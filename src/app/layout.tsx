@@ -23,13 +23,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f7f9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0e16" },
-  ],
+  themeColor: "#f6f7f9",
 };
 
-// Applies the saved theme before first paint so there is no flash.
+// Light is the default. Only a theme the user picked with the toggle (saved in localStorage) is applied, before first paint so there is no flash.
 const themeScript = `try{var t=localStorage.getItem("rv-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

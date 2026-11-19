@@ -124,7 +124,7 @@ function StoreSelector({ stores, activeStore, pathname }: { stores: Store[]; act
         <button
           type="button"
           className={cn(
-            "flex h-9 max-w-[16rem] cursor-pointer items-center gap-2 rounded-control border px-2.5 text-[13px] font-medium transition-colors aria-expanded:ring-2 aria-expanded:ring-accent/30 pointer-coarse:h-11",
+            "flex h-9 min-w-0 max-w-[16rem] cursor-pointer items-center gap-2 rounded-control border px-2.5 text-[13px] font-medium transition-colors aria-expanded:ring-2 aria-expanded:ring-accent/30 pointer-coarse:h-11",
             activeStore ? "border-accent/40 bg-accent-soft text-accent-text" : "border-line-strong bg-surface text-fg-muted hover:bg-surface-2",
           )}
         >
@@ -152,7 +152,7 @@ function OrgSelector({ org }: { org: Organization }) {
       trigger={
         <button
           type="button"
-          className="flex h-9 max-w-[14rem] cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-2.5 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 aria-expanded:ring-2 aria-expanded:ring-accent/30 pointer-coarse:h-11"
+          className="flex h-9 max-w-[14rem] shrink-0 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-2.5 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 aria-expanded:ring-2 aria-expanded:ring-accent/30 pointer-coarse:h-11"
         >
           <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded bg-fg text-[10px] font-bold text-canvas">{org.name.charAt(0)}</span>
           <span className="hidden min-w-0 truncate sm:inline">{org.name}</span>
@@ -195,8 +195,7 @@ function NotificationsMenu({ alerts, stores }: { alerts: AlertHeadline[]; stores
 function ThemeToggle() {
   const toggle = () => {
     const root = document.documentElement;
-    const attr = root.getAttribute("data-theme");
-    const isDark = attr ? attr === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = root.getAttribute("data-theme") === "dark";
     const next = isDark ? "light" : "dark";
     root.setAttribute("data-theme", next);
     try {
@@ -270,7 +269,7 @@ export function AppShell({ org, user, stores, alerts, children }: ShellProps) {
         Skip to main content
       </a>
 
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] border-r border-line bg-canvas lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] border-r border-line bg-sidebar lg:block">
         <Sidebar activeStore={activeStore} pathname={pathname} />
       </aside>
 
@@ -280,7 +279,7 @@ export function AppShell({ org, user, stores, alerts, children }: ShellProps) {
         onClick={(event) => {
           if (event.target === dialogRef.current) setOpenFor(null);
         }}
-        className="ui-drawer m-0 mr-auto h-dvh max-h-dvh w-[min(300px,88vw)] rounded-none border-r border-line bg-canvas p-0 shadow-pop lg:hidden"
+        className="ui-drawer m-0 mr-auto h-dvh max-h-dvh w-[min(300px,88vw)] rounded-none border-r border-line bg-sidebar p-0 shadow-pop lg:hidden"
       >
         <div className="flex h-full flex-col">
           <div className="flex justify-end px-2 pt-2">
@@ -295,12 +294,12 @@ export function AppShell({ org, user, stores, alerts, children }: ShellProps) {
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur supports-[backdrop-filter]:bg-canvas/80">
         <div className="flex h-14 items-center gap-2 px-3 sm:px-5">
           <IconButton icon="menu" label="Open navigation" className="lg:hidden" onClick={() => setOpenFor(pathname)} />
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <OrgSelector org={org} />
             <span aria-hidden="true" className="hidden text-line-strong sm:inline">/</span>
             <StoreSelector stores={stores} activeStore={activeStore} pathname={pathname} />
           </div>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <div className="hidden md:block"><Tooltip content="All data shown is sample data" side="bottom">
               <span tabIndex={0} className="mr-1 inline-flex h-6 items-center gap-1 rounded-full border border-dashed border-line-strong px-2 text-[11px] font-medium text-fg-subtle">
                 <Icon name="database" size={12} /> Demo data

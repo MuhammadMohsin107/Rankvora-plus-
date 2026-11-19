@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { cloneElement, useCallback, useEffect, useId, useRef, useState, type MouseEvent, type ReactElement, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
@@ -39,7 +40,7 @@ type MenuProps = {
  */
 export function Menu({ trigger, items, align = "end", width = 224, header, className }: MenuProps) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
   const wrapperRef = useRef<HTMLSpanElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -57,12 +58,16 @@ export function Menu({ trigger, items, align = "end", width = 224, header, class
       return;
     }
     const rect = event.currentTarget.getBoundingClientRect();
-    const left = align === "end" ? Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width)) : Math.max(8, Math.min(window.innerWidth - width - 8, rect.left));
+    // Never wider than the viewport minus a 8px gutter on each side (phones, small windows).
+    const panelWidth = Math.min(width, document.documentElement.clientWidth - 16);
+    const edge = document.documentElement.clientWidth - panelWidth - 8;
+    const left = align === "end" ? Math.max(8, Math.min(edge, rect.right - panelWidth)) : Math.max(8, Math.min(edge, rect.left));
     const below = window.innerHeight - rect.bottom - 12;
     const above = rect.top - 12;
     const openUp = below < 220 && above > below;
     setPos({
       left,
+      width: panelWidth,
       top: openUp ? Math.max(8, rect.top - 6 - Math.min(above, 360)) : rect.bottom + 6,
       maxHeight: Math.min(openUp ? above : below, 360),
     });
@@ -124,16 +129,19 @@ export function Menu({ trigger, items, align = "end", width = 224, header, class
 
   return (
     <>
-      <span ref={wrapperRef} className="inline-flex">
+      <span ref={wrapperRef} className="inline-flex min-w-0 max-w-full">
         {cloneElement(trigger, { onClick: toggle, "aria-haspopup": "menu", "aria-expanded": open, "aria-controls": id })}
       </span>
-      {open && pos ? (
+      {open && pos
+        ? // Portal to <body>: an ancestor with backdrop-filter (the sticky top bar) would otherwise
+          // become the containing block of this fixed panel and shift it by the sidebar width.
+          createPortal(
         <div
           ref={panelRef}
           id={id}
           role="menu"
           onKeyDown={onKeyDown}
-          style={{ position: "fixed", top: pos.top, left: pos.left, width, maxHeight: pos.maxHeight }}
+          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight }}
           className={cn("ui-scroll z-[60] overflow-y-auto rounded-card border border-line bg-surface p-1 shadow-pop", className)}
         >
           {header ? <div className="border-b border-line px-2.5 pb-2 pt-1.5">{header}</div> : null}
@@ -174,8 +182,10 @@ export function Menu({ trigger, items, align = "end", width = 224, header, class
               </button>
             );
           })}
-        </div>
-      ) : null}
+        </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

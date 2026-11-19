@@ -11,6 +11,8 @@
   color-scheme: light;
 
   --canvas: #f6f7f9;
+  /* sidebar: a step deeper than the page so the navigation reads as its own surface */
+  --sidebar: #eceff5;
   --surface: #ffffff;
   --surface-2: #f1f3f6;
   --surface-3: #e9ecf1;
@@ -53,51 +55,10 @@
   --dur: 180ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --canvas: #0a0e16;
-    --surface: #111724;
-    --surface-2: #172032;
-    --surface-3: #1e293d;
-    --line: #232f45;
-    --line-strong: #364563;
-
-    --fg: #e8ecf4;
-    --fg-muted: #aab4c6;
-    --fg-subtle: #8e9ab0;
-
-    --accent: #8f97ff;
-    --accent-hover: #a7adff;
-    --accent-soft: #1a2040;
-    --accent-fg: #0a0e16;
-    --accent-text: #b3b8ff;
-
-    --success: #4ade80;
-    --success-soft: #11291c;
-    --warning: #f5a74a;
-    --warning-soft: #2e2110;
-    --danger: #ff8a80;
-    --danger-soft: #331816;
-    --info: #5cc2ee;
-    --info-soft: #0f2634;
-
-    --series-1: #9aa1ff;
-    --series-2: #4fc3dc;
-    --series-3: #f0a64a;
-    --series-4: #f27aa8;
-    --series-5: #a0aec0;
-    --grid: #1f2a3f;
-
-    --elev-card: 0 1px 2px rgb(0 0 0 / 0.4);
-    --elev-pop: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
-    --scrim: rgb(2 6 14 / 0.65);
-  }
-}
-
 :root[data-theme="dark"] {
   color-scheme: dark;
   --canvas: #0a0e16;
+  --sidebar: #0e1522;
   --surface: #111724;
   --surface-2: #172032;
   --surface-3: #1e293d;
@@ -140,6 +101,7 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --color-canvas: var(--canvas);
+  --color-sidebar: var(--sidebar);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
@@ -258,10 +220,6 @@ dialog[open].ui-drawer {
 .rv-sun { display: none; }
 :root[data-theme="dark"] .rv-sun { display: inline-block; }
 :root[data-theme="dark"] .rv-moon { display: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .rv-sun { display: inline-block; }
-  :root:not([data-theme="light"]) .rv-moon { display: none; }
-}
 
 /* thin, quiet scrollbars for dense tables */
 .ui-scroll {
