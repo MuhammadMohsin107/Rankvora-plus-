@@ -65,6 +65,36 @@ Next.js (App Router) + TypeScript + Tailwind CSS 4 + PostgreSQL + Drizzle ORM.
 | `npm run db:migrate`  | Apply migrations                             |
 | `npm run db:push`     | Push the schema directly (dev only)          |
 | `npm run db:studio`   | Open Drizzle Studio                          |
+| `npm run preview`     | Build for Cloudflare and run it locally      |
+| `npm run deploy`      | Build for Cloudflare and deploy the Worker   |
+| `npm run upload`      | Upload a new Worker version without deploying |
+
+## Deploy to Cloudflare Workers
+
+The app runs on Cloudflare **Workers** through the OpenNext adapter
+(`@opennextjs/cloudflare`); Cloudflare Pages is not supported by the adapter.
+Config lives in `wrangler.jsonc` (Worker name `rankvora-plus`) and
+`open-next.config.ts`.
+
+Cache Components are switched off for the Cloudflare build only (see
+`next.config.ts`) because the adapter still has open bugs with them. Local
+`npm run dev` and `npm run build` keep them on.
+
+**Git-connected deploy (Workers Builds):** in the Cloudflare dashboard go to
+Workers & Pages, Create, import the GitHub repository, and use:
+
+| Setting        | Value                                 |
+| -------------- | ------------------------------------- |
+| Build command  | `npx opennextjs-cloudflare build`     |
+| Deploy command | `npx opennextjs-cloudflare deploy`    |
+| Preview command | `npx opennextjs-cloudflare upload`   |
+
+The Worker name in the dashboard must be `rankvora-plus` (the `name` in
+`wrangler.jsonc`). Workers Builds sets `WORKERS_CI=1`, which selects the
+Cloudflare build. If the build image cannot provide the Node version in
+`.nvmrc`, set the build variable `NODE_VERSION` to `24`.
+
+**From your machine:** run `npx wrangler login` once, then `npm run deploy`.
 
 ## Tests
 

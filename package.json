@@ -14,12 +14,17 @@
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
     "test:unit": "vitest run --exclude \"**/*.db.test.ts\"",
-    "test:db": "vitest run db.test"
+    "test:db": "vitest run db.test",
+    "preview": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "engines": {
     "node": ">=24"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.17",
     "dotenv": "^18.0.10",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.6",
@@ -34,6 +39,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
@@ -41,6 +47,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.1",
+    "wrangler": "^4.165.0"
   }
 }
