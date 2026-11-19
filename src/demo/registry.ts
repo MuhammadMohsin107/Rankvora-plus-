@@ -217,13 +217,13 @@ export type RegistryTask = {
 
 /** 6 of these are open → matches the store summary "pending tasks". */
 export const REGISTRY_TASKS: RegistryTask[] = [
-  { id: "task-001", title: "Add running-surface and cushioning facts to Glide 2 page", findingId: "fnd-001", status: "draft_ready", assignee: "Hira Malik", dueAt: "2026-11-24T00:00:00Z", mode: "ai_draft", risk: "medium", priority: "P2" },
+  { id: "task-001", title: "Add running-surface and cushioning facts to Glide 2 page", findingId: "fnd-001", status: "draft_ready", assignee: "Hira Malik", dueAt: "2026-11-24T00:00:00Z", mode: "ai_draft", risk: "medium", priority: "P1" },
   { id: "task-002", title: "Correct Glide 2 structured-data price", findingId: "fnd-002", status: "pending_approval", assignee: "Omar Farooq", dueAt: "2026-11-21T00:00:00Z", mode: "approved_apply", risk: "high", priority: "P1" },
   { id: "task-003", title: "Replace two broken internal links on collection pages", findingId: "fnd-003", status: "queued", assignee: "Hira Malik", dueAt: "2026-11-26T00:00:00Z", mode: "cms_staged", risk: "low", priority: "P2" },
   { id: "task-004", title: "Publish beginner buying guide", findingId: "fnd-007", status: "verification_pending", assignee: "Hira Malik", dueAt: "2026-11-15T00:00:00Z", mode: "cms_staged", risk: "medium", priority: "P2" },
   { id: "task-005", title: "Add sameAs and contact points to Organization schema", findingId: "fnd-008", status: "verified_success", assignee: "Omar Farooq", dueAt: "2026-11-05T00:00:00Z", mode: "ai_draft", risk: "medium", priority: "P3" },
   { id: "task-006", title: "Review robots.txt rule for OAI-SearchBot", findingId: "fnd-006", status: "blocked", assignee: "Omar Farooq", dueAt: "2026-11-28T00:00:00Z", mode: "guidance", risk: "high", priority: "P1" },
-  { id: "task-007", title: "Investigate missing mention on affordable-shoes prompt (Gemini)", findingId: "fnd-004", status: "suggested", assignee: null, dueAt: null, mode: "guidance", risk: "low", priority: "P1" },
+  { id: "task-007", title: "Investigate missing mention on affordable-shoes prompt (Gemini)", findingId: "fnd-004", status: "suggested", assignee: null, dueAt: null, mode: "guidance", risk: "low", priority: "P2" },
   { id: "task-008", title: "Add FAQ block to marathon page", findingId: "fnd-009", status: "rolled_back", assignee: "Hira Malik", dueAt: "2026-11-08T00:00:00Z", mode: "approved_apply", risk: "medium", priority: "P2" },
 ];
 
@@ -354,7 +354,7 @@ export const REGISTRY_AE_COMPARISONS: RegistryComparison[] = [
 /** 4 of these are open → matches the store summary "pending tasks". */
 export const REGISTRY_AE_TASKS: RegistryTask[] = [
   { id: "task-ae-001", title: "Add Product and Offer schema to the WooCommerce product template", findingId: "fnd-ae-001", status: "staged", assignee: "Hira Malik", dueAt: "2026-11-25T00:00:00Z", mode: "cms_staged", risk: "medium", priority: "P1" },
-  { id: "task-ae-002", title: "Switch JSON-LD priceCurrency from USD to AED", findingId: "fnd-ae-002", status: "failed", assignee: "Omar Farooq", dueAt: "2026-11-20T00:00:00Z", mode: "approved_apply", risk: "high", priority: "P1" },
+  { id: "task-ae-002", title: "Switch JSON-LD priceCurrency from USD to AED", findingId: "fnd-ae-002", status: "failed", assignee: "Omar Farooq", dueAt: "2026-11-20T00:00:00Z", mode: "approved_apply", risk: "high", priority: "P0" },
   { id: "task-ae-003", title: "Add UAE delivery and returns section to product pages", findingId: "fnd-ae-003", status: "pending_approval", assignee: "Hira Malik", dueAt: "2026-11-27T00:00:00Z", mode: "ai_draft", risk: "low", priority: "P2" },
   { id: "task-ae-004", title: "Review Dubai local citations against GulfRun", findingId: "fnd-ae-004", status: "suggested", assignee: null, dueAt: null, mode: "guidance", risk: "low", priority: "P2" },
   { id: "task-ae-005", title: "Remove redirecting URLs from the sitemap", findingId: "fnd-ae-005", status: "verified_success", assignee: "Omar Farooq", dueAt: "2026-11-08T00:00:00Z", mode: "approved_apply", risk: "low", priority: "P3" },

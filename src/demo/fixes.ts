@@ -36,7 +36,7 @@ export function demoDigest(seed: string): string {
 const PK_FINDING_EXTRAS: Record<string, FindingExtras> = {
   "fnd-001": {
     severityRationale: "Medium: the product page omits facts that shoppers and AI answers need for suitability questions. Nothing is broken.",
-    priorityRationale: "P2: affects one product page and two tracked prompts; no revenue-critical error.",
+    priorityRationale: "P1: Glide 2 is the flagship product page and the target of the November verification audit, so it is worked before lower-traffic pages even though nothing is broken.",
     verificationCriteria: ["Page states surface suitability", "Page states cushioning level", "Page states weight with the size it applies to", "Re-crawl shows all three attributes"],
     evidence: [
       { id: "e1", kind: "page", url: `${RP_URL}/products/glide-2`, note: "Crawl: 3 of 5 expected attributes missing", auditId: "aud-002" },
@@ -71,7 +71,7 @@ const PK_FINDING_EXTRAS: Record<string, FindingExtras> = {
   },
   "fnd-004": {
     severityRationale: "High: a core neutral prompt on one channel shows the brand in fewer samples than before. Based on 2 samples only.",
-    priorityRationale: "P1: core prompt; confidence is medium because the sample is small.",
+    priorityRationale: "P2: the severity is high, but it rests on 2 samples on one channel. Confirm it with a larger re-run before it takes priority over the price and crawler issues.",
     verificationCriteria: ["Re-run on the same channel with at least 3 samples", "Report mention counts with numerator and denominator", "Failed requests are reported separately"],
     evidence: [
       { id: "e1", kind: "response", responseId: "resp-run-008-09", note: "Gemini · latest monitoring run · sample 1" },
@@ -82,7 +82,7 @@ const PK_FINDING_EXTRAS: Record<string, FindingExtras> = {
   },
   "fnd-005": {
     severityRationale: "Low: inconsistent spelling can split brand mentions across two names. No functional impact.",
-    priorityRationale: "P3: cosmetic fix on two pages.",
+    priorityRationale: "P2: the severity is low, but the wrong spelling is in the footer of every page and the fix is a quick text change, so it ships with the next content release.",
     verificationCriteria: ["About page and footer use “RunPro”", "No “Run Pro” on the six core pages"],
     evidence: [
       { id: "e1", kind: "page", url: `${RP_URL}/pages/about`, note: "“Run Pro” in body copy", auditId: "aud-003" },
@@ -1085,8 +1085,8 @@ const AE_FINDING_EXTRAS: Record<string, FindingExtras> = {
     ],
   },
   "fnd-ae-002": {
-    severityRationale: "High: structured data reports USD while the page shows AED. A wrong currency can fail merchant-listing validation and mislead systems that read structured data.",
-    priorityRationale: "P1: one page, but price data is customer-facing and the fix is two lines.",
+    severityRationale: "Critical: structured data reports USD while the page shows AED. A wrong currency can fail merchant-listing validation and mislead systems that read structured data.",
+    priorityRationale: "P0: price data is customer-facing, the fix is two lines, and it must not wait behind other work. The apply attempt failed because the WooCommerce connection needs attention.",
     verificationCriteria: ["Offer priceCurrency is AED", "Offer price equals the visible price (AED 1,280)", "Structured data validates without price or currency warnings"],
     evidence: [{ id: "e1", kind: "page", url: `${AE_URL}/product/glide-2`, note: "Offer: priceCurrency USD, price 349. Visible price: AED 1,280", auditId: "aud-ae-001" }],
     observations: [
@@ -1145,7 +1145,7 @@ const AE_FINDING_EXTRAS: Record<string, FindingExtras> = {
     ],
   },
   "fnd-ae-006": {
-    severityRationale: "Low: one prompt, 2 channels, brand absent. Low confidence that a site change would matter; answers vary between runs.",
+    severityRationale: "Informational: one prompt, 2 channels, brand absent. Low confidence that a site change would matter; answers vary between runs, so this is recorded for awareness.",
     priorityRationale: "P3: single informational prompt. Accepted by the owner on 12 Nov; revisit in January.",
     verificationCriteria: ["Re-run p-ae-003 on the same channels with 3 samples each", "Report brand mentions with numerator and denominator", "Failed requests reported separately"],
     evidence: [
