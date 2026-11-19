@@ -1,0 +1,389 @@
+"use client";
+
+import { useState } from "react";
+
+import { Badge, Status } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Callout, Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
+import { Stepper } from "@/components/ui/feedback";
+import { Checkbox, Field, Textarea } from "@/components/ui/form";
+import { Icon } from "@/components/ui/icon";
+import { DiffView, Mono } from "@/components/ui/misc";
+import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
+import { useToast } from "@/components/ui/toast";
+import { formatDateTime } from "@/lib/format";
+import type { Role } from "@/types/core";
+import type { ApprovalState, BatchItem, CmsState, ExecutionMode, ExecutionRecord, FieldOutcome, RemoteCheck, TaskDraft, TaskStatus } from "@/types/fixes";
+
+import { CodeDiff } from "./code-diff";
+import { CMS_STATE_LABEL, MODE_LABEL } from "./fixes-shared";
+import { shortHash } from "./task-approval";
+import { BATCH_BADGE } from "./task-draft";
+
+const CMS_STEPS: CmsState[] = ["draft", "staged", "applied", "published"];
+const WRITTEN: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "verified_success", "partially_verified", "failed"]);
+const ROLLBACK_STATUSES: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "partially_verified", "failed"]);
+
+const OUTCOME: Record<FieldOutcome["outcome"], { label: string; tone: "neutral" | "success" | "warning" | "danger"; icon: Parameters<typeof Badge>[0]["icon"] }> = {
+  pending: { label: "Pending", tone: "neutral", icon: "clock" },
+  written: { label: "Written", tone: "success", icon: "check-circle" },
+  skipped: { label: "Held", tone: "warning", icon: "alert-triangle" },
+  failed: { label: "Failed", tone: "danger", icon: "x-circle" },
+  reverted: { label: "Reverted", tone: "neutral", icon: "undo" },
+};
+
+/** Which CMS state the task is in, following local status moves. */
+export function cmsStateFor(status: TaskStatus, record: CmsState, mode: ExecutionMode): CmsState {
+  if (mode === "guidance") return "guidance";
+  if (status === "staged") return "staged";
+  if (status === "applied") return "applied";
+  if (status === "published") return "published";
+  if (["suggested", "pending_approval", "approved", "queued", "in_progress", "blocked", "draft_ready"].includes(status)) return "draft";
+  return record;
+}
+
+function nextWrite(status: TaskStatus, mode: ExecutionMode): { label: string; target: TaskStatus } | null {
+  if (mode === "guidance" || mode === "ai_draft") return null;
+  if (status === "approved" || status === "queued") return mode === "cms_staged" ? { label: "Stage draft", target: "staged" } : { label: "Apply to Shopify", target: "applied" };
+  if (status === "staged") return { label: "Apply to Shopify", target: "applied" };
+  if (status === "applied") return { label: "Publish", target: "published" };
+  return null;
+}
+
+type Props = {
+  execution: ExecutionRecord;
+  remote: RemoteCheck | null;
+  draft: TaskDraft;
+  text: string;
+  status: TaskStatus;
+  mode: ExecutionMode;
+  approvalState: ApprovalState;
+  diffHash: string | null;
+  viewRole: Role;
+  batch: Record<string, BatchItem["result"]>;
+  onWrite: (target: TaskStatus, label: string) => void;
+  onRollback: (reason: string) => void;
+  onRedraft: () => void;
+};
+
+function Scope({ name, ok }: { name: string; ok?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-line-strong bg-surface px-2 py-0.5 text-xs">
+      {ok === undefined ? null : <Icon name={ok ? "check-circle" : "x-circle"} size={12} className={ok ? "text-success" : "text-danger"} />}
+      <span className="font-mono">{name}</span>
+    </span>
+  );
+}
+
+/** Connector, scopes, remote version check, exact diff, per-field outcome, CMS state and rollback. */
+export function TaskExecutionTab({ execution, remote, draft, text, status, mode, approvalState, diffHash, viewRole, batch, onWrite, onRollback, onRedraft }: Props) {
+  const toast = useToast();
+  const [confirm, setConfirm] = useState<{ label: string; target: TaskStatus } | null>(null);
+  const [rolling, setRolling] = useState(false);
+  const [ack, setAck] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const { connector, rollback } = execution;
+  const cms = cmsStateFor(status, execution.cmsState, mode);
+  const stepIndex = Math.max(0, CMS_STEPS.indexOf(cms));
+  const write = nextWrite(status, mode);
+  const canExecute = viewRole === "owner" || viewRole === "admin" || viewRole === "editor";
+  const changed = Boolean(remote?.changed);
+
+  let writeBlock: string | null = null;
+  if (write) {
+    if (!canExecute) writeBlock = "Your role cannot run execution.";
+    else if (approvalState !== "approved") writeBlock = "Needs an approved diff first.";
+    else if (changed) writeBlock = "Resource changed since draft. Re-check first.";
+  }
+
+  const fields: FieldOutcome[] = execution.fields.map((f) => {
+    if (f.outcome === "pending" && WRITTEN.has(status)) return { ...f, outcome: "written", note: undefined };
+    if (f.outcome === "written" && status === "rolled_back") return { ...f, outcome: "reverted" };
+    return f;
+  });
+
+  const rolledBack = status === "rolled_back";
+  const canRollback = rollback.available && ROLLBACK_STATUSES.has(status);
+  const rollbackReady = reason.trim().length >= 5 && (!rollback.laterEdit || ack);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Connector" subtitle={MODE_LABEL[mode]} />
+          <CardBody className="flex flex-col gap-3">
+            {connector ? (
+              <KeyValue
+                columns={1}
+                items={[
+                  { label: "Connector", value: `${connector.label} · ${connector.store}` },
+                  { label: "Connection", value: <Status kind="integration" value={connector.state} /> },
+                  {
+                    label: "Granted scopes",
+                    value: (
+                      <span className="flex flex-wrap gap-1.5">
+                        {connector.scopesGranted.map((scope) => (
+                          <Scope key={scope} name={scope} />
+                        ))}
+                      </span>
+                    ),
+                  },
+                  {
+                    label: "Scopes this task needs",
+                    value: (
+                      <span className="flex flex-wrap gap-1.5">
+                        {connector.scopesRequired.map((scope) => (
+                          <Scope key={scope} name={scope} ok={connector.scopesGranted.includes(scope)} />
+                        ))}
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+            ) : (
+              <Callout tone="neutral" title="No connector used">
+                {mode === "guidance" ? "Guidance only. A person makes any change." : "A person applied this change outside Rankvora Plus."}
+              </Callout>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader title="CMS state" info="Draft and staged are not live. Applied and published are not verified." />
+          <CardBody className="flex flex-col gap-3">
+            {cms === "guidance" ? (
+              <Badge tone="neutral" icon="file-text" className="self-start">Guidance only</Badge>
+            ) : (
+              <Stepper
+                steps={CMS_STEPS.map((s) => ({ id: s, label: CMS_STATE_LABEL[s] }))}
+                current={cms === "published" ? CMS_STEPS.length : stepIndex}
+              />
+            )}
+            <KeyValue
+              columns={2}
+              items={[
+                { label: "Staged", value: <span className="tnum">{execution.stagedAt ? formatDateTime(execution.stagedAt) : "Not yet"}</span> },
+                { label: "Applied", value: <span className="tnum">{execution.appliedAt ? formatDateTime(execution.appliedAt) : WRITTEN.has(status) ? "Just now (demo)" : "Not yet"}</span> },
+                { label: "Published", value: <span className="tnum">{mode === "ai_draft" || mode === "guidance" ? "Not applicable" : execution.publishedAt ? formatDateTime(execution.publishedAt) : "Not yet"}</span> },
+              ]}
+            />
+          </CardBody>
+        </Card>
+      </div>
+
+      {remote ? (
+        <Card>
+          <CardHeader
+            title="Remote version check"
+            subtitle={remote.resource}
+            actions={
+              <Button
+                size="sm"
+                icon="refresh"
+                onClick={() => toast.push({ title: changed ? "Still changed" : "Remote unchanged", description: changed ? "The resource still differs from the draft." : `Version ${remote.versionNow} matches the draft.`, tone: changed ? "warning" : "success" })}
+              >
+                Re-check
+              </Button>
+            }
+          />
+          <CardBody className="flex flex-col gap-3">
+            {changed ? (
+              <Callout
+                tone="warning"
+                title="Resource changed since draft"
+                actions={status === "queued" || status === "approved" || status === "staged" ? <Button size="sm" icon="sparkles" onClick={onRedraft}>Redraft from current</Button> : undefined}
+              >
+                {remote.changedBy ? `${remote.changedBy} edited it ${remote.changedAt ? formatDateTime(remote.changedAt) : ""}. ` : ""}
+                {remote.note ?? ""} The write is held until the draft is rebuilt from the current copy.
+              </Callout>
+            ) : (
+              <Callout tone="success" title="Remote matches the draft">The version and hash are the same as when the draft was made.</Callout>
+            )}
+            <KeyValue
+              columns={3}
+              items={[
+                { label: "Version at draft", value: <Mono>{remote.versionAtDraft}</Mono> },
+                { label: "Version now", value: <Mono>{remote.versionNow}</Mono> },
+                { label: "Checked", value: <span className="tnum">{formatDateTime(remote.checkedAt)} UTC</span> },
+                { label: "Hash at draft", value: <Mono>{shortHash(remote.hashAtDraft)}</Mono> },
+                { label: "Hash now", value: <Mono>{shortHash(remote.hashNow)}</Mono> },
+              ]}
+            />
+          </CardBody>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardHeader title="Exact diff" info="What is written, nothing more." />
+        <CardBody>
+          {draft.kind === "text" ? (
+            <DiffView before={draft.before} after={text} beforeLabel="Current" afterLabel="Will be written" />
+          ) : draft.kind === "patch" ? (
+            <CodeDiff before={draft.before} after={text} label={`${draft.resource} · ${draft.language}`} />
+          ) : draft.kind === "batch" ? (
+            <ul className="divide-y divide-line rounded-control border border-line">
+              {draft.items.map((item) => {
+                const result = batch[item.id] ?? item.result;
+                const view = BATCH_BADGE[result];
+                return (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-[13px]">
+                    <span className="min-w-0 truncate text-fg">{item.pageUrl.replace("https://", "")}</span>
+                    <span className="flex items-center gap-2">
+                      <Mono>{item.from}</Mono>
+                      <Icon name="arrow-right" size={12} className="text-fg-subtle" />
+                      <Mono>{item.to}</Mono>
+                      <Badge tone={view.tone} icon={view.icon}>{view.label}</Badge>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-[13px] text-fg-subtle">Guidance only. No diff.</p>
+          )}
+        </CardBody>
+      </Card>
+
+      {fields.length > 0 ? (
+        <Card>
+          <CardHeader title="Per-field outcome" />
+          <CardBody className="pt-2">
+            <ul className="divide-y divide-line">
+              {fields.map((f) => {
+                const view = OUTCOME[f.outcome];
+                return (
+                  <li key={f.field} className="flex flex-wrap items-start justify-between gap-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-fg">{f.field}</p>
+                      <p className="mt-0.5 truncate text-xs text-fg-muted">
+                        {f.before} <Icon name="arrow-right" size={11} className="inline" /> {f.after}
+                      </p>
+                      {f.note ? <p className="mt-0.5 text-xs text-fg-subtle">{f.note}</p> : null}
+                    </div>
+                    <Badge tone={view.tone} icon={view.icon}>{view.label}</Badge>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {rollback.record ? (
+        <Card>
+          <CardHeader title="Rollback record" actions={<Status kind="task" value="rolled_back" />} />
+          <CardBody className="flex flex-col gap-3">
+            <KeyValue
+              columns={2}
+              items={[
+                { label: "Rolled back", value: <span className="tnum">{formatDateTime(rollback.record.at)} · {rollback.record.by}</span> },
+                { label: "Restored hash", value: <Mono>{shortHash(rollback.record.restoredHash)}</Mono> },
+                { label: "Reason", value: rollback.record.reason },
+                { label: "Outcome", value: rollback.record.outcome === "restored" ? "Restored" : "Restored with manual merge" },
+              ]}
+            />
+            <Callout tone="warning" title="Later edit kept">
+              {rollback.record.note} Kept: {rollback.record.preservedEdits.join(", ")}.
+            </Callout>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {write ? (
+          <Button variant="primary" icon="bolt" disabled={Boolean(writeBlock)} onClick={() => setConfirm(write)}>
+            {write.label}
+          </Button>
+        ) : null}
+        {canRollback ? (
+          <Button
+            variant="danger-ghost"
+            icon="undo"
+            onClick={() => {
+              setReason("");
+              setAck(false);
+              setRolling(true);
+            }}
+          >
+            Roll back
+          </Button>
+        ) : null}
+        {writeBlock ? (
+          <span className="flex items-center gap-1.5 text-xs text-fg-muted">
+            <Icon name="lock" size={13} />
+            {writeBlock}
+          </span>
+        ) : null}
+        {!write && !canRollback && !rolledBack ? <span className="text-xs text-fg-subtle">{rollback.unavailableReason ?? "No execution step available."}</span> : null}
+      </div>
+
+      <ConfirmDialog
+        open={confirm !== null}
+        onClose={() => setConfirm(null)}
+        tone="primary"
+        title={confirm?.label ?? "Write"}
+        confirmLabel={confirm?.label ?? "Write"}
+        onConfirm={() => {
+          if (!confirm) return;
+          onWrite(confirm.target, confirm.label);
+          setConfirm(null);
+        }}
+      >
+        <p>
+          This writes to <span className="font-medium text-fg">{connector ? `${connector.label} · ${connector.store}` : "the connected store"}</span>, exactly:
+        </p>
+        <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
+          {execution.fields.filter((f) => f.outcome !== "skipped").map((f) => (
+            <li key={f.field}>
+              {f.field}: {f.before} → {f.after}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2">Approved diff <Mono>{shortHash(diffHash)}</Mono> is checked against the remote version first. Applied is not verified; run verification afterwards.</p>
+      </ConfirmDialog>
+
+      <Dialog
+        open={rolling}
+        onClose={() => setRolling(false)}
+        title="Roll back this change"
+        description="Restores the version from before this task."
+        footer={
+          <>
+            <Button onClick={() => setRolling(false)}>Cancel</Button>
+            <Button
+              variant="danger"
+              icon="undo"
+              disabled={!rollbackReady}
+              onClick={() => {
+                setRolling(false);
+                onRollback(reason.trim());
+              }}
+            >
+              Roll back
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <ul className="flex list-disc flex-col gap-1 pl-5 text-[13px] text-fg-muted">
+            {execution.fields.filter((f) => f.outcome !== "skipped").map((f) => (
+              <li key={f.field}>
+                {f.field} returns to: {f.before}
+              </li>
+            ))}
+          </ul>
+          {rollback.laterEdit ? (
+            <Callout tone="warning" title="The remote resource was edited after this change">
+              {rollback.laterEdit.by} edited it {formatDateTime(rollback.laterEdit.at)}. {rollback.laterEdit.note} Rollback does not overwrite it automatically, so it needs manual reconciliation.
+            </Callout>
+          ) : null}
+          {rollback.laterEdit ? <Checkbox checked={ack} onChange={(event) => setAck(event.target.checked)} label="I will reconcile the later edit manually" /> : null}
+          <Field label="Reason" required hint="Recorded in history." error={reason.length > 0 && reason.trim().length < 5 ? "Write at least 5 characters." : undefined}>
+            {({ id, describedBy, invalid }) => <Textarea id={id} aria-describedby={describedBy} invalid={invalid} rows={3} value={reason} onChange={(event) => setReason(event.target.value)} />}
+          </Field>
+        </div>
+      </Dialog>
+    </div>
+  );
+}

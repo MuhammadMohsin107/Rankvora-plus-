@@ -1,0 +1,80 @@
+import { Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
+import { Card, CardBody, CardHeader, Metric } from "@/components/ui/card";
+import { sampleStatus } from "@/lib/stats";
+import type { LaneSummary } from "@/types/audit";
+
+type Props = {
+  summary: LaneSummary;
+  /** Base path of the audit, e.g. /stores/runpro-pk/audits/aud-002 */
+  base: string;
+  basis?: string;
+  /** "headline" leaves out coverage metrics (shown separately on the overview). */
+  variant?: "full" | "headline";
+};
+
+/**
+ * The two assessment lanes side by side. They are never combined into one score.
+ */
+export function LaneCards({ summary, base, basis, variant = "full" }: Props) {
+  const { ai, website } = summary;
+  const full = variant === "full";
+  const bodyGrid = full ? "sm:grid-cols-2" : "sm:grid-cols-3";
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+      <Card as="section" className="flex flex-col">
+        <CardHeader
+          title="AI visibility"
+          info="Computed from successful API answer samples. Failed requests are excluded from rates and counted in coverage."
+          actions={summary.provisional ? <Badge tone="warning" icon="alert-triangle">Provisional</Badge> : undefined}
+        />
+        {ai ? (
+          <>
+            <CardBody className={`grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-5 ${bodyGrid}`}>
+              <Metric label="Mention rate" numerator={ai.mention.n} denominator={ai.mention.d} basis={basis} sampleStatus={sampleStatus(ai.mention.d)} info="Successful responses that mention the brand ÷ successful responses." />
+              <Metric label="Recommendation rate" numerator={ai.recommendation.n} denominator={ai.recommendation.d} basis={basis} sampleStatus={sampleStatus(ai.recommendation.d)} />
+              <Metric label="Owned citation rate" numerator={ai.ownedCitation.n} denominator={ai.ownedCitation.d} unit="citation-capable responses" info="Denominator counts only successful responses from providers that return citations." />
+              {full ? <Metric label="Response success" numerator={ai.responses.n} denominator={ai.responses.d} unit="requests" info="Successful ÷ planned requests. The remainder failed and are not read as brand absence." /> : null}
+            </CardBody>
+            <div className="mt-auto flex justify-end border-t border-line px-4 py-2">
+              <ButtonLink href={`${base}/ai-visibility`} variant="ghost" size="sm" trailingIcon="arrow-right">AI visibility</ButtonLink>
+            </div>
+          </>
+        ) : (
+          <CardBody><p className="text-[13px] text-fg-muted">Lane not included in this audit.</p></CardBody>
+        )}
+      </Card>
+
+      <Card as="section" className="flex flex-col">
+        <CardHeader
+          title="Website readiness"
+          info="Technical and content-quality pass rates are separate. Pass rate = passing ÷ determinate checks. Coverage = determinate ÷ applicable checks."
+          actions={summary.provisional ? <Badge tone="warning" icon="alert-triangle">Provisional</Badge> : undefined}
+        />
+        {website ? (
+          <>
+            <CardBody className={`grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-5 ${bodyGrid}`}>
+              <Metric label="Technical pass rate" numerator={website.technical.n} denominator={website.technical.d} unit="checks" naReason={website.technical.d === 0 ? "No determinate checks" : undefined} />
+              <Metric label="Content-quality pass rate" numerator={website.content.n} denominator={website.content.d} unit="checks" naReason={website.content.d === 0 ? "No determinate checks" : undefined} />
+              {full ? <Metric label="Check coverage" numerator={website.checks.n} denominator={website.checks.d} unit="applicable checks" info="Checks with a determinate result ÷ applicable checks." /> : null}
+              {full ? (
+                <Metric
+                  label="Page coverage"
+                  numerator={website.pages.n}
+                  denominator={website.pages.d}
+                  unit="in-scope pages"
+                  basis={`${website.pagesDetail.excluded} excluded · ${website.pagesDetail.blocked} blocked · ${website.pagesDetail.unvisited} unvisited`}
+                />
+              ) : null}
+            </CardBody>
+            <div className="mt-auto flex justify-end border-t border-line px-4 py-2">
+              <ButtonLink href={`${base}/website`} variant="ghost" size="sm" trailingIcon="arrow-right">Website readiness</ButtonLink>
+            </div>
+          </>
+        ) : (
+          <CardBody><p className="text-[13px] text-fg-muted">Lane not included in this audit.</p></CardBody>
+        )}
+      </Card>
+    </div>
+  );
+}

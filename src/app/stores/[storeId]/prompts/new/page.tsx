@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import { PageHeader } from "@/components/shell/page-header";
+import { CreatePrompt } from "@/features/prompts/create-prompt";
+import { storeIds } from "@/services/core";
+import { getNewPromptData } from "@/services/prompts";
+
+export const metadata: Metadata = { title: "New prompt" };
+
+export async function generateStaticParams() {
+  return storeIds();
+}
+
+export default async function NewPromptPage(props: PageProps<"/stores/[storeId]/prompts/new">) {
+  const { storeId } = await props.params;
+  const data = await getNewPromptData(storeId);
+  if (!data) notFound();
+
+  return (
+    <>
+      <PageHeader title="New prompt" breadcrumb={[{ label: "Prompts", href: `/stores/${storeId}/prompts` }, { label: "New" }]} />
+      <CreatePrompt data={data} />
+    </>
+  );
+}

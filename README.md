@@ -66,6 +66,17 @@ Next.js (App Router) + TypeScript + Tailwind CSS 4 + PostgreSQL + Drizzle ORM.
 | `npm run db:push`     | Push the schema directly (dev only)          |
 | `npm run db:studio`   | Open Drizzle Studio                          |
 
+## Tests
+
+```bash
+npm run test:unit   # pure logic, no database needed
+npm run test:db     # tenant-isolation and service tests against your local PostgreSQL
+npm test            # everything
+```
+
+Database tests run every case inside a transaction that is always rolled back,
+so they never leave data behind. Run `npm run db:migrate` first.
+
 ## Project structure
 
 ```
