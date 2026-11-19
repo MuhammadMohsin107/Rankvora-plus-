@@ -8,6 +8,27 @@
       "when": 1795009489000,
       "tag": "0000_giant_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795009613637,
+      "tag": "0001_empty_scarlet_witch",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795010230379,
+      "tag": "0002_powerful_valeria_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795010246748,
+      "tag": "0003_append_only_history",
+      "breakpoints": true
     }
   ]
 }

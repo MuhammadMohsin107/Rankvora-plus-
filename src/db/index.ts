@@ -1,4 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
+import type { PgDatabase } from "drizzle-orm/pg-core";
 import { Pool } from "pg";
 
 import * as schema from "./schema";
@@ -19,3 +21,6 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export const db = drizzle(pool, { schema });
+
+/** Either the shared `db` or a transaction handle; services accept both. */
+export type DbOrTx = PgDatabase<NodePgQueryResultHKT, typeof schema>;
