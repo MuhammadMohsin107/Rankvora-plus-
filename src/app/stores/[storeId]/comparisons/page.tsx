@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -21,7 +24,7 @@ function refOf(reference: string): ComparisonRow["baseline"] {
   return window ? { text: `${formatShortDate(window.from)} – ${formatShortDate(window.to)}`, isId: false } : { text: reference, isId: true };
 }
 
-export default async function ComparisonsPage(props: PageProps<"/stores/[storeId]/comparisons">) {
+async function ComparisonsPageContent(props: PageProps<"/stores/[storeId]/comparisons">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
@@ -31,7 +34,7 @@ export default async function ComparisonsPage(props: PageProps<"/stores/[storeId
   if (comparisons.length === 0) {
     return (
       <>
-        <PageHeader title="Comparisons" subtitle={store.name} />
+        <PageHeader title="Comparisons" />
         <EmptyState
           icon="compare"
           title="No comparisons yet"
@@ -49,7 +52,6 @@ export default async function ComparisonsPage(props: PageProps<"/stores/[storeId
     typeLabel: COMPARISON_TYPES.find((t) => t.value === c.type)?.label ?? c.type,
     baseline: refOf(c.baseline),
     current: refOf(c.current),
-    status: c.status,
     comparability: c.comparability,
     createdBy: c.createdBy,
     createdAt: c.createdAt,
@@ -61,10 +63,17 @@ export default async function ComparisonsPage(props: PageProps<"/stores/[storeId
     <>
       <PageHeader
         title="Comparisons"
-        subtitle={`${store.name} · matched cohorts only`}
         actions={<ButtonLink href={`${base}/new`} variant="primary" icon="plus">New comparison</ButtonLink>}
       />
       <ComparisonsTable storeId={storeId} rows={rows} />
     </>
+  );
+}
+
+export default function ComparisonsPage(props: PageProps<"/stores/[storeId]/comparisons">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ComparisonsPageContent {...props} />
+    </Suspense>
   );
 }

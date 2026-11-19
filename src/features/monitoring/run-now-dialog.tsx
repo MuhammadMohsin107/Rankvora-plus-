@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Callout, KeyValue } from "@/components/ui/card";
+import { KeyValue } from "@/components/ui/card";
 import { Field, Select, Textarea } from "@/components/ui/form";
 import { Dialog } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
@@ -45,10 +45,9 @@ export function RunNowDialog({ open, onClose, schedules, scheduleId }: Props) {
       open={open}
       onClose={close}
       title="Run now"
-      description="Starts one extra run. The schedule is not changed."
+      description="Starts one extra run. It counts toward this month's usage and may raise alerts under the schedule's rules."
       footer={
         <>
-          {!valid ? <span className="mr-auto text-xs text-fg-subtle">Add a reason (8+ characters).</span> : null}
           <Button variant="secondary" onClick={close}>Cancel</Button>
           <Button variant="primary" icon="play" disabled={!valid || !target} onClick={start}>Start run</Button>
         </>
@@ -66,7 +65,7 @@ export function RunNowDialog({ open, onClose, schedules, scheduleId }: Props) {
             )}
           </Field>
         ) : null}
-        <Field label="Reason" required hint="Saved on the run for the audit trail.">
+        <Field label="Reason" required hint="At least 8 characters. Saved on the run.">
           {({ id, describedBy, invalid }) => (
             <Textarea id={id} aria-describedby={describedBy} invalid={invalid} rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="e.g. Check results after the product page update" />
           )}
@@ -82,7 +81,6 @@ export function RunNowDialog({ open, onClose, schedules, scheduleId }: Props) {
             ]}
           />
         ) : null}
-        <Callout tone="info">Counts toward this month&apos;s usage and may raise alerts under the schedule&apos;s rules.</Callout>
       </div>
     </Dialog>
   );

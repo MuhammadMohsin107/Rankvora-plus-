@@ -69,8 +69,7 @@ export async function getDashboardData(storeId: string): Promise<DashboardData |
         }
       : null,
     activity: [
-      { id: "act-1", title: "Audit started", detail: "Full audit — November · Sana Iqbal", at: "2026-11-19T08:42:00Z", tone: "accent", icon: "audit" },
-      { id: "act-2", title: "Weekly run completed with warnings", detail: "run-008 · 6 of 54 jobs failed, excluded from rates", at: "2026-11-17T05:12:00Z", tone: "warning", icon: "monitoring" },
+      { id: "act-2", title: "Weekly run completed with warnings", detail: "run-008 · failed requests excluded from rates", at: "2026-11-17T05:12:00Z", tone: "warning", icon: "monitoring" },
       { id: "act-3", title: "Guide published, verification pending", detail: "task-004 · Publish beginner buying guide", at: "2026-11-15T09:00:00Z", tone: "info", icon: "fixes" },
       { id: "act-4", title: "Verification audit completed", detail: "aud-003 · Glide 2 product facts", at: "2026-11-12T07:29:00Z", tone: "success", icon: "check-circle" },
       { id: "act-5", title: "Task verified", detail: "task-005 · Organization schema updated", at: "2026-11-12T07:25:00Z", tone: "success", icon: "fixes" },

@@ -532,7 +532,8 @@ export async function getMonitoringOverview(storeId: string): Promise<Monitoring
     }),
     health,
     openAlerts: events.filter((e) => e.alert && !["resolved", "muted"].includes(e.alert.status)),
-    recentEvents: events.slice(0, 6),
+    // Open alerts have their own list; keep each event in one place.
+    recentEvents: events.filter((e) => !(e.alert && !["resolved", "muted"].includes(e.alert.status))).slice(0, 6),
     runCount: runs.length,
   };
 }

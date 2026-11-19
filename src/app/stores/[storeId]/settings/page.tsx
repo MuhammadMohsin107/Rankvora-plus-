@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -20,7 +23,7 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function StoreSettingsPage(props: PageProps<"/stores/[storeId]/settings">) {
+async function StoreSettingsPageContent(props: PageProps<"/stores/[storeId]/settings">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
@@ -60,4 +63,12 @@ export default async function StoreSettingsPage(props: PageProps<"/stores/[store
   };
 
   return <StoreSettings data={data} />;
+}
+
+export default function StoreSettingsPage(props: PageProps<"/stores/[storeId]/settings">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <StoreSettingsPageContent {...props} />
+    </Suspense>
+  );
 }

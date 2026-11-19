@@ -34,7 +34,10 @@ const verdictTone: Record<Comparability, Tone> = {
   not_comparable: "danger",
 };
 
-/** The comparability verdict with matched coverage in counts and the main reasons. */
+/**
+ * The matched coverage in counts and the main reasons. `showVerdict` puts the verdict label in the
+ * title; leave it off where the verdict is already shown next to it.
+ */
 export function VerdictBanner({
   verdict,
   coverage,
@@ -43,6 +46,8 @@ export function VerdictBanner({
   checks,
   actions,
   className,
+  showVerdict = true,
+  showIssues = true,
 }: {
   verdict: Comparability;
   coverage: Rate;
@@ -51,16 +56,22 @@ export function VerdictBanner({
   checks: Check[];
   actions?: React.ReactNode;
   className?: string;
+  showVerdict?: boolean;
+  showIssues?: boolean;
 }) {
-  const issues = checks
+  const counts = `${unmatched} unmatched · ${excluded} excluded`;
+  const issues = !showIssues ? [] : checks
     .filter((c) => c.state !== "pass")
     .sort((a, b) => Number(b.severity === "major") - Number(a.severity === "major") || Number(b.kind === "hard") - Number(a.kind === "hard"))
     .slice(0, 3);
   return (
-    <Callout tone={verdictTone[verdict]} title={STATUS.comparability[verdict].label} actions={actions} className={className}>
-      <p className="tnum">
-        {coverage.n} / {coverage.d} slots matched · {unmatched} unmatched · {excluded} excluded
-      </p>
+    <Callout
+      tone={verdictTone[verdict]}
+      title={showVerdict ? STATUS.comparability[verdict].label : `${coverage.n} / ${coverage.d} slots matched`}
+      actions={actions}
+      className={className}
+    >
+      <p className="tnum">{showVerdict ? `${coverage.n} / ${coverage.d} slots matched · ${counts}` : counts}</p>
       {issues.length > 0 ? (
         <ul className="mt-1 list-disc pl-4 text-xs">
           {issues.map((issue) => (

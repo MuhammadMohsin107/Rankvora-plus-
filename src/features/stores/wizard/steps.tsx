@@ -9,14 +9,14 @@ import { ChipInput } from "@/components/ui/chip-input";
 import { Spinner } from "@/components/ui/feedback";
 import { Checkbox, Field, Input, RadioCards, Segmented, Select, Textarea } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
-import { PLATFORM_LABEL, SEARCH_MODE_LABEL } from "@/lib/labels";
+import { PLATFORM_LABEL } from "@/lib/labels";
 import type { AiChannel, StorePlatform } from "@/types/core";
 import type { StoreSetupSample } from "@/types/settings";
 
 import { COUNTRIES, INDUSTRIES, LANGUAGES, PLATFORM_ORDER, TIMEZONES } from "../options";
 import { normalizeWebsite, validateOptionalUrl, validateRequired } from "../validation";
 import { ChannelPicker } from "./channel-picker";
-import { buildChecklist, type ConnectionMethod, type WizardForm } from "./model";
+import type { ConnectionMethod, WizardForm } from "./model";
 
 export type StepProps = {
   form: WizardForm;
@@ -81,9 +81,9 @@ export function ConnectionStep({ form, patch, error, onAuthorize }: StepProps & 
           options={[
             { value: "manual", label: "Manual", description: "No connection. Fixes are guidance only." },
             { value: "shopify", label: "Shopify", description: "Per-store authorization. Read access first." },
-            { value: "woocommerce", label: "WooCommerce", description: "Connector", disabled: true, badge: <Badge>Later</Badge> },
-            { value: "wordpress", label: "WordPress", description: "Connector", disabled: true, badge: <Badge>Later</Badge> },
-            { value: "webflow", label: "Webflow", description: "Connector", disabled: true, badge: <Badge>Later</Badge> },
+            { value: "woocommerce", label: "WooCommerce", disabled: true, badge: <Badge>Later</Badge> },
+            { value: "wordpress", label: "WordPress", disabled: true, badge: <Badge>Later</Badge> },
+            { value: "webflow", label: "Webflow", disabled: true, badge: <Badge>Later</Badge> },
           ]}
         />
         {connectionError ? (
@@ -103,11 +103,11 @@ export function ConnectionStep({ form, patch, error, onAuthorize }: StepProps & 
             </div>
           ) : null}
           {form.shopifyState === "authorizing" ? (
-            <p className="flex items-center gap-2 text-[13px] text-fg-muted" role="status"><Spinner className="text-accent-text" />Waiting for Shopify to confirm. Simulated.</p>
+            <p className="flex items-center gap-2 text-[13px] text-fg-muted" role="status"><Spinner className="text-accent-text" />Waiting for Shopify to confirm</p>
           ) : null}
           {form.shopifyState === "authorized" ? (
             <div className="flex flex-col gap-3">
-              <Callout tone="success" title="Shopify authorized (simulated)">No real connection was made.</Callout>
+              <Callout tone="success" title="Shopify authorized">Simulated. No real connection was made.</Callout>
               <KeyValue
                 columns={2}
                 items={[
@@ -280,9 +280,7 @@ export function ProductsStep({ form, patch, sample, goTo }: StepProps & { sample
           </ul>
         </div>
       ) : (
-        <Callout tone="info" title="Shopify is not connected" actions={<Button size="sm" onClick={() => goTo(1)}>Go to Connection</Button>}>
-          Connect Shopify to import products.
-        </Callout>
+        <Callout tone="info" title="Shopify is not connected" actions={<Button size="sm" onClick={() => goTo(1)}>Go to Connection</Button>} />
       )}
     </div>
   );
@@ -327,7 +325,6 @@ export function CompetitorsStep({ form, patch }: StepProps) {
                   <p className="truncate text-xs text-fg-subtle">{c.domain}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Status kind="competitor" value="confirmed" />
                   <IconButton icon="x" label={`Remove ${c.name} from confirmed`} size="sm" onClick={() => (c.reason === "Added by you" ? patch({ competitors: form.competitors.filter((x) => x.id !== c.id) }) : setState(c.id, "suggested"))} />
                 </div>
               </li>
@@ -394,12 +391,7 @@ export function CompetitorsStep({ form, patch }: StepProps) {
 
 /* ───────── 6. AI channels + review ───────── */
 
-export function ChannelsStep({ form, patch, error, channels, goTo }: StepProps & { channels: AiChannel[] }) {
-  const checklist = buildChecklist(form);
-  const selectedChannels = channels.filter((c) => form.channelIds.includes(c.id));
-  const complete = checklist.every((item) => item.state !== "todo");
-  const modeLabel = form.trackingMode === "model_only" ? SEARCH_MODE_LABEL.model_only : form.trackingMode === "web_grounded" ? "Web-grounded" : "Model-only and web-grounded";
-
+export function ChannelsStep({ form, patch, error, channels }: StepProps & { channels: AiChannel[] }) {
   return (
     <div className="flex flex-col gap-6">
       <ChannelPicker
@@ -411,42 +403,16 @@ export function ChannelsStep({ form, patch, error, channels, goTo }: StepProps &
         error={error("channels")}
       />
 
-      <section aria-labelledby="review-title" className="flex flex-col gap-3 border-t border-line pt-5">
-        <h3 id="review-title" className="text-sm font-semibold text-fg">Review</h3>
-        <ul className="divide-y divide-line rounded-control border border-line">
-          {checklist.map((item) => (
-            <li key={item.id} className="flex items-center justify-between gap-3 px-3 py-2">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <Icon name={item.state === "done" ? "check-circle" : item.state === "todo" ? "alert-circle" : "circle"} size={16} className={item.state === "done" ? "shrink-0 text-success" : item.state === "todo" ? "shrink-0 text-warning" : "shrink-0 text-fg-subtle"} />
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-fg">{item.label}</p>
-                  <p className="truncate text-xs text-fg-subtle">{item.detail}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => goTo(item.step)}>Edit</Button>
-            </li>
-          ))}
-        </ul>
-        {selectedChannels.length > 0 ? (
-          <p className="text-xs text-fg-subtle">
-            Runs {selectedChannels.map((c) => c.providerLabel).join(", ")} API answer samples. Mode: {modeLabel}.
-          </p>
-        ) : null}
-
-        <div className="rounded-control border border-line bg-surface-2/50 p-3">
-          <p className="mb-2 text-xs font-medium text-fg-muted">Store status</p>
-          <ol className="flex flex-wrap items-center gap-x-2 gap-y-2">
-            <li className="flex items-center gap-1.5"><Status kind="store" value="draft" /><span className="text-xs text-fg-subtle">setup incomplete</span></li>
-            <Icon name="chevron-right" size={14} className="text-line-strong" />
-            <li className="flex items-center gap-1.5"><Status kind="store" value="ready" /><span className="text-xs text-fg-subtle">setup complete</span></li>
-            <Icon name="chevron-right" size={14} className="text-line-strong" />
-            <li className="flex items-center gap-1.5"><Status kind="store" value="active" /><span className="text-xs text-fg-subtle">tracking on</span></li>
-          </ol>
-          <p className="mt-2 text-xs text-fg-muted">
-            {complete ? "All required steps are done. Activating moves this store to Active." : "Complete the required steps to move from Draft to Ready."}
-          </p>
-        </div>
-      </section>
+      <div className="rounded-control border border-line bg-surface-2/50 p-3">
+        <p className="mb-2 text-xs font-medium text-fg-muted">Store status</p>
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <li className="flex items-center gap-1.5"><Status kind="store" value="draft" /><span className="text-xs text-fg-subtle">setup incomplete</span></li>
+          <Icon name="chevron-right" size={14} className="text-line-strong" />
+          <li className="flex items-center gap-1.5"><Status kind="store" value="ready" /><span className="text-xs text-fg-subtle">setup complete</span></li>
+          <Icon name="chevron-right" size={14} className="text-line-strong" />
+          <li className="flex items-center gap-1.5"><Status kind="store" value="active" /><span className="text-xs text-fg-subtle">tracking on</span></li>
+        </ol>
+      </div>
     </div>
   );
 }

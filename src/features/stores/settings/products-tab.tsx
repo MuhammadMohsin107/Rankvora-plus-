@@ -105,7 +105,7 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
         searchable={{ placeholder: "Search products", text: (p) => `${p.title} ${p.category}` }}
         defaultSort={{ column: "title", dir: "asc" }}
         toolbarExtra={addButton}
-        empty={<EmptyState icon="store" title="No products yet" description="AI answers need products to associate with the brand." action={addButton} />}
+        empty={<EmptyState icon="store" title="No products yet" />}
       />
 
       <Dialog

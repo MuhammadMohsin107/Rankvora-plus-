@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -20,7 +23,7 @@ export async function generateStaticParams() {
 
 const sourceTone = { owned: "success", competitor: "warning", third_party: "neutral" } as const;
 
-export default async function AiVisibilityPage(props: PageProps<"/stores/[storeId]/audits/[auditId]/ai-visibility">) {
+async function AiVisibilityPageContent(props: PageProps<"/stores/[storeId]/audits/[auditId]/ai-visibility">) {
   const { storeId, auditId } = await props.params;
   const [audit, lane] = await Promise.all([getAudit(storeId, auditId), getAiLane(storeId, auditId)]);
   if (!audit || !lane) notFound();
@@ -35,14 +38,11 @@ export default async function AiVisibilityPage(props: PageProps<"/stores/[storeI
       : undefined;
 
   const totalCitations = lane.citationsBySource.owned + lane.citationsBySource.competitor + lane.citationsBySource.third_party;
-  const attempted = lane.succeeded + lane.failed;
 
   return (
     <div className="flex flex-col gap-6">
       {audit.provisional ? (
-        <Callout tone="warning" title="Provisional">
-          {attempted} of {lane.planned} requests have finished. Rates change as more responses arrive.
-        </Callout>
+        <Callout tone="warning" title="Provisional">Rates change as more responses arrive.</Callout>
       ) : null}
 
       <MetricGrid>
@@ -63,7 +63,7 @@ export default async function AiVisibilityPage(props: PageProps<"/stores/[storeI
           />
         </MetricCell>
         <MetricCell>
-          <Metric label="Response success" numerator={lane.succeeded} denominator={audit.plannedJobs} unit="planned requests" basis={lane.failed > 0 ? `${lane.failed} failed, excluded from rates` : "no failures"} info="Failures are shown here and never counted as the brand being absent." />
+          <Metric label="Response success" numerator={lane.succeeded} denominator={audit.plannedJobs} unit="planned requests" basis={lane.failed > 0 ? `${lane.failed} failed, excluded from rates` : undefined} info="Failures are shown here and never counted as the brand being absent." />
         </MetricCell>
       </MetricGrid>
 
@@ -71,14 +71,14 @@ export default async function AiVisibilityPage(props: PageProps<"/stores/[storeI
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
         <Card as="section">
-          <CardHeader title="Competitors" subtitle="Mentioned in ÷ successful responses" info="Competitors confirmed for this store. Each rate counts responses that name the competitor." />
+          <CardHeader title="Competitors" info="Competitors confirmed for this store. Each rate is responses that name the competitor ÷ successful responses." />
           <CardBody>
             <CompetitorTable rows={lane.competitors} />
           </CardBody>
         </Card>
 
         <Card as="section">
-          <CardHeader title="Citations by source type" subtitle={`${totalCitations} citations in ${lane.succeeded} successful responses`} />
+          <CardHeader title="Citations by source type" />
           <CardBody className="flex flex-col gap-4">
             {totalCitations > 0 ? (
               <StackedBar
@@ -116,5 +116,13 @@ export default async function AiVisibilityPage(props: PageProps<"/stores/[storeI
         <AiResponsesTable responses={lane.responses} providers={lane.providers} prompts={lane.prompts} />
       </Section>
     </div>
+  );
+}
+
+export default function AiVisibilityPage(props: PageProps<"/stores/[storeId]/audits/[auditId]/ai-visibility">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <AiVisibilityPageContent {...props} />
+    </Suspense>
   );
 }

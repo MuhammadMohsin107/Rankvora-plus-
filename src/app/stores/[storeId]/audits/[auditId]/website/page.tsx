@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -14,7 +17,7 @@ export async function generateStaticParams() {
   return auditParams();
 }
 
-export default async function WebsiteReadinessPage(props: PageProps<"/stores/[storeId]/audits/[auditId]/website">) {
+async function WebsiteReadinessPageContent(props: PageProps<"/stores/[storeId]/audits/[auditId]/website">) {
   const { storeId, auditId } = await props.params;
   const [audit, lane] = await Promise.all([getAudit(storeId, auditId), getWebsiteLane(storeId, auditId)]);
   if (!audit || !lane) notFound();
@@ -24,14 +27,11 @@ export default async function WebsiteReadinessPage(props: PageProps<"/stores/[st
   }
 
   const { coverage } = lane;
-  const notAssessed = coverage.pages.d - coverage.pages.n;
 
   return (
     <div className="flex flex-col gap-6">
       {lane.provisional ? (
-        <Callout tone="warning" title="Provisional">
-          {lane.notice} {coverage.pages.n} of {coverage.pages.d} pages crawled so far.
-        </Callout>
+        <Callout tone="warning" title="Provisional">{lane.notice}</Callout>
       ) : lane.notice ? (
         <Callout tone="info">{lane.notice}</Callout>
       ) : null}
@@ -53,13 +53,13 @@ export default async function WebsiteReadinessPage(props: PageProps<"/stores/[st
             denominator={coverage.pages.d}
             unit="in-scope pages"
             basis={`${coverage.pagesDetail.excluded} excluded · ${coverage.pagesDetail.blocked} blocked · ${coverage.pagesDetail.unvisited} unvisited`}
-            info={`Assessed ÷ discovered in-scope pages. ${notAssessed} not assessed. Excluded pages are out of scope by rule.`}
+            info="Assessed ÷ discovered in-scope pages. Excluded pages are out of scope by rule."
           />
         </MetricCell>
       </MetricGrid>
 
       <Card as="section">
-        <CardHeader title="AI crawler access" subtitle="Reported per crawler. One rule never stands in for another." info="Read from robots.txt. The rule shown is the group that applies to that user-agent." />
+        <CardHeader title="AI crawler access" info="Reported per crawler; one rule never stands in for another. Read from robots.txt: the rule shown is the group that applies to that user-agent." />
         <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-3">
           {lane.crawlers.map((c) => (
             <article key={c.id} className="flex min-w-0 flex-col gap-2.5 rounded-control border border-line p-3">
@@ -82,7 +82,7 @@ export default async function WebsiteReadinessPage(props: PageProps<"/stores/[st
         </CardBody>
       </Card>
 
-      <Section title="Checks" actions={<Badge tone="neutral">{lane.checks.length} checks</Badge>}>
+      <Section title="Checks">
         <ChecksTable checks={lane.checks} storeId={storeId} />
       </Section>
 
@@ -90,5 +90,13 @@ export default async function WebsiteReadinessPage(props: PageProps<"/stores/[st
         <PagesTable pages={lane.pages} issues={lane.pageIssues} />
       </Section>
     </div>
+  );
+}
+
+export default function WebsiteReadinessPage(props: PageProps<"/stores/[storeId]/audits/[auditId]/website">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <WebsiteReadinessPageContent {...props} />
+    </Suspense>
   );
 }

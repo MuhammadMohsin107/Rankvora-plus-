@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
 import { Badge, Status } from "@/components/ui/badge";
-import { Button, ButtonLink, IconButton } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { Callout, Metric, MetricCell, MetricGrid } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/form";
 import { Menu, type MenuItem } from "@/components/ui/menu";
@@ -104,9 +104,12 @@ export function PromptLibrary({ store, initialPrompts, initialGroups }: { store:
           <Link href={`${base}/${r.id}`} className="line-clamp-2 rounded font-medium text-fg hover:text-accent-text hover:underline">
             {r.text}
           </Link>
-          <p className="mt-0.5 truncate text-xs text-fg-subtle">
-            {r.topic}
-            {r.mentionsBrand ? " · Names brand" : ""}
+          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-fg-subtle">
+            {r.isCore ? <Badge tone="accent" icon="flag">Core</Badge> : null}
+            <span className="truncate">
+              {r.topic}
+              {r.mentionsBrand ? " · Names brand" : ""}
+            </span>
           </p>
         </div>
       ),
@@ -123,18 +126,6 @@ export function PromptLibrary({ store, initialPrompts, initialGroups }: { store:
     { id: "status", header: "Status", sort: (r) => STATUS_ORDER[r.status], cell: (r) => <Status kind="prompt" value={r.status} /> },
     { id: "version", header: "Version", hideBelow: "2xl", sort: (r) => r.version, cell: (r) => <span className="tnum text-fg-muted">v{r.version}</span> },
     { id: "source", header: "Source", hideBelow: "2xl", sort: (r) => SOURCE_LABEL[r.source], cell: (r) => <span className="whitespace-nowrap text-fg-muted">{SOURCE_LABEL[r.source]}</span> },
-    {
-      id: "core",
-      header: "Core",
-      hideBelow: "lg",
-      sort: (r) => (r.isCore ? 0 : 1),
-      cell: (r) =>
-        r.isCore ? (
-          <Badge tone="accent" icon="flag">Core</Badge>
-        ) : (
-          <span className="text-fg-subtle"><span aria-hidden="true">—</span><span className="sr-only">Not core</span></span>
-        ),
-    },
     { id: "last", header: "Latest result", hideBelow: "lg", cell: (r) => <LastResults results={r.lastResults} /> },
     {
       id: "updated",
@@ -151,7 +142,6 @@ export function PromptLibrary({ store, initialPrompts, initialGroups }: { store:
       align: "right",
       cell: (r) => {
         const items: MenuItem[] = [
-          { label: "Open", icon: "arrow-up-right", href: `${base}/${r.id}` },
           r.status === "active"
             ? { label: "Pause", icon: "pause", onSelect: () => setStatus([r], "paused") }
             : r.status === "archived"
@@ -176,30 +166,25 @@ export function PromptLibrary({ store, initialPrompts, initialGroups }: { store:
   ];
 
   const activeTotal = summary.active;
-
   return (
     <div className="flex flex-col gap-5">
       <MetricGrid>
         <MetricCell>
-          <Metric label="Active prompts" value={String(summary.active)} basis={`${summary.draft} draft · ${summary.paused} paused · ${summary.archived} archived`} info="Only active prompts run in audits and monitoring." />
+          <Metric label="Active prompts" value={String(summary.active)} basis={`${summary.draft} draft · ${summary.paused} paused · ${summary.archived} archived`} info="Only active prompts run in audits and monitoring. The counts beside it are among active prompts." />
         </MetricCell>
         <MetricCell>
-          <Metric label="Neutral" value={String(summary.neutral)} basis={`of ${activeTotal} active`} info="Neutral prompts do not name the brand. They test whether AI answers bring it up." />
+          <Metric label="Neutral" value={String(summary.neutral)} info="Neutral prompts do not name the brand. They test whether AI answers bring it up." />
         </MetricCell>
         <MetricCell>
-          <Metric label="Brand-specific" value={String(summary.brand)} basis={`of ${activeTotal} active`} info="These prompts name the brand, so they usually score higher on mentions." />
+          <Metric label="Brand-specific" value={String(summary.brand)} info="These prompts name the brand, so they usually score higher on mentions." />
         </MetricCell>
         <MetricCell>
-          <Metric label="Core set" value={String(summary.core)} basis={`of ${activeTotal} active`} info="Core prompts are the stable set used to compare results over time." />
+          <Metric label="Core set" value={String(summary.core)} info="Core prompts are the stable set used to compare results over time." />
         </MetricCell>
       </MetricGrid>
 
       {activeTotal > 0 && summary.neutral === 0 ? (
-        <Callout
-          tone="warning"
-          title="Every active prompt names the brand"
-          actions={<ButtonLink href={`${base}/new`} size="sm" variant="secondary" icon="plus">Add neutral prompt</ButtonLink>}
-        >
+        <Callout tone="warning" title="Every active prompt names the brand">
           Mention rates will look high. Neutral prompts show real discovery.
         </Callout>
       ) : null}

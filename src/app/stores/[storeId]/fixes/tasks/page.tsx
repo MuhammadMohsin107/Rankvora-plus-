@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -15,7 +18,7 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function FixTasksPage(props: PageProps<"/stores/[storeId]/fixes/tasks">) {
+async function FixTasksPageContent(props: PageProps<"/stores/[storeId]/fixes/tasks">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
@@ -27,11 +30,11 @@ export default async function FixTasksPage(props: PageProps<"/stores/[storeId]/f
   if (tasks.length === 0) {
     return (
       <>
-        <PageHeader title="Fix tasks" subtitle="Board and list" tabs={tabs} />
+        <PageHeader title="Fixes" tabs={tabs} />
         <EmptyState
           icon="fixes"
           title="No tasks yet"
-          description={findings.length ? "Create tasks from findings." : "Tasks come from audit findings."}
+          description={findings.length ? undefined : "Tasks come from audit findings."}
           action={
             findings.length ? (
               <ButtonLink href={`${base}/fixes`} variant="primary">Open findings</ButtonLink>
@@ -48,13 +51,16 @@ export default async function FixTasksPage(props: PageProps<"/stores/[storeId]/f
 
   return (
     <>
-      <PageHeader
-        title="Fix tasks"
-        subtitle="Board and list"
-        tabs={tabs}
-        actions={<ButtonLink href={`${base}/fixes`} variant="primary" icon="plus">Create from findings</ButtonLink>}
-      />
+      <PageHeader title="Fixes" tabs={tabs} />
       <TaskBoard storeId={storeId} tasks={tasks} role={actor.role} />
     </>
+  );
+}
+
+export default function FixTasksPage(props: PageProps<"/stores/[storeId]/fixes/tasks">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <FixTasksPageContent {...props} />
+    </Suspense>
   );
 }

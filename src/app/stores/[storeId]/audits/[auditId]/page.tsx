@@ -1,15 +1,18 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { SplitLayout } from "@/components/shell/page-header";
-import { Callout, Card, CardBody, CardHeader, KeyValue, Metric } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, KeyValue, Metric } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { InProgressOverview } from "@/features/audit/in-progress-overview";
 import { LaneCards } from "@/features/audit/lane-cards";
 import { channelLabel } from "@/lib/labels";
 import { auditParams, getAudit, getLaneSummary } from "@/services/audit";
-import { getStore, listStoreChannels } from "@/services/core";
+import { listStoreChannels } from "@/services/core";
 
 export const metadata: Metadata = { title: "Audit overview" };
 
@@ -20,10 +23,10 @@ export async function generateStaticParams() {
 const limitationIcon = { warning: "alert-triangle", info: "info", neutral: "minus-circle" } as const;
 const limitationColor = { warning: "text-warning", info: "text-info", neutral: "text-fg-subtle" } as const;
 
-export default async function AuditOverviewPage(props: PageProps<"/stores/[storeId]/audits/[auditId]">) {
+async function AuditOverviewPageContent(props: PageProps<"/stores/[storeId]/audits/[auditId]">) {
   const { storeId, auditId } = await props.params;
-  const [audit, store, summary, channels] = await Promise.all([getAudit(storeId, auditId), getStore(storeId), getLaneSummary(storeId, auditId), listStoreChannels(storeId)]);
-  if (!audit || !store || !summary) notFound();
+  const [audit, summary, channels] = await Promise.all([getAudit(storeId, auditId), getLaneSummary(storeId, auditId), listStoreChannels(storeId)]);
+  if (!audit || !summary) notFound();
 
   const base = `/stores/${storeId}/audits/${auditId}`;
 
@@ -33,18 +36,12 @@ export default async function AuditOverviewPage(props: PageProps<"/stores/[store
   }
 
   const { config, coverage } = audit;
-  const prompts = config.promptIds.length;
-  const scope = `${prompts} prompts × ${config.channelIds.length} channels × ${config.samples} ${config.samples === 1 ? "sample" : "samples"} = ${audit.plannedJobs} requests`;
+  // The request total (prompts × channels × samples) is the Responses coverage denominator below.
+  const scope = `${config.promptIds.length} prompts × ${config.channelIds.length} channels × ${config.samples} ${config.samples === 1 ? "sample" : "samples"}`;
 
   return (
     <div className="flex flex-col gap-5">
-      {audit.status === "completed_with_warnings" ? (
-        <Callout tone="warning" title="Completed with warnings">
-          {audit.failedJobs} requests failed and {coverage.pages.d - coverage.pages.n} pages were not assessed. See limitations below.
-        </Callout>
-      ) : null}
-
-      <LaneCards summary={summary} base={base} variant="headline" basis={audit.type === "verification" ? "verification scope" : undefined} />
+      <LaneCards summary={summary} base={base} variant="headline" showLinks={false} basis={audit.type === "verification" ? "Verification scope" : undefined} />
 
       <SplitLayout
         main={
@@ -74,7 +71,7 @@ export default async function AuditOverviewPage(props: PageProps<"/stores/[store
             </div>
 
             <Card as="section">
-              <CardHeader title="Limitations" subtitle={`${audit.limitations.length}`} info="Read the numbers with these in mind." />
+              <CardHeader title="Limitations" info="Read the numbers with these in mind." />
               <CardBody className="pt-2">
                 <ul className="divide-y divide-line">
                   {audit.limitations.map((item) => (
@@ -95,11 +92,8 @@ export default async function AuditOverviewPage(props: PageProps<"/stores/[store
               <KeyValue
                 columns={1}
                 items={[
-                  { label: "Store", value: `${store.name} · ${store.market}` },
                   { label: "AI scope", value: <span className="tnum">{scope}</span> },
                   { label: "Website scope", value: `${config.startPoints.join(", ")} · up to ${config.maxUrls} URLs` },
-                  { label: "Criteria · analysis", value: <span className="tnum">{config.criteriaVersion} · {config.analysisVersion}</span> },
-                  { label: "Created by", value: audit.createdBy },
                   {
                     label: "Compared with",
                     value: audit.baseline ? (
@@ -115,5 +109,13 @@ export default async function AuditOverviewPage(props: PageProps<"/stores/[store
         }
       />
     </div>
+  );
+}
+
+export default function AuditOverviewPage(props: PageProps<"/stores/[storeId]/audits/[auditId]">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <AuditOverviewPageContent {...props} />
+    </Suspense>
   );
 }

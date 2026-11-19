@@ -33,7 +33,7 @@ type WordingProps = {
 
 export function WordingDialog({ open, onClose, ...rest }: WordingProps) {
   return (
-    <Dialog open={open} onClose={onClose} title="Edit wording" description="Saving creates a new version.">
+    <Dialog open={open} onClose={onClose} title="Edit wording">
       <WordingBody onClose={onClose} {...rest} />
     </Dialog>
   );
@@ -94,10 +94,7 @@ function WordingBody({ onClose, prompt, storeId, existing, currentRuns, onCommit
         confirmLabel={`Create v${next}`}
         tone="primary"
       >
-        <p>
-          This creates version v{next}. Earlier runs keep pointing to v{prompt.version}, and comparisons will mark it as changed.
-        </p>
-        <p className="tnum mt-2 text-xs text-fg-subtle">v{prompt.version} was used by {pluralize(currentRuns, "run")}.</p>
+        Earlier runs keep pointing to v{prompt.version} (used by {pluralize(currentRuns, "run")}), and comparisons will mark it as changed.
       </ConfirmDialog>
     </>
   );
@@ -198,9 +195,9 @@ function ConfigBody({ onClose, prompt, groups, products, onSave }: Omit<ConfigPr
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span aria-hidden="true" className="text-[13px] font-medium text-fg">Tracking scope</span>
+          <span aria-hidden="true" className="text-[13px] font-medium text-fg">Scope</span>
           <RadioCards
-            label="Tracking scope"
+            label="Scope"
             columns={3}
             value={draft.scope}
             onChange={(value: PromptScope) => set("scope", value)}

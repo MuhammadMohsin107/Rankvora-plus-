@@ -124,12 +124,12 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
           actions={<Status kind="integration" value={commerce.state} />}
         />
         <CardBody className="flex flex-col gap-4">
-          {commerce.note ? <Callout tone={commerce.state === "needs_attention" ? "warning" : "neutral"} title={commerce.state === "needs_attention" ? "Needs attention" : undefined}>{commerce.note}</Callout> : null}
+          {commerce.note && (commerce.state !== "needs_attention" || readOnly) ? <Callout tone="neutral">{commerce.note}</Callout> : null}
 
           <KeyValue
             columns={2}
             items={[
-              { label: "Account", value: commerce.account ?? "Not connected" },
+              { label: "Account", value: commerce.account ?? "None" },
               { label: "Last verified", value: commerce.lastVerifiedAt ? formatRelative(commerce.lastVerifiedAt) : "Never" },
             ]}
           />
@@ -161,13 +161,13 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
       </Card>
 
       <Card className="min-w-0 self-start">
-        <CardHeader title="Search Console" subtitle="Search performance for the canonical domain" actions={<Status kind="integration" value={searchConsole.state} />} />
+        <CardHeader title="Search Console" info="Search performance for the canonical domain." actions={<Status kind="integration" value={searchConsole.state} />} />
         <CardBody className="flex flex-col gap-4">
           {searchConsole.note ? <Callout tone="neutral">{searchConsole.note}</Callout> : null}
           <KeyValue
             columns={2}
             items={[
-              { label: "Property", value: searchConsole.property ? <Mono>{searchConsole.property}</Mono> : "Not connected" },
+              { label: "Property", value: searchConsole.property ? <Mono>{searchConsole.property}</Mono> : "None" },
               { label: "Last verified", value: searchConsole.lastVerifiedAt ? formatRelative(searchConsole.lastVerifiedAt) : "Never" },
             ]}
           />
@@ -203,9 +203,9 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
             columns={2}
             options={[
               { value: "shopify", label: "Shopify", description: "Per-store authorization. Read access first." },
-              { value: "woocommerce", label: "WooCommerce", description: "Connector", disabled: true, badge: <Badge>Later</Badge> },
-              { value: "wordpress", label: "WordPress", description: "Connector", disabled: true, badge: <Badge>Later</Badge> },
-              { value: "webflow", label: "Webflow", description: "Connector", disabled: true, badge: <Badge>Later</Badge> },
+              { value: "woocommerce", label: "WooCommerce", disabled: true, badge: <Badge>Later</Badge> },
+              { value: "wordpress", label: "WordPress", disabled: true, badge: <Badge>Later</Badge> },
+              { value: "webflow", label: "Webflow", disabled: true, badge: <Badge>Later</Badge> },
             ]}
           />
         )}

@@ -1,6 +1,6 @@
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Progress, Spinner } from "@/components/ui/feedback";
+import { Progress } from "@/components/ui/feedback";
 import { Timeline } from "@/components/ui/misc";
 import type { ReportRecord } from "@/types/comparison";
 
@@ -14,7 +14,7 @@ export function GeneratingState({ report, progress }: { report: ReportRecord; pr
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
       <Card as="section">
-        <CardHeader title="Report is being generated" subtitle="It appears here when the source finishes" actions={<Spinner className="text-accent-text" />} />
+        <CardHeader title="Report is being generated" subtitle="It appears here when the source finishes" />
         <CardBody className="flex flex-col gap-5">
           {progress ? (
             <div className="flex flex-col gap-3">

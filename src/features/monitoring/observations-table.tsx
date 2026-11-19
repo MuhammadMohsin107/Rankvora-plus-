@@ -107,7 +107,7 @@ export function ObservationsTable({ rows }: { rows: ObservationRow[] }) {
 function Evidence({ row }: { row: ObservationRow }) {
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-xs text-fg-subtle">API answer samples. They may differ from what the consumer app shows.</p>
+      <p className="text-xs text-fg-subtle">API answer samples, which may differ from the consumer app. Mentions ÷ successful samples; failed samples are not counted as absent.</p>
 
       <section aria-label="History">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-fg-subtle">Mentions per run</h3>
@@ -122,7 +122,6 @@ function Evidence({ row }: { row: ObservationRow }) {
             </li>
           ))}
         </ol>
-        <p className="mt-1.5 text-xs text-fg-subtle">Mentions ÷ successful samples. Failed samples are not counted as absent.</p>
       </section>
 
       <section aria-label="Latest samples">
@@ -138,7 +137,7 @@ function Evidence({ row }: { row: ObservationRow }) {
                 <ResponseButton response={response}>Open original answer</ResponseButton>
               </div>
               {response.status === "failed" ? (
-                <Callout tone="warning">{response.failure?.message}. Not counted as absent.</Callout>
+                <Callout tone="warning">{response.failure?.message}</Callout>
               ) : (
                 <p className="text-[13px] text-fg-muted">
                   {response.evidenceQuote ? `“${response.evidenceQuote}”` : `${response.answerText.replace(/\s+/g, " ").slice(0, 160)}…`}

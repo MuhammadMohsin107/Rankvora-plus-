@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink, IconButton } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -61,7 +61,7 @@ function NavLink({ item, pathname, count }: { item: NavItem; pathname: string; c
   );
 }
 
-function Sidebar({ stores, activeStore, pathname }: { stores: Store[]; activeStore: Store | null; pathname: string }) {
+function Sidebar({ activeStore, pathname }: { activeStore: Store | null; pathname: string }) {
   return (
     <div className="flex h-full flex-col gap-5 overflow-y-auto p-3 ui-scroll">
       <div className="px-1 pt-1">
@@ -79,36 +79,17 @@ function Sidebar({ stores, activeStore, pathname }: { stores: Store[]; activeSto
 
       {activeStore ? (
         <nav aria-label={`${activeStore.name} navigation`} className="flex flex-col gap-0.5 rounded-card border border-accent/25 bg-accent-soft/50 p-2">
-          <div className="mb-1 flex items-start gap-2 rounded-control px-1.5 py-1">
-            <span aria-hidden="true" className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-[11px] font-bold text-accent-fg">
-              {activeStore.market}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-fg">{activeStore.name}</p>
-              <p className="truncate text-xs text-fg-muted">{activeStore.domain}</p>
-            </div>
-          </div>
+          <p className="flex items-center justify-between gap-2 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent-text">
+            <span className="flex items-center gap-1.5"><Icon name="store" size={12} /> Store</span>
+            {activeStore.status !== "active" ? <Badge tone={STATUS.store[activeStore.status].tone} icon={STATUS.store[activeStore.status].icon}>{STATUS.store[activeStore.status].label}</Badge> : null}
+          </p>
           {storeNav(activeStore.id).map((item) => {
             const key = item.badgeKey;
             const count = key && activeStore.summary ? activeStore.summary[key] : undefined;
             return <NavLink key={item.href} item={item} pathname={pathname} count={count} />;
           })}
         </nav>
-      ) : (
-        <nav aria-label="Stores" className="flex flex-col gap-0.5">
-          <p className="px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">Open a store</p>
-          {stores.map((store) => (
-            <Link
-              key={store.id}
-              href={`/stores/${store.id}`}
-              className="flex h-9 items-center gap-2.5 rounded-control px-2.5 text-[13px] font-medium text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg pointer-coarse:h-11"
-            >
-              <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded bg-surface-3 text-[10px] font-bold text-fg-muted">{store.market}</span>
-              <span className="min-w-0 flex-1 truncate">{store.name}</span>
-            </Link>
-          ))}
-        </nav>
-      )}
+      ) : null}
 
       <p className="mt-auto flex items-center gap-1.5 px-2.5 pb-1 text-[11px] text-fg-subtle">
         <Icon name="database" size={12} /> Demonstration data
@@ -247,7 +228,6 @@ function UserMenu({ user }: { user: Member }) {
         </div>
       }
       items={[
-        { label: "Organization settings", href: "/settings", icon: "settings" },
         { label: "Members & roles", href: "/settings/members", icon: "users" },
         { label: "Usage & billing", href: "/settings/billing", icon: "credit-card" },
       ]}
@@ -291,7 +271,7 @@ export function AppShell({ org, user, stores, alerts, children }: ShellProps) {
       </a>
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] border-r border-line bg-canvas lg:block">
-        <Sidebar stores={stores} activeStore={activeStore} pathname={pathname} />
+        <Sidebar activeStore={activeStore} pathname={pathname} />
       </aside>
 
       <dialog
@@ -307,7 +287,7 @@ export function AppShell({ org, user, stores, alerts, children }: ShellProps) {
             <IconButton icon="x" label="Close navigation" size="sm" onClick={() => setOpenFor(null)} />
           </div>
           <div className="min-h-0 flex-1">
-            <Sidebar stores={stores} activeStore={activeStore} pathname={pathname} />
+            <Sidebar activeStore={activeStore} pathname={pathname} />
           </div>
         </div>
       </dialog>
@@ -331,16 +311,6 @@ export function AppShell({ org, user, stores, alerts, children }: ShellProps) {
             <UserMenu user={user} />
           </div>
         </div>
-        {activeStore ? (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-accent/20 bg-accent-soft/60 px-3 py-1.5 text-xs sm:px-5" aria-label="Active store">
-            <span className="flex items-center gap-1.5 font-semibold text-accent-text"><Icon name="store" size={13} /> Store</span>
-            <span className="font-medium text-fg">{activeStore.name}</span>
-            <span className="text-fg-muted">{activeStore.marketName} · {activeStore.language.toUpperCase()}</span>
-            <span className="hidden text-fg-muted sm:inline">{activeStore.domain}</span>
-            <Badge tone={STATUS.store[activeStore.status].tone} icon={STATUS.store[activeStore.status].icon}>{STATUS.store[activeStore.status].label}</Badge>
-            <ButtonLink href={`/stores/${activeStore.id}/settings`} variant="ghost" size="sm" className="ml-auto !h-6 !px-2 text-xs">Store settings</ButtonLink>
-          </div>
-        ) : null}
       </header>
 
       <main id="main" tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[1360px] px-3 py-5 outline-none sm:px-5 sm:py-6">

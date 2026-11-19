@@ -51,7 +51,7 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
     },
     {
       id: "verified",
-      label: "Verified success",
+      label: "Verified",
       hint: "Re-check passed",
       state: status === "verified_success" ? "done" : status === "partially_verified" ? "partial" : status === "failed" ? "failed" : rolledBack ? "na" : "pending",
       at: null,
@@ -67,12 +67,12 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
             const view = STATE_VIEW[step.state];
             const verifiedPending = step.id === "verified" && status === "verification_pending";
             return (
-              <li key={step.id} className={cn("flex items-start gap-2.5 rounded-control border px-3 py-2.5", view.ring)}>
+              <li key={step.id} title={step.hint} className={cn("flex items-start gap-2.5 rounded-control border px-3 py-2.5", view.ring)}>
                 <Icon name={verifiedPending ? "clock" : view.icon} size={18} className={cn("mt-0.5 shrink-0", verifiedPending ? "text-warning" : view.tone)} />
                 <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-fg">{step.label}</p>
                   <p className="text-xs text-fg-muted">{verifiedPending ? "Pending" : view.text}</p>
-                  <p className="tnum mt-0.5 text-xs text-fg-subtle">{step.at && step.state !== "na" ? formatDateTime(step.at) : step.hint}</p>
+                  {step.at && step.state !== "na" ? <p className="tnum mt-0.5 text-xs text-fg-subtle">{formatDateTime(step.at)}</p> : null}
                 </div>
               </li>
             );

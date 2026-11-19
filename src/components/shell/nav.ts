@@ -4,7 +4,7 @@ export type NavItem = { label: string; href: string; icon: IconName; exact?: boo
 
 export const ORG_NAV: NavItem[] = [
   { label: "Portfolio", href: "/", icon: "dashboard", exact: true },
-  { label: "Stores", href: "/stores", icon: "store" },
+  { label: "Stores", href: "/stores", icon: "store", exact: true },
   { label: "Organization settings", href: "/settings", icon: "settings" },
 ];
 

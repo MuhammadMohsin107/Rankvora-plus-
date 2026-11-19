@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Status } from "@/components/ui/badge";
-import { ButtonLink, IconButton } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { ConfirmDialog } from "@/components/ui/overlay";
@@ -37,13 +37,14 @@ export function scheduleMenuItems(args: {
   onToggle: () => void;
   onRunNow: () => void;
   onCancel: () => void;
-  includeDetail?: boolean;
+  /** Only the destructive entry: the other actions are already visible buttons (schedule header). */
+  onlyCancel?: boolean;
 }): MenuItem[] {
-  const { storeId, row, status, onToggle, onRunNow, onCancel, includeDetail = true } = args;
+  const { storeId, row, status, onToggle, onRunNow, onCancel, onlyCancel = false } = args;
   const base = `/stores/${storeId}/monitoring/schedules/${row.id}`;
   const cancelled = status === "cancelled";
+  if (onlyCancel) return [{ label: "Cancel schedule", icon: "x-circle", tone: "danger", onSelect: onCancel, disabled: cancelled, disabledReason: "Already cancelled" }];
   const items: MenuItem[] = [];
-  if (includeDetail) items.push({ label: "View details", icon: "eye", href: base });
   items.push({ label: "Edit", icon: "pencil", href: `${base}/edit`, disabled: cancelled || !row.editable, disabledReason: cancelled ? "Cancelled schedules cannot be edited" : "The prompt library for this store is not part of the demo" });
   items.push(
     status === "paused"
@@ -64,7 +65,7 @@ export function CancelScheduleDialog({ name, open, onClose, onConfirm }: { name:
   );
 }
 
-export function SchedulesTable({ storeId, rows, canSchedule, storeTimezone }: { storeId: string; rows: ScheduleRow[]; canSchedule: boolean; storeTimezone: string }) {
+export function SchedulesTable({ storeId, rows, storeTimezone }: { storeId: string; rows: ScheduleRow[]; storeTimezone: string }) {
   const toast = useToast();
   const [overrides, setOverrides] = useState<Record<string, ScheduleStatus>>({});
   const [runTarget, setRunTarget] = useState<string | null>(null);
@@ -140,7 +141,7 @@ export function SchedulesTable({ storeId, rows, canSchedule, storeTimezone }: { 
       header: "Next run",
       sort: (r) => (statusOf(r) === "paused" || statusOf(r) === "cancelled" ? null : (r.nextRunAt ?? null)),
       hideBelow: "sm",
-      cell: (r) => (statusOf(r) === "paused" || statusOf(r) === "cancelled" ? <span className="text-xs text-fg-subtle">{statusOf(r) === "paused" ? "Paused" : "Cancelled"}</span> : <When iso={r.nextRunAt} tz={storeTimezone} />),
+      cell: (r) => (statusOf(r) === "paused" || statusOf(r) === "cancelled" ? <span className="text-fg-subtle">—</span> : <When iso={r.nextRunAt} tz={storeTimezone} />),
     },
     {
       id: "usage",
@@ -185,7 +186,7 @@ export function SchedulesTable({ storeId, rows, canSchedule, storeTimezone }: { 
             value: (r) => statusOf(r),
           },
         ]}
-        empty={<EmptyState icon="monitoring" title="No schedules" action={canSchedule ? <ButtonLink href={`${base}/schedules/new`} variant="primary" icon="plus">New schedule</ButtonLink> : undefined} />}
+        empty={<EmptyState icon="monitoring" title="No schedules" />}
       />
       <RunNowDialog open={runTarget !== null} onClose={() => setRunTarget(null)} schedules={targets} scheduleId={runTarget ?? undefined} />
       <CancelScheduleDialog

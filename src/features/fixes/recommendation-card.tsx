@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { Badge, Status } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -62,7 +60,6 @@ type Props = {
   local: RecLocal;
   evidenceLabels: Record<string, string>;
   canApprove: boolean;
-  storeId: string;
   onApprove: () => void;
   onEdit: () => void;
   onReject: () => void;
@@ -71,7 +68,7 @@ type Props = {
 };
 
 /** One recommendation: problem, evidence, cause, action, and the approve / edit / reject controls. */
-export function RecommendationCard({ rec, local, evidenceLabels, canApprove, storeId, onApprove, onEdit, onReject, onReopen, onCreateTask }: Props) {
+export function RecommendationCard({ rec, local, evidenceLabels, canApprove, onApprove, onEdit, onReject, onReopen, onCreateTask }: Props) {
   const linkedTask = rec.taskId;
   const statusBadge =
     local.status === "approved" ? (
@@ -90,7 +87,7 @@ export function RecommendationCard({ rec, local, evidenceLabels, canApprove, sto
           {statusBadge}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span title={`${rec.cause.basis} ${CAUSE_HINT[rec.cause.classification]}`}>
+          <span title={CAUSE_HINT[rec.cause.classification]}>
             <Status kind="cause" value={rec.cause.classification} />
           </span>
           <Status kind="risk" value={rec.risk} />
@@ -98,8 +95,6 @@ export function RecommendationCard({ rec, local, evidenceLabels, canApprove, sto
           <Badge tone="neutral" icon="layers">{MODE_LABEL[rec.suggestedMode]}</Badge>
         </div>
       </header>
-
-      <Block label="Problem">{rec.problem}</Block>
 
       <div className="rounded-control border border-accent/25 bg-accent-soft/50 px-3 py-2.5">
         <h4 className="text-xs font-medium text-accent-text">Proposed action</h4>
@@ -147,33 +142,26 @@ export function RecommendationCard({ rec, local, evidenceLabels, canApprove, sto
             <Button variant="danger-ghost" size="sm" icon="x" onClick={onReject}>
               Reject
             </Button>
-            {!canApprove ? <span className="text-xs text-fg-subtle">Only an owner or admin can approve.</span> : null}
           </>
         ) : null}
 
         {local.status === "approved" ? (
           <>
-            {linkedTask ? (
-              <Link href={`/stores/${storeId}/fixes/tasks/${linkedTask}`} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent-text hover:underline">
-                <Icon name="fixes" size={14} />
-                Open {linkedTask}
-              </Link>
-            ) : local.taskCreated ? (
+            {linkedTask ? null : local.taskCreated ? (
               <Badge tone="accent" icon="sparkles">Task suggested (demo)</Badge>
             ) : (
-              <Button variant="primary" size="sm" icon="plus" onClick={onCreateTask}>
-                Create task
-              </Button>
+              <>
+                <Button variant="primary" size="sm" icon="plus" onClick={onCreateTask}>
+                  Create task
+                </Button>
+                <Button size="sm" icon="pencil" onClick={onEdit}>
+                  Edit
+                </Button>
+              </>
             )}
-            {!linkedTask && !local.taskCreated ? (
-              <Button size="sm" icon="pencil" onClick={onEdit}>
-                Edit
-              </Button>
+            {local.decidedBy || local.decisionNote ? (
+              <span className="text-xs text-fg-subtle">{[local.decidedBy ? `by ${local.decidedBy}` : null, local.decisionNote].filter(Boolean).join(" · ")}</span>
             ) : null}
-            <span className="ml-auto text-xs text-fg-subtle">
-              Approved{local.decidedBy ? ` by ${local.decidedBy}` : ""}
-              {local.decisionNote ? ` · ${local.decisionNote}` : ""}
-            </span>
           </>
         ) : null}
 
@@ -182,7 +170,7 @@ export function RecommendationCard({ rec, local, evidenceLabels, canApprove, sto
             <Button size="sm" icon="refresh" onClick={onReopen}>
               Reopen
             </Button>
-            <span className="text-xs text-fg-subtle">{local.decisionNote ?? "Rejected."}</span>
+            {local.decisionNote ? <span className="text-xs text-fg-subtle">{local.decisionNote}</span> : null}
           </>
         ) : null}
       </footer>

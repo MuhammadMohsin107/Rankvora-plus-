@@ -5,8 +5,8 @@ import { useState } from "react";
 
 import { PageHeader, SplitLayout } from "@/components/shell/page-header";
 import { Badge, Status } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Callout, Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -29,6 +29,9 @@ const REJECT_REASONS = ["Not relevant", "Already handled", "Too risky", "Accepti
 const LANE_LABEL = { ai_visibility: "AI visibility lane", website_readiness: "Website readiness lane" } as const;
 
 const evidenceIcon: Record<ResolvedEvidence["kind"], IconName> = { response: "prompts", page: "globe", prompt: "search" };
+
+/** The severity / priority value is already in the header; drop the leading "High:" / "P1:" label from the rationale. */
+const rationaleText = (text: string) => text.replace(/^(Critical|High|Medium|Low|Informational|P[0-3]):\s*/, "");
 
 function evidenceLabel(e: ResolvedEvidence): string {
   if (e.kind === "response") return `${e.response.providerLabel} · sample ${e.response.sample}`;
@@ -79,54 +82,23 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
 
   const evidenceLabels = Object.fromEntries(evidence.map((e) => [e.id, evidenceLabel(e)]));
 
-  const approvedWithoutTask = recommendations.find((r) => local[r.id].status === "approved" && !r.taskId && !local[r.id].taskCreated);
-  const hasProposed = recommendations.some((r) => local[r.id].status === "proposed");
-
-  let primary: React.ReactNode;
-  if (approvedWithoutTask) {
-    primary = (
-      <Button variant="primary" icon="plus" onClick={() => open("task", approvedWithoutTask.id)}>
-        Create task
-      </Button>
-    );
-  } else if (hasProposed) {
-    primary = (
-      <ButtonLink href="#recommendations" variant="primary" icon="check">
-        Review recommendations
-      </ButtonLink>
-    );
-  } else if (tasks[0]) {
-    primary = (
-      <ButtonLink href={`${base}/fixes/tasks/${tasks[0].id}`} variant="primary" trailingIcon="arrow-right">
-        Open {tasks[0].id}
-      </ButtonLink>
-    );
-  } else {
-    primary = (
-      <ButtonLink href={`${base}/fixes`} variant="secondary" icon="arrow-left">
-        Findings inbox
-      </ButtonLink>
-    );
-  }
-
   return (
     <>
       <PageHeader
         title={finding.title}
         breadcrumb={[
           { label: "Fixes", href: `${base}/fixes` },
-          { label: "Findings", href: `${base}/fixes` },
           { label: finding.id },
         ]}
-        subtitle={`${CATEGORY_LABEL[finding.category]} · ${LANE_LABEL[finding.lane]} · first detected ${formatDate(finding.firstDetectedAt)}`}
+        subtitle={`${CATEGORY_LABEL[finding.category]} · ${LANE_LABEL[finding.lane]}`}
         meta={
           <>
             <Status kind="finding" value={finding.status} />
             <Status kind="severity" value={finding.severity} />
             <Status kind="priority" value={finding.priority} />
+            <Status kind="confidence" value={finding.confidence} />
           </>
         }
-        actions={primary}
       />
 
       <SplitLayout
@@ -153,7 +125,7 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
             </Card>
 
             <Card>
-              <CardHeader title="Evidence" subtitle={`${evidence.length} items`} info="Raw responses are read-only. Failed requests are never counted as the brand being absent." />
+              <CardHeader title="Evidence" info="Raw responses are read-only. Failed requests are never counted as the brand being absent." />
               <CardBody className="pt-2">
                 {evidence.length === 0 ? (
                   <p className="text-[13px] text-fg-subtle">No evidence recorded.</p>
@@ -201,7 +173,7 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
             </Card>
 
             <Card>
-              <CardHeader title="Affected" subtitle={`${finding.affectedUrls.length} URLs · ${prompts.length} prompts`} />
+              <CardHeader title="Affected" />
               <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
                 <div className="min-w-0">
                   <h3 className="mb-1.5 text-xs font-medium text-fg-subtle">URLs</h3>
@@ -244,14 +216,13 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
                 <h2 id="rec-heading" className="text-sm font-semibold text-fg">
                   Recommendations <span className="tnum font-normal text-fg-subtle">{recommendations.length}</span>
                 </h2>
-                {!approver ? <Badge tone="neutral" icon="lock">View only</Badge> : null}
+                {!approver ? <Badge tone="neutral" icon="lock" title="Only an owner or admin can approve.">View only</Badge> : null}
               </div>
               {recommendations.length === 0 ? (
                 <EmptyState
                   icon="sparkles"
                   title="No recommendations"
-                  description={finding.status === "false_positive" ? "Closed as a false positive." : "Nothing proposed yet."}
-                  action={<ButtonLink href={`${base}/fixes`} variant="secondary" icon="arrow-left">Findings inbox</ButtonLink>}
+                  description={finding.status === "false_positive" ? "Closed as a false positive." : undefined}
                 />
               ) : (
                 recommendations.map((rec) => (
@@ -261,7 +232,6 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
                     local={local[rec.id]}
                     evidenceLabels={evidenceLabels}
                     canApprove={approver}
-                    storeId={storeId}
                     onApprove={() => open("approve", rec.id)}
                     onEdit={() => open("edit", rec.id)}
                     onReject={() => open("reject", rec.id)}
@@ -278,38 +248,28 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
         }
         aside={
           <>
-            <Card>
-              <CardHeader title="Details" />
-              <CardBody>
-                <KeyValue
-                  columns={1}
-                  items={[
-                    { label: "Confidence", value: <Status kind="confidence" value={finding.confidence} /> },
-                    { label: "First detected", value: <Link href={finding.auditId.startsWith("run-") ? `${base}/monitoring/runs/${finding.auditId}` : `${base}/audits/${finding.auditId}`} className="text-accent-text hover:underline">{finding.auditId} · {formatDate(finding.firstDetectedAt)}</Link> },
-                    { label: "Last observed", value: <span className="tnum">{formatDateTime(finding.lastObservedAt)} UTC</span> },
-                    { label: "Observed", value: <span className="tnum">{finding.recurrenceCount} {finding.recurrenceCount === 1 ? "time" : "times"}</span> },
-                    ...(extras.duplicate ? [{ label: "Possible duplicate", value: <Link href={`${base}/fixes/findings/${extras.duplicate.ofId}`} className="text-accent-text hover:underline">{extras.duplicate.ofId} · {extras.duplicate.reason}</Link> }] : []),
-                  ]}
-                />
-              </CardBody>
-            </Card>
+            {extras.duplicate ? (
+              <Callout tone="neutral" title="Possible duplicate">
+                <Link href={`${base}/fixes/findings/${extras.duplicate.ofId}`} className="text-accent-text hover:underline">{extras.duplicate.ofId}</Link> · {extras.duplicate.reason}
+              </Callout>
+            ) : null}
 
             <Card>
               <CardHeader title="Rationale" />
               <CardBody className="flex flex-col gap-3">
                 <div>
-                  <Status kind="severity" value={finding.severity} />
-                  <p className="mt-1.5 text-[13px] text-fg-muted">{extras.severityRationale}</p>
+                  <h3 className="text-xs font-medium text-fg-subtle">Severity</h3>
+                  <p className="mt-0.5 text-[13px] text-fg-muted">{rationaleText(extras.severityRationale)}</p>
                 </div>
                 <div className="border-t border-line pt-3">
-                  <Status kind="priority" value={finding.priority} />
-                  <p className="mt-1.5 text-[13px] text-fg-muted">{extras.priorityRationale}</p>
+                  <h3 className="text-xs font-medium text-fg-subtle">Priority</h3>
+                  <p className="mt-0.5 text-[13px] text-fg-muted">{rationaleText(extras.priorityRationale)}</p>
                 </div>
               </CardBody>
             </Card>
 
             <Card>
-              <CardHeader title="Linked tasks" subtitle={tasks.length === 0 ? undefined : `${tasks.length}`} />
+              <CardHeader title="Linked tasks" />
               <CardBody className="pt-2">
                 {tasks.length === 0 ? (
                   <p className="text-[13px] text-fg-subtle">No task yet.</p>
@@ -346,7 +306,7 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
             </Card>
 
             <Card>
-              <CardHeader title="Observation history" subtitle={`${extras.observations.length} ${extras.observations.length === 1 ? "observation" : "observations"}`} />
+              <CardHeader title="Observation history" />
               <CardBody>
                 <Timeline
                   items={extras.observations.map((o, index) => ({
@@ -363,7 +323,7 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
                     meta: (
                       <>
                         {o.sourceHref ? <Link href={`${base}/${o.sourceHref}`} className="text-accent-text hover:underline">{o.source}</Link> : o.source}
-                        <span> · {o.note}</span>
+                        {o.note ? <span> · {o.note}</span> : null}
                       </>
                     ),
                   }))}
@@ -383,7 +343,7 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
         onConfirm={() => {
           if (!dialog) return;
           patch(dialog.recId, { status: "approved", decidedBy: "you", decisionNote: undefined });
-          toast.push({ title: "Recommendation approved", description: "A task can now be created. Nothing on the site changes. Demo action, not saved." });
+          toast.push({ title: "Recommendation approved", description: "A task can now be created. Demo action, not saved." });
           close();
         }}
       >

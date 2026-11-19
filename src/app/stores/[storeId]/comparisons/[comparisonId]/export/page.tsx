@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -12,7 +15,7 @@ export async function generateStaticParams() {
   return comparisonStaticParams();
 }
 
-export default async function ComparisonExportPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/export">) {
+async function ComparisonExportPageContent(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/export">) {
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
@@ -53,8 +56,8 @@ export default async function ComparisonExportPage(props: PageProps<"/stores/[st
       matching={METHODOLOGY.matching}
       aggregation={METHODOLOGY.aggregation[result.aggregation]}
       sources={[
-        { label: `Baseline · ${baseline.label}`, reference: baseline.reference, runs: baseline.runIds },
-        { label: `Current · ${current.label}`, reference: current.reference, runs: current.runIds },
+        { label: `Baseline · ${baseline.label}`, runs: baseline.runIds },
+        { label: `Current · ${current.label}`, runs: current.runIds },
       ]}
       rowCsv={rowLevelCsv(result)}
       aggregateCsv={aggregateCsv(result)}
@@ -62,5 +65,13 @@ export default async function ComparisonExportPage(props: PageProps<"/stores/[st
       createdBy={record.createdBy}
       createdAtLabel={formatDateTime(record.createdAt)}
     />
+  );
+}
+
+export default function ComparisonExportPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/export">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ComparisonExportPageContent {...props} />
+    </Suspense>
   );
 }

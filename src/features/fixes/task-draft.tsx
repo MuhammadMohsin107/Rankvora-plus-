@@ -48,7 +48,7 @@ function ClaimText({ text, claims }: { text: string; claims: UnsupportedClaim[] 
 function SourceFacts({ facts }: { facts: DraftFact[] }) {
   return (
     <Card>
-      <CardHeader title="Source facts used" subtitle={`${facts.length} facts`} info="The draft may only state facts listed here. Anything else is flagged as unsupported." />
+      <CardHeader title="Source facts used" info="The draft may only state facts listed here. Anything else is flagged as unsupported." />
       <CardBody className="pt-2">
         <ul className="divide-y divide-line">
           {facts.map((fact) => (
@@ -177,9 +177,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
                       <p className="mt-0.5 text-xs text-fg-muted">
                         Link “{item.linkText}”: <Mono>{item.from}</Mono> <Icon name="arrow-right" size={12} className="inline" /> <Mono>{item.to}</Mono>
                       </p>
-                      {(result === "conflict" || result === "excluded") && (item.reason || result === "excluded") ? (
-                        <p className="mt-1 text-xs text-fg-subtle">{result === "excluded" && batch[item.id] ? "Excluded by you." : item.reason}</p>
-                      ) : null}
+                      {(result === "conflict" || result === "excluded") && item.reason && !batch[item.id] ? <p className="mt-1 text-xs text-fg-subtle">{item.reason}</p> : null}
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Badge tone={view.tone} icon={view.icon}>{view.label}</Badge>
@@ -241,7 +239,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
         <Card>
           <CardHeader title={isPatch ? "Patch" : "Draft text"} subtitle={draft.resource} />
           <CardBody>
-            <Field label={isPatch ? "Patch content" : draft.kind === "text" ? draft.field : "Draft"} hint={isPatch ? "Edit the proposed value. The diff updates as you type." : "Edit freely. Preview and diff update as you type."}>
+            <Field label={isPatch ? "Proposed value" : draft.kind === "text" ? draft.field : "Draft"}>
               {({ id, describedBy }) => (
                 <Textarea id={id} aria-describedby={describedBy} rows={isPatch ? 14 : 9} readOnly={locked} value={text} onChange={(event) => onText(event.target.value)} className={mono} spellCheck={!isPatch} />
               )}
@@ -250,7 +248,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
         </Card>
 
         <Card>
-          <CardHeader title={isPatch ? "Unsupported claims" : "Live preview"} subtitle={isPatch ? undefined : `${live.length} unsupported ${live.length === 1 ? "claim" : "claims"} flagged`} />
+          <CardHeader title={isPatch ? "Unsupported claims" : "Live preview"} info="Edit or remove an unsupported claim before approval." />
           <CardBody className="flex flex-col gap-3">
             {isPatch ? null : (
               <div className="rounded-control border border-line bg-surface-2/40 p-3">
@@ -267,7 +265,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
                 {live.map((claim) => (
                   <li key={claim.text}>
                     <Callout tone="warning" title={`“${claim.text}”`}>
-                      {claim.reason} Edit or remove it before approval.
+                      {claim.reason}
                     </Callout>
                   </li>
                 ))}
@@ -281,7 +279,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
         <CardHeader title="Before and after" info="Exact change, compared with the current remote copy." />
         <CardBody>
           {isPatch ? (
-            <CodeDiff before={draft.before} after={text} label={`${draft.resource} · ${draft.language}`} />
+            <CodeDiff before={draft.before} after={text} label={draft.language} />
           ) : (
             <DiffView before={draft.before} after={text} beforeLabel="Current" afterLabel="Proposed" />
           )}

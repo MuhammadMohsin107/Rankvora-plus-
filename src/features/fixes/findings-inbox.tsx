@@ -50,6 +50,15 @@ export function FindingsInbox({ storeId, rows }: { storeId: string; rows: Findin
     { id: "category", label: "Category", options: Object.entries(CATEGORY_LABEL).map(([value, label]) => ({ value, label })), value: (r) => r.category },
     { id: "confidence", label: "Confidence", options: options(STATUS.confidence), value: (r) => r.confidence },
     { id: "status", label: "Status", options: options(STATUS.finding), value: (r) => r.status },
+    {
+      id: "task",
+      label: "Task",
+      options: [
+        { value: "none", label: "No task" },
+        { value: "linked", label: "Has task" },
+      ],
+      value: (r) => (r.tasks.length > 0 || created.has(r.id) ? "linked" : "none"),
+    },
   ];
 
   const columns: Column<FindingRow>[] = [
@@ -125,7 +134,6 @@ export function FindingsInbox({ storeId, rows }: { storeId: string; rows: Findin
       width: "w-12",
       cell: (r) => {
         const items: MenuItem[] = [
-          { label: "Open finding", icon: "arrow-right", href: `${base}/findings/${r.id}` },
           {
             label: "Create task",
             icon: "plus",
@@ -137,7 +145,6 @@ export function FindingsInbox({ storeId, rows }: { storeId: string; rows: Findin
             },
           },
         ];
-        if (r.tasks[0]) items.push({ label: `Open ${r.tasks[0].id}`, icon: "fixes", href: `${base}/tasks/${r.tasks[0].id}` });
         return <Menu trigger={<IconButton icon="more" label={`Actions for ${r.id}`} size="sm" />} items={items} />;
       },
     },

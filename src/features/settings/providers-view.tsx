@@ -11,7 +11,7 @@ import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { DEMO_NOW, formatRelative } from "@/lib/format";
-import { SEARCH_MODE_LABEL, channelLabel } from "@/lib/labels";
+import { SEARCH_MODE_LABEL } from "@/lib/labels";
 import type { IntegrationState } from "@/types/core";
 import type { ProviderConnection } from "@/types/settings";
 
@@ -89,14 +89,13 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
                 actions={<Status kind="integration" value={s.status} />}
               />
               <CardBody className="flex flex-1 flex-col gap-4">
-                <p className="rounded-control bg-surface-2 px-2.5 py-1.5 text-xs text-fg-muted">{channelLabel({ providerLabel: p.label, apiLabel: p.apiLabel, model: p.model ?? "", searchMode: p.searchMode ?? "model_only" })}</p>
                 <KeyValue
                   columns={2}
                   items={[
                     { label: "Model", value: p.model },
                     { label: "Search", value: p.searchMode ? <>{p.searchCapability}<span className="block text-xs text-fg-subtle">{SEARCH_MODE_LABEL[p.searchMode]}</span></> : p.searchCapability },
                     { label: "Citations", value: p.supportsCitations ? <Badge tone="success" icon="check">Supported</Badge> : <Badge tone="neutral" icon="minus">Not supported</Badge> },
-                    { label: "Key", value: s.byok && s.keyLast4 ? <span className="tnum">{"••••••••"}{s.keyLast4}</span> : "Platform-managed" },
+                    ...(s.byok && s.keyLast4 ? [{ label: "Key", value: <span className="tnum">{"••••••••"}{s.keyLast4}</span> }] : []),
                     { label: "Last verified", value: s.lastVerifiedAt ? formatRelative(s.lastVerifiedAt) : "Never" },
                   ]}
                 />
@@ -140,15 +139,12 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
         ))}
       </div>
 
-      <p className="flex flex-wrap items-center gap-1.5 text-xs text-fg-subtle">
-        <Icon name="info" size={13} />
-        Copilot is not offered.
-        <Tooltip content="Consumer apps such as Copilot and the ChatGPT app are not tracked. Results are API answer samples.">
-          <span tabIndex={0} aria-label="Consumer apps such as Copilot and the ChatGPT app are not tracked. Results are API answer samples." className="flex cursor-help">
-            <Icon name="help" size={13} />
-          </span>
-        </Tooltip>
-      </p>
+      <Tooltip className="self-start" content="Consumer apps such as Copilot and the ChatGPT app are not tracked. Results are API answer samples.">
+        <span tabIndex={0} className="flex cursor-help items-center gap-1.5 text-xs text-fg-subtle">
+          <Icon name="info" size={13} />
+          Copilot is not offered
+        </span>
+      </Tooltip>
 
       <Dialog
         open={keyFor !== null}

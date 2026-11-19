@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { PageHeader, SplitLayout } from "@/components/shell/page-header";
 import { Badge, Status } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
 import { Switch } from "@/components/ui/form";
 import { Menu } from "@/components/ui/menu";
 import { Timeline } from "@/components/ui/misc";
@@ -13,7 +13,6 @@ import { ConfirmDialog } from "@/components/ui/overlay";
 import { Tabs } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import { DEMO_NOW, formatDate } from "@/lib/format";
-import { INTENT_LABEL, SCOPE_LABEL } from "@/lib/labels";
 import type { PromptStatus } from "@/types/core";
 import type { PromptActivityItem, PromptDetailData } from "@/types/prompts";
 
@@ -78,13 +77,11 @@ export function PromptDetail({ data }: { data: PromptDetailData }) {
     <>
       <PageHeader
         title={prompt.text}
-        subtitle={`${INTENT_LABEL[prompt.intent]}${prompt.topic ? ` · ${prompt.topic}` : ""} · ${SCOPE_LABEL[prompt.scope]}`}
         breadcrumb={[{ label: "Prompts", href: base }, { label: prompt.id }]}
         meta={
           <>
             <Status kind="prompt" value={prompt.status} />
             <Badge tone="neutral">v{prompt.version}</Badge>
-            {prompt.isCore ? <Badge tone="accent" icon="flag">Core</Badge> : null}
           </>
         }
         actions={
@@ -102,10 +99,7 @@ export function PromptDetail({ data }: { data: PromptDetailData }) {
             <Menu
               trigger={<IconButton icon="more" label="More actions" variant="secondary" />}
               items={[
-                { label: "Edit tracking", icon: "settings", onSelect: () => setDialog("config") },
                 archived ? { label: "Restore as draft", icon: "undo", onSelect: () => changeStatus("draft") } : { label: "Archive", icon: "minus-circle", tone: "danger", onSelect: () => setDialog("archive") },
-                { type: "separator" },
-                { label: "Back to library", icon: "arrow-left", href: base },
               ]}
             />
           </>
@@ -120,7 +114,7 @@ export function PromptDetail({ data }: { data: PromptDetailData }) {
               {
                 id: "results",
                 label: "Results",
-                content: <ResultsSection storeId={store.id} results={data.results} channels={channels} versions={versions} status={prompt.status} onStatus={changeStatus} />,
+                content: <ResultsSection results={data.results} channels={channels} versions={versions} status={prompt.status} />,
               },
               { id: "versions", label: "Versions", count: versions.length, content: <VersionHistory key={versions.length} versions={versions} /> },
               {
@@ -129,7 +123,6 @@ export function PromptDetail({ data }: { data: PromptDetailData }) {
                 count: activity.length,
                 content: (
                   <Card as="section">
-                    <CardHeader title="Activity" />
                     <CardBody>
                       <Timeline
                         items={activity.map((item) => ({

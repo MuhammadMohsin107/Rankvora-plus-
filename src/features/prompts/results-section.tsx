@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { StackedBar } from "@/components/charts/bars";
 import { LineChart, type LineSeries } from "@/components/charts/line-chart";
 import { Status } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, Metric } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { Segmented } from "@/components/ui/form";
@@ -19,12 +18,10 @@ import type { ChannelOption, PromptResults, PromptVersion, ResultCounts } from "
 import type { ResponseSample } from "@/types/shared-records";
 
 type Props = {
-  storeId: string;
   results: PromptResults;
   channels: ChannelOption[];
   versions: PromptVersion[];
   status: PromptStatus;
-  onStatus: (status: PromptStatus) => void;
 };
 
 const GRID: Record<number, string> = {
@@ -34,7 +31,7 @@ const GRID: Record<number, string> = {
   4: "grid-cols-[minmax(0,1fr)] sm:grid-cols-2 xl:grid-cols-4",
 };
 
-function RateCell({ title, subtitle, counts }: { title: string; subtitle: string; counts: ResultCounts }) {
+function RateCell({ title, subtitle, counts, showFailed = true }: { title: string; subtitle: string; counts: ResultCounts; showFailed?: boolean }) {
   const d = counts.mention.d;
   const na = d === 0 ? (counts.requests === 0 ? "No responses" : "All requests failed") : undefined;
   const status = d === 0 ? "ok" : sampleStatus(d);
@@ -51,7 +48,7 @@ function RateCell({ title, subtitle, counts }: { title: string; subtitle: string
         unit="successful"
         naReason={na}
         sampleStatus={status}
-        basis={counts.failed > 0 ? `${counts.failed} failed, excluded` : undefined}
+        basis={showFailed && counts.failed > 0 ? `${counts.failed} failed, excluded` : undefined}
       />
       <Metric label="Recommendation rate" numerator={counts.recommendation.n} denominator={counts.recommendation.d} unit="successful" naReason={na} sampleStatus="ok" />
     </div>
@@ -68,7 +65,7 @@ function outcomeOf(response: ResponseSample) {
   return <Status kind="recommendation" value={value} />;
 }
 
-export function ResultsSection({ storeId, results, channels, versions, status, onStatus }: Props) {
+export function ResultsSection({ results, channels, versions, status }: Props) {
   const [metric, setMetric] = useState<"mention" | "recommendation">("mention");
   const [view, setView] = useState<"pooled" | "provider">("pooled");
   const { runs, providers, pooled, latest, period } = results;
@@ -104,15 +101,6 @@ export function ResultsSection({ storeId, results, channels, versions, status, o
         icon="monitoring"
         title="No results yet"
         description={archived ? "Archived prompts do not run." : status === "active" ? "Results appear after the next run." : "Only active prompts run in audits and monitoring."}
-        action={
-          archived ? (
-            <Button icon="undo" onClick={() => onStatus("draft")}>Restore as draft</Button>
-          ) : status === "active" ? (
-            <ButtonLink href={`/stores/${storeId}/monitoring`} variant="secondary" trailingIcon="arrow-right">Open monitoring</ButtonLink>
-          ) : (
-            <Button variant="primary" icon="play" onClick={() => onStatus("active")}>Activate prompt</Button>
-          )
-        }
       />
     );
   }
@@ -124,14 +112,14 @@ export function ResultsSection({ storeId, results, channels, versions, status, o
     <div className="flex flex-col gap-5">
       <Card as="section">
         <CardHeader
-          title="Results"
+          title="Rates by provider"
           subtitle={`${runs.length} monitoring ${runs.length === 1 ? "run" : "runs"}${period ? ` · ${period}` : ""}`}
-          info="API answer samples. Failed requests are counted separately and are never treated as the brand being absent."
+          info="Failed requests are counted separately and are never treated as the brand being absent."
         />
         <CardBody>
           <div className={cn("grid gap-px overflow-hidden rounded-card border border-line bg-line", GRID[Math.min(cells.length, 4)])}>
             {cells.map((cell) => (
-              <RateCell key={cell.id} title={cell.title} subtitle={cell.subtitle} counts={cell.counts} />
+              <RateCell key={cell.id} title={cell.title} subtitle={cell.subtitle} counts={cell.counts} showFailed={cell.id !== "pooled"} />
             ))}
           </div>
           <div className="mt-4 flex flex-col gap-1.5">
@@ -150,7 +138,6 @@ export function ResultsSection({ storeId, results, channels, versions, status, o
       <Card as="section">
         <CardHeader
           title="Trend"
-          subtitle="Per monitoring run"
           actions={
             <>
               <Segmented size="sm" label="Metric" value={metric} onChange={setMetric} options={[{ value: "mention", label: "Mention" }, { value: "recommendation", label: "Recommended" }]} />

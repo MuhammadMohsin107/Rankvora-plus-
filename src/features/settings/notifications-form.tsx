@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,7 @@ export function NotificationsForm({ events, initial, orgTimezone }: { events: No
   return (
     <div className="flex flex-col gap-5">
       <Card>
-        <CardHeader title="Events and channels" subtitle="Defaults for every store" actions={<Link href="/stores" className="text-xs text-accent-text hover:underline">Per-store overrides</Link>} />
+        <CardHeader title="Events and channels" subtitle="Defaults for every store" />
         <div className="mt-3">
           <NotificationMatrixTable events={events} value={prefs.matrix} onChange={(matrix) => setPrefs({ ...prefs, matrix })} webhookReady={webhookReady} />
         </div>
@@ -122,7 +121,7 @@ export function NotificationsForm({ events, initial, orgTimezone }: { events: No
       </div>
 
       {prefs.digest === "off" && Object.values(prefs.matrix).every((channels) => channels.length === 0) ? (
-        <Callout tone="warning" title="Nothing will be delivered">All events and the digest are off.</Callout>
+        <Callout tone="warning" title="Nothing will be delivered" />
       ) : null}
 
       <div className="flex items-center gap-2">

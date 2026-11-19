@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -19,7 +22,7 @@ export async function generateStaticParams() {
   return scheduleParams();
 }
 
-export default async function ScheduleDetailPage(props: PageProps<"/stores/[storeId]/monitoring/schedules/[scheduleId]">) {
+async function ScheduleDetailPageContent(props: PageProps<"/stores/[storeId]/monitoring/schedules/[scheduleId]">) {
   const { storeId, scheduleId } = await props.params;
   const detail = await getSchedule(storeId, scheduleId);
   if (!detail) notFound();
@@ -29,7 +32,6 @@ export default async function ScheduleDetailPage(props: PageProps<"/stores/[stor
   const tz = row.timezone;
   const base = `/stores/${storeId}/monitoring`;
   const usedBy = (version: number) => runs.filter((r) => r.scheduleVersion === version).length;
-  const lastRun = runs[0];
   const localTime = row.nextRunAt && tz !== "UTC" ? `${c.localTime} = ${formatTime(row.nextRunAt)} UTC` : c.localTime;
 
   return (
@@ -39,7 +41,7 @@ export default async function ScheduleDetailPage(props: PageProps<"/stores/[stor
         main={
           <>
             <Card>
-              <CardHeader title="Configuration" subtitle={`Version ${row.currentVersion} · read-only`} />
+              <CardHeader title="Configuration" />
               <CardBody>
                 <KeyValue
                   columns={3}
@@ -52,7 +54,7 @@ export default async function ScheduleDetailPage(props: PageProps<"/stores/[stor
                     { label: "Max concurrency", value: <span className="tnum">{c.maxConcurrency}</span> },
                     { label: "Retry", value: <span className="tnum">{c.retry.maxAttempts} attempts · {c.retry.backoffSeconds}s backoff</span> },
                     { label: "Usage cap", value: <span className="tnum">{c.usageCap.jobsPerMonth} jobs · {formatUsd(c.usageCap.costUsd)} estimate / month</span> },
-                    { label: "Estimate", value: <span className="tnum">{row.jobsPerRun} jobs / run · ~{row.jobsPerMonth} / mo · ~{formatUsd(row.costPerMonthUsd)} estimate</span> },
+                    { label: "Estimate", value: <span className="tnum">{row.jobsPerRun} jobs / run · ~{row.jobsPerMonth} / mo · ~{formatUsd(row.costPerMonthUsd)}</span> },
                   ]}
                 />
               </CardBody>
@@ -70,7 +72,7 @@ export default async function ScheduleDetailPage(props: PageProps<"/stores/[stor
                         <p className="min-w-0 text-[13px] text-fg">{p.text}</p>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="tnum text-xs text-fg-subtle">{p.pinned ? `pinned v${p.pinned}` : `v${p.version}`}</span>
-                          <Status kind="prompt" value={p.status as "active" | "paused" | "draft" | "archived"} />
+                          {p.status === "active" ? null : <Status kind="prompt" value={p.status as "paused" | "draft" | "archived"} />}
                         </div>
                       </li>
                     ))}
@@ -122,23 +124,9 @@ export default async function ScheduleDetailPage(props: PageProps<"/stores/[stor
         aside={
           <>
             <Card>
-              <CardHeader title="Next and last run" />
+              <CardHeader title="Next run" />
               <CardBody className="flex flex-col gap-3">
-                <div>
-                  <p className="text-xs text-fg-subtle">Next run</p>
-                  {row.status === "active" || row.status === "needs_attention" ? <When iso={row.nextRunAt} tz={tz} /> : <p className="text-[13px] text-fg-muted">None while {row.status === "paused" ? "paused" : "cancelled"}</p>}
-                </div>
-                <div>
-                  <p className="text-xs text-fg-subtle">Last run</p>
-                  {lastRun ? (
-                    <div className="flex items-start justify-between gap-2">
-                      <When iso={lastRun.scheduledFor} tz={tz} />
-                      <Link href={`${base}/runs/${lastRun.id}`} className="text-[13px] font-medium text-accent-text hover:underline">{lastRun.id}</Link>
-                    </div>
-                  ) : (
-                    <p className="text-[13px] text-fg-muted">No runs yet</p>
-                  )}
-                </div>
+                {row.status === "active" || row.status === "needs_attention" ? <When iso={row.nextRunAt} tz={tz} detail /> : <span className="text-fg-subtle">—</span>}
                 {row.statusReason ? <p className="border-t border-line pt-3 text-xs text-fg-muted">{row.statusReason}</p> : null}
               </CardBody>
             </Card>
@@ -171,5 +159,13 @@ export default async function ScheduleDetailPage(props: PageProps<"/stores/[stor
         }
       />
     </>
+  );
+}
+
+export default function ScheduleDetailPage(props: PageProps<"/stores/[storeId]/monitoring/schedules/[scheduleId]">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ScheduleDetailPageContent {...props} />
+    </Suspense>
   );
 }

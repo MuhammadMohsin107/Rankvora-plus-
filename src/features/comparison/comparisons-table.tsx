@@ -11,7 +11,7 @@ import { DataTable, type Column, type TableFilter } from "@/components/ui/table"
 import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/format";
 import { STATUS } from "@/lib/status";
-import type { Comparability, ComparisonStatusValue, ComparisonType } from "@/types/comparison";
+import type { Comparability, ComparisonType } from "@/types/comparison";
 
 type RefValue = { text: string; isId: boolean };
 
@@ -22,7 +22,6 @@ export type ComparisonRow = {
   typeLabel: string;
   baseline: RefValue;
   current: RefValue;
-  status: ComparisonStatusValue;
   comparability: Comparability;
   createdBy: string;
   createdAt: string;
@@ -70,8 +69,7 @@ export function ComparisonsTable({ storeId, rows }: { storeId: string; rows: Com
         </div>
       ),
     },
-    { id: "status", header: "Status", sort: (r) => r.status, cell: (r) => <Status kind="comparison" value={r.status} /> },
-    { id: "comparability", header: "Comparability", sort: (r) => r.comparability, hideBelow: "sm", cell: (r) => <Status kind="comparability" value={r.comparability} /> },
+    { id: "comparability", header: "Comparability", sort: (r) => r.comparability, cell: (r) => <Status kind="comparability" value={r.comparability} /> },
     { id: "createdBy", header: "Created by", hideBelow: "lg", sort: (r) => r.createdBy, cell: (r) => <span className="text-[13px] text-fg-muted">{r.createdBy}</span> },
     { id: "createdAt", header: "Created", hideBelow: "lg", sort: (r) => r.createdAt, cell: (r) => <span className="tnum text-[13px] text-fg-muted">{formatDate(r.createdAt)}</span> },
     { id: "method", header: "Method", hideBelow: "xl", cell: (r) => <span className="tnum text-[13px] text-fg-muted">v{r.methodologyVersion}</span> },
@@ -86,11 +84,8 @@ export function ComparisonsTable({ storeId, rows }: { storeId: string; rows: Com
           <Menu
             trigger={<IconButton icon="more" label={`Actions for ${r.title}`} size="sm" />}
             items={[
-              { label: "Open comparison", icon: "arrow-right", href: `${base}/${r.id}` },
               ...(r.reportId ? [{ label: "Open report", icon: "reports" as const, href: `/stores/${storeId}/reports/${r.reportId}` }] : []),
               { label: "Export CSV", icon: "download", onSelect: () => toast.push({ title: "CSV export started", description: `${r.id}: row-level and aggregate files.`, tone: "info" }) },
-              { type: "separator" },
-              { label: "Run a new comparison", icon: "plus", href: `${base}/new` },
             ]}
           />
         </div>
@@ -100,7 +95,6 @@ export function ComparisonsTable({ storeId, rows }: { storeId: string; rows: Com
 
   const filters: TableFilter<ComparisonRow>[] = [
     { id: "type", label: "Type", options: unique(rows.map((r) => r.type)).map((value) => ({ value, label: rows.find((r) => r.type === value)!.typeLabel })), value: (r) => r.type },
-    { id: "status", label: "Status", options: unique(rows.map((r) => r.status)).map((value) => ({ value, label: STATUS.comparison[value].label })), value: (r) => r.status },
     { id: "comparability", label: "Comparability", options: unique(rows.map((r) => r.comparability)).map((value) => ({ value, label: STATUS.comparability[value].label })), value: (r) => r.comparability },
   ];
 

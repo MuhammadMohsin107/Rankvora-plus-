@@ -1,4 +1,4 @@
-import { Badge, Status } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
@@ -33,7 +33,6 @@ export function TrackingConfig({ prompt, groups, products, channels, onEdit }: P
         <KeyValue
           columns={1}
           items={[
-            { label: "Status", value: <Status kind="prompt" value={prompt.status} /> },
             { label: "Scope", value: SCOPE_LABEL[prompt.scope] },
             { label: "Market · language", value: <span className="tnum">{prompt.market} · {prompt.language.toUpperCase()}</span> },
             {
@@ -49,7 +48,7 @@ export function TrackingConfig({ prompt, groups, products, channels, onEdit }: P
                   </ul>
                 ),
             },
-            { label: "Core prompt", value: prompt.isCore ? <Badge tone="accent" icon="flag">Core</Badge> : <span className="text-fg-muted">No</span> },
+            { label: "Core prompt", value: prompt.isCore ? "Yes" : <span className="text-fg-muted">No</span> },
             { label: "Group", value: group?.name ?? <span className="text-fg-muted">Ungrouped</span> },
             { label: "Intent", value: INTENT_LABEL[prompt.intent] },
             { label: "Topic", value: prompt.topic || <span className="text-fg-muted">None</span> },

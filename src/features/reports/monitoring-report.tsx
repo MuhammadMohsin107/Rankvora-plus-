@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { BarCompare, type BarCompareRow } from "@/components/charts/bars";
 import { Badge, Status } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
 import { KeyValue, Metric, MetricCell } from "@/components/ui/card";
 import { Mono } from "@/components/ui/misc";
 import { Limitations, MetricStrip, ReportFrame, ReportSection, SourceLinks } from "@/features/reports/report-parts";
@@ -32,7 +31,6 @@ const severityTone = { info: "neutral", low: "info", medium: "warning", high: "d
 
 export function MonitoringReport({ report, data, storeId, limitations }: { report: ReportRecord; data: MonitoringReportData; storeId: string; limitations: string[] }) {
   const { run } = data;
-  const versus = data.previousRunId ? `vs ${data.previousRunId}` : undefined;
   const sources = [
     { label: "Monitoring run", id: run.id, href: `/stores/${storeId}/monitoring/runs/${run.id}` },
     { label: "Schedule", id: run.scheduleId, href: `/stores/${storeId}/monitoring/schedules/${run.scheduleId}` },
@@ -46,26 +44,26 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
   const counts = (["new_mention", "lost_mention", "new_recommendation", "recommendation_lost"] as const).map((kind) => ({ kind, count: data.events.filter((e) => e.kind === kind).length }));
 
   return (
-    <ReportFrame report={report} sections={SECTIONS} sources={sources}>
+    <ReportFrame sections={SECTIONS}>
       <ReportSection id="summary" number={1} title="Run summary">
         <KeyValue
           columns={2}
           items={[
-            { label: "Run", value: <Mono>{run.id}</Mono> },
             { label: "Status", value: <Status kind="run" value={run.status as StatusValue<"run">} /> },
             { label: "Scheduled for", value: <span className="tnum">{formatDateTime(run.scheduledFor)} UTC</span> },
             { label: "Snapshot", value: <Mono>{run.snapshotId}</Mono> },
           ]}
         />
-        <MetricStrip columns={3}>
+        <MetricStrip columns={2}>
           <MetricCell>
             <Metric label="Jobs succeeded" numerator={run.succeededJobs} denominator={run.plannedJobs} unit="planned jobs" />
           </MetricCell>
           <MetricCell>
-            <Metric label="Jobs failed" value={String(run.failedJobs)} basis="excluded from rates" />
-          </MetricCell>
-          <MetricCell>
-            <Metric label="Analysed responses" value={String(data.mention.current.d)} basis="successful, eligible" />
+            <Metric
+              label="Jobs failed"
+              value={String(run.failedJobs)}
+              basis={`excluded from rates${data.failedByClass.length > 0 ? `: ${data.failedByClass.map((f) => `${humanize(f.cls)} ${f.count}`).join(" · ")}` : ""}`}
+            />
           </MetricCell>
         </MetricStrip>
       </ReportSection>
@@ -77,7 +75,7 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
               label="Brand mention rate"
               numerator={data.mention.current.n}
               denominator={data.mention.current.d}
-              delta={data.mention.previous ? { points: pointChange(data.mention.previous, data.mention.current), versus } : undefined}
+              delta={data.mention.previous ? { points: pointChange(data.mention.previous, data.mention.current) } : undefined}
               basis="API answer samples"
             />
           </MetricCell>
@@ -86,7 +84,7 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
               label="Recommendation rate"
               numerator={data.recommendation.current.n}
               denominator={data.recommendation.current.d}
-              delta={data.recommendation.previous ? { points: pointChange(data.recommendation.previous, data.recommendation.current), versus } : undefined}
+              delta={data.recommendation.previous ? { points: pointChange(data.recommendation.previous, data.recommendation.current) } : undefined}
             />
           </MetricCell>
           <MetricCell>
@@ -94,9 +92,9 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
               label="Owned citation rate"
               numerator={data.citation.current?.n}
               denominator={data.citation.current?.d}
-              unit="responses with citation data"
+              info="Responses with citation data only."
               naReason={data.citation.current ? undefined : "No provider returned citation data"}
-              delta={data.citation.current && data.citation.previous ? { points: pointChange(data.citation.previous, data.citation.current), versus } : undefined}
+              delta={data.citation.current && data.citation.previous ? { points: pointChange(data.citation.previous, data.citation.current) } : undefined}
             />
           </MetricCell>
         </MetricStrip>
@@ -106,7 +104,7 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
         {providerRows.length > 0 ? <BarCompare rows={providerRows} baselineLabel="Prev" currentLabel="This" /> : <p className="text-[13px] text-fg-muted">No previous run to compare with.</p>}
       </ReportSection>
 
-      <ReportSection id="events" number={4} title="Events" subtitle={data.previousRunId ? `Changes on matching slots since ${data.previousRunId}` : undefined}>
+      <ReportSection id="events" number={4} title="Events">
         {data.previousRunId ? (
           <>
             <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -139,7 +137,7 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
         )}
       </ReportSection>
 
-      <ReportSection id="alerts" number={5} title="Alerts">
+      <ReportSection id="alerts" number={5} title="Alerts" actions={<ButtonLink href={`/stores/${storeId}/monitoring/alerts`} variant="ghost" size="sm" trailingIcon="arrow-right">Open alerts</ButtonLink>}>
         {data.alerts.length === 0 ? (
           <p className="text-[13px] text-fg-muted">No alerts were raised by this run.</p>
         ) : (
@@ -148,7 +146,7 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
                 <div className="min-w-0">
                   <p className="max-w-lg text-[13px] text-fg">{a.title}</p>
-                  <p className="text-xs text-fg-subtle">{formatRelative(a.at)} · <Link href={`/stores/${storeId}/monitoring/alerts`} className="text-accent-text hover:underline">Open alerts</Link></p>
+                  <p className="text-xs text-fg-subtle">{formatRelative(a.at)}</p>
                 </div>
                 <Badge tone={severityTone[a.severity as keyof typeof severityTone]} className="capitalize">{a.severity}</Badge>
               </li>
@@ -159,14 +157,11 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
 
       <ReportSection id="usage" number={6} title="Usage">
         <MetricStrip columns={4}>
-          <MetricCell><Metric label="Requests" value={formatNumber(data.usage.requests)} basis="provider calls" /></MetricCell>
-          <MetricCell><Metric label="Tokens in / out" value={`${formatNumber(data.usage.inputTokens)} / ${formatNumber(data.usage.outputTokens)}`} basis="all requests" /></MetricCell>
-          <MetricCell><Metric label="Search calls" value={formatNumber(data.usage.searchCalls)} basis="tool calls" /></MetricCell>
-          <MetricCell><Metric label="Cost" value={formatCurrency(data.usage.costUsd)} basis="estimate, USD" /></MetricCell>
+          <MetricCell><Metric label="Requests" value={formatNumber(data.usage.requests)} /></MetricCell>
+          <MetricCell><Metric label="Tokens in / out" value={`${formatNumber(data.usage.inputTokens)} / ${formatNumber(data.usage.outputTokens)}`} /></MetricCell>
+          <MetricCell><Metric label="Search calls" value={formatNumber(data.usage.searchCalls)} /></MetricCell>
+          <MetricCell><Metric label="Estimated cost" value={formatCurrency(data.usage.costUsd)} /></MetricCell>
         </MetricStrip>
-        {data.failedByClass.length > 0 ? (
-          <p className="tnum text-xs text-fg-subtle">Failed requests: {data.failedByClass.map((f) => `${humanize(f.cls)} ${f.count}`).join(" · ")}</p>
-        ) : null}
       </ReportSection>
 
       <ReportSection id="limitations" number={7} title="Limitations">
@@ -178,7 +173,6 @@ export function MonitoringReport({ report, data, storeId, limitations }: { repor
         <KeyValue
           columns={2}
           items={[
-            { label: "Report version", value: report.version },
             { label: "Generated", value: <span className="tnum">{formatDateTime(report.createdAt)} UTC</span> },
           ]}
         />

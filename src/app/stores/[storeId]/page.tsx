@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -22,7 +25,7 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function StoreDashboardPage(props: PageProps<"/stores/[storeId]">) {
+async function StoreDashboardPageContent(props: PageProps<"/stores/[storeId]">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
@@ -44,30 +47,24 @@ export default async function StoreDashboardPage(props: PageProps<"/stores/[stor
   }
 
   const data = await getDashboardData(store.id);
-  const basis = data ? `Run ${formatShortDate(data.monitoring.lastRun.scheduledFor)} · ${store.channelIds.length} API channels` : `Latest run · ${store.channelIds.length} API channels`;
-  const topCompetitor = data?.competitors.find((c) => c.status === "confirmed");
+  const basis = data ? `Latest run ${formatShortDate(data.monitoring.lastRun.scheduledFor)} · ${store.channelIds.length} API channels · change vs previous run` : `Latest run · ${store.channelIds.length} API channels`;
 
   return (
     <>
       <PageHeader
         title="Dashboard"
-        subtitle={`${store.marketName} · latest monitoring ${summary.lastRunAt ? formatRelative(summary.lastRunAt) : "none"}`}
-        actions={
-          <>
-            <ButtonLink href={`${base}/monitoring`} variant="secondary" icon="monitoring">Monitoring</ButtonLink>
-            <ButtonLink href={`${base}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>
-          </>
-        }
+        subtitle={`${store.domain} · ${store.marketName} · ${store.language.toUpperCase()}`}
+        actions={<ButtonLink href={`${base}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>}
       />
 
+      <p className="mb-2 text-xs text-fg-subtle">{basis}</p>
       <MetricGrid>
         <MetricCell>
           <Metric
             label="Brand mention rate"
             numerator={summary.mention.n}
             denominator={summary.mention.d}
-            basis={basis}
-            delta={{ points: pointChange(summary.mentionPrevious, summary.mention), versus: "vs previous run" }}
+            delta={{ points: pointChange(summary.mentionPrevious, summary.mention) }}
             info="Responses that mention the brand ÷ successful, analysed API answer samples. Failed requests are excluded."
           />
         </MetricCell>
@@ -76,8 +73,7 @@ export default async function StoreDashboardPage(props: PageProps<"/stores/[stor
             label="Recommendation rate"
             numerator={summary.recommendation.n}
             denominator={summary.recommendation.d}
-            basis={basis}
-            delta={{ points: pointChange(summary.recommendationPrevious, summary.recommendation), versus: "vs previous run" }}
+            delta={{ points: pointChange(summary.recommendationPrevious, summary.recommendation) }}
             info="A simple mention is not a recommendation."
           />
         </MetricCell>
@@ -87,22 +83,21 @@ export default async function StoreDashboardPage(props: PageProps<"/stores/[stor
             numerator={summary.ownedCitation.n}
             denominator={summary.ownedCitation.d}
             unit="citation-capable responses"
-            basis={basis}
-            delta={{ points: pointChange(summary.ownedCitationPrevious, summary.ownedCitation), versus: "vs previous run" }}
+            delta={{ points: pointChange(summary.ownedCitationPrevious, summary.ownedCitation) }}
             naReason={summary.ownedCitation.d === 0 ? "No citation data from these channels" : undefined}
           />
         </MetricCell>
         <MetricCell>
-          {topCompetitor ? (
+          {data ? (
             <Metric
-              label={`Top competitor: ${topCompetitor.name}`}
-              numerator={topCompetitor.n}
-              denominator={topCompetitor.d}
-              basis={basis}
-              info="Share of the same responses that name this competitor."
+              label="Response success"
+              numerator={data.monitoring.lastRun.succeededJobs}
+              denominator={data.monitoring.lastRun.plannedJobs}
+              unit="requests"
+              info="Failed requests are excluded from every rate above. A failed request is not evidence that the brand is absent."
             />
           ) : (
-            <Metric label="Competitor visibility" value="N/A" naReason="No confirmed competitor yet" />
+            <Metric label="Response success" value="N/A" naReason="No runs yet" />
           )}
         </MetricCell>
       </MetricGrid>
@@ -129,7 +124,7 @@ export default async function StoreDashboardPage(props: PageProps<"/stores/[stor
         <>
           <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <Card>
-              <CardHeader title="Visibility trend" subtitle="Weekly monitoring · API answer samples" actions={<ButtonLink href={`${base}/monitoring`} variant="ghost" size="sm" trailingIcon="arrow-right">Monitoring</ButtonLink>} />
+              <CardHeader title="Visibility trend" subtitle="Weekly monitoring · API answer samples" />
               <CardBody>
                 <LineChart
                   height={240}
@@ -147,12 +142,11 @@ export default async function StoreDashboardPage(props: PageProps<"/stores/[stor
             <Card>
               <CardHeader title="Monitoring" actions={<Status kind="schedule" value={data.monitoring.schedule.status} />} />
               <CardBody className="flex flex-col gap-4">
-                <p className="text-[13px] font-medium text-fg">{data.monitoring.schedule.name}</p>
+                <Link href={`${base}/monitoring`} className="text-[13px] font-medium text-accent-text hover:underline">{data.monitoring.schedule.name}</Link>
                 <KeyValue
                   columns={1}
                   items={[
                     { label: "Last run", value: <span className="flex flex-col items-start gap-1.5"><span className="tnum">{formatDate(data.monitoring.lastRun.scheduledFor, store.timezone)} {formatTime(data.monitoring.lastRun.scheduledFor, store.timezone)}</span><Status kind="run" value={data.monitoring.lastRun.status} /></span> },
-                    { label: "Jobs", value: <span className="tnum">{data.monitoring.lastRun.succeededJobs} / {data.monitoring.lastRun.plannedJobs} succeeded · {data.monitoring.lastRun.failedJobs} failed</span> },
                     { label: "Next run", value: <span className="tnum">{formatDate(data.monitoring.schedule.nextRunAt ?? "", store.timezone)} {formatTime(data.monitoring.schedule.nextRunAt ?? "", store.timezone)}</span> },
                     { label: "Open alerts", value: <Link href={`${base}/monitoring/alerts`} className="tnum font-medium text-accent-text hover:underline">{data.monitoring.openAlerts} unread</Link> },
                   ]}
@@ -212,12 +206,8 @@ export default async function StoreDashboardPage(props: PageProps<"/stores/[stor
 
           <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2 xl:grid-cols-3">
             <Card>
-              <CardHeader title="Competitor visibility" subtitle="Share of the same responses that name each brand" />
+              <CardHeader title="Competitor visibility" subtitle={`Responses naming each brand · of ${data.competitors[0]?.d ?? 0} successful`} />
               <CardBody className="flex flex-col gap-3.5">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-baseline justify-between"><span className="text-[13px] font-medium text-fg">{store.brandName} (you)</span><span className="tnum text-xs text-fg-muted">{summary.mention.n} / {summary.mention.d}</span></div>
-                  <Progress value={summary.mention.n} max={summary.mention.d} label={`${store.brandName} mentions`} />
-                </div>
                 {data.competitors.map((c) => (
                   <div key={c.id} className="flex flex-col gap-1">
                     <div className="flex items-baseline justify-between gap-2">
@@ -262,5 +252,13 @@ export default async function StoreDashboardPage(props: PageProps<"/stores/[stor
         </>
       )}
     </>
+  );
+}
+
+export default function StoreDashboardPage(props: PageProps<"/stores/[storeId]">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <StoreDashboardPageContent {...props} />
+    </Suspense>
   );
 }

@@ -5,6 +5,8 @@ import { useState } from "react";
 import { BarCompare, type BarCompareRow } from "@/components/charts/bars";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Segmented } from "@/components/ui/form";
+import { Icon } from "@/components/ui/icon";
+import { Tooltip } from "@/components/ui/tooltip";
 import type { BreakdownRow, MetricKey } from "@/types/audit";
 
 import { RateCell } from "./rate-cell";
@@ -58,7 +60,18 @@ export function BreakdownCards({ providers, groups, compareTitle }: Props) {
   return (
     <section aria-label="Rates breakdown" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-fg">Breakdown</h2>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-semibold text-fg">Breakdown</h2>
+            <Tooltip content={info}>
+              <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label={info}>
+                <Icon name="info" size={14} />
+              </span>
+            </Tooltip>
+          </div>
+          {/* Basis stated once for both cards. */}
+          <p className="mt-0.5 text-xs text-fg-subtle">{METRIC_LABEL[metric]} rate · {denominator.toLowerCase()}</p>
+        </div>
         <Segmented
           label="Metric"
           value={metric}
@@ -72,7 +85,7 @@ export function BreakdownCards({ providers, groups, compareTitle }: Props) {
           { id: "group", title: "By prompt group", rows: groups },
         ] as const).map((section) => (
           <Card as="section" key={section.id}>
-            <CardHeader title={section.title} subtitle={`${METRIC_LABEL[metric]} rate · ${denominator.toLowerCase()}`} info={info} />
+            <CardHeader title={section.title} />
             <CardBody>
               {section.rows.length === 0 ? (
                 <p className="text-[13px] text-fg-muted">No responses yet.</p>

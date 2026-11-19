@@ -1,13 +1,13 @@
 import Link from "next/link";
 
-import { Badge, Status } from "@/components/ui/badge";
+import { Status } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 import type { Tone } from "@/lib/status";
 import type { MonitoringEvent } from "@/types/monitoring";
 
-import { EVENT_ICON, EVENT_LABEL, EVENT_TONE, SEVERITY_STATUS } from "./labels";
+import { EVENT_ICON, EVENT_TONE, SEVERITY_STATUS, eventMeta } from "./labels";
 
 const circle: Record<Tone, string> = {
   neutral: "bg-surface-2 text-fg-subtle",
@@ -30,12 +30,9 @@ export function EventList({ events, href }: { events: MonitoringEvent[]; href: s
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[13px] text-fg">{event.title}</p>
-              <p className="mt-0.5 text-xs text-fg-subtle">
-                {EVENT_LABEL[event.type]}
-                {event.providerShort ? ` · ${event.providerShort}` : ""} · {event.runId} · {formatRelative(event.at)}
-              </p>
+              <p className="mt-0.5 text-xs text-fg-subtle">{eventMeta(event)} · {formatRelative(event.at)}</p>
             </div>
-            {event.alert ? <Status kind="severity" value={SEVERITY_STATUS[event.alert.severity]} compact /> : <Badge tone="neutral">Event</Badge>}
+            {event.alert ? <Status kind="severity" value={SEVERITY_STATUS[event.alert.severity]} compact /> : null}
           </Link>
         </li>
       ))}

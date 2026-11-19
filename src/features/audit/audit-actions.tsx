@@ -21,7 +21,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Immutable run configuration, shown in a drawer. */
-export function ConfigDrawerButton({ config, channels, auditTitle }: { config: AuditConfig; channels: { id: string; label: string }[]; auditTitle: string }) {
+export function ConfigDrawerButton({ config, channels }: { config: AuditConfig; channels: { id: string; label: string }[] }) {
   const [open, setOpen] = useState(false);
   const onOff = (v: boolean) => (
     <Badge tone={v ? "success" : "neutral"} icon={v ? "check-circle" : "minus-circle"}>
@@ -31,7 +31,7 @@ export function ConfigDrawerButton({ config, channels, auditTitle }: { config: A
   return (
     <>
       <Button icon="settings" onClick={() => setOpen(true)}>Configuration</Button>
-      <Drawer open={open} onClose={() => setOpen(false)} title="Configuration" description={`${auditTitle} · fixed when the audit started`} size="md">
+      <Drawer open={open} onClose={() => setOpen(false)} title="Configuration" description="Fixed when the audit started" size="md">
         <div className="flex flex-col gap-6">
           <Group title="AI visibility">
             <KeyValue

@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -10,7 +13,7 @@ import { EmptyState } from "@/components/ui/feedback";
 import { Mono } from "@/components/ui/misc";
 import { formatDuration, formatNumber } from "@/lib/format";
 import { formatUsd } from "@/features/monitoring/labels";
-import { ProviderSplitTable, RunFailures, RunJobsTable } from "@/features/monitoring/run-detail-parts";
+import { ProviderSplitTable, RunJobsTable } from "@/features/monitoring/run-detail-parts";
 import { whenText } from "@/features/monitoring/when";
 import { getStore } from "@/services/core";
 import { getRunDetail, runParams } from "@/services/monitoring";
@@ -21,7 +24,7 @@ export async function generateStaticParams() {
   return runParams();
 }
 
-export default async function RunDetailPage(props: PageProps<"/stores/[storeId]/monitoring/runs/[runId]">) {
+async function RunDetailPageContent(props: PageProps<"/stores/[storeId]/monitoring/runs/[runId]">) {
   const { storeId, runId } = await props.params;
   const [store, detail] = await Promise.all([getStore(storeId), getRunDetail(storeId, runId)]);
   if (!store || !detail) notFound();
@@ -33,7 +36,7 @@ export default async function RunDetailPage(props: PageProps<"/stores/[storeId]/
     <>
       <PageHeader
         title={run.id}
-        subtitle={`${run.scheduleName} · ${whenText(run.scheduledFor, tz)} · ${tz}`}
+        subtitle={whenText(run.scheduledFor, tz)}
         breadcrumb={[{ label: "Monitoring", href: base }, { label: "Runs", href: `${base}/runs` }, { label: run.id }]}
         meta={
           <>
@@ -43,7 +46,7 @@ export default async function RunDetailPage(props: PageProps<"/stores/[storeId]/
         }
         actions={
           <>
-            <ButtonLink href={`${base}/schedules/${run.scheduleId}`} icon="clock">Schedule</ButtonLink>
+            <ButtonLink href={`${base}/schedules/${run.scheduleId}`} icon="clock" aria-label={`Open schedule ${run.scheduleName}`}>{run.scheduleName}</ButtonLink>
             {detail.reportId ? <ButtonLink href={`/stores/${storeId}/reports/${detail.reportId}`} variant="primary" icon="reports">Open report</ButtonLink> : null}
           </>
         }
@@ -52,106 +55,80 @@ export default async function RunDetailPage(props: PageProps<"/stores/[storeId]/
       <div className="flex flex-col gap-6">
         <MetricGrid>
           <MetricCell>
-            <Metric label="Brand mention rate" numerator={run.mention.n} denominator={run.mention.d} basis="successful responses" info="Mentions ÷ successful, analysed responses. Failed jobs are excluded." />
+            <Metric label="Brand mention rate" numerator={run.mention.n} denominator={run.mention.d} info="Mentions ÷ successful, analysed responses. Failed jobs are excluded." />
           </MetricCell>
           <MetricCell>
-            <Metric label="Recommendation rate" numerator={run.recommendation.n} denominator={run.recommendation.d} basis="successful responses" />
+            <Metric label="Recommendation rate" numerator={run.recommendation.n} denominator={run.recommendation.d} />
           </MetricCell>
           <MetricCell>
             <Metric label="Response success rate" numerator={run.succeeded} denominator={run.planned} unit="jobs" info="Jobs that returned an answer ÷ planned jobs." />
           </MetricCell>
           <MetricCell>
-            <Metric label="Failed jobs" value={String(run.failed)} basis={run.failed > 0 ? "excluded from rates" : "none"} />
+            <Metric label="Duration" value={run.durationSeconds === null ? "—" : formatDuration(run.durationSeconds)} />
           </MetricCell>
         </MetricGrid>
-
-        {detail.provisional ? <Callout tone="warning" title="Provisional">This run is still going. Numbers may change until it completes.</Callout> : null}
 
         <SplitLayout
           main={
             <>
-              <Card>
-                <CardHeader title="By provider" subtitle={detail.previousRunId ? `Mention rate vs ${detail.previousRunId}` : "Mention rate"} info="Mentions ÷ successful responses for each provider API, model and search mode." />
-                <CardBody>
-                  {providers.length === 0 ? (
-                    <EmptyState icon="plug" title="No provider split for this run" description="Job-level records are not stored for it in the demo." />
-                  ) : (
-                    <BarCompare
-                      baselineLabel="Prev"
-                      currentLabel="This"
-                      rows={providers.map((p) => ({ id: p.channelId, label: p.short, sub: `${p.succeeded} / ${p.planned} jobs ok`, baseline: p.previousMention, current: p.mention }))}
-                    />
-                  )}
-                </CardBody>
-              </Card>
-
               {providers.length > 0 ? (
-                <Section title="Provider usage">
-                  <ProviderSplitTable providers={providers} />
-                </Section>
+                <>
+                  <Card>
+                    <CardHeader title="By provider" subtitle={detail.previousRunId ? `Mention rate vs ${detail.previousRunId}` : "Mention rate"} info="Mentions ÷ successful responses for each provider API, model and search mode." />
+                    <CardBody>
+                      <BarCompare
+                        baselineLabel="Prev"
+                        currentLabel="This"
+                        rows={providers.map((p) => ({ id: p.channelId, label: p.short, baseline: p.previousMention, current: p.mention }))}
+                      />
+                    </CardBody>
+                  </Card>
+
+                  <Section title="Provider usage">
+                    <ProviderSplitTable providers={providers} />
+                  </Section>
+                </>
               ) : null}
 
               <Section title="Jobs">
                 {jobs.length === 0 ? (
-                  <EmptyState
-                    icon="list"
-                    title="No job records for this run"
-                    description="Totals above come from the run summary. Job-level records are not part of the demo for this store."
-                    action={<ButtonLink href={`${base}/runs`}>Back to runs</ButtonLink>}
-                  />
+                  <EmptyState icon="list" title="No job records for this run" description="Totals come from the run summary." />
                 ) : (
-                  <RunJobsTable jobs={jobs} />
+                  <div className="flex flex-col gap-3">
+                    {totals.failed > 0 ? (
+                      <Callout tone="info">
+                        {totals.failed} failed after retries (timeouts, rate limits, provider errors, refusals). They are excluded from every rate and never counted as the brand being absent.
+                      </Callout>
+                    ) : null}
+                    <RunJobsTable jobs={jobs} />
+                  </div>
                 )}
               </Section>
-
-              {jobs.length > 0 ? (
-                <Card>
-                  <CardHeader title="Failures" subtitle={`${totals.failed} failed after retries`} info="Timeouts, rate limits, provider errors and refusals are technical failures." />
-                  <CardBody>
-                    <RunFailures jobs={jobs} />
-                  </CardBody>
-                </Card>
-              ) : null}
             </>
           }
           aside={
             <>
               <Card>
-                <CardHeader title="Totals" />
+                <CardHeader title="Totals and usage" info="Planned, succeeded and failed jobs are in the rates above. Cost is an estimate allocated from provider usage; retries count as requests." />
                 <CardBody>
                   <KeyValue
                     columns={2}
                     items={[
-                      { label: "Planned", value: <span className="tnum">{totals.planned}</span> },
                       { label: "Attempted", value: <span className="tnum">{totals.attempted}</span> },
-                      { label: "Succeeded", value: <span className="tnum">{totals.succeeded}</span> },
-                      { label: "Failed", value: <span className="tnum">{totals.failed}</span> },
                       { label: "Retried", value: <span className="tnum">{totals.retried}</span> },
                       { label: "Analysed", value: <span className="tnum">{totals.analysed}</span> },
-                    ]}
-                  />
-                </CardBody>
-              </Card>
-
-              <Card>
-                <CardHeader title="Usage and cost" info="Cost is an estimate allocated from provider usage. Retries count as requests." />
-                <CardBody>
-                  <KeyValue
-                    columns={2}
-                    items={[
                       { label: "Requests", value: <span className="tnum">{usage.requests}</span> },
                       { label: "Search calls", value: <span className="tnum">{usage.searchCalls}</span> },
                       { label: "Input tokens", value: <span className="tnum">{formatNumber(usage.inputTokens)}</span> },
                       { label: "Output tokens", value: <span className="tnum">{formatNumber(usage.outputTokens)}</span> },
                       { label: "Cost (estimate)", value: <span className="tnum">{formatUsd(usage.costUsd)}</span> },
-                      { label: "Duration", value: <span className="tnum">{run.durationSeconds === null ? "—" : formatDuration(run.durationSeconds)}</span> },
                     ]}
                   />
                 </CardBody>
               </Card>
 
               <Card>
-                <CardHeader title="Config snapshot" subtitle="Read-only" info="What this run used. Later schedule edits never change it." />
+                <CardHeader title="Config snapshot" info="What this run used. Later schedule edits never change it." />
                 <CardBody className="flex flex-col gap-4">
                   <KeyValue
                     columns={1}
@@ -192,5 +169,13 @@ export default async function RunDetailPage(props: PageProps<"/stores/[storeId]/
         />
       </div>
     </>
+  );
+}
+
+export default function RunDetailPage(props: PageProps<"/stores/[storeId]/monitoring/runs/[runId]">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <RunDetailPageContent {...props} />
+    </Suspense>
   );
 }

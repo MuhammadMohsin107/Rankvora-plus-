@@ -1,8 +1,10 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shell/page-header";
-import { ButtonLink } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/feedback";
 import { aggregateCsv, toCsv } from "@/features/comparison/export";
 import { ExportActions, RetryReport } from "@/features/reports/export-actions";
@@ -10,7 +12,7 @@ import { AuditReport } from "@/features/reports/audit-report";
 import { ComparisonReport } from "@/features/reports/comparison-report";
 import { GeneratingState } from "@/features/reports/generating-state";
 import { MonitoringReport } from "@/features/reports/monitoring-report";
-import { ReportStatusBadge, ReportTypeBadge } from "@/features/reports/report-parts";
+import { ReportTypeBadge } from "@/features/reports/report-parts";
 import { COMPARISON_LIMITATIONS, getComparisonDetail, getPromptRows, METHODOLOGY } from "@/services/comparison";
 import {
   AUDIT_REPORT_LIMITATIONS,
@@ -55,7 +57,7 @@ function monitoringFiles(data: MonitoringReportData) {
   return { csv: toCsv(["metric", "numerator", "denominator", "previous_numerator", "previous_denominator"], rows), json: JSON.stringify(data, null, 2) };
 }
 
-export default async function ReportPage(props: PageProps<"/stores/[storeId]/reports/[reportId]">) {
+async function ReportPageContent(props: PageProps<"/stores/[storeId]/reports/[reportId]">) {
   const { storeId, reportId } = await props.params;
   const report = await getReport(storeId, reportId);
   if (!report) notFound();
@@ -65,12 +67,7 @@ export default async function ReportPage(props: PageProps<"/stores/[storeId]/rep
       title={report.title}
       subtitle={`${report.period} · ${report.version}`}
       breadcrumb={[{ label: "Reports", href: `/stores/${storeId}/reports` }, { label: report.id }]}
-      meta={
-        <>
-          <ReportTypeBadge type={report.type} />
-          <ReportStatusBadge status={report.status} />
-        </>
-      }
+      meta={<ReportTypeBadge type={report.type} />}
       actions={actions}
     />
   );
@@ -79,7 +76,7 @@ export default async function ReportPage(props: PageProps<"/stores/[storeId]/rep
     const progress = await getGeneratingProgress(report);
     return (
       <>
-        {header(<ButtonLink href={report.sourceHref} variant="secondary" icon="arrow-right">Open {report.type}</ButtonLink>)}
+        {header(null)}
         <GeneratingState report={report} progress={progress} />
       </>
     );
@@ -88,7 +85,7 @@ export default async function ReportPage(props: PageProps<"/stores/[storeId]/rep
   if (report.status === "failed") {
     return (
       <>
-        {header(<RetryReport title={report.title} />)}
+        {header(null)}
         <ErrorState title="The report could not be generated" detail="The source data is intact. Retry to build it again." action={<RetryReport title={report.title} />} />
       </>
     );
@@ -138,5 +135,13 @@ async function ReadyReport({ storeId, report, header }: { storeId: string; repor
         evidence={evidence}
       />
     </>
+  );
+}
+
+export default function ReportPage(props: PageProps<"/stores/[storeId]/reports/[reportId]">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ReportPageContent {...props} />
+    </Suspense>
   );
 }

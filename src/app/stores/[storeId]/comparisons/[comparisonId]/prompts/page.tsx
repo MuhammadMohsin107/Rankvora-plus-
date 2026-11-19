@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -12,7 +15,7 @@ export async function generateStaticParams() {
   return comparisonStaticParams();
 }
 
-export default async function ComparisonPromptsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/prompts">) {
+async function ComparisonPromptsPageContent(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/prompts">) {
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
@@ -23,9 +26,7 @@ export default async function ComparisonPromptsPage(props: PageProps<"/stores/[s
   return (
     <div className="flex flex-col gap-8">
       {result.verdict === "insufficient_data" ? (
-        <Callout tone="warning" title="Low sample">
-          {result.matchedPairs} matched pairs. Read these rows as examples, not as a trend.
-        </Callout>
+        <Callout tone="warning" title="Directional sample: read these rows as examples, not as a trend" />
       ) : null}
 
       <div id="matched" className="scroll-mt-24">
@@ -46,5 +47,13 @@ export default async function ComparisonPromptsPage(props: PageProps<"/stores/[s
         </Section>
       </div>
     </div>
+  );
+}
+
+export default function ComparisonPromptsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/prompts">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ComparisonPromptsPageContent {...props} />
+    </Suspense>
   );
 }

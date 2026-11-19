@@ -62,18 +62,6 @@ export async function listFindingRows(storeId: string): Promise<FindingRow[]> {
   }));
 }
 
-/** Counts shown in the Fixes header strip. */
-export async function getFixesCounts(storeId: string) {
-  const [rows, tasks] = await Promise.all([listFindingRows(storeId), summaries(storeId)]);
-  const done = new Set(["verified_success", "rolled_back", "rejected", "superseded"]);
-  return {
-    openFindings: rows.filter((r) => !r.closed).length,
-    withoutTask: rows.filter((r) => !r.closed && r.tasks.length === 0).length,
-    openTasks: tasks.filter((t) => !done.has(t.status)).length,
-    awaitingVerification: tasks.filter((t) => t.status === "verification_pending").length,
-  };
-}
-
 export async function getFindingDetail(storeId: string, findingId: string): Promise<FindingDetailData | null> {
   const finding = await getFinding(storeId, findingId);
   const extras = FINDING_EXTRAS[findingId];

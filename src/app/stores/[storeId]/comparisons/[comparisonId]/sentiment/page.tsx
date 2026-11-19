@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -23,16 +26,14 @@ const segments = (c: SentimentCounts): Segment[] => [
 
 function Distribution({ title, counts }: { title: string; counts: SentimentCounts }) {
   return (
-    <Card>
-      <CardHeader title={title} as="h3" subtitle="Responses that mention the brand" />
-      <CardBody>
-        {counts.total > 0 ? <StackedBar segments={segments(counts)} unit="mentions" /> : <p className="text-[13px] text-fg-muted">No response mentions the brand, so sentiment is N/A.</p>}
-      </CardBody>
-    </Card>
+    <div className="flex min-w-0 flex-col gap-2.5">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">{title}</h3>
+      {counts.total > 0 ? <StackedBar segments={segments(counts)} unit="mentions" /> : <p className="text-[13px] text-fg-muted">No response mentions the brand, so sentiment is N/A.</p>}
+    </div>
   );
 }
 
-export default async function ComparisonSentimentPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/sentiment">) {
+async function ComparisonSentimentPageContent(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/sentiment">) {
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
@@ -43,13 +44,16 @@ export default async function ComparisonSentimentPage(props: PageProps<"/stores/
     <div className="flex flex-col gap-5">
       <HeadlineCard metric={positive} aggregation={result.aggregation} countsOnly={result.verdict === "insufficient_data"} />
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-2">
-        <Distribution title="Baseline" counts={result.sentiment.baseline} />
-        <Distribution title="Current" counts={result.sentiment.current} />
-      </div>
+      <Card>
+        <CardHeader title="Distribution" subtitle="Responses that mention the brand" />
+        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-2">
+          <Distribution title="Baseline" counts={result.sentiment.baseline} />
+          <Distribution title="Current" counts={result.sentiment.current} />
+        </CardBody>
+      </Card>
 
       <Card>
-        <CardHeader title="Where sentiment changed" subtitle="Evidence quotes from the matched slots" info="Matched slots where the brand was mentioned on one side and the sentiment label differs. Open the Prompts tab to read the full responses." />
+        <CardHeader title="Where sentiment changed" info="Matched slots where the brand was mentioned on one side and the sentiment label differs. Open the Prompts tab to read the full responses." />
         <CardBody className="pt-2">
           {result.sentiment.excerpts.length === 0 ? (
             <p className="text-[13px] text-fg-muted">No matched slot changed sentiment.</p>
@@ -82,5 +86,13 @@ export default async function ComparisonSentimentPage(props: PageProps<"/stores/
         </CardBody>
       </Card>
     </div>
+  );
+}
+
+export default function ComparisonSentimentPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/sentiment">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ComparisonSentimentPageContent {...props} />
+    </Suspense>
   );
 }

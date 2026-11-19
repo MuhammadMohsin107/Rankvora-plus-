@@ -133,7 +133,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
     <div className="flex flex-col gap-5">
       <Card as="section">
         <CardHeader
-          title="Import from CSV"
+          title="Paste or upload"
           subtitle={`Up to ${MAX_IMPORT_ROWS} rows. Nothing is created until you confirm.`}
           actions={
             <>
@@ -157,7 +157,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
                 spellCheck={false}
                 className="font-mono"
                 value={csv}
-                placeholder={CSV_COLUMNS.join(",")}
+                placeholder="Paste rows here"
                 onChange={(event) => {
                   setCsv(event.target.value);
                   setFileName(null);
@@ -194,7 +194,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
 
       {hasRows ? (
         <Card as="section">
-          <CardHeader title="Dry run" subtitle="Check every row before importing." />
+          <CardHeader title="Dry run" />
           <CardBody className="flex flex-col gap-4">
             <StackedBar
               unit="rows"
@@ -209,7 +209,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2/60 px-4 py-3">
             <ButtonLink href={base} variant="ghost">Cancel</ButtonLink>
             <Button variant="primary" icon="upload" disabled={tally.create === 0} onClick={confirm}>
-              Import {pluralize(tally.create, "prompt")}
+              Import prompts
             </Button>
           </div>
         </Card>

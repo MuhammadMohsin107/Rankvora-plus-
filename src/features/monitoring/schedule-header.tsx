@@ -33,7 +33,6 @@ export function ScheduleHeader({ storeId, row }: { storeId: string; row: Schedul
     <>
       <PageHeader
         title={row.name}
-        subtitle={`${row.frequencyLabel} · ${row.timezone} · version ${row.currentVersion}`}
         breadcrumb={[{ label: "Monitoring", href: base }, { label: "Schedules", href: `${base}/schedules` }, { label: row.id }]}
         meta={<Status kind="schedule" value={status} />}
         actions={
@@ -43,7 +42,7 @@ export function ScheduleHeader({ storeId, row }: { storeId: string; row: Schedul
             <ButtonLink href={`${base}/schedules/${row.id}/edit`} variant="primary" icon="pencil" aria-disabled={cancelled || !row.editable} tabIndex={cancelled || !row.editable ? -1 : undefined}>Edit</ButtonLink>
             <Menu
               trigger={<IconButton icon="more" label="More actions" variant="secondary" />}
-              items={scheduleMenuItems({ storeId, row, status, onToggle: toggle, onRunNow: () => setRunOpen(true), onCancel: () => setCancelOpen(true), includeDetail: false })}
+              items={scheduleMenuItems({ storeId, row, status, onToggle: toggle, onRunNow: () => setRunOpen(true), onCancel: () => setCancelOpen(true), onlyCancel: true })}
             />
           </>
         }

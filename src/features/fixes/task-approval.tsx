@@ -15,7 +15,7 @@ import { ROLE_LABEL } from "@/lib/labels";
 import type { Role } from "@/types/core";
 import type { ApprovalRecord, ApprovalState, ExecutionMode, TaskStatus } from "@/types/fixes";
 
-import { APPROVER_REASON, canApprove, MODE_LABEL } from "./fixes-shared";
+import { canApprove, MODE_LABEL } from "./fixes-shared";
 
 const ROLES: Role[] = ["owner", "admin", "editor", "auditor", "viewer"];
 const REJECT_REASONS = ["Wording not supported by facts", "Wrong resource", "Too risky for now", "Needs another review", "Other"];
@@ -44,6 +44,7 @@ type Props = {
   state: ApprovalState;
   decidedBy?: string;
   decidedAt?: string;
+  decidedNote?: string;
   mode: ExecutionMode;
   status: TaskStatus;
   actualRole: Role;
@@ -57,7 +58,7 @@ type Props = {
 };
 
 /** Approval is not editing: only owner or admin approves the exact diff hash. */
-export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, mode, status, actualRole, viewRole, onViewRole, diffChanged, onRequest, onApprove, onReject }: Props) {
+export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decidedNote, mode, status, actualRole, viewRole, onViewRole, diffChanged, onRequest, onApprove, onReject }: Props) {
   const toast = useToast();
   const [confirm, setConfirm] = useState(false);
   const [rejecting, setRejecting] = useState(false);
@@ -72,7 +73,6 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, mode, s
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
-          <CardHeader title="Approval" actions={<Badge tone={badge.tone} icon={badge.icon}>{badge.label}</Badge>} />
           <CardBody className="flex flex-col gap-4">
             {state === "not_required" ? (
               <Callout tone="neutral" title="No approval needed">{approval.notRequiredReason ?? `${MODE_LABEL[mode]} makes no external write.`}</Callout>
@@ -81,12 +81,14 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, mode, s
                 <KeyValue
                   columns={2}
                   items={[
+                    { label: "Status", value: <Badge tone={badge.tone} icon={badge.icon}>{badge.label}</Badge> },
+                    { label: "Required approver", value: "Owner or admin" },
                     {
                       label: "Exact diff hash",
                       value: (
                         <span className="flex flex-wrap items-center gap-1.5">
-                          <span title={approval.diffHash ?? undefined}><Mono>{diffChanged ? "changed (unsaved edit)" : shortHash(approval.diffHash)}</Mono></span>
-                          {approval.diffHash && !diffChanged ? (
+                          <span title={approval.diffHash ?? undefined}><Mono>{shortHash(approval.diffHash)}</Mono></span>
+                          {approval.diffHash ? (
                             <IconButton
                               icon="copy"
                               label="Copy diff hash"
@@ -100,9 +102,8 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, mode, s
                         </span>
                       ),
                     },
-                    { label: "Required approver", value: "Owner or admin" },
                     { label: "Requested by", value: approval.requestedBy ? `${approval.requestedBy} · ${formatDateTime(approval.requestedAt ?? "")}` : "Not requested" },
-                    { label: "Decision", value: decidedBy ? `${decidedBy}${decidedAt ? ` · ${formatDateTime(decidedAt)}` : ""}` : "Open" },
+                    { label: "Decided by", value: decidedBy ? `${decidedBy}${decidedAt ? ` · ${formatDateTime(decidedAt)}` : ""}` : "Open" },
                   ]}
                 />
 
@@ -123,10 +124,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, mode, s
                 {state === "approved" && diffChanged ? (
                   <Callout tone="warning" title="Approved diff no longer matches">The draft was edited after approval. Request approval again.</Callout>
                 ) : null}
-                {state === "approved" && !diffChanged ? (
-                  <Callout tone="success" title="Approval matches the current diff">{approval.note ?? "Only this exact diff can be written."}</Callout>
-                ) : null}
-                {state === "rejected" ? <Callout tone="danger" title="Rejected">{approval.note ?? "Edit the draft and request approval again."}</Callout> : null}
+                {state === "rejected" ? <Callout tone="danger" title="Reason">{decidedNote ?? approval.note ?? "Edit the draft and request approval again."}</Callout> : null}
 
                 {state === "pending" ? (
                   <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
@@ -139,7 +137,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, mode, s
                     {!allowed ? (
                       <span className="flex items-center gap-1.5 text-xs text-fg-muted">
                         <Icon name="lock" size={13} />
-                        Blocked for {ROLE_LABEL[viewRole]}. {APPROVER_REASON}
+                        Blocked for {ROLE_LABEL[viewRole]}.
                       </span>
                     ) : null}
                   </div>
@@ -201,14 +199,8 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, mode, s
         }}
       >
         <p>
-          You approve diff <Mono>{shortHash(approval.diffHash)}</Mono> only. Rankvora Plus may write exactly:
+          You approve diff <Mono>{shortHash(approval.diffHash)}</Mono> only. Nothing is written until the execution step, and a changed remote resource holds the write.
         </p>
-        <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
-          {approval.writes.map((write) => (
-            <li key={write}>{write}</li>
-          ))}
-        </ul>
-        <p className="mt-2">Nothing is written until the execution step. If the remote resource changes first, the write is held.</p>
       </ConfirmDialog>
 
       <Dialog

@@ -155,11 +155,11 @@ export function PagesTable({ pages, issues }: { pages: CrawledPage[]; issues: Re
     },
     {
       id: "lcp",
-      header: "LCP",
+      header: "LCP (lab)",
       align: "right",
       sort: (p) => p.lab?.lcpMs ?? null,
       hideBelow: "md",
-      cell: (p) => (p.lab ? <span className="tnum whitespace-nowrap">{(p.lab.lcpMs / 1000).toFixed(1)} s <span className="text-xs text-fg-subtle">{p.field ? "lab · field" : "lab only"}</span></span> : <span className="text-fg-subtle">—</span>),
+      cell: (p) => (p.lab ? <span className="tnum whitespace-nowrap" title={p.field ? "Field data is also available in the inspector" : "No field data for this URL"}>{(p.lab.lcpMs / 1000).toFixed(1)} s</span> : <span className="text-fg-subtle">—</span>),
     },
     {
       id: "issues",
@@ -193,7 +193,7 @@ export function PagesTable({ pages, issues }: { pages: CrawledPage[]; issues: Re
         onRowClick={(p) => setOpen(p)}
         empty={<EmptyState icon="globe" title="No pages crawled yet" />}
       />
-      <Drawer open={open !== null} onClose={() => setOpen(null)} title={open?.title ?? open?.path ?? "Page"} description={open?.path} size="lg">
+      <Drawer open={open !== null} onClose={() => setOpen(null)} title={open?.title ?? open?.path ?? "Page"} size="lg">
         {open ? <PageInspector page={open} issues={issues[open.id] ?? []} /> : null}
       </Drawer>
     </>

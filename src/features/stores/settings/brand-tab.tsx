@@ -82,7 +82,7 @@ export function BrandTab({ versions, draft, onDraft, readOnly, onSaveVersion, ti
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
       <Card className="min-w-0">
-        <CardHeader title="Brand profile" subtitle={current ? `Current version v${current.version}` : "No version yet"} actions={current ? <Badge tone="accent">v{current.version}</Badge> : null} />
+        <CardHeader title="Edit current version" />
         <CardBody>
           <form
             noValidate
@@ -114,7 +114,7 @@ export function BrandTab({ versions, draft, onDraft, readOnly, onSaveVersion, ti
       </Card>
 
       <Card className="min-w-0 self-start">
-        <CardHeader title="Version history" subtitle="Edits create a new version. Past audits and runs keep the version they used." />
+        <CardHeader title="Version history" />
         <CardBody>
           {versions.length === 0 ? (
             <p className="text-[13px] text-fg-muted">No versions yet.</p>
@@ -169,7 +169,7 @@ export function BrandTab({ versions, draft, onDraft, readOnly, onSaveVersion, ti
         </form>
       </Dialog>
 
-      <Dialog open={viewing !== null} onClose={() => setViewing(null)} title={viewing ? `Changes in v${viewing.version}` : ""} description={previous ? `Compared with v${previous.version}` : "First version"} size="lg">
+      <Dialog open={viewing !== null} onClose={() => setViewing(null)} title={viewing ? `Changes in v${viewing.version}` : ""} description={previous ? undefined : "First version"} size="lg">
         {viewing ? (
           <div className="flex flex-col gap-4">
             <DiffView before={previous?.description ?? ""} after={viewing.description} beforeLabel={previous ? `v${previous.version} description` : "Before"} afterLabel={`v${viewing.version} description`} />

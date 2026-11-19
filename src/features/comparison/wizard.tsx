@@ -3,14 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Badge, Status } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader, KeyValue, Metric } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/feedback";
 import { Field, Input, RadioCards, Segmented, Select } from "@/components/ui/form";
 import { Mono } from "@/components/ui/misc";
 import { DataTable, type Column, type TableFilter } from "@/components/ui/table";
-import { useToast } from "@/components/ui/toast";
 import { WizardFrame } from "@/components/ui/wizard";
 import { CheckList, VerdictBanner } from "@/features/comparison/compatibility";
 import { previewComparison, REASON_LABEL } from "@/features/comparison/engine";
@@ -27,13 +26,10 @@ const STEPS = [
   { id: "run", label: "Run" },
 ];
 
-const STEP_TITLE = [
-  { title: "Comparison type", subtitle: "Pick what you want to compare." },
-  { title: "Baseline and current", subtitle: "Two sources from this store." },
-  { title: "Filters and policy", subtitle: "Narrow the cohort and choose how rates are aggregated." },
-  { title: "Compatibility preview", subtitle: "Computed live from the selection." },
-  { title: "Run", subtitle: "Runs now and opens the result." },
-];
+const STEP_TITLE = ["Comparison type", "Baseline and current", "Filters and policy", "Compatibility preview", "Run"];
+
+/** "Matched-slot macro average: each slot…" → "each slot…" (the label is already on screen). */
+const policyNote = (text: string) => text.slice(text.indexOf(":") + 1).trim();
 
 type ExcludedRow = {
   id: string;
@@ -54,7 +50,6 @@ function windowOf(reference: string): WindowState {
 
 export function NewComparisonWizard({ storeId, data, catalog }: { storeId: string; data: WizardData; catalog: WizardCatalog }) {
   const router = useRouter();
-  const toast = useToast();
 
   const [step, setStep] = useState(0);
   const [type, setType] = useState<ComparisonType>("snapshot_vs_snapshot");
@@ -153,10 +148,7 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
 
   const run = () => {
     setPhase("running");
-    window.setTimeout(() => {
-      setPhase("done");
-      toast.push({ title: "Comparison completed", description: `Saved as ${target.id}. Opening it shows the full result.`, tone: "success" });
-    }, 900);
+    window.setTimeout(() => setPhase("done"), 900);
   };
 
   const back = () => {
@@ -168,10 +160,9 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
   let blockedReason: string | undefined;
   if (step === 1) {
     primary = { label: "Next", onClick: () => setStep(2), disabled: Boolean(rangeError) };
-    blockedReason = rangeError ?? undefined;
   } else if (step === 3) {
     primary = { label: "Continue", onClick: () => setStep(4), disabled: hardFail };
-    blockedReason = "A hard check failed. Change the selection to run.";
+    blockedReason = "A hard check failed.";
   } else if (step === 4) {
     if (phase === "done") primary = { label: "Open comparison", onClick: () => router.push(target.href) };
     else primary = { label: "Run comparison", onClick: run, loading: phase === "running" };
@@ -191,37 +182,35 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
 
   const verdict = preview?.assessment.verdict;
 
-  const aside = (
-    <Card>
-      <CardHeader title="Selection" as="h3" />
-      <CardBody className="flex flex-col gap-3">
-        <KeyValue
-          columns={1}
-          items={[
-            { label: "Type", value: catalog.types.find((t) => t.value === type)?.label },
-            { label: "Baseline", value: baseSide ? <span className="flex flex-col gap-0.5"><span>{baseSide.info.label}</span><Mono>{baseRef}</Mono></span> : "—" },
-            { label: "Current", value: curSide ? <span className="flex flex-col gap-0.5"><span>{curSide.info.label}</span><Mono>{curRef}</Mono></span> : "—" },
-            { label: "Filters", value: filterCount ? `${filterCount} applied` : "None" },
-            { label: "Aggregation", value: aggregation === "pooled" ? "Pooled" : "Matched-slot macro average" },
-          ]}
-        />
-        {step >= 1 && verdict && !rangeError ? (
-          <div className="flex flex-col gap-1 border-t border-line pt-3">
-            <span className="text-xs text-fg-subtle">Compatibility</span>
-            <Status kind="comparability" value={verdict} />
-            <span className="tnum text-xs text-fg-muted">{preview!.matching.pairs.length} / {preview!.assessment.coverage.d} slots matched</span>
-          </div>
-        ) : null}
-      </CardBody>
-    </Card>
-  );
+  // The summary only appears once the selection is made, and never repeats the fields of the step on screen.
+  const aside =
+    step >= 2 ? (
+      <Card>
+        <CardHeader title="Selection" as="h3" />
+        <CardBody>
+          <KeyValue
+            columns={1}
+            items={[
+              { label: "Type", value: catalog.types.find((t) => t.value === type)?.label },
+              { label: "Baseline", value: baseSide ? <span className="flex flex-col gap-0.5"><span>{baseSide.info.label}</span><Mono>{baseRef}</Mono></span> : "—" },
+              { label: "Current", value: curSide ? <span className="flex flex-col gap-0.5"><span>{curSide.info.label}</span><Mono>{curRef}</Mono></span> : "—" },
+              ...(step >= 3
+                ? [
+                    { label: "Filters", value: filterCount ? `${filterCount} applied` : "None" },
+                    { label: "Aggregation", value: aggregation === "pooled" ? "Pooled" : "Matched-slot macro average" },
+                  ]
+                : []),
+            ]}
+          />
+        </CardBody>
+      </Card>
+    ) : undefined;
 
   return (
     <WizardFrame
       steps={STEPS}
       current={step}
-      title={STEP_TITLE[step].title}
-      subtitle={STEP_TITLE[step].subtitle}
+      title={STEP_TITLE[step]}
       aside={aside}
       onBack={step > 0 ? back : undefined}
       onStepClick={(index) => {
@@ -241,7 +230,7 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
             options={catalog.types.map((t) => ({
               value: t.value,
               label: t.label,
-              description: t.short,
+              description: t.portfolio ? undefined : t.short,
               disabled: t.portfolio,
               badge: t.portfolio ? <Badge tone="neutral">On Portfolio page</Badge> : undefined,
             }))}
@@ -254,11 +243,6 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
 
       {step === 1 ? (
         <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-2">
-            <Badge tone="neutral" icon="store">Same store only</Badge>
-            <span className="text-xs text-fg-subtle">Snapshots from other stores are never listed.</span>
-          </div>
-
           {isPeriod ? (
             <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-2">
               {(
@@ -394,7 +378,7 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
                   { value: "pooled", label: "Pooled" },
                 ]}
               />
-              <p className="text-xs text-fg-subtle">{catalog.aggregation[aggregation]}</p>
+              <p className="text-xs text-fg-subtle">{policyNote(catalog.aggregation[aggregation])}</p>
             </div>
           </div>
         </div>
@@ -409,8 +393,8 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
               unmatched={preview.matching.unmatched.length}
               excluded={preview.matching.excluded.length}
               checks={preview.assessment.checks}
+              showIssues={false}
             />
-            {hardFail ? <Callout tone="danger" title="Cannot run">Change the baseline or current selection until every hard check passes.</Callout> : <Callout tone="success" title="Can run">All hard checks pass.{preview.assessment.verdict === "insufficient_data" ? " The result will be saved as insufficient data." : ""}</Callout>}
             <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
               <section className="flex flex-col gap-2">
                 <h3 className="text-sm font-semibold text-fg">Hard checks</h3>
@@ -421,13 +405,12 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
                 <CheckList checks={preview.assessment.checks.filter((c) => c.kind === "soft")} />
               </section>
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-card border border-line p-4 sm:grid-cols-3">
-              <Metric label="Matched coverage" numerator={preview.assessment.coverage.n} denominator={preview.assessment.coverage.d} unit="slots" sampleStatus={preview.matching.pairs.length >= 20 ? "ok" : "directional"} />
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-card border border-line p-4 sm:grid-cols-2">
               <Metric label="Mention rate · baseline" numerator={preview.mention.baseline.n} denominator={preview.mention.baseline.d} basis="matched cohort" />
               <Metric label="Mention rate · current" numerator={preview.mention.current.n} denominator={preview.mention.current.d} basis="matched cohort" />
             </div>
             <section className="flex flex-col gap-2">
-              <h3 className="text-sm font-semibold text-fg">Excluded and unmatched slots <span className="tnum font-normal text-fg-subtle">({excludedRows.length})</span></h3>
+              <h3 className="text-sm font-semibold text-fg">Excluded and unmatched slots</h3>
               <DataTable
                 label="Excluded and unmatched slots"
                 data={excludedRows}
@@ -447,20 +430,7 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
 
       {step === 4 ? (
         <div className="flex flex-col gap-4">
-          {phase === "idle" ? (
-            <>
-              <KeyValue
-                columns={2}
-                items={[
-                  { label: "Type", value: catalog.types.find((t) => t.value === type)?.label },
-                  { label: "Baseline", value: <Mono>{baseRef}</Mono> },
-                  { label: "Current", value: <Mono>{curRef}</Mono> },
-                  { label: "Verdict", value: verdict ? <Status kind="comparability" value={verdict} /> : "—" },
-                ]}
-              />
-              <p className="text-[13px] text-fg-muted">Runs synchronously and opens {target.id}.</p>
-            </>
-          ) : null}
+          {phase === "idle" ? <p className="text-[13px] text-fg-muted">Runs now and opens <Mono>{target.id}</Mono>.</p> : null}
           {phase === "running" ? (
             <div className="flex items-center gap-2.5 text-[13px] text-fg-muted" role="status">
               <Spinner className="text-accent-text" />
@@ -468,21 +438,9 @@ export function NewComparisonWizard({ storeId, data, catalog }: { storeId: strin
             </div>
           ) : null}
           {phase === "done" && preview ? (
-            <div className="flex flex-col gap-4">
-              <Callout tone="success" title="Comparison completed">
-                Saved as <Mono>{target.id}</Mono>. Results are immutable; recalculating creates a new revision.
-              </Callout>
-              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-card border border-line p-4 sm:grid-cols-4">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-medium text-fg-muted">Comparability</span>
-                  <Status kind="comparability" value={preview.assessment.verdict} />
-                </div>
-                <Metric label="Matched coverage" numerator={preview.assessment.coverage.n} denominator={preview.assessment.coverage.d} unit="slots" />
-                <Metric label="Mention rate · baseline" numerator={preview.mention.baseline.n} denominator={preview.mention.baseline.d} basis="matched cohort" />
-                <Metric label="Mention rate · current" numerator={preview.mention.current.n} denominator={preview.mention.current.d} basis="matched cohort" />
-              </div>
-              {preview.assessment.verdict === "insufficient_data" ? <Callout tone="warning" title="Low sample">Counts only. No trend is concluded below 20 matched pairs.</Callout> : null}
-            </div>
+            <Callout tone="success" title="Comparison completed">
+              Saved as <Mono>{target.id}</Mono>.
+            </Callout>
           ) : null}
           <p className="sr-only" aria-live="polite">{phase === "done" ? `Comparison completed. ${STATUS.comparability[verdict ?? "insufficient_data"].label}.` : ""}</p>
         </div>

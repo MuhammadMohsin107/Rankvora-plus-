@@ -19,13 +19,14 @@ const STEPS = [
   { id: "review", label: "Review" },
 ];
 
-const TITLES = [
-  { title: "What kind of audit?", subtitle: "Choose the type and the lanes to assess." },
-  { title: "Prompts", subtitle: "Which prompts to ask. Versions are fixed at start." },
-  { title: "AI channels", subtitle: "Provider API, model, search mode, market and samples." },
-  { title: "Website scope", subtitle: "Where the crawl starts and what it covers." },
-  { title: "Criteria and limits", subtitle: "Integrations, caps and the criteria version." },
-  { title: "Review", subtitle: "Check the scope, usage and limitations, then start." },
+// Step headings say what to decide (the stepper already names the step); a subtitle appears only when it adds a rule.
+const TITLES: { title: string; subtitle?: string }[] = [
+  { title: "What kind of audit?" },
+  { title: "Which prompts?", subtitle: "Versions are fixed at start." },
+  { title: "Which AI channels?", subtitle: "Provider API, model and search mode. Results are API answer samples." },
+  { title: "What should be crawled?" },
+  { title: "Rules and caps" },
+  { title: "Ready to start?" },
 ];
 
 /** Where the demo lands after "Start audit": the in-progress November audit. */
@@ -65,7 +66,7 @@ export function AuditWizard({ data }: { data: WizardData }) {
   const last = step === STEPS.length - 1;
 
   const error = stepError(step, data, state);
-  const reviewBlock = last ? (usage.overBudget ? "Approximate cost exceeds the budget cap" : STEPS.slice(0, 5).map((_, i) => stepError(i, data, state)).find(Boolean) ?? null) : null;
+  const reviewBlock = last ? (usage.overBudget ? "Over the budget cap" : STEPS.slice(0, 5).map((_, i) => stepError(i, data, state)).find(Boolean) ?? null) : null;
   const blocked = last ? reviewBlock : error;
 
   const start = () => {
@@ -102,7 +103,8 @@ export function AuditWizard({ data }: { data: WizardData }) {
         disabled: Boolean(blocked),
         loading: starting,
       }}
-      blockedReason={blocked ?? undefined}
+      // Steps 1 to 5 show their problem next to the field; only the review step needs the reason beside the button.
+      blockedReason={last ? (blocked ?? undefined) : undefined}
     >
       {body}
     </WizardFrame>

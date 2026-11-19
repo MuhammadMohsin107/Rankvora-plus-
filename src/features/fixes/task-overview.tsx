@@ -61,8 +61,6 @@ export function TaskOverviewTab({ storeId, detail, status, assignee, assignees, 
                 { label: "Due", value: <span className={cn("tnum", due.overdue && "font-medium text-danger")}>{task.dueAt ? formatDate(task.dueAt) : "No due date"}{due.overdue ? " · overdue" : ""}</span> },
                 { label: "Execution mode", value: <span title={MODE_HINT[task.mode]}>{MODE_LABEL[task.mode]}</span> },
                 { label: "Risk", value: <Status kind="risk" value={task.risk} /> },
-                { label: "Priority", value: <Status kind="priority" value={task.priority} /> },
-                { label: "Status", value: <Status kind="task" value={status} /> },
                 { label: "Finding", value: <Link href={`${base}/findings/${task.findingId}`} className="text-accent-text hover:underline">{task.findingId} · {task.findingTitle}</Link> },
                 {
                   label: "Recommendation",

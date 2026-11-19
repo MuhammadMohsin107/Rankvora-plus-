@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -5,7 +8,6 @@ import { PageHeader } from "@/components/shell/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
 import { PromptLibrary } from "@/features/prompts/prompt-library";
-import { pluralize } from "@/lib/format";
 import { storeIds } from "@/services/core";
 import { getLibrary } from "@/services/prompts";
 
@@ -15,7 +17,7 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function PromptsPage(props: PageProps<"/stores/[storeId]/prompts">) {
+async function PromptsPageContent(props: PageProps<"/stores/[storeId]/prompts">) {
   const { storeId } = await props.params;
   const data = await getLibrary(storeId);
   if (!data) notFound();
@@ -42,7 +44,7 @@ export default async function PromptsPage(props: PageProps<"/stores/[storeId]/pr
     <>
       <PageHeader
         title="Prompts"
-        subtitle={`${pluralize(data.prompts.length, "prompt")} · ${data.store.marketName}`}
+        subtitle={data.store.marketName}
         actions={
           <ButtonLink href={`/stores/${storeId}/prompts/new`} variant="primary" icon="plus">
             New prompt
@@ -51,5 +53,13 @@ export default async function PromptsPage(props: PageProps<"/stores/[storeId]/pr
       />
       <PromptLibrary store={data.store} initialPrompts={data.prompts} initialGroups={data.groups} />
     </>
+  );
+}
+
+export default function PromptsPage(props: PageProps<"/stores/[storeId]/prompts">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <PromptsPageContent {...props} />
+    </Suspense>
   );
 }

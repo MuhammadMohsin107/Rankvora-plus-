@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { Status } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ConfirmDialog } from "@/components/ui/overlay";
@@ -98,9 +98,7 @@ export function StoreSettings({ data }: { data: StoreSettingsData }) {
   const doneCount = setupItems.filter((item) => item.done).length;
 
   const commerceState = integrations.commerce.state;
-  const blocked: Partial<Record<StoreStatus, string>> = {};
-  if (!requiredDone && (status === "draft" || status === "needs_review")) blocked.ready = "Finish the required setup items first.";
-  if (status === "disconnected" && commerceState !== "connected" && commerceState !== "manual") blocked.active = "Reconnect the integration first.";
+  const reactivateBlocked = status === "disconnected" && commerceState !== "connected" && commerceState !== "manual" ? "Reconnect the integration first." : undefined;
 
   const showSetup = status === "draft" || status === "needs_review" || status === "ready";
   const pendingCopy = pending ? transitionCopy(status, pending, profile.name) : null;
@@ -111,9 +109,7 @@ export function StoreSettings({ data }: { data: StoreSettingsData }) {
       label: "Profile",
       content: (
         <ProfileTab
-          storeName={profile.name}
           domain={domains.canonical}
-          status={status}
           readOnly={readOnly}
           profile={profile}
           savedProfile={savedProfile}
@@ -124,8 +120,6 @@ export function StoreSettings({ data }: { data: StoreSettingsData }) {
             toast.push({ title: "Profile saved", description: "Demo action: nothing was changed on a server." });
           }}
           platformLocked={commerceState === "connected" || commerceState === "needs_attention"}
-          blockedTransitions={blocked}
-          onStatus={setPending}
           channels={data.channels}
           channelIds={channelIds}
           savedChannelIds={savedChannelIds}
@@ -157,7 +151,7 @@ export function StoreSettings({ data }: { data: StoreSettingsData }) {
             setVersions([next, ...versions]);
             setBrandDraft(draftFromVersion(next));
             log(`Brand profile saved as v${version}`, "brand", note);
-            toast.push({ title: `Brand saved as v${version}`, description: "Earlier audits and runs keep their version." });
+            toast.push({ title: `Brand saved as v${version}` });
           }}
         />
       ),
@@ -252,23 +246,16 @@ export function StoreSettings({ data }: { data: StoreSettingsData }) {
       ),
     },
     { id: "activity", label: "Activity log", content: <ActivityTab entries={activity} timezone={store.timezone} /> },
-    { id: "danger", label: "Danger zone", content: <DangerTab status={status} storeName={profile.name} onStatus={setPending} /> },
+    { id: "danger", label: "Danger zone", content: <DangerTab status={status} storeName={profile.name} reactivateBlocked={reactivateBlocked} onStatus={setPending} /> },
   ];
 
   return (
     <>
-      <PageHeader
-        title="Store settings"
-        subtitle={`${profile.name} · ${domains.canonical}`}
-        meta={<Status kind="store" value={status} />}
-        actions={<ButtonLink href={`/stores/${store.id}`} variant="secondary" trailingIcon="arrow-right">Dashboard</ButtonLink>}
-      />
+      <PageHeader title="Store settings" meta={<Status kind="store" value={status} />} />
 
       <div className="flex flex-col gap-4">
         {readOnly ? (
-          <Callout tone="neutral" title="Archived: read-only" actions={<Button size="sm" variant="secondary" icon="undo" onClick={() => setPending("paused")}>Restore</Button>}>
-            Restore the store to edit it.
-          </Callout>
+          <Callout tone="neutral" title="Read-only">Restore the store in Danger zone to edit it.</Callout>
         ) : null}
 
         {showSetup ? (

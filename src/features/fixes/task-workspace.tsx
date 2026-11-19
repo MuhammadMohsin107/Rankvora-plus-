@@ -13,7 +13,6 @@ import { statusMeta } from "@/lib/status";
 import type { Role } from "@/types/core";
 import type { ApprovalState, AssigneeOption, BatchItem, HistoryEvent, HistoryKind, TaskDetailData, TaskStatus, VerificationOutcome } from "@/types/fixes";
 
-import { MODE_LABEL } from "./fixes-shared";
 import { LifecycleTracker } from "./lifecycle-tracker";
 import { TaskApprovalTab } from "./task-approval";
 import { TaskDraftTab } from "./task-draft";
@@ -174,7 +173,6 @@ export function TaskWorkspace({ storeId, detail, role, actorName, assignees }: P
       <PageHeader
         title={task.title}
         breadcrumb={[{ label: "Fixes", href: base }, { label: "Tasks", href: `${base}/tasks` }, { label: task.id }]}
-        subtitle={`${task.id} · ${MODE_LABEL[task.mode]}`}
         meta={
           <>
             <Status kind="task" value={status} />
@@ -247,6 +245,7 @@ export function TaskWorkspace({ storeId, detail, role, actorName, assignees }: P
                   state={approvalState}
                   decidedBy={decision.by}
                   decidedAt={decision.at}
+                  decidedNote={decision.note}
                   mode={task.mode}
                   status={status}
                   actualRole={role}
@@ -313,7 +312,7 @@ export function TaskWorkspace({ storeId, detail, role, actorName, assignees }: P
             {
               id: "verification",
               label: "Verification",
-              content: <TaskVerificationTab storeId={storeId} record={verification} outcome={outcome} status={status} verifying={verifying} onRun={runVerification} />,
+              content: <TaskVerificationTab storeId={storeId} record={verification} outcome={outcome} status={status} verifying={verifying} />,
             },
             { id: "history", label: "History", count: events.length, content: <TaskHistoryTab events={events} /> },
           ]}

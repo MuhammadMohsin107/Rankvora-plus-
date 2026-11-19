@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -15,10 +18,9 @@ export async function generateStaticParams() {
   return comparisonStaticParams();
 }
 
-const toRow = (m: MetricResult, sub: string): BarCompareRow => ({
+const toRow = (m: MetricResult): BarCompareRow => ({
   id: m.id,
   label: m.label,
-  sub,
   baseline: m.baseline,
   current: m.current,
   baselineCi: m.baselineCi,
@@ -38,7 +40,7 @@ function NameList({ names, empty }: { names: string[]; empty: string }) {
   );
 }
 
-export default async function ComparisonCompetitorsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/competitors">) {
+async function ComparisonCompetitorsPageContent(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/competitors">) {
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
@@ -51,14 +53,14 @@ export default async function ComparisonCompetitorsPage(props: PageProps<"/store
   }
 
   const rows = [
-    toRow({ ...brand, label: "Your brand" }, `${brand.cohort} matched slots`),
-    ...result.competitors.map((m) => toRow(m, `${m.cohort} matched slots`)),
+    toRow({ ...brand, label: "Your brand" }),
+    ...result.competitors.map((m) => toRow(m)),
   ];
 
   return (
     <div className="flex flex-col gap-5">
       <Card>
-        <CardHeader title="Mention rate on the same cohort" subtitle="Brand and tracked competitors, matched slots only" info="Every row uses the same matched slots and denominator, so rates are directly comparable." />
+        <CardHeader title="Mention rate" subtitle={`Brand and tracked competitors · same ${brand.cohort} matched slots in every row`} />
         <CardBody>
           <BarCompare rows={rows} baselineLabel="Base" currentLabel="Current" />
         </CardBody>
@@ -68,25 +70,26 @@ export default async function ComparisonCompetitorsPage(props: PageProps<"/store
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-2">
         <Card>
-          <CardHeader title="Newly appearing" info="Not named on the baseline, named on the current side. A new from zero change, not a tracked-set change." />
+          <CardHeader title="Newly appearing" info="Not named on the baseline, named on the current side. The tracked set is not versioned yet, so this reflects answers, not changes to the set." />
           <CardBody>
-            <NameList names={result.competitorAppeared} empty="No competitor appeared." />
+            <NameList names={result.competitorAppeared} empty="None" />
           </CardBody>
         </Card>
         <Card>
           <CardHeader title="No longer appearing" info="Named on the baseline, not named on the current side." />
           <CardBody>
-            <NameList names={result.competitorGone} empty="No competitor disappeared." />
+            <NameList names={result.competitorGone} empty="None" />
           </CardBody>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader title="Tracked set" subtitle="Confirmed competitors used on both sides" info="The tracked set is not versioned yet, so added or removed competitors are shown as appearing or no longer appearing in answers." />
-        <CardBody>
-          <NameList names={result.competitors.map((m) => m.label)} empty="None" />
-        </CardBody>
-      </Card>
     </div>
+  );
+}
+
+export default function ComparisonCompetitorsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/competitors">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ComparisonCompetitorsPageContent {...props} />
+    </Suspense>
   );
 }

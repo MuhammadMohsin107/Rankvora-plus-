@@ -85,13 +85,13 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
         <Card>
           <CardHeader title="Canonical domain" info="The main address this store is measured on. Results link to it." />
           <CardBody className="flex flex-wrap items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-[15px] font-medium text-fg">{record.canonical}<Badge tone="success" icon="check">Canonical</Badge></p>
+            <p className="text-[15px] font-medium text-fg">{record.canonical}</p>
             <Button variant="secondary" disabled={readOnly} onClick={() => setChangeOpen(true)}>Change</Button>
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader title="Aliases and redirects" subtitle={`${record.aliases.length} listed`} />
+          <CardHeader title="Aliases and redirects" />
           <CardBody className="flex flex-col gap-4">
             {record.aliases.length === 0 ? (
               <p className="text-[13px] text-fg-muted">No aliases yet.</p>
@@ -134,7 +134,7 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
       </div>
 
       <Card className="self-start">
-        <CardHeader title="Former domains" subtitle="Read-only history" info="Past audits and runs keep the domain they were measured on." />
+        <CardHeader title="Former domains" info="Past audits and runs keep the domain they were measured on." />
         <CardBody>
           {record.former.length === 0 ? (
             <p className="text-[13px] text-fg-muted">No former domains.</p>
@@ -171,7 +171,7 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
             reviewChange();
           }}
         >
-          <Field label="New canonical domain" error={canonicalError ?? undefined} hint="Saved as the host name only">
+          <Field label="New domain" error={canonicalError ?? undefined} hint="Saved as the host name only">
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} inputMode="url" value={newCanonical} placeholder="example.com" onChange={(e) => setNewCanonical(e.target.value)} />}
           </Field>
         </form>

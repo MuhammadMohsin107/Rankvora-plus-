@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -17,17 +20,17 @@ export async function generateStaticParams() {
 
 const sourceTone = { owned: "success", competitor: "warning", third_party: "neutral" } as const;
 
-export default async function ComparisonCitationsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/citations">) {
+async function ComparisonCitationsPageContent(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/citations">) {
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
   const { result } = detail;
   const citation = result.headline.find((m) => m.id === "citation")!;
+  const sourceOf = (domain: string) => result.domains.find((d) => d.domain === domain)?.source ?? "third_party";
 
   const providerRows: BarCompareRow[] = result.channels.map((c) => ({
     id: c.channelId,
     label: c.label,
-    sub: `${c.citation.cohort} slots with citation data`,
     baseline: c.citation.baseline,
     current: c.citation.current,
     baselineCi: c.citation.baselineCi,
@@ -48,7 +51,7 @@ export default async function ComparisonCitationsPage(props: PageProps<"/stores/
       <HeadlineCard metric={citation} aggregation={result.aggregation} countsOnly={result.verdict === "insufficient_data"} />
 
       <Card>
-        <CardHeader title="Owned citation rate by provider" info="Responses with citation data only. A provider without citation support is N/A, never 0%." />
+        <CardHeader title="By provider" info="Owned citation rate on responses with citation data only. A provider without citation support is N/A, never 0%." />
         <CardBody>
           {providerRows.length > 0 ? <BarCompare rows={providerRows} baselineLabel="Base" currentLabel="Current" /> : <p className="text-[13px] text-fg-muted">No matched slots.</p>}
         </CardBody>
@@ -82,7 +85,7 @@ export default async function ComparisonCitationsPage(props: PageProps<"/stores/
                     <span aria-hidden="true">→</span>
                     <span className="sr-only">to</span>
                     <span>{u.current.n} / {u.current.d}</span>
-                    <Badge tone={sourceTone[result.domains.find((d) => d.domain === u.domain)?.source ?? "third_party"]}>{u.domain}</Badge>
+                    <Badge tone={sourceTone[sourceOf(u.domain)]}>{CITATION_SOURCE_LABEL[sourceOf(u.domain)]}</Badge>
                   </div>
                 </li>
               ))}
@@ -91,5 +94,13 @@ export default async function ComparisonCitationsPage(props: PageProps<"/stores/
         </CardBody>
       </Card>
     </div>
+  );
+}
+
+export default function ComparisonCitationsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/citations">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ComparisonCitationsPageContent {...props} />
+    </Suspense>
   );
 }

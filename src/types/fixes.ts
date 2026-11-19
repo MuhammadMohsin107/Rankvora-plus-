@@ -67,7 +67,7 @@ export type Recommendation = {
   taskId: string | null;
 };
 
-export type Observation = { id: string; at: string; source: string; sourceHref?: string; note: string; provisional?: boolean };
+export type Observation = { id: string; at: string; source: string; sourceHref?: string; note?: string; provisional?: boolean };
 
 export type FindingExtras = {
   severityRationale: string;

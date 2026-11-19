@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -14,7 +17,7 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function ReportsPage(props: PageProps<"/stores/[storeId]/reports">) {
+async function ReportsPageContent(props: PageProps<"/stores/[storeId]/reports">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
@@ -23,7 +26,7 @@ export default async function ReportsPage(props: PageProps<"/stores/[storeId]/re
   if (reports.length === 0 && history.length === 0) {
     return (
       <>
-        <PageHeader title="Reports" subtitle={store.name} />
+        <PageHeader title="Reports" />
         <EmptyState
           icon="reports"
           title="No reports yet"
@@ -38,10 +41,17 @@ export default async function ReportsPage(props: PageProps<"/stores/[storeId]/re
     <>
       <PageHeader
         title="Reports"
-        subtitle={`${store.name} · audit, monitoring and comparison history`}
         actions={<ButtonLink href={`/stores/${storeId}/comparisons/new`} icon="compare">New comparison</ButtonLink>}
       />
       <ReportsView storeId={storeId} reports={reports} history={history} />
     </>
+  );
+}
+
+export default function ReportsPage(props: PageProps<"/stores/[storeId]/reports">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ReportsPageContent {...props} />
+    </Suspense>
   );
 }

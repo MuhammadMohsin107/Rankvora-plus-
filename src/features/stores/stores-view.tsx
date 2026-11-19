@@ -85,7 +85,6 @@ export function StoresView({ stores }: { stores: Store[] }) {
 
   const rowMenu = (store: Store): MenuItem[] => {
     const items: MenuItem[] = [
-      { label: "Open", icon: "arrow-right", href: `/stores/${store.id}` },
       { label: store.summary ? "Settings" : "Continue setup", icon: "settings", href: `/stores/${store.id}/settings` },
       { type: "separator" },
     ];
@@ -148,10 +147,10 @@ export function StoresView({ stores }: { stores: Store[] }) {
   ];
 
   const emptyAll = (
-    <EmptyState icon="store" title="No stores yet" description="Add a store to start tracking AI visibility." action={<ButtonLink href="/stores/new" variant="primary" icon="plus">Add store</ButtonLink>} />
+    <EmptyState icon="store" title="No stores yet" action={<ButtonLink href="/stores/new" variant="primary" icon="plus">Add store</ButtonLink>} />
   );
   const emptyMatch = (
-    <EmptyState icon="filter" title="No matching stores" description="Nothing fits these filters." action={<Button onClick={clearFilters}>Clear filters</Button>} />
+    <EmptyState icon="filter" title="No matching stores" />
   );
 
   if (stores.length === 0) return emptyAll;
@@ -222,11 +221,14 @@ export function StoresView({ stores }: { stores: Store[] }) {
       ) : filtered.length === 0 ? (
         emptyMatch
       ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {sortStores(filtered, sortKey).map((store) => (
-            <StoreCard key={store.id} store={store} />
-          ))}
-        </div>
+        <>
+          <p className="-mb-1 text-xs text-fg-subtle">Changes compare with the previous run</p>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {sortStores(filtered, sortKey).map((store) => (
+              <StoreCard key={store.id} store={store} />
+            ))}
+          </div>
+        </>
       )}
 
       <ConfirmDialog

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Callout, Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Mono } from "@/components/ui/misc";
 import { ConfirmDialog } from "@/components/ui/overlay";
@@ -18,7 +18,7 @@ type ExportPanelProps = {
   analysisVersion: string;
   matching: string;
   aggregation: string;
-  sources: { label: string; reference: string; runs: string[] }[];
+  sources: { label: string; runs: string[] }[];
   rowCsv: string;
   aggregateCsv: string;
   json: string;
@@ -79,14 +79,14 @@ export function ExportPanel({ comparisonId, methodologyVersion, analysisVersion,
     setConfirm(false);
     const next = `r${revisions.length + 1}`;
     setRevisions((current) => [...current, { id: next, note: "Recalculated with methodology " + methodologyVersion, meta: `Queued · ${createdBy}` }]);
-    toast.push({ title: `Revision ${next} queued`, description: "The original result stays unchanged.", tone: "success" });
+    toast.push({ title: `Revision ${next} queued`, tone: "success" });
   };
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex min-w-0 flex-col gap-5">
         <Card>
-          <CardHeader title="Export" subtitle="Files reflect the matched cohort and list what was left out" />
+          <CardHeader title="Files" info="Files reflect the matched cohort and list what was left out." />
           <CardBody className="pt-2">
             <ul className="divide-y divide-line">
               {files.map((file) => (
@@ -123,8 +123,7 @@ export function ExportPanel({ comparisonId, methodologyVersion, analysisVersion,
               {sources.map((source) => (
                 <li key={source.label} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="text-xs text-fg-subtle">{source.label}</p>
-                    <Mono>{source.reference}</Mono>
+                    <p className="text-[13px] text-fg">{source.label}</p>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {source.runs.map((run) => (
@@ -139,7 +138,7 @@ export function ExportPanel({ comparisonId, methodologyVersion, analysisVersion,
       </div>
 
       <Card className="self-start">
-        <CardHeader title="Revisions" subtitle="Results are immutable" actions={<Button size="sm" icon="refresh" onClick={() => setConfirm(true)}>Recalculate</Button>} />
+        <CardHeader title="Revisions" info="Results are immutable. Recalculating adds a revision and never overwrites an earlier result." actions={<Button size="sm" icon="refresh" onClick={() => setConfirm(true)}>Recalculate</Button>} />
         <CardBody>
           <ol className="flex flex-col gap-3">
             {revisions.map((revision) => (
@@ -152,12 +151,11 @@ export function ExportPanel({ comparisonId, methodologyVersion, analysisVersion,
               </li>
             ))}
           </ol>
-          <Callout tone="neutral" className="mt-4">Recalculating adds a revision note. It never overwrites an earlier result.</Callout>
         </CardBody>
       </Card>
 
       <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} onConfirm={recalculate} title="Recalculate comparison?" confirmLabel="Create revision" tone="primary">
-        Creates revision r{revisions.length + 1} from the same sources and methodology {methodologyVersion}. Existing revisions and exports are not changed.
+        Creates revision r{revisions.length + 1} from the same sources and methodology {methodologyVersion}.
       </ConfirmDialog>
     </div>
   );

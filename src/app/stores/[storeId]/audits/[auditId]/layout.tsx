@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shell/page-header";
@@ -16,7 +19,7 @@ export async function generateStaticParams() {
   return auditParams();
 }
 
-export default async function AuditLayout({ children, params }: LayoutProps<"/stores/[storeId]/audits/[auditId]">) {
+async function AuditLayoutContent({ children, params }: LayoutProps<"/stores/[storeId]/audits/[auditId]">) {
   const { storeId, auditId } = await params;
   const audit = await getAudit(storeId, auditId);
   if (!audit) notFound();
@@ -24,12 +27,16 @@ export default async function AuditLayout({ children, params }: LayoutProps<"/st
   const [channels, findings] = await Promise.all([listStoreChannels(storeId), getAuditFindings(storeId, auditId)]);
   const base = `/stores/${storeId}/audits/${auditId}`;
 
+  // Times are UTC (stated once, on the first). Everything here is shown only in this header, never again on a tab.
   const times = [
     `Started ${formatDateTime(audit.startedAt)} UTC`,
-    audit.completedAt ? `Completed ${formatDateTime(audit.completedAt)} UTC` : null,
+    audit.completedAt ? `Completed ${formatDateTime(audit.completedAt)}` : null,
     `${formatMinutes(audit.durationSeconds)}${audit.provisional ? " so far" : ""}`,
     audit.createdBy,
   ].filter(Boolean);
+  // Audit titles usually name their type ("Full audit — November"); show the type badge only when the title does not.
+  const typeLabel = AUDIT_TYPE_LABEL[audit.type];
+  const titleNamesType = audit.title.toLowerCase().includes(typeLabel.toLowerCase());
 
   return (
     <>
@@ -40,12 +47,11 @@ export default async function AuditLayout({ children, params }: LayoutProps<"/st
         meta={
           <>
             <Status kind="audit" value={audit.status} />
-            <Badge>{AUDIT_TYPE_LABEL[audit.type]}</Badge>
+            {titleNamesType ? null : <Badge>{typeLabel}</Badge>}
             {audit.snapshotId ? (
-              <span className="inline-flex items-center gap-1.5" title="Immutable snapshot: it cannot change after completion">
-                <Badge tone="neutral" icon="lock">Snapshot</Badge>
+              <Badge tone="neutral" icon="lock" title="Immutable snapshot: it cannot change after completion">
                 <Mono>{audit.snapshotId}</Mono>
-              </span>
+              </Badge>
             ) : (
               <Badge tone="neutral" icon="clock" title="A snapshot is created when the audit completes">No snapshot yet</Badge>
             )}
@@ -53,7 +59,7 @@ export default async function AuditLayout({ children, params }: LayoutProps<"/st
         }
         actions={
           <>
-            <ConfigDrawerButton auditTitle={audit.title} config={audit.config} channels={channels.map((c) => ({ id: c.id, label: channelLabel(c) }))} />
+            <ConfigDrawerButton config={audit.config} channels={channels.map((c) => ({ id: c.id, label: channelLabel(c) }))} />
             {audit.provisional ? (
               <CancelAuditButton completedJobs={audit.succeededJobs + audit.failedJobs} assessedPages={audit.pages?.n ?? 0} />
             ) : (
@@ -76,5 +82,13 @@ export default async function AuditLayout({ children, params }: LayoutProps<"/st
       />
       {children}
     </>
+  );
+}
+
+export default function AuditLayout(props: LayoutProps<"/stores/[storeId]/audits/[auditId]">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <AuditLayoutContent {...props} />
+    </Suspense>
   );
 }

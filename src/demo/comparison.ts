@@ -92,7 +92,7 @@ export const METHODOLOGY = {
 
 export const COMPARISON_LIMITATIONS = [
   "API answer samples differ from consumer apps and can change between requests.",
-  "Only the matched cohort is compared. Excluded and unmatched slots can hide changes.",
+  "Excluded and unmatched slots can hide changes.",
   "Differences are context, not proof. Visibility changed after a task was completed does not mean the task caused it.",
   "Providers without citation support are N/A for citation metrics.",
 ];

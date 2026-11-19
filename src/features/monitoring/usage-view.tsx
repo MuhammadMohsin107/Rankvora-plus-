@@ -61,18 +61,18 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented label="Period" value={periodId} onChange={setPeriodId} options={usage.periods.map((p) => ({ value: p.id, label: p.label }))} />
-        <p className="tnum text-[13px] text-fg-muted">{period.runCount} run{period.runCount === 1 ? "" : "s"} in this period</p>
+        <p className="tnum text-[13px] text-fg-muted">{period.runCount} run{period.runCount === 1 ? "" : "s"}</p>
       </div>
 
       {usage.estimated ? <Callout tone="info">Token and search-call counts are estimated for this store. Job-level records are not part of the demo.</Callout> : null}
       {isCurrent && projectedOver.length > 0 ? (
         <Callout tone="warning" title="Projected to pass a cap this month">
-          {projectedOver.map((k) => `${USAGE_LABEL[k]} ${show(k, usage.projected[k])} / ${show(k, usage.caps[k])}`).join(" · ")}. Runs stop at the cap and finish as partially completed.
+          {projectedOver.map((k) => USAGE_LABEL[k]).join(", ")}. Runs stop at the cap and finish as partially completed.
         </Callout>
       ) : null}
 
       <Card>
-        <CardHeader title="Usage against caps" subtitle={period.label} info="Caps are the monthly usage limits set on the schedules. Cost is an estimate from provider usage." />
+        <CardHeader title="Usage against caps" info="Caps are the monthly usage limits set on the schedules. Cost is an estimate from provider usage." />
         <CardBody>
           <ul className="flex flex-col gap-4">
             {KEYS.map((key) => {
@@ -103,7 +103,7 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:grid-cols-2">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-fg-muted">Active schedules, per month</span>
-            <span className="tnum text-sm text-fg"><span className="text-[22px] font-semibold">~{formatNumber(plannedJobs)}</span> jobs · ~{formatUsd(plannedCost)} estimate</span>
+            <span className="tnum text-sm text-fg"><span className="text-[22px] font-semibold">~{formatNumber(plannedJobs)}</span> jobs · ~{formatUsd(plannedCost)}</span>
           </div>
           {usage.storeRequests ? (
             <div className="flex flex-col gap-1.5">

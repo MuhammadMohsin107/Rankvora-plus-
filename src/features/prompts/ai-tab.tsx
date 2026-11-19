@@ -56,8 +56,7 @@ export function AiTab({ data, state, session, onRegenerate, onAccept, onDismiss 
   return (
     <Card as="section">
       <CardHeader
-        title="Suggested prompts"
-        subtitle={`From the ${store.name} profile`}
+        title="Based on the store profile"
         info="Demo suggestions built from brand, market, products and competitors. Accepted prompts are added as drafts."
         actions={
           <Button size="sm" icon="refresh" loading={state.loading} onClick={onRegenerate}>
@@ -67,7 +66,7 @@ export function AiTab({ data, state, session, onRegenerate, onAccept, onDismiss 
       />
       <div className="p-4 pt-3" aria-busy={state.loading}>
         {visible.length === 0 && !state.loading ? (
-          <EmptyState icon="sparkles" title="All suggestions reviewed" action={<Button icon="refresh" onClick={onRegenerate}>Regenerate</Button>} />
+          <EmptyState icon="sparkles" title="All suggestions reviewed" />
         ) : (
           <ul className={state.loading ? "flex flex-col divide-y divide-line opacity-50" : "flex flex-col divide-y divide-line"}>
             {visible.map((suggestion) => {
@@ -83,12 +82,12 @@ export function AiTab({ data, state, session, onRegenerate, onAccept, onDismiss 
                       <Badge tone="neutral">{INTENT_LABEL[suggestion.intent]}</Badge>
                       {namesBrand(added ? addedText : suggestion.text, store.brandName) ? <Badge tone="neutral" icon="store">Names brand</Badge> : <Badge tone="info" icon="search">Neutral</Badge>}
                       {match ? (
-                        <Badge tone="warning" icon="alert-triangle" title={`Existing: ${match.text}`}>
+                        <Badge tone="warning" icon="alert-triangle" title={exact ? `Existing: ${match.text}` : undefined}>
                           {exact ? "Already in library" : "Similar prompt exists"}
                         </Badge>
                       ) : null}
                     </div>
-                    {match && !exact ? <p className="mt-1.5 text-xs text-fg-subtle [overflow-wrap:anywhere]">Similar to “{match.text}”. Adding it creates a variant.</p> : null}
+                    {match && !exact ? <p className="mt-1.5 text-xs text-fg-subtle [overflow-wrap:anywhere]">“{match.text}”. Adding it creates a variant.</p> : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {added ? (
@@ -112,8 +111,7 @@ export function AiTab({ data, state, session, onRegenerate, onAccept, onDismiss 
         )}
       </div>
       {addedCount > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-surface-2/60 px-4 py-3">
-          <span className="tnum text-[13px] text-fg-muted">{addedCount} added as draft</span>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2/60 px-4 py-3">
           <ButtonLink href={`/stores/${store.id}/prompts`} variant="primary" trailingIcon="arrow-right">View library</ButtonLink>
         </div>
       ) : null}

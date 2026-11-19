@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { TIMEZONES } from "@/features/stores/options";
@@ -35,7 +35,6 @@ export function GeneralForm({ initial }: { initial: Values }) {
 
   return (
     <Card className="max-w-2xl">
-      <CardHeader title="General" />
       <CardBody>
         <form
           className="flex flex-col gap-4"

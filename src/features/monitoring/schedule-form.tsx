@@ -225,7 +225,7 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
     { id: "providers", label: "At least 1 provider selected", ok: enabledChannels.length > 0 },
     { id: "credentials", label: "Provider credentials tested", ok: enabledChannels.length > 0 && enabledChannels.every((c) => c.credentials === "tested") },
     { id: "tz", label: "Time zone and local time valid", ok: tzKnown && cron.length > 0 },
-    { id: "plan", label: `Within plan (${formatNumber(jobsPerMonth)} of ${formatNumber(remainingPlan)} requests left this month)`, ok: jobsPerMonth <= remainingPlan && jobsPerMonth <= s.capJobs },
+    { id: "plan", label: "Within plan and usage cap", ok: jobsPerMonth <= remainingPlan && jobsPerMonth <= s.capJobs },
     { id: "alerts", label: "Alert destinations verified", ok: destinationsOk },
   ];
   const blocking = checks.find((c) => !c.ok);
@@ -260,7 +260,7 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
 
   const main = (
     <>
-      <FormSection id="basics" title="Name">
+      <FormSection id="basics" title="Basics">
         <Field label="Schedule name" required hint="Shown on runs, alerts and reports.">
           {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} value={s.name} maxLength={80} onChange={(event) => set("name", event.target.value)} placeholder="e.g. Weekly visibility check" />}
         </Field>
@@ -296,7 +296,7 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
                   checked={s.promptIds.includes(p.id)}
                   onChange={() => set("promptIds", toggleId(s.promptIds, p.id))}
                   label={<span className="text-[13px]">{p.text}</span>}
-                  description={`${p.group} · ${s.promptMode === "pinned" ? `pinned at v${p.version}` : `latest, now v${p.version}`}${p.isCore ? " · core" : ""}`}
+                  description={`${p.group} · v${p.version}${p.isCore ? " · core" : ""}`}
                 />
               </li>
             ))}
@@ -424,7 +424,7 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
         </div>
         <p className="flex flex-wrap items-center gap-1.5 text-[13px] text-fg-muted">
           <Icon name="clock" size={14} className="text-fg-subtle" />
-          <span className="tnum">{s.localTime} {s.timezone}{utc ? ` = ${utc} UTC` : ""}</span>
+          <span className="tnum">{utc ? `= ${utc} UTC` : "Unknown time zone"}</span>
           <Tooltip content={dst ? "Runs at the same local time all year, so the UTC time shifts by an hour when clocks change." : "This zone has no daylight saving, so the UTC time never shifts."}>
             <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label="Daylight saving note"><Icon name="info" size={14} /></span>
           </Tooltip>
@@ -473,11 +473,11 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
               </Select>
             )}
           </Field>
-          <Field label="Cooldown">
+          <Field label="Cooldown (per prompt × provider)">
             {({ id }) => (
               <Select id={id} value={s.cooldown} onChange={(event) => set("cooldown", Number(event.target.value))}>
                 {[6, 12, 24, 48, 72].map((h) => (
-                  <option key={h} value={h}>{h} h per prompt × provider</option>
+                  <option key={h} value={h}>{h} h</option>
                 ))}
               </Select>
             )}
@@ -492,9 +492,7 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
                   <span className="text-xs text-fg-subtle">to</span>
                   <Input type="time" aria-label="Quiet hours end" value={s.quietTo} onChange={(event) => set("quietTo", event.target.value || "07:00")} className="tnum w-28" />
                 </>
-              ) : (
-                <span className="text-xs text-fg-subtle">Off</span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -506,10 +504,10 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
           <Switch checked={s.inApp} onChange={(v) => set("inApp", v)} label="In-app notifications" />
         </div>
         <fieldset>
-          <legend className="mb-2 text-[13px] font-medium text-fg">Email</legend>
+          <legend className="mb-2 text-[13px] font-medium text-fg">Email (verified addresses)</legend>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
             {ctx.emails.map((email) => (
-              <Checkbox key={email} checked={s.emails.includes(email)} onChange={() => set("emails", toggleId(s.emails, email))} label={<span className="text-[13px]">{email}</span>} description="Verified" />
+              <Checkbox key={email} checked={s.emails.includes(email)} onChange={() => set("emails", toggleId(s.emails, email))} label={<span className="text-[13px]">{email}</span>} />
             ))}
           </div>
         </fieldset>
@@ -545,7 +543,7 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
           <div className="flex flex-col gap-1 border-t border-line pt-3">
             <div className="flex items-baseline justify-between text-xs text-fg-muted">
               <span>Plan requests left this month</span>
-              <span className="tnum">{formatNumber(jobsPerMonth)} / {formatNumber(remainingPlan)}</span>
+              <span className="tnum">{formatNumber(remainingPlan)}</span>
             </div>
             <Progress value={Math.min(jobsPerMonth, remainingPlan)} max={Math.max(remainingPlan, 1)} label="Estimated share of remaining plan requests" tone={jobsPerMonth > remainingPlan ? "danger" : jobsPerMonth > remainingPlan * 0.8 ? "warning" : "accent"} />
             {ctx.otherJobsPerMonth > 0 ? <p className="tnum text-xs text-fg-subtle">Active schedules already plan ~{formatNumber(ctx.otherJobsPerMonth)} jobs / month.</p> : null}
@@ -565,16 +563,12 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
             ))}
           </ul>
           {mode === "edit" && initial ? (
-            <div className="border-t border-line pt-3 text-xs text-fg-muted">
-              <p className="font-medium text-fg">Saves as version {initial.version + 1}</p>
-              <p className="mt-0.5">{changes.length > 0 ? `Changed: ${changes.join(", ")}` : "No changes yet"}</p>
-            </div>
+            <p className="border-t border-line pt-3 text-xs text-fg-muted">{changes.length > 0 ? `Changed: ${changes.join(", ")}` : "No changes yet"}</p>
           ) : null}
           <div className="flex flex-col gap-2 border-t border-line pt-3">
             <Button variant="primary" disabled={Boolean(blocking) || (mode === "edit" && changes.length === 0)} loading={submitting} onClick={submit}>
               {mode === "edit" && initial ? `Save as version ${initial.version + 1}` : "Create schedule"}
             </Button>
-            {blocking ? <p className="text-xs text-fg-subtle">Blocked: {blocking.label.replace(/ \(.*\)$/, "")}</p> : mode === "edit" && changes.length === 0 ? <p className="text-xs text-fg-subtle">Change something to save a new version.</p> : null}
             <ButtonLink href={mode === "edit" ? `${base}/schedules/${scheduleId}` : `${base}/schedules`} variant="ghost">Cancel</ButtonLink>
           </div>
         </CardBody>

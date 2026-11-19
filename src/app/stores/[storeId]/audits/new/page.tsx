@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -14,12 +17,12 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function NewAuditPage(props: PageProps<"/stores/[storeId]/audits/new">) {
+async function NewAuditPageContent(props: PageProps<"/stores/[storeId]/audits/new">) {
   const { storeId } = await props.params;
   const data = await getWizardData(storeId);
   if (!data) notFound();
 
-  const header = <PageHeader title="Start audit" subtitle={`${data.store.name} · ${data.store.domain}`} breadcrumb={[{ label: "Audits", href: `/stores/${storeId}/audits` }, { label: "New" }]} />;
+  const header = <PageHeader title="Start audit" breadcrumb={[{ label: "Audits", href: `/stores/${storeId}/audits` }, { label: "New" }]} />;
 
   const activePrompts = data.prompts.filter((p) => p.status === "active").length;
   if (activePrompts === 0) {
@@ -44,5 +47,13 @@ export default async function NewAuditPage(props: PageProps<"/stores/[storeId]/a
       {header}
       <AuditWizard data={data} />
     </>
+  );
+}
+
+export default function NewAuditPage(props: PageProps<"/stores/[storeId]/audits/new">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <NewAuditPageContent {...props} />
+    </Suspense>
   );
 }

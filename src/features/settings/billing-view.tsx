@@ -55,7 +55,7 @@ export function BillingView({ billing }: { billing: BillingOverview }) {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader title={`${billing.planName} plan`} subtitle={`Limits · ${billing.periodLabel}`} actions={<Badge tone="neutral" icon="database">Demo plan</Badge>} />
+          <CardHeader title={`${billing.planName} plan`} subtitle={`Limits · ${billing.periodLabel}`} />
           <CardBody>
             <ul className="flex flex-col gap-4">
               {billing.planLimits.map((limit) => (
@@ -72,14 +72,14 @@ export function BillingView({ billing }: { billing: BillingOverview }) {
         </Card>
 
         <Card>
-          <CardHeader title="Requests by provider" subtitle={billing.periodLabel} info="Provider API requests made by audits and monitoring. Estimated cost is what the provider bills; it is not part of the plan fee." />
+          <CardHeader title="Requests by provider" info="Provider API requests made by audits and monitoring. Estimated cost is what the provider bills; it is not part of the plan fee." />
           <CardBody>
             <ul className="flex flex-col gap-4">
               {billing.providerUsage.map((row) => (
                 <li key={row.provider} className="flex flex-col gap-1.5">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-[13px] text-fg">{row.label}</span>
-                    <span className="tnum text-xs text-fg-subtle"><span className="text-sm font-semibold text-fg">{formatNumber(row.requests)}</span> / {formatNumber(row.cap)} requests</span>
+                    <span className="tnum text-xs text-fg-subtle"><span className="text-sm font-semibold text-fg">{formatNumber(row.requests)}</span> / {formatNumber(row.cap)}</span>
                   </div>
                   <Progress value={row.requests} max={row.cap} label={`${row.label} requests against its cap`} tone={tone(row.requests, row.cap)} />
                   <p className="tnum text-xs text-fg-subtle">{formatNumber(row.searchCalls)} search calls · est. {formatCurrency(row.estimatedCostUsd)}</p>

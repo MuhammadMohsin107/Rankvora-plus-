@@ -96,7 +96,7 @@ export function MembersView({
             <p className="flex items-center gap-1.5 truncate text-[13px] font-medium text-fg">
               {r.invitedAt ? r.email : r.name}
               {r.id === currentUserId ? <Badge tone="accent">You</Badge> : null}
-              {r.invitedAt ? <Badge tone="warning" icon="clock">Invited</Badge> : null}
+              {r.invitedAt ? <Badge tone="warning" icon="clock" title={`Invited ${formatRelative(r.invitedAt)}`}>Invited</Badge> : null}
             </p>
             {!r.invitedAt ? <p className="truncate text-xs text-fg-subtle">{r.email}</p> : null}
           </div>
@@ -127,7 +127,7 @@ export function MembersView({
       header: "Last active",
       hideBelow: "md",
       sort: (r) => r.lastActive ?? r.invitedAt ?? "",
-      cell: (r) => <span className="tnum whitespace-nowrap text-fg-muted">{r.lastActive ? formatRelative(r.lastActive) : r.invitedAt ? `Invited ${formatRelative(r.invitedAt)}` : "Never"}</span>,
+      cell: (r) => <span className="tnum whitespace-nowrap text-fg-muted">{r.lastActive ? formatRelative(r.lastActive) : "Never"}</span>,
     },
     {
       id: "actions",
@@ -190,8 +190,7 @@ export function MembersView({
       >
         {roleChange ? (
           <>
-            <p>{ROLE_LABEL[roleChange.row.role]} becomes {ROLE_LABEL[roleChange.to]}.</p>
-            {lostLabels.length > 0 ? <p className="mt-2">Loses: {lostLabels.join(", ")}.</p> : <p className="mt-2">No permissions are lost.</p>}
+            {lostLabels.length > 0 ? <p>Loses: {lostLabels.join(", ")}.</p> : <p>No permissions are lost.</p>}
           </>
         ) : null}
       </ConfirmDialog>
@@ -237,7 +236,7 @@ export function MembersView({
               <Input id={id} type="email" autoComplete="off" aria-describedby={describedBy} invalid={invalid} value={email} placeholder="name@company.com" onChange={(e) => setEmail(e.target.value)} onBlur={() => setEmailTouched(true)} />
             )}
           </Field>
-          <Field label="Role" hint={`${ROLE_LABEL[inviteRole]}: ${rolePermissions[inviteRole].length} of ${permissions.length} permissions`}>
+          <Field label="Role" hint={`${rolePermissions[inviteRole].length} of ${permissions.length} permissions`}>
             {({ id, describedBy }) => (
               <Select id={id} aria-describedby={describedBy} value={inviteRole} onChange={(e) => setInviteRole(e.target.value as Role)}>
                 {ASSIGNABLE.map((role) => (

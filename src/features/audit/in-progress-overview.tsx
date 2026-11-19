@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { StackedBar } from "@/components/charts/bars";
-import { Callout, Card, CardBody, CardHeader, KeyValue, Metric, MetricCell, MetricGrid } from "@/components/ui/card";
+import { Callout, Card, CardBody, CardHeader, KeyValue, Metric } from "@/components/ui/card";
 import { Progress } from "@/components/ui/feedback";
 import { Mono } from "@/components/ui/misc";
 import { SplitLayout } from "@/components/shell/page-header";
@@ -42,27 +41,17 @@ export function InProgressOverview({ audit, channelLabelText }: { audit: AuditDe
         Numbers on every tab are partial and will change until the audit completes.
       </Callout>
 
-      <MetricGrid>
-        <MetricCell>
-          <Metric label="Overall progress" numerator={progress.overall.n} denominator={progress.overall.d} unit="work units" info="Work units = AI requests + pages to crawl." basis={`${formatDuration(progress.elapsedSeconds)} elapsed`} />
-        </MetricCell>
-        <MetricCell>
-          <Metric label="Requests completed" numerator={attempted} denominator={audit.plannedJobs} unit="requests" basis={`${progress.jobs.succeeded} succeeded`} />
-        </MetricCell>
-        <MetricCell>
-          <Metric label="Pages crawled" numerator={audit.coverage.pages.n} denominator={audit.coverage.pages.d} unit="in-scope pages" />
-        </MetricCell>
-        <MetricCell>
-          <Metric label="Failed requests" value={String(progress.jobs.failed)} basis={`of ${attempted} attempted`} info="Failures are excluded from rates and counted in coverage." />
-        </MetricCell>
-      </MetricGrid>
-
       <SplitLayout
         main={
           <>
             <Card as="section">
-              <CardHeader title="Stages" subtitle="Each stage reports its own count" />
+              <CardHeader title="Progress" />
               <CardBody>
+                {/* Requests and pages are counted in their own stage rows below, not repeated here. */}
+                <div className="mb-4 border-b border-line pb-4">
+                  <Metric label="Overall" numerator={progress.overall.n} denominator={progress.overall.d} unit="work units" info="Work units = AI requests + pages to crawl. Each stage below reports its own count." basis={`${formatDuration(progress.elapsedSeconds)} elapsed`} />
+                  <Progress className="mt-2" value={progress.overall.n} max={progress.overall.d} label="Overall progress" />
+                </div>
                 <ul className="divide-y divide-line">
                   {progress.stages.map((stage) => (
                     <StageRow key={stage.id} stage={stage} />
@@ -72,7 +61,11 @@ export function InProgressOverview({ audit, channelLabelText }: { audit: AuditDe
             </Card>
 
             <Card as="section">
-              <CardHeader title="Failed requests" subtitle={`${progress.failedResponses.length} after 3 attempts`} info="A failed request is not evidence that the brand is absent." />
+              <CardHeader
+                title="Failed requests"
+                subtitle={progress.failedResponses.length > 0 ? `${progress.failedResponses.length} of ${attempted} attempted, after 3 attempts` : undefined}
+                info="Failures are excluded from rates and counted in coverage. A failed request is not evidence that the brand is absent."
+              />
               <CardBody className="pt-2">
                 {progress.failedResponses.length === 0 ? (
                   <p className="text-[13px] text-fg-muted">No failed requests.</p>
@@ -110,29 +103,16 @@ export function InProgressOverview({ audit, channelLabelText }: { audit: AuditDe
               </CardBody>
             </Card>
 
-            <Card as="section">
-              <CardHeader title="Requests" subtitle={`${audit.plannedJobs} planned`} />
-              <CardBody>
-                <StackedBar
-                  unit="requests"
-                  segments={[
-                    { id: "ok", label: "Succeeded", value: progress.jobs.succeeded, tone: "success" },
-                    { id: "failed", label: "Failed", value: progress.jobs.failed, tone: "danger" },
-                    { id: "running", label: "Running", value: progress.jobs.running, tone: "accent" },
-                    { id: "queued", label: "Queued", value: progress.jobs.queued, tone: "neutral" },
-                  ]}
-                />
-              </CardBody>
-            </Card>
-
-            <Card as="section">
-              <CardHeader title="Warnings" subtitle={`${progress.warnings.length}`} />
-              <CardBody className="flex flex-col gap-2">
-                {progress.warnings.map((w) => (
-                  <Callout key={w} tone="warning">{w}</Callout>
-                ))}
-              </CardBody>
-            </Card>
+            {progress.warnings.length > 0 ? (
+              <Card as="section">
+                <CardHeader title="Warnings" />
+                <CardBody className="flex flex-col gap-2">
+                  {progress.warnings.map((w) => (
+                    <Callout key={w} tone="warning">{w}</Callout>
+                  ))}
+                </CardBody>
+              </Card>
+            ) : null}
           </>
         }
       />

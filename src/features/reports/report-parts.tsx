@@ -2,12 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Mono } from "@/components/ui/misc";
 import { SplitLayout } from "@/components/shell/page-header";
 import { cn } from "@/lib/cn";
-import { formatDateTime } from "@/lib/format";
-import type { ReportRecord, ReportStatus, ReportType } from "@/types/comparison";
+import type { ReportStatus, ReportType } from "@/types/comparison";
 
 export function ReportStatusBadge({ status }: { status: ReportStatus }) {
   if (status === "ready") return <Badge tone="success" icon="check-circle">Ready</Badge>;
@@ -28,21 +27,21 @@ export function ReportTypeBadge({ type }: { type: ReportType }) {
 export const reportTypeLabel = (type: ReportType) => typeMeta[type].label;
 
 /** A numbered report section with an anchor, so the contents list can link to it. */
-export function ReportSection({ id, number, title, subtitle, info, children }: { id: string; number: number; title: string; subtitle?: string; info?: string; children: ReactNode }) {
+export function ReportSection({ id, number, title, subtitle, info, actions, children }: { id: string; number: number; title: string; subtitle?: string; info?: string; actions?: ReactNode; children: ReactNode }) {
   return (
     <div id={id} className="scroll-mt-24">
       <Card as="section">
-        <CardHeader title={`${number}. ${title}`} subtitle={subtitle} info={info} />
+        <CardHeader title={`${number}. ${title}`} subtitle={subtitle} info={info} actions={actions} />
         <CardBody className="flex flex-col gap-4">{children}</CardBody>
       </Card>
     </div>
   );
 }
 
-const stripColumns = { 3: "sm:grid-cols-3", 4: "sm:grid-cols-2 xl:grid-cols-4" } as const;
+const stripColumns = { 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-2 xl:grid-cols-4" } as const;
 
 /** MetricGrid with a fixed column count (use with MetricCell). */
-export function MetricStrip({ columns, children }: { columns: 3 | 4; children: ReactNode }) {
+export function MetricStrip({ columns, children }: { columns: 2 | 3 | 4; children: ReactNode }) {
   return <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-card border border-line bg-line shadow-card", stripColumns[columns])}>{children}</div>;
 }
 
@@ -74,36 +73,13 @@ export function SourceLinks({ sources }: { sources: SourceLink[] }) {
   );
 }
 
-/** Report page frame: sections in the main column, details and contents on the side. */
-export function ReportFrame({ report, sections, sources, children }: { report: ReportRecord; sections: { id: string; title: string }[]; sources: SourceLink[]; children: ReactNode }) {
+/** Report page frame: sections in the main column, the contents list on the side. Provenance lives in the last section. */
+export function ReportFrame({ sections, children }: { sections: { id: string; title: string }[]; children: ReactNode }) {
   return (
     <SplitLayout
       main={children}
       aside={
-        <div className="flex flex-col gap-5 xl:sticky xl:top-36 xl:self-start">
-          <Card>
-            <CardHeader title="Report details" as="h3" />
-            <CardBody>
-              <KeyValue
-                columns={1}
-                items={[
-                  { label: "Report id", value: <Mono>{report.id}</Mono> },
-                  { label: "Version", value: report.version },
-                  { label: "Period", value: report.period },
-                  { label: "Created", value: <span className="tnum">{formatDateTime(report.createdAt)} UTC</span> },
-                  {
-                    label: "Source",
-                    value: (
-                      <Link href={report.sourceHref} className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
-                        <Mono>{report.sourceLabel}</Mono>
-                      </Link>
-                    ),
-                  },
-                  ...sources.filter((s) => s.id !== report.sourceId).map((s) => ({ label: s.label, value: <Link href={s.href} className="font-medium text-accent-text hover:underline"><Mono>{s.id}</Mono></Link> })),
-                ]}
-              />
-            </CardBody>
-          </Card>
+        <div className="xl:sticky xl:top-36 xl:self-start">
           <Card>
             <CardHeader title="On this page" as="h3" />
             <CardBody className="pt-2">

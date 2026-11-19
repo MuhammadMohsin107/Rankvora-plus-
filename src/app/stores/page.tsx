@@ -13,8 +13,8 @@ export default async function StoresPage() {
     <>
       <PageHeader
         title="Stores"
-        subtitle={`${stores.length} ${stores.length === 1 ? "store" : "stores"}`}
-        actions={<ButtonLink href="/stores/new" variant="primary" icon="plus">Add store</ButtonLink>}
+        subtitle={stores.length > 0 ? `${stores.length} ${stores.length === 1 ? "store" : "stores"}` : undefined}
+        actions={stores.length > 0 ? <ButtonLink href="/stores/new" variant="primary" icon="plus">Add store</ButtonLink> : undefined}
       />
       <StoresView stores={stores} />
     </>

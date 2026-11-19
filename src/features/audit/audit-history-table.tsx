@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Badge, Status } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
 import { DataTable, type Column } from "@/components/ui/table";
 import { Mono } from "@/components/ui/misc";
@@ -96,7 +95,8 @@ export function AuditHistoryTable({ audits, storeId }: { audits: AuditSummary[];
         },
       ]}
       onRowClick={(a) => router.push(href(a))}
-      empty={<EmptyState icon="audit" title="No audits yet" action={<ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>} />}
+      // The page header owns "Start audit"; this state only appears when a search or filter matches nothing.
+      empty={<EmptyState icon="audit" title="No matching audits" />}
     />
   );
 }

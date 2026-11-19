@@ -58,16 +58,15 @@ export function RunsTable({ storeId, runs, storeTimezone, compact }: { storeId: 
         </div>
       ),
     },
-    { id: "failed", header: "Failed", align: "right", hideBelow: "md", sort: (r) => r.failed, cell: (r) => <span className={r.failed > 0 ? "tnum text-[13px] font-medium text-danger" : "tnum text-[13px] text-fg-muted"}>{r.failed}</span> },
     {
       id: "cost",
-      header: "Duration · cost",
+      header: "Duration · est. cost",
       hideBelow: "lg",
       sort: (r) => r.costUsd,
       cell: (r) => (
         <div>
           <p className="tnum whitespace-nowrap text-[13px] text-fg">{r.durationSeconds === null ? "—" : formatDuration(r.durationSeconds)}</p>
-          <p className="tnum whitespace-nowrap text-xs text-fg-subtle">{formatUsd(r.costUsd)} estimate</p>
+          <p className="tnum whitespace-nowrap text-xs text-fg-subtle">{formatUsd(r.costUsd)}</p>
         </div>
       ),
     },
@@ -92,7 +91,7 @@ export function RunsTable({ storeId, runs, storeTimezone, compact }: { storeId: 
               ...(schedules.length > 1 ? [{ id: "schedule", label: "Schedule", options: schedules.map(([value, label]) => ({ value, label })), value: (r: RunSummary) => r.scheduleId }] : []),
             ]
       }
-      empty={<EmptyState icon="history" title="No runs yet" description="Runs appear here after a schedule starts." />}
+      empty={<EmptyState icon="history" title="No runs yet" />}
     />
   );
 }

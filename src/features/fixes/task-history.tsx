@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
 import type { IconName } from "@/components/ui/icon";
 import { Timeline } from "@/components/ui/misc";
 import { DEMO_NOW, formatDateTime } from "@/lib/format";
@@ -20,7 +20,6 @@ export function TaskHistoryTab({ events }: { events: HistoryEvent[] }) {
   const ordered = [...events].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
   return (
     <Card>
-      <CardHeader title="History" subtitle={`${events.length} events`} />
       <CardBody>
         <Timeline
           items={ordered.map((event) => ({

@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -14,7 +17,7 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function NewComparisonPage(props: PageProps<"/stores/[storeId]/comparisons/new">) {
+async function NewComparisonPageContent(props: PageProps<"/stores/[storeId]/comparisons/new">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
@@ -22,11 +25,7 @@ export default async function NewComparisonPage(props: PageProps<"/stores/[store
   if (!data) notFound();
 
   const header = (
-    <PageHeader
-      title="New comparison"
-      subtitle={store.name}
-      breadcrumb={[{ label: "Comparisons", href: `/stores/${storeId}/comparisons` }, { label: "New" }]}
-    />
+    <PageHeader title="New comparison" />
   );
 
   if (data.snapshots.length < 2) {
@@ -36,7 +35,7 @@ export default async function NewComparisonPage(props: PageProps<"/stores/[store
         <EmptyState
           icon="compare"
           title="Two snapshots needed"
-          description="Run an audit or a monitoring run first. Then compare it with another snapshot."
+          description="Run an audit or a monitoring run first."
           action={<ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>}
         />
       </>
@@ -48,5 +47,13 @@ export default async function NewComparisonPage(props: PageProps<"/stores/[store
       {header}
       <NewComparisonWizard storeId={storeId} data={data} catalog={wizardCatalog()} />
     </>
+  );
+}
+
+export default function NewComparisonPage(props: PageProps<"/stores/[storeId]/comparisons/new">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <NewComparisonPageContent {...props} />
+    </Suspense>
   );
 }

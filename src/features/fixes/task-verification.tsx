@@ -3,9 +3,7 @@
 import Link from "next/link";
 
 import { Status } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader, Metric } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
 import { formatDateTime } from "@/lib/format";
 import type { TaskStatus, VerificationOutcome, VerificationRecord } from "@/types/fixes";
 
@@ -15,15 +13,7 @@ type Props = {
   outcome: VerificationOutcome | null;
   status: TaskStatus;
   verifying: boolean;
-  onRun: () => void;
 };
-
-const RESULT_TEXT = {
-  verified_success: "All checks passed on re-check.",
-  partially_verified: "Some checks passed; others are not conclusive yet.",
-  failed: "One or more checks failed.",
-  rolled_back: "Rolled back. The change is no longer in place.",
-} as const;
 
 function PlannedChecks({ checks }: { checks: VerificationRecord["plannedChecks"] }) {
   return (
@@ -39,7 +29,7 @@ function PlannedChecks({ checks }: { checks: VerificationRecord["plannedChecks"]
 }
 
 /** Checks re-run, before / after evidence, result and the effect on the finding. Applied is never verified. */
-export function TaskVerificationTab({ storeId, record, outcome, status, verifying, onRun }: Props) {
+export function TaskVerificationTab({ storeId, record, outcome, status, verifying }: Props) {
   const passed = outcome ? outcome.checks.filter((c) => c.after.status === "pass").length : 0;
 
   return (
@@ -47,10 +37,10 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
       {outcome ? (
         <>
           <Card>
-            <CardHeader title="Result" actions={<Status kind="task" value={outcome.result} />} />
+            <CardHeader title="Result" />
             <CardBody className="flex flex-col gap-3">
               <p className="text-[13px] text-fg-muted">
-                <span className="tnum font-medium text-fg">{passed} / {outcome.checks.length}</span> checks passed. {RESULT_TEXT[outcome.result]}
+                <span className="tnum font-medium text-fg">{passed} / {outcome.checks.length}</span> checks passed
               </p>
               <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
                 <span className="tnum">Run {formatDateTime(outcome.ranAt)} UTC</span>
@@ -67,7 +57,7 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
           </Card>
 
           <Card>
-            <CardHeader title="Checks re-run" subtitle="Before and after evidence" />
+            <CardHeader title="Checks re-run" />
             <CardBody className="pt-2">
               <div className="ui-scroll overflow-x-auto">
                 <table className="w-full min-w-[34rem] border-collapse text-[13px]">
@@ -101,24 +91,19 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
         </>
       ) : status === "verification_pending" ? (
         <Card>
-          <CardHeader title="Verification pending" actions={<Status kind="task" value="verification_pending" />} />
+          <CardHeader title="Planned checks" />
           <CardBody className="flex flex-col gap-3">
-            <Callout tone="warning" title="Applied, not verified">
-              The change is in place but no check has re-run yet. It counts as verified only after the checks below pass.
+            <Callout tone="warning" title={verifying ? "Running checks" : "Applied, not verified"}>
+              {verifying ? undefined : "No check has re-run yet."}
             </Callout>
             <PlannedChecks checks={record.plannedChecks} />
-            <div>
-              <Button variant="primary" icon="shield-check" loading={verifying} onClick={onRun}>
-                {verifying ? "Running checks" : "Run verification"}
-              </Button>
-            </div>
           </CardBody>
         </Card>
       ) : status === "rolled_back" ? (
         <Card>
-          <CardHeader title="Not verified" actions={<Status kind="task" value="rolled_back" />} />
+          <CardHeader title="Planned checks" />
           <CardBody className="flex flex-col gap-3">
-            <Callout tone="neutral" title="Rolled back before verification">The change is no longer in place, so there is nothing to verify.</Callout>
+            <Callout tone="neutral" title="Rolled back before verification">Nothing to verify.</Callout>
             <PlannedChecks checks={record.plannedChecks} />
           </CardBody>
         </Card>
@@ -126,9 +111,7 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
         <Card>
           <CardHeader title="Planned checks" />
           <CardBody className="flex flex-col gap-3">
-            <Callout tone="neutral" title="Not verified">
-              <span className="flex items-center gap-1.5"><Icon name="clock" size={13} />Checks run after the change is applied. Applied is not verified.</span>
-            </Callout>
+            <Callout tone="neutral" title="Not verified">Checks run after the change is applied.</Callout>
             <PlannedChecks checks={record.plannedChecks} />
           </CardBody>
         </Card>

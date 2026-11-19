@@ -68,7 +68,6 @@ export const AUD_004_STAGES: AuditStage[] = [
 ];
 
 export const AUD_004_WARNINGS = [
-  "2 requests failed after 3 attempts. They are excluded from rates and counted in coverage.",
   "runpro.pk answered 429 to the crawler; it backed off to 2 concurrent requests.",
   "3 pages timed out and are queued for one retry.",
 ];
@@ -276,7 +275,7 @@ export const WEBSITE_VARIANTS: Record<string, WebsiteVariant> = {
       "chk-27": { snippet: 'No indexed page covers "how to choose a running shoe"' },
     },
     crawlerOverrides: {
-      "oai-searchbot": { allowed: true, rule: "(no OAI-SearchBot group)\nUser-agent: *\nAllow: /", consequence: "Allowed by the default rule. Pages can be crawled for ChatGPT search.", findingId: null },
+      "oai-searchbot": { allowed: true, rule: "(no OAI-SearchBot group)\nUser-agent: *\nAllow: /", consequence: "Covered by the default rule. Pages can be crawled for ChatGPT search.", findingId: null },
     },
     notice: null,
   },
@@ -326,7 +325,7 @@ export const BASE_CRAWLERS: CrawlerAccess[] = [
     purpose: "ChatGPT search",
     allowed: false,
     rule: "User-agent: OAI-SearchBot\nDisallow: /",
-    consequence: "Blocked. This crawler cannot fetch any page, so pages may not be eligible for ChatGPT search results.",
+    consequence: "This crawler cannot fetch any page, so pages may not be eligible for ChatGPT search results.",
     findingId: "fnd-006",
   },
   {
@@ -335,7 +334,7 @@ export const BASE_CRAWLERS: CrawlerAccess[] = [
     purpose: "Model training",
     allowed: true,
     rule: "(no GPTBot group)\nUser-agent: *\nDisallow: /cart\nDisallow: /checkout\nAllow: /",
-    consequence: "Allowed by the default rule, except /cart and /checkout. Training access is separate from ChatGPT search.",
+    consequence: "Covered by the default rule, except /cart and /checkout. Training access is separate from ChatGPT search.",
     findingId: null,
   },
   {
@@ -344,7 +343,7 @@ export const BASE_CRAWLERS: CrawlerAccess[] = [
     purpose: "User-requested visits",
     allowed: true,
     rule: "(no ChatGPT-User group)\nUser-agent: *\nDisallow: /cart\nDisallow: /checkout\nAllow: /",
-    consequence: "Allowed by the default rule. A ChatGPT user can have a page fetched on request.",
+    consequence: "Covered by the default rule. A ChatGPT user can have a page fetched on request.",
     findingId: null,
   },
 ];

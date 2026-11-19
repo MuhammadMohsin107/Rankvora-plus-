@@ -98,3 +98,20 @@ export function formatUsd(value: number): string {
 export function formatNumberShort(value: number): string {
   return new Intl.NumberFormat("en-GB").format(value);
 }
+
+/** True when an event title already starts with its type label ("New mention: ..."). */
+export function titleHasType(event: { type: EventType; title: string }): boolean {
+  return event.title.toLowerCase().startsWith(EVENT_LABEL[event.type].toLowerCase());
+}
+
+/**
+ * Meta line for an event. The type and provider are left out when the title
+ * already says them, so nothing is repeated under the title.
+ */
+export function eventMeta(event: { type: EventType; title: string; providerShort?: string | null; runId: string }): string {
+  const parts: string[] = [];
+  if (!titleHasType(event)) parts.push(EVENT_LABEL[event.type]);
+  if (event.providerShort && !event.title.includes(event.providerShort)) parts.push(event.providerShort);
+  parts.push(event.runId);
+  return parts.join(" · ");
+}

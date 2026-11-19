@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -13,13 +16,13 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function NewSchedulePage(props: PageProps<"/stores/[storeId]/monitoring/schedules/new">) {
+async function NewSchedulePageContent(props: PageProps<"/stores/[storeId]/monitoring/schedules/new">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
   const base = `/stores/${storeId}/monitoring`;
   const header = (
-    <PageHeader title="New schedule" subtitle="Prompts, providers, timetable and alert rules" breadcrumb={[{ label: "Monitoring", href: base }, { label: "Schedules", href: `${base}/schedules` }, { label: "New" }]} />
+    <PageHeader title="New schedule" breadcrumb={[{ label: "Monitoring", href: base }, { label: "Schedules", href: `${base}/schedules` }, { label: "New" }]} />
   );
   if (store.channelIds.length === 0) {
     return (
@@ -36,5 +39,13 @@ export default async function NewSchedulePage(props: PageProps<"/stores/[storeId
       {header}
       <ScheduleForm ctx={ctx} mode="create" />
     </>
+  );
+}
+
+export default function NewSchedulePage(props: PageProps<"/stores/[storeId]/monitoring/schedules/new">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <NewSchedulePageContent {...props} />
+    </Suspense>
   );
 }

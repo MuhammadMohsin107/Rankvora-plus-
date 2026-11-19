@@ -44,8 +44,8 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
       { id: "e3", kind: "prompt", promptId: "p-010", note: "Paused prompt about marathon training" },
     ],
     observations: [
-      { id: "o1", at: "2026-10-20T05:34:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "First detected on a crawl of the product page" },
-      { id: "o2", at: "2026-11-19T08:55:00Z", source: "Full audit — November", sourceHref: "audits/aud-004", note: "Observed again (audit still running, provisional)", provisional: true },
+      { id: "o1", at: "2026-10-20T05:34:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "Crawl of the product page" },
+      { id: "o2", at: "2026-11-19T08:55:00Z", source: "Full audit — November", sourceHref: "audits/aud-004", note: "Audit still running", provisional: true },
     ],
   },
   "fnd-002": {
@@ -53,7 +53,7 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
     priorityRationale: "P1: one page, but the price is customer-facing and the fix is small and reviewable.",
     verificationCriteria: ["JSON-LD offers.price equals the visible price", "Structured data validates without price warnings", "Re-crawl shows no price mismatch"],
     evidence: [{ id: "e1", kind: "page", url: `${RP_URL}/products/glide-2`, note: "JSON-LD price PKR 13,500 vs visible PKR 12,900", auditId: "aud-002" }],
-    observations: [{ id: "o1", at: "2026-10-20T05:40:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "First detected; mismatch confirmed on re-check 19 Nov" }],
+    observations: [{ id: "o1", at: "2026-10-20T05:40:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "Mismatch confirmed on re-check 19 Nov" }],
   },
   "fnd-003": {
     severityRationale: "Medium: broken internal links waste crawl paths and send visitors to error pages.",
@@ -64,9 +64,9 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
       { id: "e2", kind: "page", url: `${RP_URL}/collections/sale`, note: "1 internal link returns HTTP 404", auditId: "aud-002" },
     ],
     observations: [
-      { id: "o1", at: "2026-10-20T05:28:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "First detected" },
-      { id: "o2", at: "2026-11-12T07:15:00Z", source: "Verification — Glide 2 product facts", sourceHref: "audits/aud-003", note: "Observed again" },
-      { id: "o3", at: "2026-11-19T08:50:00Z", source: "Full audit — November", sourceHref: "audits/aud-004", note: "Observed again (audit still running, provisional)", provisional: true },
+      { id: "o1", at: "2026-10-20T05:28:00Z", source: "Full audit — October", sourceHref: "audits/aud-002" },
+      { id: "o2", at: "2026-11-12T07:15:00Z", source: "Verification — Glide 2 product facts", sourceHref: "audits/aud-003" },
+      { id: "o3", at: "2026-11-19T08:50:00Z", source: "Full audit — November", sourceHref: "audits/aud-004", note: "Audit still running", provisional: true },
     ],
   },
   "fnd-004": {
@@ -78,7 +78,7 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
       { id: "e2", kind: "response", responseId: "resp-run-008-10", note: "Gemini · latest monitoring run · sample 2" },
       { id: "e3", kind: "prompt", promptId: "p-002", note: "Neutral recommendation prompt" },
     ],
-    observations: [{ id: "o1", at: "2026-11-17T04:44:00Z", source: "Weekly monitoring — 17 Nov", sourceHref: "monitoring/runs/run-008", note: "First detected from the latest monitoring run" }],
+    observations: [{ id: "o1", at: "2026-11-17T04:44:00Z", source: "Weekly monitoring — 17 Nov", sourceHref: "monitoring/runs/run-008" }],
   },
   "fnd-005": {
     severityRationale: "Low: inconsistent spelling can split brand mentions across two names. No functional impact.",
@@ -88,7 +88,7 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
       { id: "e1", kind: "page", url: `${RP_URL}/pages/about`, note: "“Run Pro” in body copy", auditId: "aud-003" },
       { id: "e2", kind: "page", url: `${RP_URL}/`, note: "“Run Pro” in the footer", auditId: "aud-003" },
     ],
-    observations: [{ id: "o1", at: "2026-11-12T07:20:00Z", source: "Verification — Glide 2 product facts", sourceHref: "audits/aud-003", note: "First detected" }],
+    observations: [{ id: "o1", at: "2026-11-12T07:20:00Z", source: "Verification — Glide 2 product facts", sourceHref: "audits/aud-003" }],
   },
   "fnd-006": {
     severityRationale: "High: a crawler is disallowed. This may be deliberate, so it is reported for a decision, not as an error.",
@@ -96,10 +96,10 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
     verificationCriteria: ["Policy per crawler is documented", "robots.txt matches the decision", "Each crawler is reported separately in the next audit"],
     evidence: [{ id: "e1", kind: "page", url: `${RP_URL}/robots.txt`, note: "OAI-SearchBot: Disallow /", auditId: "aud-002" }],
     observations: [
-      { id: "o1", at: "2026-10-20T05:22:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "First detected" },
-      { id: "o2", at: "2026-11-02T04:10:00Z", source: "Scheduled robots.txt check", note: "Observed again" },
-      { id: "o3", at: "2026-11-12T07:12:00Z", source: "Verification — Glide 2 product facts", sourceHref: "audits/aud-003", note: "Observed again" },
-      { id: "o4", at: "2026-11-19T08:44:00Z", source: "Full audit — November", sourceHref: "audits/aud-004", note: "Observed again (audit still running, provisional)", provisional: true },
+      { id: "o1", at: "2026-10-20T05:22:00Z", source: "Full audit — October", sourceHref: "audits/aud-002" },
+      { id: "o2", at: "2026-11-02T04:10:00Z", source: "Scheduled robots.txt check" },
+      { id: "o3", at: "2026-11-12T07:12:00Z", source: "Verification — Glide 2 product facts", sourceHref: "audits/aud-003" },
+      { id: "o4", at: "2026-11-19T08:44:00Z", source: "Full audit — November", sourceHref: "audits/aud-004", note: "Audit still running", provisional: true },
     ],
   },
   "fnd-007": {
@@ -113,8 +113,8 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
       { id: "e4", kind: "response", responseId: "resp-run-008-39", note: "Gemini · latest monitoring run · sample 1" },
     ],
     observations: [
-      { id: "o1", at: "2026-08-12T06:30:00Z", source: "Initial audit", sourceHref: "audits/aud-001", note: "First detected" },
-      { id: "o2", at: "2026-10-20T05:36:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "Observed again" },
+      { id: "o1", at: "2026-08-12T06:30:00Z", source: "Initial audit", sourceHref: "audits/aud-001" },
+      { id: "o2", at: "2026-10-20T05:36:00Z", source: "Full audit — October", sourceHref: "audits/aud-002" },
       { id: "o3", at: "2026-11-15T09:00:00Z", source: "Publish check", note: "Guide published; not yet re-crawled" },
     ],
   },
@@ -123,7 +123,7 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
     priorityRationale: "P3: single site-wide markup block.",
     verificationCriteria: ["Organization JSON-LD includes sameAs", "Organization JSON-LD includes contactPoint", "Markup validates"],
     evidence: [{ id: "e1", kind: "page", url: `${RP_URL}/`, note: "Home page Organization markup", auditId: "aud-003" }],
-    observations: [{ id: "o1", at: "2026-08-12T06:33:00Z", source: "Initial audit", sourceHref: "audits/aud-001", note: "First detected; verified present on 12 Nov re-crawl" }],
+    observations: [{ id: "o1", at: "2026-08-12T06:33:00Z", source: "Initial audit", sourceHref: "audits/aud-001", note: "Verified present on 12 Nov re-crawl" }],
   },
   "fnd-009": {
     severityRationale: "Medium: a competitor domain is cited more often than the owned domain on comparison prompts. Citation-capable responses only.",
@@ -136,7 +136,7 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
       { id: "e4", kind: "prompt", promptId: "p-004", note: "Alternatives prompt" },
       { id: "e5", kind: "prompt", promptId: "p-003", note: "Head-to-head prompt" },
     ],
-    observations: [{ id: "o1", at: "2026-11-17T04:50:00Z", source: "Weekly monitoring — 17 Nov", sourceHref: "monitoring/runs/run-008", note: "First detected from the latest monitoring run" }],
+    observations: [{ id: "o1", at: "2026-11-17T04:50:00Z", source: "Weekly monitoring — 17 Nov", sourceHref: "monitoring/runs/run-008" }],
   },
   "fnd-010": {
     severityRationale: "Low: reviewed and closed as a false positive.",
@@ -144,7 +144,7 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
     verificationCriteria: ["None. Closed as false positive on review."],
     evidence: [{ id: "e1", kind: "page", url: `${RP_URL}/collections/road`, note: "Titles differ by pagination suffix", auditId: "aud-001" }],
     observations: [
-      { id: "o1", at: "2026-08-12T06:36:00Z", source: "Initial audit", sourceHref: "audits/aud-001", note: "First detected" },
+      { id: "o1", at: "2026-08-12T06:36:00Z", source: "Initial audit", sourceHref: "audits/aud-001" },
     ],
     duplicate: { ofId: "fnd-003", reason: "Same URL: /collections/road" },
   },
@@ -153,7 +153,7 @@ export const FINDING_EXTRAS: Record<string, FindingExtras> = {
     priorityRationale: "P3: accepted by the owner; review in January.",
     verificationCriteria: ["Re-measure lab LCP in January", "Add field data if available"],
     evidence: [{ id: "e1", kind: "page", url: `${RP_URL}/blogs/guides`, note: "Lab LCP 3.1 s on mobile", auditId: "aud-002" }],
-    observations: [{ id: "o1", at: "2026-10-20T05:45:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "First detected; accepted risk" }],
+    observations: [{ id: "o1", at: "2026-10-20T05:45:00Z", source: "Full audit — October", sourceHref: "audits/aud-002", note: "Accepted risk" }],
     duplicate: { ofId: "fnd-007", reason: "Same URL: /blogs/guides" },
   },
 };

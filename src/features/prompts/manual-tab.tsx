@@ -210,8 +210,6 @@ export function ManualTab({ data, form, setForm, session, onCreated }: Props) {
                   <span className="text-fg-subtle">Add text</span>
                 ),
               },
-              { label: "Market · language", value: `${form.market} · ${form.language.toUpperCase()}` },
-              { label: "Scope", value: SCOPE_LABEL[form.scope] },
               {
                 label: "Runs on",
                 value:

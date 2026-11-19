@@ -26,7 +26,7 @@ export function VersionHistory({ versions }: { versions: PromptVersion[] }) {
   return (
     <div className="flex flex-col gap-5">
       <Card as="section">
-        <CardHeader title="Version history" subtitle={pluralize(versions.length, "version")} info="Editing the wording creates a new version. Earlier runs keep pointing to the version they used." />
+        <CardHeader title="History" info="Editing the wording creates a new version. Earlier runs keep pointing to the version they used." />
         <CardBody>
           <Timeline
             items={versions.map((v) => ({

@@ -8,7 +8,10 @@ import type { ResponseSample } from "@/types/shared-records";
 const mentionValue = (r: ResponseSample) => (r.status === "failed" ? "failed" : r.brandMentioned);
 const recommendationValue = (r: ResponseSample) => (r.status === "failed" ? "failed" : r.recommendation);
 
-/** Every response sample of the audit, including failed requests (never read as "brand absent"). */
+/**
+ * Every response sample of the audit, including failed requests (never read as "brand absent").
+ * The Outcome column already says whether the brand was mentioned or recommended, so there is no separate mention column.
+ */
 export function AiResponsesTable({ responses, providers, prompts }: { responses: ResponseSample[]; providers: { id: string; label: string }[]; prompts: { id: string; text: string; version: number }[] }) {
   const columns: Column<ResponseSample>[] = [
     {
@@ -39,12 +42,6 @@ export function AiResponsesTable({ responses, providers, prompts }: { responses:
       header: "Outcome",
       sort: (r) => r.outcome,
       cell: (r) => (r.status === "failed" ? <Status kind="job" value="failed" /> : <Status kind="recommendation" value={r.recommendation} />),
-    },
-    {
-      id: "mention",
-      header: "Brand mentioned",
-      hideBelow: "md",
-      cell: (r) => (r.status === "failed" ? <span className="text-fg-subtle">Not available</span> : <span>{r.brandMentioned === "yes" ? "Yes" : r.brandMentioned === "no" ? "No" : "Uncertain"}</span>),
     },
     {
       id: "citations",
@@ -88,17 +85,6 @@ export function AiResponsesTable({ responses, providers, prompts }: { responses:
             { value: "failed", label: "Failed (no result)" },
           ],
           value: recommendationValue,
-        },
-        {
-          id: "outcome",
-          label: "Outcome",
-          options: [
-            { value: "recommended", label: "Recommended" },
-            { value: "mentioned", label: "Mentioned only" },
-            { value: "absent", label: "Not mentioned" },
-            { value: "failed", label: "Failed" },
-          ],
-          value: (r) => r.outcome,
         },
       ]}
     />

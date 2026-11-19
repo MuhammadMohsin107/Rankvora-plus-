@@ -16,7 +16,7 @@ import type { Role } from "@/types/core";
 import type { ApprovalState, BatchItem, CmsState, ExecutionMode, ExecutionRecord, FieldOutcome, RemoteCheck, TaskDraft, TaskStatus } from "@/types/fixes";
 
 import { CodeDiff } from "./code-diff";
-import { CMS_STATE_LABEL, MODE_LABEL } from "./fixes-shared";
+import { CMS_STATE_LABEL } from "./fixes-shared";
 import { shortHash } from "./task-approval";
 import { BATCH_BADGE } from "./task-draft";
 
@@ -94,7 +94,6 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
   if (write) {
     if (!canExecute) writeBlock = "Your role cannot run execution.";
     else if (approvalState !== "approved") writeBlock = "Needs an approved diff first.";
-    else if (changed) writeBlock = "Resource changed since draft. Re-check first.";
   }
 
   const fields: FieldOutcome[] = execution.fields.map((f) => {
@@ -103,21 +102,23 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
     return f;
   });
 
+  /** The exact diff above already shows before / after for these drafts. */
+  const diffCovered = ((draft.kind === "text" || draft.kind === "patch") && fields.length === 1) || draft.kind === "batch";
   const rolledBack = status === "rolled_back";
   const canRollback = rollback.available && ROLLBACK_STATUSES.has(status);
   const rollbackReady = reason.trim().length >= 5 && (!rollback.laterEdit || ack);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+      <div className={cms === "guidance" ? "grid grid-cols-[minmax(0,1fr)] gap-4" : "grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2"}>
         <Card>
-          <CardHeader title="Connector" subtitle={MODE_LABEL[mode]} />
+          <CardHeader title="Connector" />
           <CardBody className="flex flex-col gap-3">
             {connector ? (
               <KeyValue
                 columns={1}
                 items={[
-                  { label: "Connector", value: `${connector.label} · ${connector.store}` },
+                  { label: "Connected to", value: `${connector.label} · ${connector.store}` },
                   { label: "Connection", value: <Status kind="integration" value={connector.state} /> },
                   {
                     label: "Granted scopes",
@@ -143,33 +144,24 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
               />
             ) : (
               <Callout tone="neutral" title="No connector used">
-                {mode === "guidance" ? "Guidance only. A person makes any change." : "A person applied this change outside Rankvora Plus."}
+                {mode === "guidance" ? "A person makes any change." : "A person applied this change outside Rankvora Plus."}
               </Callout>
             )}
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader title="CMS state" info="Draft and staged are not live. Applied and published are not verified." />
-          <CardBody className="flex flex-col gap-3">
-            {cms === "guidance" ? (
-              <Badge tone="neutral" icon="file-text" className="self-start">Guidance only</Badge>
-            ) : (
+        {cms === "guidance" ? null : (
+          <Card>
+            <CardHeader title="CMS state" info="Draft and staged are not live. Applied and published are not verified." />
+            <CardBody className="flex flex-col gap-3">
               <Stepper
                 steps={CMS_STEPS.map((s) => ({ id: s, label: CMS_STATE_LABEL[s] }))}
                 current={cms === "published" ? CMS_STEPS.length : stepIndex}
               />
-            )}
-            <KeyValue
-              columns={2}
-              items={[
-                { label: "Staged", value: <span className="tnum">{execution.stagedAt ? formatDateTime(execution.stagedAt) : "Not yet"}</span> },
-                { label: "Applied", value: <span className="tnum">{execution.appliedAt ? formatDateTime(execution.appliedAt) : WRITTEN.has(status) ? "Just now (demo)" : "Not yet"}</span> },
-                { label: "Published", value: <span className="tnum">{mode === "ai_draft" || mode === "guidance" ? "Not applicable" : execution.publishedAt ? formatDateTime(execution.publishedAt) : "Not yet"}</span> },
-              ]}
-            />
-          </CardBody>
-        </Card>
+              {execution.stagedAt ? <p className="tnum text-xs text-fg-subtle">Staged {formatDateTime(execution.stagedAt)}</p> : null}
+            </CardBody>
+          </Card>
+        )}
       </div>
 
       {remote ? (
@@ -198,7 +190,7 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
                 {remote.note ?? ""} The write is held until the draft is rebuilt from the current copy.
               </Callout>
             ) : (
-              <Callout tone="success" title="Remote matches the draft">The version and hash are the same as when the draft was made.</Callout>
+              <Callout tone="success" title="Remote matches the draft" />
             )}
             <KeyValue
               columns={3}
@@ -220,7 +212,7 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
           {draft.kind === "text" ? (
             <DiffView before={draft.before} after={text} beforeLabel="Current" afterLabel="Will be written" />
           ) : draft.kind === "patch" ? (
-            <CodeDiff before={draft.before} after={text} label={`${draft.resource} · ${draft.language}`} />
+            <CodeDiff before={draft.before} after={text} label={remote ? draft.language : `${draft.resource} · ${draft.language}`} />
           ) : draft.kind === "batch" ? (
             <ul className="divide-y divide-line rounded-control border border-line">
               {draft.items.map((item) => {
@@ -240,7 +232,7 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
               })}
             </ul>
           ) : (
-            <p className="text-[13px] text-fg-subtle">Guidance only. No diff.</p>
+            <p className="text-[13px] text-fg-subtle">No diff.</p>
           )}
         </CardBody>
       </Card>
@@ -256,9 +248,11 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
                   <li key={f.field} className="flex flex-wrap items-start justify-between gap-3 py-2.5">
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium text-fg">{f.field}</p>
-                      <p className="mt-0.5 truncate text-xs text-fg-muted">
-                        {f.before} <Icon name="arrow-right" size={11} className="inline" /> {f.after}
-                      </p>
+                      {diffCovered ? null : (
+                        <p className="mt-0.5 truncate text-xs text-fg-muted">
+                          {f.before} <Icon name="arrow-right" size={11} className="inline" /> {f.after}
+                        </p>
+                      )}
                       {f.note ? <p className="mt-0.5 text-xs text-fg-subtle">{f.note}</p> : null}
                     </div>
                     <Badge tone={view.tone} icon={view.icon}>{view.label}</Badge>
@@ -272,7 +266,7 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
 
       {rollback.record ? (
         <Card>
-          <CardHeader title="Rollback record" actions={<Status kind="task" value="rolled_back" />} />
+          <CardHeader title="Rollback record" />
           <CardBody className="flex flex-col gap-3">
             <KeyValue
               columns={2}
@@ -292,7 +286,7 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
 
       <div className="flex flex-wrap items-center gap-2">
         {write ? (
-          <Button variant="primary" icon="bolt" disabled={Boolean(writeBlock)} onClick={() => setConfirm(write)}>
+          <Button variant="primary" icon="bolt" disabled={Boolean(writeBlock) || changed} title={changed ? "Resource changed since draft" : undefined} onClick={() => setConfirm(write)}>
             {write.label}
           </Button>
         ) : null}
@@ -331,16 +325,8 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
         }}
       >
         <p>
-          This writes to <span className="font-medium text-fg">{connector ? `${connector.label} · ${connector.store}` : "the connected store"}</span>, exactly:
+          This writes the exact diff to <span className="font-medium text-fg">{connector ? `${connector.label} · ${connector.store}` : "the connected store"}</span>. Approved diff <Mono>{shortHash(diffHash)}</Mono> is checked against the remote version first.
         </p>
-        <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
-          {execution.fields.filter((f) => f.outcome !== "skipped").map((f) => (
-            <li key={f.field}>
-              {f.field}: {f.before} → {f.after}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2">Approved diff <Mono>{shortHash(diffHash)}</Mono> is checked against the remote version first. Applied is not verified; run verification afterwards.</p>
       </ConfirmDialog>
 
       <Dialog
@@ -366,13 +352,6 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
         }
       >
         <div className="flex flex-col gap-4">
-          <ul className="flex list-disc flex-col gap-1 pl-5 text-[13px] text-fg-muted">
-            {execution.fields.filter((f) => f.outcome !== "skipped").map((f) => (
-              <li key={f.field}>
-                {f.field} returns to: {f.before}
-              </li>
-            ))}
-          </ul>
           {rollback.laterEdit ? (
             <Callout tone="warning" title="The remote resource was edited after this change">
               {rollback.laterEdit.by} edited it {formatDateTime(rollback.laterEdit.at)}. {rollback.laterEdit.note} Rollback does not overwrite it automatically, so it needs manual reconciliation.

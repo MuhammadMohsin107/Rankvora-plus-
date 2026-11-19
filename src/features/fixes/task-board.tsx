@@ -60,9 +60,9 @@ export function TaskBoard({ storeId, tasks, role }: { storeId: string; tasks: Ta
 
   const menuItems = (task: TaskSummary): MenuItem[] => {
     const moves = allowedMoves(task.status, task.mode);
-    const items: MenuItem[] = [{ label: task.status === "verification_pending" ? "Open task to run verification" : "Open task", icon: "arrow-right", href: `${base}/tasks/${task.id}` }];
+    const items: MenuItem[] = [];
     if (moves.length > 0) {
-      items.push({ type: "separator" }, { type: "label", label: "Move to" });
+      items.push({ type: "label", label: "Move to" });
       for (const target of moves) {
         const blocked = needsApprover(target) && !canApprove(role);
         items.push({
@@ -73,10 +73,15 @@ export function TaskBoard({ storeId, tasks, role }: { storeId: string; tasks: Ta
           onSelect: () => move(task, target),
         });
       }
-    } else {
-      items.push({ type: "separator" }, { label: "No manual moves", icon: "lock", disabled: true, disabledReason: "Verification outcomes come from re-checks, not manual moves." });
     }
     return items;
+  };
+
+  /** Row / card menu. Opening the task is the title link, so only moves live here. */
+  const moveMenu = (task: TaskSummary, className?: string) => {
+    const items = menuItems(task);
+    if (items.length === 0) return null;
+    return <Menu trigger={<IconButton icon="more" label={`Move ${task.id}`} size="sm" className={className} />} items={items} />;
   };
 
   const filters: TableFilter<TaskSummary>[] = [
@@ -136,13 +141,13 @@ export function TaskBoard({ storeId, tasks, role }: { storeId: string; tasks: Ta
       srOnlyHeader: true,
       align: "right",
       width: "w-12",
-      cell: (r) => <Menu trigger={<IconButton icon="more" label={`Actions for ${r.id}`} size="sm" />} items={menuItems(r)} />,
+      cell: (r) => moveMenu(r),
     },
   ];
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
         <Segmented
           label="Task view"
           value={view}
@@ -152,7 +157,6 @@ export function TaskBoard({ storeId, tasks, role }: { storeId: string; tasks: Ta
             { value: "list", label: "List", icon: "list" },
           ]}
         />
-        <p className="tnum text-xs text-fg-subtle">{rows.length} tasks</p>
       </div>
 
       {view === "board" ? (
@@ -177,15 +181,15 @@ export function TaskBoard({ storeId, tasks, role }: { storeId: string; tasks: Ta
                           <li key={task.id}>
                             <article className="flex flex-col gap-2.5 rounded-control border border-line bg-surface p-3 shadow-card">
                               <div className="flex items-start justify-between gap-2">
-                                <Status kind="task" value={task.status} />
-                                <Menu trigger={<IconButton icon="more" label={`Actions for ${task.id}`} size="sm" className="-mr-1.5 -mt-1" />} items={menuItems(task)} />
+                                <h3 className="min-w-0 text-[13px] font-medium leading-snug text-fg">
+                                  <Link href={`${base}/tasks/${task.id}`} className="line-clamp-3 hover:text-accent-text hover:underline">
+                                    {task.title}
+                                  </Link>
+                                </h3>
+                                {moveMenu(task, "-mr-1.5 -mt-1.5 shrink-0")}
                               </div>
-                              <h3 className="text-[13px] font-medium leading-snug text-fg">
-                                <Link href={`${base}/tasks/${task.id}`} className="line-clamp-3 hover:text-accent-text hover:underline">
-                                  {task.title}
-                                </Link>
-                              </h3>
                               <div className="flex flex-wrap items-center gap-1.5">
+                                {column.statuses.length > 1 ? <Status kind="task" value={task.status} /> : null}
                                 <Status kind="priority" value={task.priority} />
                                 <Status kind="risk" value={task.risk} />
                               </div>

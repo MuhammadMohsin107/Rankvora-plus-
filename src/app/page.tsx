@@ -10,7 +10,7 @@ import { Icon } from "@/components/ui/icon";
 import { StoreCard } from "@/features/stores/store-card";
 import { formatNumber, formatRelative } from "@/lib/format";
 import { pointChange } from "@/lib/stats";
-import { getOrganization, getOrgUsage, listAlertHeadlines, listStores } from "@/services/core";
+import { getOrgUsage, listAlertHeadlines, listStores } from "@/services/core";
 import type { AlertSeverity, Rate, Store } from "@/types/core";
 
 export const metadata: Metadata = { title: "Portfolio" };
@@ -22,7 +22,7 @@ function pooled(stores: Store[], pick: (s: NonNullable<Store["summary"]>) => Rat
 }
 
 export default async function PortfolioPage() {
-  const [org, stores, alerts, usage] = await Promise.all([getOrganization(), listStores(), listAlertHeadlines(), getOrgUsage()]);
+  const [stores, alerts, usage] = await Promise.all([listStores(), listAlertHeadlines(), getOrgUsage()]);
   const tracked = stores.filter((s) => s.summary);
 
   const mention = pooled(tracked, (s) => s.mention);
@@ -36,26 +36,27 @@ export default async function PortfolioPage() {
   const alertTotal = tracked.reduce((n, s) => n + (s.summary?.openAlerts ?? 0), 0);
   const taskTotal = tracked.reduce((n, s) => n + (s.summary?.pendingTasks ?? 0), 0);
   const storeName = (id: string) => stores.find((s) => s.id === id)?.name ?? id;
-  const basis = `Pooled across ${tracked.length} stores`;
 
   return (
     <>
       <PageHeader
         title="Portfolio"
-        subtitle={`${org.name} · ${stores.length} stores`}
+        subtitle="Changes compare with the previous run"
         actions={<ButtonLink href="/stores/new" variant="primary" icon="plus">Add store</ButtonLink>}
       />
 
-      <Section title="Organization roll-up" actions={<Badge tone="neutral" icon="layers">Pooled, not averaged</Badge>}>
+      <Section
+        title="Organization roll-up"
+        actions={<Badge tone="neutral" icon="layers" title="Counts are added across stores, not an average of store percentages.">Pooled across {tracked.length} stores</Badge>}
+      >
         <MetricGrid>
           <MetricCell>
             <Metric
               label="Brand mention rate"
               numerator={mention.n}
               denominator={mention.d}
-              basis={basis}
-              delta={{ points: pointChange(mentionPrev, mention), versus: "vs previous run" }}
-              info="Pooled response-level rate across stores. Not an average of store percentages."
+              delta={{ points: pointChange(mentionPrev, mention) }}
+              info="Responses that mention the brand ÷ successful, analysed responses."
             />
           </MetricCell>
           <MetricCell>
@@ -63,8 +64,7 @@ export default async function PortfolioPage() {
               label="Recommendation rate"
               numerator={recommendation.n}
               denominator={recommendation.d}
-              basis={basis}
-              delta={{ points: pointChange(recommendationPrev, recommendation), versus: "vs previous run" }}
+              delta={{ points: pointChange(recommendationPrev, recommendation) }}
             />
           </MetricCell>
           <MetricCell>
@@ -73,20 +73,20 @@ export default async function PortfolioPage() {
               numerator={citation.n}
               denominator={citation.d}
               unit="citation-capable responses"
-              basis={noCitation ? `${noCitation} store has no citation data` : basis}
-              delta={{ points: pointChange(citationPrev, citation), versus: "vs previous run" }}
+              basis={noCitation ? `${noCitation} ${noCitation === 1 ? "store has" : "stores have"} no citation data` : undefined}
+              delta={{ points: pointChange(citationPrev, citation) }}
             />
           </MetricCell>
           <MetricCell>
             <div className="flex flex-col gap-3">
-              <Metric label="Open alerts" value={String(alertTotal)} basis="across stores" />
+              <Metric label="Open alerts" value={String(alertTotal)} />
               <p className="tnum text-xs text-fg-subtle"><span className="font-semibold text-fg">{taskTotal}</span> fix tasks pending</p>
             </div>
           </MetricCell>
         </MetricGrid>
       </Section>
 
-      <Section title="Stores" className="mt-6" actions={<ButtonLink href="/stores" variant="ghost" size="sm" trailingIcon="arrow-right">All stores</ButtonLink>}>
+      <Section title="Stores" className="mt-6">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-3">
           {stores.map((store) => (
             <StoreCard key={store.id} store={store} />
@@ -96,7 +96,7 @@ export default async function PortfolioPage() {
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <Card>
-          <CardHeader title="Needs attention" subtitle="Latest alerts across all stores" />
+          <CardHeader title="Needs attention" />
           <CardBody className="pt-2">
             <ul className="divide-y divide-line">
               {alerts.map((alert) => (
@@ -120,7 +120,7 @@ export default async function PortfolioPage() {
           <CardBody className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex items-baseline justify-between">
-                <span className="text-xs font-medium text-fg-muted">Organization</span>
+                <span className="text-xs font-medium text-fg-muted">Total</span>
                 <span className="tnum text-xs text-fg-subtle"><span className="text-sm font-semibold text-fg">{formatNumber(usage.requests)}</span> / {formatNumber(usage.requestCap)}</span>
               </div>
               <Progress value={usage.requests} max={usage.requestCap} label="Organization request usage" />

@@ -18,7 +18,7 @@ import { formatDateTime } from "@/lib/format";
 import { STATUS } from "@/lib/status";
 import type { AlertStatus, DeliveryRow, DeliveryStatus, EvidenceSide, MonitoringEvent } from "@/types/monitoring";
 
-import { DELIVERY_ICON, DELIVERY_LABEL, EVENT_ICON, EVENT_LABEL, EVENT_TONE, SEVERITY_ORDER, SEVERITY_STATUS } from "./labels";
+import { DELIVERY_ICON, DELIVERY_LABEL, EVENT_ICON, EVENT_LABEL, EVENT_TONE, SEVERITY_ORDER, SEVERITY_STATUS, eventMeta, titleHasType } from "./labels";
 import { When } from "./when";
 
 const toneBg = { neutral: "bg-surface-2 text-fg-subtle", success: "bg-success-soft text-success", warning: "bg-warning-soft text-warning", danger: "bg-danger-soft text-danger", info: "bg-info-soft text-info", accent: "bg-accent-soft text-accent-text" } as const;
@@ -65,8 +65,8 @@ function EventDrawerBody({ event, status, tz }: { event: MonitoringEvent; status
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-1.5">
         {alert ? <Status kind="severity" value={SEVERITY_STATUS[alert.severity]} /> : null}
-        {status ? <Status kind="alert" value={status} /> : <Badge>No alert raised</Badge>}
-        <Badge icon={EVENT_ICON[event.type]}>{EVENT_LABEL[event.type]}</Badge>
+        {status ? <Status kind="alert" value={status} /> : null}
+        {titleHasType(event) ? null : <Badge icon={EVENT_ICON[event.type]}>{EVENT_LABEL[event.type]}</Badge>}
         <span className="tnum text-xs text-fg-subtle">{formatDateTime(event.at, tz)} · {event.runId}</span>
       </div>
       <p className="text-[13px] text-fg-muted">{event.summary}</p>
@@ -135,7 +135,6 @@ export function AlertsInbox({ events, storeTimezone }: { events: MonitoringEvent
   const shown = useMemo(() => events.filter((e) => mode === "events" || e.alert), [events, mode]);
   const visibility = shown.filter((e) => e.category === "visibility");
   const quality = shown.filter((e) => e.category === "data_quality");
-  const openCount = events.filter((e) => e.alert && !["resolved", "muted"].includes(statusOf(e) ?? "")).length;
   const alertCount = events.filter((e) => e.alert).length;
   const open = events.find((e) => e.id === openId) ?? null;
 
@@ -149,7 +148,7 @@ export function AlertsInbox({ events, storeTimezone }: { events: MonitoringEvent
           <span aria-hidden="true" className={cn("mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full", toneBg[EVENT_TONE[e.type]])}><Icon name={EVENT_ICON[e.type]} size={13} /></span>
           <div className="min-w-0 max-w-[26rem]">
             <button type="button" onClick={() => setOpenId(e.id)} className="block max-w-full cursor-pointer truncate rounded text-left text-[13px] font-medium text-fg hover:text-accent-text hover:underline" title={e.title}>{e.title}</button>
-            <p className="truncate text-xs text-fg-subtle">{EVENT_LABEL[e.type]}{e.providerShort ? ` · ${e.providerShort}` : ""} · {e.runId}</p>
+            <p className="truncate text-xs text-fg-subtle">{eventMeta(e)}</p>
           </div>
         </div>
       ),
@@ -164,12 +163,7 @@ export function AlertsInbox({ events, storeTimezone }: { events: MonitoringEvent
       srOnlyHeader: true,
       align: "right",
       width: "w-12",
-      cell: (e) =>
-        e.alert && statusOf(e) ? (
-          <Menu trigger={<IconButton icon="more" label={`Actions for ${e.title}`} size="sm" />} items={[{ label: "View evidence", icon: "eye", onSelect: () => setOpenId(e.id) }, { type: "separator" }, ...actionItems(e, statusOf(e) as AlertStatus, handlers)]} />
-        ) : (
-          <IconButton icon="eye" label={`View evidence for ${e.title}`} size="sm" onClick={() => setOpenId(e.id)} />
-        ),
+      cell: (e) => (e.alert && statusOf(e) ? <Menu trigger={<IconButton icon="more" label={`Actions for ${e.title}`} size="sm" />} items={actionItems(e, statusOf(e) as AlertStatus, handlers)} /> : null),
     },
   ];
 
@@ -179,11 +173,11 @@ export function AlertsInbox({ events, storeTimezone }: { events: MonitoringEvent
     { id: "type", label: "Type", options: [...new Set(events.map((e) => e.type))].map((t) => ({ value: t, label: EVENT_LABEL[t] })), value: (e: MonitoringEvent) => e.type },
   ];
 
-  if (events.length === 0) return <EmptyState icon="bell" title="No alerts yet" description="Changes between runs are listed here." />;
+  if (events.length === 0) return <EmptyState icon="bell" title="No alerts yet" />;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
         <Segmented
           label="Show"
           value={mode}
@@ -193,7 +187,6 @@ export function AlertsInbox({ events, storeTimezone }: { events: MonitoringEvent
             { value: "events", label: "All events", count: events.length },
           ]}
         />
-        <p className="tnum text-[13px] text-fg-muted">{openCount} open</p>
       </div>
 
       <Section title="Visibility changes">

@@ -11,7 +11,7 @@ export default async function NewStorePage() {
   const [channels, sample] = await Promise.all([listChannels(), getStoreSetupSample()]);
   return (
     <>
-      <PageHeader title="Add store" subtitle="Six short steps. Nothing is tracked until you activate." breadcrumb={[{ label: "Stores", href: "/stores" }, { label: "Add store" }]} />
+      <PageHeader title="Add store" />
       <AddStoreWizard channels={channels} sample={sample} />
     </>
   );

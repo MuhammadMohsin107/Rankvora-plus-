@@ -25,19 +25,14 @@ export function MonitoringHeader({ data }: { data: MonitoringHeaderData }) {
   const hasSchedules = data.schedules.length > 0;
   const section = rel.split("/")[1] ?? "";
 
+  // With no schedule yet, the page's empty state carries the single next action.
   let actions: React.ReactNode = null;
-  if (section === "schedules") {
+  if (hasSchedules && section === "schedules") {
     actions = data.canSchedule ? (
       <ButtonLink href={`${base}/schedules/new`} variant="primary" icon="plus">New schedule</ButtonLink>
     ) : null;
-  } else if (section === "" || section === "runs") {
-    actions = hasSchedules ? (
-      <Button variant="primary" icon="play" onClick={() => setRunOpen(true)}>Run now</Button>
-    ) : data.canSchedule ? (
-      <ButtonLink href={`${base}/schedules/new`} variant="primary" icon="plus">New schedule</ButtonLink>
-    ) : null;
-  } else if (section === "alerts" || section === "usage") {
-    actions = hasSchedules ? <ButtonLink href={`${base}/schedules`} variant="secondary" icon="settings">{section === "alerts" ? "Alert rules" : "Usage caps"}</ButtonLink> : null;
+  } else if (hasSchedules && (section === "" || section === "runs")) {
+    actions = <Button variant="primary" icon="play" onClick={() => setRunOpen(true)}>Run now</Button>;
   }
 
   return (

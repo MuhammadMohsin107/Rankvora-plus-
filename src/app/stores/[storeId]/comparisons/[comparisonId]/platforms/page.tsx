@@ -1,8 +1,10 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BarCompare, type BarCompareRow } from "@/components/charts/bars";
-import { Badge } from "@/components/ui/badge";
 import { Callout, Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { comparisonStaticParams, getComparisonDetail } from "@/services/comparison";
@@ -14,13 +16,14 @@ export async function generateStaticParams() {
   return comparisonStaticParams();
 }
 
-function rowsFor(channels: ChannelSegment[], pick: (c: ChannelSegment) => MetricResult): BarCompareRow[] {
+/** `sub` states the cohort once, on the first chart. The other charts share the same matched slots. */
+function rowsFor(channels: ChannelSegment[], pick: (c: ChannelSegment) => MetricResult, sub?: (c: ChannelSegment, metric: MetricResult) => string | undefined): BarCompareRow[] {
   return channels.map((c) => {
     const metric = pick(c);
     return {
       id: c.channelId,
       label: c.label,
-      sub: `${metric.cohort} matched slots${metric.sample !== "ok" && !metric.na ? " · directional" : ""}`,
+      sub: sub?.(c, metric),
       baseline: metric.baseline,
       current: metric.current,
       baselineCi: metric.baselineCi,
@@ -30,7 +33,7 @@ function rowsFor(channels: ChannelSegment[], pick: (c: ChannelSegment) => Metric
   });
 }
 
-export default async function ComparisonPlatformsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/platforms">) {
+async function ComparisonPlatformsPageContent(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/platforms">) {
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
@@ -38,7 +41,7 @@ export default async function ComparisonPlatformsPage(props: PageProps<"/stores/
   const changed = channels.filter((c) => c.modelChanged);
 
   if (channels.length === 0) {
-    return <EmptyState icon="plug" title="No platform segments" description="No slot matched on both sides, so there is nothing to segment." />;
+    return <EmptyState icon="plug" title="No platform segments" description="No slot matched on both sides." />;
   }
 
   return (
@@ -50,9 +53,16 @@ export default async function ComparisonPlatformsPage(props: PageProps<"/stores/
       ) : null}
 
       <Card>
-        <CardHeader title="Mention rate by platform" subtitle="Segments are never merged" info="Each provider API, model and search mode is its own segment. Segments below 20 matched slots are directional." />
+        <CardHeader
+          title="Mention rate by platform"
+          info="Each provider API, model and search mode is its own segment and is never merged. Segments below 20 matched slots are directional."
+        />
         <CardBody>
-          <BarCompare rows={rowsFor(channels, (c) => c.mention)} baselineLabel="Base" currentLabel="Current" />
+          <BarCompare
+            rows={rowsFor(channels, (c) => c.mention, (_, m) => `${m.cohort} matched slots${m.sample !== "ok" && !m.na ? " · directional" : ""}`)}
+            baselineLabel="Base"
+            currentLabel="Current"
+          />
         </CardBody>
       </Card>
 
@@ -66,27 +76,18 @@ export default async function ComparisonPlatformsPage(props: PageProps<"/stores/
         <Card>
           <CardHeader title="Owned citation rate" info="Responses with citation data only. Providers without citation support show N/A." />
           <CardBody>
-            <BarCompare rows={rowsFor(channels, (c) => c.citation)} baselineLabel="Base" currentLabel="Current" />
+            <BarCompare rows={rowsFor(channels, (c) => c.citation, (_, m) => (m.na ? undefined : `${m.cohort} slots with citation data`))} baselineLabel="Base" currentLabel="Current" />
           </CardBody>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader title="Models in the matched cohort" />
-        <CardBody>
-          <ul className="divide-y divide-line">
-            {channels.map((c) => (
-              <li key={c.channelId} className="flex flex-wrap items-center justify-between gap-2 py-2.5 first:pt-0 last:pb-0">
-                <span className="min-w-0 text-[13px] text-fg">{c.label}</span>
-                <span className="flex items-center gap-2 text-xs text-fg-muted">
-                  <span className="tnum">{c.baselineModels.join(", ") || "—"} → {c.currentModels.join(", ") || "—"}</span>
-                  {c.modelChanged ? <Badge tone="warning" icon="alert-triangle">Changed</Badge> : <Badge tone="success" icon="check-circle">Unchanged</Badge>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </CardBody>
-      </Card>
     </div>
+  );
+}
+
+export default function ComparisonPlatformsPage(props: PageProps<"/stores/[storeId]/comparisons/[comparisonId]/platforms">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ComparisonPlatformsPageContent {...props} />
+    </Suspense>
   );
 }

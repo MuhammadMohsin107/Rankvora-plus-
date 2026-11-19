@@ -29,14 +29,7 @@ const FIELD_LABEL: Record<string, string> = {
   channels: "AI channels",
 };
 
-const STEP_COPY: { title: string; subtitle: string }[] = [
-  { title: "Basics", subtitle: "Name the store and point to its website." },
-  { title: "Connection", subtitle: "Connect a platform or continue manually." },
-  { title: "Brand and market", subtitle: "How the brand is written and where it sells." },
-  { title: "Products and services", subtitle: "What AI answers should associate with the brand." },
-  { title: "Competitors", subtitle: "Confirm who the brand is compared with." },
-  { title: "AI channels and review", subtitle: "Choose what to measure, then activate." },
-];
+const STEP_TITLE = ["Basics", "Connection", "Brand and market", "Products and services", "Competitors", "AI channels and review"];
 
 function focusField(field: string) {
   const node = document.querySelector<HTMLElement>(`[name="${field}"], [data-field="${field}"]`);
@@ -124,7 +117,7 @@ export function AddStoreWizard({ channels, sample }: { channels: AiChannel[]; sa
     timers.current.push(
       window.setTimeout(() => {
         setForm((current) => ({ ...current, shopifyState: "authorized" }));
-        toast.push({ title: "Shopify authorized", description: "Simulated. No real connection was made." });
+        toast.push({ title: "Shopify authorized" });
       }, 1200),
     );
   };
@@ -137,15 +130,14 @@ export function AddStoreWizard({ channels, sample }: { channels: AiChannel[]; sa
     <WizardFrame
       steps={[...STEPS]}
       current={step}
-      title={STEP_COPY[step].title}
-      subtitle={STEP_COPY[step].subtitle}
+      title={STEP_TITLE[step]}
       onStepClick={setStep}
       onBack={step > 0 ? () => setStep(step - 1) : undefined}
       primary={step === LAST_STEP ? { label: "Activate store", onClick: activate, loading: activating } : { label: "Next", onClick: next }}
       secondary={<Button variant="ghost" onClick={saveDraft}>Save draft</Button>}
       aside={
         <Card>
-          <CardHeader title="Setup checklist" info="Draft: setup incomplete. Ready: setup complete, not tracking. Active: scheduled tracking on." actions={<Status kind="store" value={ready ? "ready" : "draft"} />} />
+          <CardHeader title="Setup checklist" actions={<Status kind="store" value={ready ? "ready" : "draft"} />} />
           <CardBody>
             <ol className="flex flex-col gap-2.5">
               {checklist.map((item) => (
@@ -176,7 +168,7 @@ export function AddStoreWizard({ channels, sample }: { channels: AiChannel[]; sa
             {errorKeys.map((field) => (
               <li key={field}>
                 <button type="button" onClick={() => focusField(field)} className="cursor-pointer rounded text-left text-[13px] text-danger underline-offset-2 hover:underline">
-                  {FIELD_LABEL[field] ?? field}: {errors[field]}
+                  {FIELD_LABEL[field] ?? field}
                 </button>
               </li>
             ))}

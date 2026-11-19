@@ -123,7 +123,7 @@ export function CompetitorsTab({ storeId, competitors, market, marketName, readO
         ]}
         defaultSort={{ column: "status", dir: "asc" }}
         toolbarExtra={addButton}
-        empty={<EmptyState icon="users" title="No competitors yet" description="Confirm who the brand is compared with." action={addButton} />}
+        empty={<EmptyState icon="users" title="No competitors yet" />}
       />
 
       <Dialog
@@ -134,7 +134,7 @@ export function CompetitorsTab({ storeId, competitors, market, marketName, readO
         footer={
           <>
             <Button variant="secondary" onClick={closeAdd}>Cancel</Button>
-            <Button variant="primary" onClick={add}>Add competitor</Button>
+            <Button variant="primary" onClick={add}>Add</Button>
           </>
         }
       >

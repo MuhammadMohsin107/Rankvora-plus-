@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -12,7 +15,7 @@ export async function generateStaticParams() {
   return auditParams();
 }
 
-export default async function AuditFindingsPage(props: PageProps<"/stores/[storeId]/audits/[auditId]/findings">) {
+async function AuditFindingsPageContent(props: PageProps<"/stores/[storeId]/audits/[auditId]/findings">) {
   const { storeId, auditId } = await props.params;
   const [audit, findings] = await Promise.all([getAudit(storeId, auditId), getAuditFindings(storeId, auditId)]);
   if (!audit) notFound();
@@ -26,10 +29,16 @@ export default async function AuditFindingsPage(props: PageProps<"/stores/[store
 
   return (
     <div className="flex flex-col gap-4">
-      <Callout tone="neutral">
-        Findings register at snapshot {audit.snapshotId}: {findings.length} findings. Statuses shown are current, not as of the snapshot.
-      </Callout>
+      <Callout tone="neutral">Statuses are current, not as of the snapshot.</Callout>
       <FindingsTable findings={findings} storeId={storeId} />
     </div>
+  );
+}
+
+export default function AuditFindingsPage(props: PageProps<"/stores/[storeId]/audits/[auditId]/findings">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <AuditFindingsPageContent {...props} />
+    </Suspense>
   );
 }

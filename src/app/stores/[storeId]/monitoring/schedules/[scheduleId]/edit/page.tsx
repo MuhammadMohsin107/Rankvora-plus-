@@ -1,3 +1,6 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -13,7 +16,7 @@ export async function generateStaticParams() {
   return scheduleParams();
 }
 
-export default async function EditSchedulePage(props: PageProps<"/stores/[storeId]/monitoring/schedules/[scheduleId]/edit">) {
+async function EditSchedulePageContent(props: PageProps<"/stores/[storeId]/monitoring/schedules/[scheduleId]/edit">) {
   const { storeId, scheduleId } = await props.params;
   const detail = await getSchedule(storeId, scheduleId);
   if (!detail) notFound();
@@ -22,7 +25,6 @@ export default async function EditSchedulePage(props: PageProps<"/stores/[storeI
   const header = (
     <PageHeader
       title={`Edit ${row.name}`}
-      subtitle={`Saving creates version ${row.currentVersion + 1}. Earlier runs keep their snapshots.`}
       breadcrumb={[{ label: "Monitoring", href: base }, { label: "Schedules", href: `${base}/schedules` }, { label: row.name, href: `${base}/schedules/${row.id}` }, { label: "Edit" }]}
     />
   );
@@ -40,5 +42,13 @@ export default async function EditSchedulePage(props: PageProps<"/stores/[storeI
       {header}
       <ScheduleForm ctx={ctx} mode="edit" scheduleId={row.id} initial={{ name: row.name, config: row.config, version: row.currentVersion }} />
     </>
+  );
+}
+
+export default function EditSchedulePage(props: PageProps<"/stores/[storeId]/monitoring/schedules/[scheduleId]/edit">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <EditSchedulePageContent {...props} />
+    </Suspense>
   );
 }

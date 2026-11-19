@@ -29,7 +29,7 @@ export function AuditReport({ report, data, storeId, limitations }: { report: Re
   ];
 
   return (
-    <ReportFrame report={report} sections={SECTIONS} sources={sources}>
+    <ReportFrame sections={SECTIONS}>
       <ReportSection id="summary" number={1} title="Executive summary" subtitle="Successful, eligible responses only">
         <MetricStrip columns={3}>
           <MetricCell>
@@ -39,7 +39,7 @@ export function AuditReport({ report, data, storeId, limitations }: { report: Re
             <Metric label="Recommendation rate" numerator={audit.recommendation?.n} denominator={audit.recommendation?.d} naReason={audit.recommendation ? undefined : "No completed analysis"} basis="API answer samples" />
           </MetricCell>
           <MetricCell>
-            <Metric label="Pages assessed" numerator={audit.pages?.n} denominator={audit.pages?.d} unit="in-scope pages" naReason={audit.pages ? undefined : "No website lane"} basis="website readiness" />
+            <Metric label="Findings created" value={String(audit.findingsCreated)} />
           </MetricCell>
         </MetricStrip>
       </ReportSection>
@@ -49,14 +49,19 @@ export function AuditReport({ report, data, storeId, limitations }: { report: Re
           columns={2}
           items={[
             { label: "Audit type", value: humanize(audit.type) },
-            { label: "Assessment lanes", value: "AI visibility · Website readiness (reported separately)" },
+            { label: "Assessment lanes", value: "AI visibility · Website readiness" },
             { label: "Started", value: <span className="tnum">{formatDateTime(audit.startedAt)} UTC</span> },
             { label: "Completed", value: <span className="tnum">{audit.completedAt ? `${formatDateTime(audit.completedAt)} UTC` : "—"}</span> },
             { label: "Created by", value: audit.createdBy },
-            { label: "Criteria", value: report.version },
           ]}
         />
-        <Metric label="Job success rate" numerator={audit.succeededJobs} denominator={audit.plannedJobs} unit="planned jobs" basis={`${audit.failedJobs} failed, excluded from rates`} />
+        <Metric
+          label="Job success rate"
+          numerator={audit.succeededJobs}
+          denominator={audit.plannedJobs}
+          unit="planned jobs"
+          basis={audit.failedJobs > 0 ? `${audit.failedJobs} failed, excluded from rates${data.failedByClass.length > 0 ? `: ${data.failedByClass.map((f) => `${humanize(f.cls)} ${f.count}`).join(" · ")}` : ""}` : undefined}
+        />
       </ReportSection>
 
       <ReportSection id="ai" number={3} title="AI visibility" subtitle="By provider API, model and search mode">
@@ -69,25 +74,19 @@ export function AuditReport({ report, data, storeId, limitations }: { report: Re
               <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
                 <Metric label="Mention rate" numerator={c.mention.n} denominator={c.mention.d} basis={c.failed ? `${c.failed} failed` : undefined} />
                 <Metric label="Recommendation rate" numerator={c.recommendation.n} denominator={c.recommendation.d} />
-                <Metric label="Owned citation rate" numerator={c.citation?.n} denominator={c.citation?.d} unit="responses with citation data" naReason={c.citation ? undefined : "Not supported by this provider"} />
+                <Metric label="Owned citation rate" numerator={c.citation?.n} denominator={c.citation?.d} naReason={c.citation ? undefined : "Not supported by this provider"} info="Responses with citation data only." />
               </CardBody>
             </Card>
           ))}
           {data.channels.length === 0 ? <p className="text-[13px] text-fg-muted">No AI responses recorded.</p> : null}
         </div>
-        {data.failedByClass.length > 0 ? (
-          <p className="tnum text-xs text-fg-subtle">
-            Failed requests (excluded, not counted as absent): {data.failedByClass.map((f) => `${humanize(f.cls)} ${f.count}`).join(" · ")}
-          </p>
-        ) : null}
       </ReportSection>
 
       <ReportSection id="website" number={4} title="Website readiness" subtitle="Separate from AI visibility. Never blended into one score.">
-        <Metric label="Page coverage" numerator={audit.pages?.n} denominator={audit.pages?.d} unit="in-scope pages" naReason={audit.pages ? undefined : "Website lane not run"} basis="pages assessed" />
+        <Metric label="Page coverage" numerator={audit.pages?.n} denominator={audit.pages?.d} unit="in-scope pages" naReason={audit.pages ? undefined : "Website lane not run"} />
       </ReportSection>
 
-      <ReportSection id="findings" number={5} title="Findings" subtitle="Register entries linked to this audit">
-        <Metric label="Findings created" value={String(audit.findingsCreated)} basis="audit headline" />
+      <ReportSection id="findings" number={5} title="Findings">
         {data.findings.length === 0 ? (
           <p className="text-[13px] text-fg-muted">No register entries are linked to this audit.</p>
         ) : (
@@ -156,10 +155,8 @@ export function AuditReport({ report, data, storeId, limitations }: { report: Re
         <KeyValue
           columns={2}
           items={[
-            { label: "Report version", value: report.version },
             { label: "Analysis version", value: <span className="tnum">1.2</span> },
             { label: "Generated", value: <span className="tnum">{formatDateTime(report.createdAt)} UTC</span> },
-            { label: "Report id", value: <Mono>{report.id}</Mono> },
           ]}
         />
       </ReportSection>

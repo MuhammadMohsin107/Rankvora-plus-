@@ -19,19 +19,23 @@ function relativeText(metric: MetricResult): string {
 /**
  * One metric, baseline vs current, always with numerator and denominator.
  * `countsOnly` (insufficient data) hides the percentage-point change and shows counts instead of a conclusion.
+ * `grouped` means a surrounding section already names the aggregation policy and the counts-only state,
+ * so the card does not repeat them.
  */
-export function HeadlineCard({ metric, countsOnly, aggregation }: { metric: MetricResult; countsOnly?: boolean; aggregation?: AggregationPolicy }) {
+export function HeadlineCard({ metric, countsOnly, aggregation, grouped }: { metric: MetricResult; countsOnly?: boolean; aggregation?: AggregationPolicy; grouped?: boolean }) {
   const unit = metricUnit(metric);
   const slotBased = unit === "matched slots";
   const na = metric.na;
+  const sample = countsOnly && grouped ? "ok" : metric.sample;
+  const info = [metric.info, !na && metric.cohort > 0 ? `${metric.cohort} matched slots in this cohort.` : null].filter(Boolean).join(" ");
   return (
     <Card as="article">
       <CardHeader
         title={metric.label}
         as="h3"
-        info={metric.info}
+        info={info || undefined}
         actions={
-          slotBased ? (
+          grouped ? undefined : slotBased ? (
             <Badge tone="neutral" title="Mean of per-slot rates across the runs in each window">
               Slot average
             </Badge>
@@ -47,7 +51,7 @@ export function HeadlineCard({ metric, countsOnly, aggregation }: { metric: Metr
           denominator={metric.baseline?.d}
           unit={unit}
           naReason={na}
-          sampleStatus={metric.sample}
+          sampleStatus={sample}
           basis={ciText(metric.baselineCi)}
         />
         <Metric
@@ -56,18 +60,18 @@ export function HeadlineCard({ metric, countsOnly, aggregation }: { metric: Metr
           denominator={metric.current?.d}
           unit={unit}
           naReason={na}
-          sampleStatus={metric.sample}
+          sampleStatus={sample}
           basis={ciText(metric.currentCi)}
           delta={!countsOnly && !na ? { points: metric.pointChange, goodWhen: metric.goodWhen } : undefined}
         />
         <dl className="tnum flex flex-col gap-1 text-xs">
           {countsOnly ? (
-            <>
+            grouped ? null : (
               <div className="flex justify-between gap-2">
                 <dt className="text-fg-subtle">Change</dt>
                 <dd className="text-fg-muted">Counts only</dd>
               </div>
-            </>
+            )
           ) : (
             <div className="flex justify-between gap-2">
               <dt className="text-fg-subtle">Relative</dt>
@@ -81,10 +85,6 @@ export function HeadlineCard({ metric, countsOnly, aggregation }: { metric: Metr
           <div className="flex justify-between gap-2">
             <dt className="text-fg-subtle">{slotBased ? "Pooled denominator change" : "Denominator change"}</dt>
             <dd className="text-fg">{metric.denominatorChange === null ? "N/A" : formatSignedInt(metric.denominatorChange)}</dd>
-          </div>
-          <div className="flex justify-between gap-2">
-            <dt className="text-fg-subtle">Matched slots</dt>
-            <dd className="text-fg">{metric.cohort}</dd>
           </div>
         </dl>
       </CardBody>

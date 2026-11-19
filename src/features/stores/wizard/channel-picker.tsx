@@ -57,15 +57,12 @@ export function ChannelPicker({ channels, selected, onChange, trackingMode, onTr
             <Badge tone="neutral" className="mt-0.5">Later</Badge>
           </li>
         </ul>
-        <p className="flex items-center gap-1.5 text-xs text-fg-subtle">
-          <Icon name="info" size={13} />
-          Copilot is not offered.
-          <Tooltip content="Consumer apps such as Copilot are not tracked. Results are API answer samples.">
-            <span tabIndex={0} aria-label="Consumer apps such as Copilot are not tracked. Results are API answer samples." className="flex cursor-help text-fg-subtle">
-              <Icon name="help" size={13} />
-            </span>
-          </Tooltip>
-        </p>
+        <Tooltip className="self-start" content="Consumer apps such as Copilot are not tracked. Results are API answer samples.">
+          <span tabIndex={0} className="flex cursor-help items-center gap-1.5 text-xs text-fg-subtle">
+            <Icon name="info" size={13} />
+            Copilot is not offered
+          </span>
+        </Tooltip>
         {error ? (
           <p role="alert" className="flex items-center gap-1 text-xs text-danger">
             <Icon name="alert-circle" size={13} />
@@ -90,7 +87,6 @@ export function ChannelPicker({ channels, selected, onChange, trackingMode, onTr
         {trackingMode === "model_only" ? (
           <Callout tone="warning" title="No citations in model-only mode">Owned citation rate will show N/A.</Callout>
         ) : null}
-        {trackingMode === "both" ? <p className="text-xs text-fg-subtle">Both modes double the provider requests per run.</p> : null}
       </div>
     </div>
   );

@@ -122,7 +122,6 @@ export function PageInspector({ page, issues }: { page: CrawledPage; issues: Pag
               <li key={l} className="flex items-center gap-2 text-[13px]">
                 <Icon name="x-circle" size={14} className="text-danger" />
                 <Mono>{l}</Mono>
-                <span className="text-xs text-fg-subtle">404</span>
               </li>
             ))}
           </ul>

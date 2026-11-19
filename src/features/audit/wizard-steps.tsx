@@ -36,13 +36,16 @@ function Skipped({ lane }: { lane: string }) {
   return <Callout tone="neutral">{lane} is not selected, so there is nothing to configure here.</Callout>;
 }
 
-function Block({ title, children, hint }: { title: string; children: ReactNode; hint?: string }) {
+/** `plain` keeps the group name for assistive tech but shows no heading (the step title already says it). */
+function Block({ title, children, hint, plain }: { title: string; children: ReactNode; hint?: string; plain?: boolean }) {
   return (
     <section className="flex flex-col gap-3" aria-label={title}>
-      <div>
-        <h3 className="text-[13px] font-semibold text-fg">{title}</h3>
-        {hint ? <p className="text-xs text-fg-subtle">{hint}</p> : null}
-      </div>
+      {plain ? null : (
+        <div>
+          <h3 className="text-[13px] font-semibold text-fg">{title}</h3>
+          {hint ? <p className="text-xs text-fg-subtle">{hint}</p> : null}
+        </div>
+      )}
       {children}
     </section>
   );
@@ -55,7 +58,7 @@ function Block({ title, children, hint }: { title: string; children: ReactNode; 
 export function StepType({ state, set }: StepProps) {
   return (
     <div className="flex flex-col gap-6">
-      <Block title="Audit type">
+      <Block title="Audit type" plain>
         <RadioCards label="Audit type" columns={2} value={state.kind} onChange={(kind) => set({ kind })} options={KIND_OPTIONS} />
       </Block>
       <Block title="Lanes" hint="Reported separately. They are never merged into one score.">
@@ -89,7 +92,7 @@ export function StepPrompts({ data, state, set }: StepProps) {
         value={state.promptMode}
         onChange={(promptMode) => set({ promptMode })}
         options={[
-          { value: "all", label: "All active", description: `${active.length} prompts` },
+          { value: "all", label: "All active", description: "Every active prompt" },
           { value: "groups", label: "By group", description: "Pick prompt groups" },
           { value: "ids", label: "Specific prompts", description: "Pick individually" },
         ]}
@@ -106,7 +109,7 @@ export function StepPrompts({ data, state, set }: StepProps) {
         </Block>
       ) : null}
 
-      <Block title={`Active prompts · ${included.size} of ${active.length} included`} hint="The exact version of each prompt is fixed when the audit starts.">
+      <Block title={`Active prompts · ${included.size} of ${active.length} included`}>
         <ul className="ui-scroll max-h-80 divide-y divide-line overflow-y-auto rounded-control border border-line">
           {active.map((p) => (
             <li key={p.id} className="px-3 py-2.5">
@@ -152,22 +155,23 @@ export function StepChannels({ data, state, set }: StepProps) {
   if (!state.ai) return <Skipped lane="AI visibility" />;
   return (
     <div className="flex flex-col gap-6">
-      <Block title="Channels" hint="Each is a provider API, model and search mode. Results are API answer samples.">
+      <Block title="Channels" plain>
         <ul className="divide-y divide-line rounded-control border border-line">
+          <li aria-hidden="true" className="hidden grid-cols-[minmax(0,1fr)_14rem] gap-3 bg-surface-2/60 px-3 py-1.5 text-xs font-medium text-fg-subtle md:grid">
+            <span>Channel</span>
+            <span>Search mode</span>
+          </li>
           {data.channels.map((c) => {
             const on = state.channelIds.includes(c.id);
             return (
               <li key={c.id} className="grid grid-cols-[minmax(0,1fr)] items-center gap-3 px-3 py-3 md:grid-cols-[minmax(0,1fr)_14rem]">
                 <Checkbox label={`${c.providerLabel} · ${c.apiLabel}`} description={`Model ${c.model}${c.supportsCitations ? " · returns citations" : " · no citations"}`} checked={on} onChange={() => set({ channelIds: toggle(state.channelIds, c.id) })} />
-                <Field label="Search mode" className="md:items-stretch">
-                  {({ id, describedBy }) => (
-                    <Select id={id} aria-label={`Search mode for ${c.providerLabel}`} aria-describedby={describedBy} disabled={!on} value={state.searchModes[c.id] ?? c.searchMode} onChange={(e) => set({ searchModes: { ...state.searchModes, [c.id]: e.target.value as SearchMode } })}>
-                      {searchModeOptions.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </Select>
-                  )}
-                </Field>
+                {/* One column header above the list names this field; each row keeps an accessible name. */}
+                <Select aria-label={`Search mode for ${c.providerLabel}`} disabled={!on} value={state.searchModes[c.id] ?? c.searchMode} onChange={(e) => set({ searchModes: { ...state.searchModes, [c.id]: e.target.value as SearchMode } })}>
+                  {searchModeOptions.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </Select>
               </li>
             );
           })}
@@ -354,7 +358,8 @@ export function StepCriteria({ data, state, set }: StepProps) {
 // ---------------------------------------------------------------------------
 
 export function StepReview({ data, state, usage, onEdit }: StepProps & { usage: Usage; onEdit: (step: number) => void }) {
-  const found = limitations(data, state, usage);
+  // Request-limit and budget warnings are shown once, live, in the usage panel beside the form.
+  const found = limitations(data, state, usage).filter((l) => l.id !== "requests" && l.id !== "budget");
   const kind = KIND_OPTIONS.find((k) => k.value === state.kind)?.label ?? state.kind;
   const channelNames = data.channels.filter((c) => state.channelIds.includes(c.id)).map((c) => `${c.providerLabel} · ${SEARCH_MODE_LABEL[state.searchModes[c.id] ?? c.searchMode]}`);
   const starts = [state.startHomepage && "Homepage", state.startSitemap && "Sitemap", state.startUrlList && `URL list (${urlLines(state.urlList).length})`, state.startCms && "CMS import"].filter(Boolean) as string[];
@@ -378,7 +383,7 @@ export function StepReview({ data, state, usage, onEdit }: StepProps & { usage: 
               "Prompts",
               1,
               <p className="text-[13px] text-fg">
-                <span className="tnum">{usage.prompts}</span> active prompts ({state.promptMode === "all" ? "all active" : state.promptMode === "groups" ? "by group" : "specific"}), versions fixed at start
+                <span className="tnum">{usage.prompts}</span> active prompts ({state.promptMode === "all" ? "all active" : state.promptMode === "groups" ? "by group" : "specific"})
               </p>,
             )
           : null}
@@ -404,13 +409,13 @@ export function StepReview({ data, state, usage, onEdit }: StepProps & { usage: 
           "Criteria and limits",
           4,
           <p className="text-[13px] text-fg">
-            Criteria {state.criteria} · {[state.searchConsole && "Search Console", state.pageSpeed && "PageSpeed", state.cms && "CMS"].filter(Boolean).join(", ") || "no integrations"} · up to <span className="tnum">{state.maxUrls}</span> URLs, <span className="tnum">{state.maxRequests}</span> requests, ${state.budgetUsd}
+            Criteria {state.criteria} · {[state.searchConsole && "Search Console", state.pageSpeed && "PageSpeed", state.cms && "CMS"].filter(Boolean).join(", ") || "no integrations"} · up to <span className="tnum">{state.maxUrls}</span> URLs and <span className="tnum">{state.maxRequests}</span> requests
           </p>,
         )}
       </div>
 
       <Card as="section">
-        <CardHeader title="Limitations" subtitle={found.length ? `${found.length} to be aware of` : undefined} />
+        <CardHeader title="Limitations" />
         <CardBody className="flex flex-col gap-2">
           {found.length === 0 ? <p className="text-[13px] text-fg-muted">None beyond the usual API-answer-sample caveat.</p> : found.map((l) => <Callout key={l.id} tone={l.tone}>{l.text}</Callout>)}
         </CardBody>
@@ -427,27 +432,21 @@ export function UsageAside({ data, state }: { data: WizardData; state: WizardSta
   const usage = predictUsage(data, state);
   return (
     <Card as="section">
-      <CardHeader title="Predicted usage" info="Jobs = prompts × channels × samples. Cost is an approximation from typical per-request pricing." actions={<Badge tone="neutral">Approximate</Badge>} />
+      <CardHeader title="Predicted usage" info="Jobs = prompts × channels × samples. Pages and cost are approximations from typical per-request pricing." />
       <CardBody className="flex flex-col gap-4">
         <div>
           <p className="tnum text-[26px] font-semibold leading-none tracking-tight text-fg">{state.ai ? usage.jobs : "—"}</p>
           <p className="tnum mt-1.5 text-xs text-fg-subtle">{state.ai ? `${usage.prompts} prompts × ${usage.channels} channels × ${usage.samples} samples = jobs` : "AI lane off"}</p>
         </div>
-        <KeyValue
-          columns={2}
-          items={[
-            { label: "Pages to crawl", value: <span className="tnum">{state.web ? `≈ ${usage.pages}` : "—"}</span> },
-            { label: "Approx. cost", value: <span className="tnum">≈ {formatCurrency(usage.costUsd)}</span> },
-          ]}
-        />
+        <KeyValue columns={1} items={[{ label: "Pages to crawl", value: <span className="tnum">{state.web ? `≈ ${usage.pages}` : "—"}</span> }]} />
         <div className="flex flex-col gap-1.5">
           <div className="flex items-baseline justify-between text-xs text-fg-subtle">
-            <span>Against budget cap</span>
-            <span className="tnum">{formatCurrency(usage.costUsd)} / {formatCurrency(state.budgetUsd)}</span>
+            <span>Cost against budget cap</span>
+            <span className="tnum">≈ {formatCurrency(usage.costUsd)} / {formatCurrency(state.budgetUsd)}</span>
           </div>
           <Progress value={usage.costUsd} max={Math.max(state.budgetUsd, 0.01)} label="Approximate cost against budget cap" tone={usage.overBudget ? "danger" : usage.costUsd / Math.max(state.budgetUsd, 0.01) > 0.85 ? "warning" : "accent"} />
         </div>
-        {usage.overBudget ? <Callout tone="warning">Over the budget cap. Reduce scope or raise the cap.</Callout> : null}
+        {usage.overBudget ? <Callout tone="warning">Approximate cost exceeds the budget cap. Reduce scope or raise the cap.</Callout> : null}
         {usage.overRequests ? <Callout tone="warning">Jobs exceed the request limit of {state.maxRequests}.</Callout> : null}
       </CardBody>
     </Card>

@@ -78,15 +78,10 @@ function HistoryTable({ storeId, records }: { storeId: string; records: Historic
     { id: "date", header: "Date", sort: (r) => r.at, hideBelow: "sm", cell: (r) => <span className="tnum text-[13px] text-fg-muted">{formatDate(r.at)}</span> },
     { id: "status", header: "Status", cell: (r) => <HistoryStatus record={r} /> },
     {
-      id: "links",
-      header: "Links",
+      id: "report",
+      header: "Report",
       align: "right",
-      cell: (r) => (
-        <div className="flex justify-end gap-1.5">
-          {r.reportId ? <ButtonLink href={`/stores/${storeId}/reports/${r.reportId}`} variant="ghost" size="sm">Report</ButtonLink> : null}
-          <ButtonLink href={r.href} variant="secondary" size="sm" trailingIcon="arrow-right">Open</ButtonLink>
-        </div>
-      ),
+      cell: (r) => (r.reportId ? <ButtonLink href={`/stores/${storeId}/reports/${r.reportId}`} variant="secondary" size="sm" trailingIcon="arrow-right">View</ButtonLink> : <span className="text-xs text-fg-subtle">—</span>),
     },
   ];
   const filters: TableFilter<HistoricalRecord>[] = [
@@ -110,7 +105,7 @@ export function ReportsView({ storeId, reports, history }: { storeId: string; re
     <Tabs
       label="Reports and history"
       tabs={[
-        { id: "reports", label: "Reports", count: reports.length, content: <ReportsTable storeId={storeId} reports={reports} /> },
+        { id: "reports", label: "Generated", count: reports.length, content: <ReportsTable storeId={storeId} reports={reports} /> },
         { id: "history", label: "Historical records", count: history.length, content: <HistoryTable storeId={storeId} records={history} /> },
       ]}
     />

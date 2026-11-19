@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { Select } from "@/components/ui/form";
 import type { IconName } from "@/components/ui/icon";
@@ -28,23 +28,20 @@ export function ActivityTab({ entries, timezone }: { entries: ActivityEntry[]; t
 
   return (
     <Card>
-      <CardHeader
-        title="Activity log"
-        subtitle={`Setting changes · times in ${timezone}`}
-        actions={
-          <div className="w-44">
-            <Select aria-label="Filter by type" value={kind} onChange={(e) => setKind(e.target.value as "" | ActivityKind)}>
-              <option value="">Type: all</option>
-              {kinds.map((k) => (
-                <option key={k} value={k}>{KIND[k].label}</option>
-              ))}
-            </Select>
-          </div>
-        }
-      />
+      <div className="flex items-center justify-between gap-3 px-4 pt-3.5">
+        <p className="text-xs text-fg-subtle">Times in {timezone}</p>
+        <div className="w-44">
+          <Select aria-label="Filter by type" value={kind} onChange={(e) => setKind(e.target.value as "" | ActivityKind)}>
+            <option value="">Type: all</option>
+            {kinds.map((k) => (
+              <option key={k} value={k}>{KIND[k].label}</option>
+            ))}
+          </Select>
+        </div>
+      </div>
       <CardBody>
         {shown.length === 0 ? (
-          <EmptyState icon="history" title="No activity" description="Changes to this store appear here." />
+          <EmptyState icon="history" title="No activity" />
         ) : (
           <Timeline
             items={shown.map((entry) => ({

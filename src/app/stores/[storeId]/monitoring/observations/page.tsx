@@ -1,7 +1,9 @@
+import { Suspense } from "react";
+
+import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
 import { NoSchedules } from "@/features/monitoring/no-schedules";
 import { ObservationsTable } from "@/features/monitoring/observations-table";
@@ -14,7 +16,7 @@ export async function generateStaticParams() {
   return storeIds();
 }
 
-export default async function ObservationsPage(props: PageProps<"/stores/[storeId]/monitoring/observations">) {
+async function ObservationsPageContent(props: PageProps<"/stores/[storeId]/monitoring/observations">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
@@ -26,9 +28,16 @@ export default async function ObservationsPage(props: PageProps<"/stores/[storeI
         icon="monitoring"
         title="No prompt-level observations yet"
         description="They appear once a run stores answers per prompt and provider."
-        action={<ButtonLink href={`/stores/${storeId}/monitoring/runs`} variant="primary">View runs</ButtonLink>}
       />
     );
   }
   return <ObservationsTable rows={rows} />;
+}
+
+export default function ObservationsPage(props: PageProps<"/stores/[storeId]/monitoring/observations">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <ObservationsPageContent {...props} />
+    </Suspense>
+  );
 }
