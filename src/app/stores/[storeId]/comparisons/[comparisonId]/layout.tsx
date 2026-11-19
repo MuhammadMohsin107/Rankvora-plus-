@@ -53,7 +53,7 @@ async function ComparisonLayoutContent({ children, params }: LayoutProps<"/store
               label="Comparison sections"
               items={[
                 { href: base, label: "Overview", exact: true },
-                { href: `${base}/prompts`, label: "Prompts", count: result.matchedPairs },
+                { href: `${base}/prompts`, label: "Prompts", count: result.verdict === "not_comparable" ? undefined : result.matchedPairs },
                 { href: `${base}/platforms`, label: "Platforms" },
                 { href: `${base}/competitors`, label: "Competitors" },
                 { href: `${base}/citations`, label: "Citations" },

@@ -35,6 +35,8 @@ export default async function PortfolioPage() {
   const noCitation = tracked.length - citationStores.length;
   const alertTotal = tracked.reduce((n, s) => n + (s.summary?.openAlerts ?? 0), 0);
   const taskTotal = tracked.reduce((n, s) => n + (s.summary?.pendingTasks ?? 0), 0);
+  const untracked = stores.filter((s) => !s.summary);
+  const needsSetup = stores.filter((s) => s.status === "needs_review" || s.status === "draft");
   const storeName = (id: string) => stores.find((s) => s.id === id)?.name ?? id;
 
   return (
@@ -47,7 +49,7 @@ export default async function PortfolioPage() {
 
       <Section
         title="Organization roll-up"
-        actions={<Badge tone="neutral" icon="layers" title="Counts are added across stores, not an average of store percentages.">Pooled across {tracked.length} stores</Badge>}
+        actions={<Badge tone="neutral" icon="layers" title="Counts are added across stores, not an average of store percentages.">Pooled across {tracked.length} of {stores.length} stores</Badge>}
       >
         <MetricGrid>
           <MetricCell>
@@ -84,6 +86,11 @@ export default async function PortfolioPage() {
             </div>
           </MetricCell>
         </MetricGrid>
+        {untracked.length > 0 ? (
+          <p className="mt-2 text-xs text-fg-subtle">
+            Not included: {untracked.map((s) => s.name).join(", ")} (no tracking data yet, N/A rather than 0%).
+          </p>
+        ) : null}
       </Section>
 
       <Section title="Stores" className="mt-6">
@@ -99,6 +106,18 @@ export default async function PortfolioPage() {
           <CardHeader title="Needs attention" />
           <CardBody className="pt-2">
             <ul className="divide-y divide-line">
+              {needsSetup.map((store) => (
+                <li key={`setup-${store.id}`}>
+                  <Link href={`/stores/${store.id}/settings`} className="flex items-start gap-3 rounded-control py-2.5 hover:bg-surface-2/60 sm:px-2 sm:-mx-2">
+                    <Icon name="alert-circle" size={16} className="mt-0.5 text-warning" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] text-fg">Setup needs review: choose AI channels to start tracking</p>
+                      <p className="mt-0.5 text-xs text-fg-subtle">{store.name} · {store.status === "draft" ? "Draft" : "Needs review"}</p>
+                    </div>
+                    <Badge tone="warning">Setup</Badge>
+                  </Link>
+                </li>
+              ))}
               {alerts.map((alert) => (
                 <li key={alert.id}>
                   <Link href={`/stores/${alert.storeId}/monitoring/alerts`} className="flex items-start gap-3 rounded-control py-2.5 hover:bg-surface-2/60 sm:px-2 sm:-mx-2">

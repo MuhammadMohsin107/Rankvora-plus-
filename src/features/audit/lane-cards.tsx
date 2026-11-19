@@ -48,7 +48,10 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
             ) : null}
           </>
         ) : (
-          <CardBody><p className="text-[13px] text-fg-muted">Lane not included in this audit.</p></CardBody>
+          <CardBody>
+            <p className="text-[13px] font-medium text-fg">Not part of this audit</p>
+            <p className="mt-0.5 text-xs text-fg-subtle">This lane was not assessed, so there are no rates to show. It is not a score of zero.</p>
+          </CardBody>
         )}
       </Card>
 
@@ -81,7 +84,10 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
             ) : null}
           </>
         ) : (
-          <CardBody><p className="text-[13px] text-fg-muted">Lane not included in this audit.</p></CardBody>
+          <CardBody>
+            <p className="text-[13px] font-medium text-fg">Not part of this audit</p>
+            <p className="mt-0.5 text-xs text-fg-subtle">This lane was not assessed, so there are no rates to show. It is not a score of zero.</p>
+          </CardBody>
         )}
       </Card>
     </div>

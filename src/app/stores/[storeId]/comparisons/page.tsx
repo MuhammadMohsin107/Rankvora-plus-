@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { ButtonLink } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/feedback";
+import { NoHistory } from "@/features/comparison/no-history";
 import { ComparisonsTable, type ComparisonRow } from "@/features/comparison/comparisons-table";
 import { parseWindow } from "@/features/comparison/sides";
 import { formatShortDate } from "@/lib/format";
@@ -35,12 +35,7 @@ async function ComparisonsPageContent(props: PageProps<"/stores/[storeId]/compar
     return (
       <>
         <PageHeader title="Comparisons" />
-        <EmptyState
-          icon="compare"
-          title="No comparisons yet"
-          description="A comparison needs two snapshots from audits or monitoring runs."
-          action={<ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>}
-        />
+        <NoHistory storeId={storeId} kind="comparisons" hasChannel={store.channelIds.length > 0} />
       </>
     );
   }

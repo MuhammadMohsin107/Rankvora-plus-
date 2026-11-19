@@ -5,10 +5,9 @@
  * the generated responses, so totals always agree with the registry.
  * Later these functions will call the real application services.
  */
+import { REGISTRY_STORE_IDS } from "@/demo/registry";
 import {
   EVENT_SPECS,
-  EXTRA_RUNS,
-  EXTRA_SCHEDULES,
   SCHEDULE_DETAILS,
   TIMELINE_MARKERS,
   USAGE_CAPS,
@@ -100,7 +99,8 @@ function hasOwned(r: ResponseSample) {
   return r.status === "succeeded" && r.citations.some((c) => c.source === "owned");
 }
 
-const RUN_IDS = () => registry.runs().map((r) => r.id);
+/** Registry stores (those with schedules and run history), in registry order. */
+const HISTORY_STORE_IDS = REGISTRY_STORE_IDS;
 
 async function loadRunResponses(storeId: string, runIds: string[]): Promise<Map<string, ResponseSample[]>> {
   const entries = await Promise.all(runIds.map(async (id) => [id, await listRunResponses(storeId, id)] as const));
@@ -128,9 +128,10 @@ function usageOf(responses: ResponseSample[]) {
   };
 }
 
-/** Average cost per planned job over the latest runs (estimate). */
-function costPerJob(): number {
-  const recent = registry.runs().slice(-4);
+/** Average cost per planned job over the store's latest runs (estimate). Stores without runs use a small default. */
+function costPerJob(storeId: string): number {
+  const recent = registry.runs(storeId).slice(-4);
+  if (recent.length === 0) return 0.06;
   return round(sum(recent.map((r) => r.costUsd)) / Math.max(1, sum(recent.map((r) => r.plannedJobs))), 4);
 }
 
@@ -139,26 +140,26 @@ function costPerJob(): number {
 // ---------------------------------------------------------------------------
 
 function allSchedules(): MonitoringSchedule[] {
-  const fromRegistry = registry.schedules().map<MonitoringSchedule>((s) => {
-    const detail = SCHEDULE_DETAILS[s.id];
-    return {
-      id: s.id,
-      storeId: "runpro-pk",
-      name: s.name,
-      status: s.status,
-      statusReason: detail.statusReason,
-      createdAt: detail.createdAt,
-      createdBy: detail.createdBy,
-      nextRunAt: s.nextRunAt,
-      currentVersion: detail.versions[0].version,
-      versions: detail.versions,
-    };
-  });
-  const extra = EXTRA_SCHEDULES.map<MonitoringSchedule>((s) => {
-    const detail = SCHEDULE_DETAILS[s.id];
-    return { ...s, statusReason: detail.statusReason, createdAt: detail.createdAt, createdBy: detail.createdBy, currentVersion: detail.versions[0].version, versions: detail.versions };
-  });
-  return [...fromRegistry, ...extra];
+  return HISTORY_STORE_IDS.flatMap((storeId) =>
+    registry.schedules(storeId).flatMap<MonitoringSchedule>((entry) => {
+      const detail = SCHEDULE_DETAILS[entry.id];
+      if (!detail) return [];
+      return [
+        {
+          id: entry.id,
+          storeId,
+          name: entry.name,
+          status: entry.status,
+          statusReason: detail.statusReason,
+          createdAt: detail.createdAt,
+          createdBy: detail.createdBy,
+          nextRunAt: entry.nextRunAt,
+          currentVersion: detail.versions[0].version,
+          versions: detail.versions,
+        },
+      ];
+    }),
+  );
 }
 
 async function toRow(schedule: MonitoringSchedule, channels: AiChannel[], activeIds: Set<string> | null, lastRunAt: string | null): Promise<ScheduleRow> {
@@ -181,7 +182,7 @@ async function toRow(schedule: MonitoringSchedule, channels: AiChannel[], active
     jobsPerRun,
     runsPerMonth: config.frequency.runsPerMonth,
     jobsPerMonth,
-    costPerMonthUsd: round(jobsPerMonth * costPerJob()),
+    costPerMonthUsd: round(jobsPerMonth * costPerJob(schedule.storeId)),
     nextRunAt: schedule.nextRunAt,
     lastRunAt,
     currentVersion: schedule.currentVersion,
@@ -244,56 +245,38 @@ export function scheduleParams(): { storeId: string; scheduleId: string }[] {
 
 export async function listRuns(storeId: string): Promise<RunSummary[]> {
   const scheduleName = (id: string) => allSchedules().find((s) => s.id === id)?.name ?? id;
-  const registryRuns = registry.runs().filter(() => storeId === "runpro-pk");
+  const registryRuns = registry.runs(storeId);
   const responses = await loadRunResponses(storeId, registryRuns.map((r) => r.id));
-  const fromRegistry = registryRuns.map<RunSummary>((r) => {
-    const list = responses.get(r.id) ?? [];
-    return {
-      id: r.id,
-      storeId,
-      scheduleId: r.scheduleId,
-      scheduleName: scheduleName(r.scheduleId),
-      scheduleVersion: scheduleVersionAt(r.scheduleId, r.scheduledFor),
-      trigger: "schedule",
-      scheduledFor: r.scheduledFor,
-      durationSeconds: runTiming(list, r.scheduledFor),
-      status: r.status,
-      mention: r.mention,
-      recommendation: r.recommendation,
-      planned: r.plannedJobs,
-      succeeded: r.succeededJobs,
-      failed: r.failedJobs,
-      requests: requestCount(list),
-      costUsd: r.costUsd,
-      snapshotId: r.snapshotId,
-      hasJobDetail: list.length > 0,
-    };
-  });
-  const authored = EXTRA_RUNS.filter((r) => r.storeId === storeId).map<RunSummary>((r) => ({
-    id: r.id,
-    storeId,
-    scheduleId: r.scheduleId,
-    scheduleName: scheduleName(r.scheduleId),
-    scheduleVersion: 1,
-    trigger: "schedule",
-    scheduledFor: r.scheduledFor,
-    durationSeconds: r.durationSeconds,
-    status: r.status,
-    mention: r.mention,
-    recommendation: r.recommendation,
-    planned: r.planned,
-    succeeded: r.succeeded,
-    failed: r.failed,
-    requests: r.succeeded + r.failed * 3,
-    costUsd: r.costUsd,
-    snapshotId: r.snapshotId,
-    hasJobDetail: false,
-  }));
-  return [...fromRegistry, ...authored].sort((a, b) => b.scheduledFor.localeCompare(a.scheduledFor));
+  return registryRuns
+    .map<RunSummary>((r) => {
+      const list = responses.get(r.id) ?? [];
+      return {
+        id: r.id,
+        storeId,
+        scheduleId: r.scheduleId,
+        scheduleName: scheduleName(r.scheduleId),
+        scheduleVersion: scheduleVersionAt(r.scheduleId, r.scheduledFor),
+        trigger: "schedule",
+        scheduledFor: r.scheduledFor,
+        durationSeconds: runTiming(list, r.scheduledFor),
+        status: r.status,
+        mention: r.mention,
+        recommendation: r.recommendation,
+        planned: r.plannedJobs,
+        succeeded: r.succeededJobs,
+        failed: r.failedJobs,
+        requests: requestCount(list),
+        costUsd: r.costUsd,
+        snapshotId: r.snapshotId,
+        hasJobDetail: list.length > 0,
+      };
+    })
+    .sort((a, b) => b.scheduledFor.localeCompare(a.scheduledFor));
 }
 
+/** Every run of every store, for generateStaticParams. */
 export function runParams(): { storeId: string; runId: string }[] {
-  return [...RUN_IDS().map((runId) => ({ storeId: "runpro-pk", runId })), ...EXTRA_RUNS.map((r) => ({ storeId: r.storeId, runId: r.id }))];
+  return HISTORY_STORE_IDS.flatMap((storeId) => registry.runs(storeId).map((r) => ({ storeId, runId: r.id })));
 }
 
 function providerSplit(channel: AiChannel, list: ResponseSample[], previous: ResponseSample[] | null, costShare: number): ProviderSplit {
@@ -411,7 +394,7 @@ export async function getRunDetail(storeId: string, runId: string): Promise<RunD
       prompts: [...promptMap.values()],
       channels: snapshotChannels,
     },
-    reportId: registry.reports().find((r) => r.type === "monitoring" && r.sourceId === runId)?.id ?? null,
+    reportId: registry.reports(storeId).find((r) => r.type === "monitoring" && r.sourceId === runId)?.id ?? null,
     provisional: run.status === "running",
   };
 }
@@ -634,7 +617,7 @@ function aggregateSides(
       const p = prev ? stat(prev) : null;
       return {
         previous: p && prevId ? mk("Previous", prevId, prevRun?.scheduledFor ?? fallbackAt, `${channelName(ch)}: ${p.failed} of ${p.total} jobs failed`, "success") : null,
-        current: mk("Current", spec.runId, fallbackAt, `${channelName(ch)}: ${c.failed} of ${c.total} jobs failed${c.cls ? ` (${c.cls})` : ""}`, "danger"),
+        current: mk("Current", spec.runId, fallbackAt, `${channelName(ch)}: ${c.failed} of ${c.total} jobs failed${c.cls ? ` (${c.cls})` : ""}`, spec.currentTone ?? "danger"),
       };
     }
     case "avg_position": {
@@ -643,7 +626,7 @@ function aggregateSides(
       const text = (x: { avg: number | null; n: number }) => (x.avg === null ? "No ordered lists" : `Average list position ${x.avg.toFixed(2)} · ${x.n} ordered lists`);
       return {
         previous: p && prevId ? mk("Previous", prevId, prevRun?.scheduledFor ?? fallbackAt, text(p), "neutral") : null,
-        current: mk("Current", spec.runId, fallbackAt, text(c), "warning"),
+        current: mk("Current", spec.runId, fallbackAt, text(c), spec.currentTone ?? "warning"),
       };
     }
     case "competitor_citations": {
@@ -652,11 +635,11 @@ function aggregateSides(
       const text = (x: { n: number; d: number }) => `${x.n} / ${x.d} answers cite a competitor domain (${pct(x.n, x.d)})`;
       return {
         previous: p && prevId ? mk("Previous", prevId, prevRun?.scheduledFor ?? fallbackAt, text(p), "neutral") : null,
-        current: mk("Current", spec.runId, fallbackAt, text(c), "warning"),
+        current: mk("Current", spec.runId, fallbackAt, text(c), spec.currentTone ?? "warning"),
       };
     }
     default:
-      return { previous: null, current: mk("Current", spec.runId, spec.at, "Commerce connection: needs attention", "warning") };
+      return { previous: null, current: mk("Current", spec.runId, spec.at, spec.evidenceSummary ?? "Commerce connection: needs attention", spec.currentTone ?? "warning") };
   }
 }
 
@@ -722,8 +705,9 @@ export async function listEvents(storeId: string): Promise<MonitoringEvent[]> {
 // ---------------------------------------------------------------------------
 
 export async function listObservations(storeId: string): Promise<ObservationRow[]> {
-  if (storeId !== "runpro-pk") return [];
-  const [prompts, groups, channels, runs, events] = await Promise.all([listPromptsBase(storeId), listPromptGroups(storeId), listStoreChannels(storeId), listRuns(storeId), listEvents(storeId)]);
+  const [store, prompts, groups, channels, runs, events] = await Promise.all([getStore(storeId), listPromptsBase(storeId), listPromptGroups(storeId), listStoreChannels(storeId), listRuns(storeId), listEvents(storeId)]);
+  if (!store) return [];
+  const locale = `${store.market} · ${store.language.toUpperCase()}`;
   const chronological = runs.filter((r) => r.hasJobDetail).sort((a, b) => a.scheduledFor.localeCompare(b.scheduledFor));
   const map = await loadRunResponses(storeId, chronological.map((r) => r.id));
   const latestRun = chronological[chronological.length - 1];
@@ -742,6 +726,7 @@ export async function listObservations(storeId: string): Promise<ObservationRow[
       const best: ResponseSample["outcome"] = ok.some((r) => r.outcome === "recommended") ? "recommended" : ok.some((r) => r.outcome === "mentioned") ? "mentioned" : ok.length > 0 ? "absent" : "failed";
       rows.push({
         id: `${prompt.id}|${channel.id}`,
+        locale,
         promptId: prompt.id,
         promptText: prompt.text,
         groupName: groups.find((g) => g.id === prompt.groupId)?.name ?? "Ungrouped",
@@ -772,6 +757,7 @@ export async function listObservations(storeId: string): Promise<ObservationRow[
 // Usage
 // ---------------------------------------------------------------------------
 
+const FALLBACK_CAPS = { requests: 100, samples: 100, searchCalls: 100, tokens: 50_000, costUsd: 5, providerRequests: 50 };
 const ZERO: UsageNumbers = { requests: 0, samples: 0, searchCalls: 0, tokens: 0, costUsd: 0 };
 const add = (a: UsageNumbers, b: UsageNumbers): UsageNumbers => ({
   requests: a.requests + b.requests,
@@ -784,14 +770,15 @@ const add = (a: UsageNumbers, b: UsageNumbers): UsageNumbers => ({
 export async function getUsage(storeId: string): Promise<UsageSummary | null> {
   const [store, channels, schedules, runs, org] = await Promise.all([getStore(storeId), listStoreChannels(storeId), listSchedules(storeId), listRuns(storeId), getOrgUsage()]);
   if (!store) return null;
-  const caps = USAGE_CAPS[storeId] ?? { requests: 100, samples: 100, searchCalls: 100, tokens: 50_000, costUsd: 5, providerRequests: 50 };
+  const caps = USAGE_CAPS[storeId] ?? FALLBACK_CAPS;
   const hasDetail = runs.some((r) => r.hasJobDetail);
-  const perJob = costPerJob();
+  const perJob = costPerJob(storeId);
+  const storePeriods = USAGE_PERIODS[storeId] ?? [];
 
   let periods: UsagePeriod[];
-  if (hasDetail) {
-    const map = await loadRunResponses(storeId, USAGE_PERIODS.flatMap((p) => p.runIds));
-    periods = USAGE_PERIODS.map<UsagePeriod>((period) => {
+  if (hasDetail && storePeriods.length > 0) {
+    const map = await loadRunResponses(storeId, storePeriods.flatMap((p) => p.runIds));
+    periods = storePeriods.map<UsagePeriod>((period) => {
       const byProvider = channels.map((c) => {
         let numbers = ZERO;
         for (const runId of period.runIds) {
@@ -847,7 +834,7 @@ export async function getUsage(storeId: string): Promise<UsageSummary | null> {
   const storeUsage = org.perStore.find((s) => s.storeId === storeId);
 
   return {
-    estimated: !hasDetail,
+    estimated: !(hasDetail && storePeriods.length > 0),
     currentPeriodId: current.id,
     periods,
     caps: { requests: caps.requests, samples: caps.samples, searchCalls: caps.searchCalls, tokens: caps.tokens, costUsd: caps.costUsd },
@@ -894,6 +881,7 @@ export async function getScheduleFormContext(storeId: string): Promise<ScheduleF
   if (!store) return null;
   const [prompts, groups, channels, org, members, schedules] = await Promise.all([listPromptsBase(storeId), listPromptGroups(storeId), listStoreChannels(storeId), getOrgUsage(), listMembers(), listSchedules(storeId)]);
   const storeUsage = org.perStore.find((s) => s.storeId === storeId);
+  const caps = USAGE_CAPS[storeId] ?? FALLBACK_CAPS;
   return {
     storeId,
     storeTimezone: store.timezone,
@@ -909,8 +897,10 @@ export async function getScheduleFormContext(storeId: string): Promise<ScheduleF
     })),
     channels: channels.map((c) => ({ ...toInfo(c), credentials: "tested" as const })),
     timezones: [...new Set([store.timezone, ...TIMEZONES])].map((value) => ({ value, label: value })),
-    costPerJobUsd: costPerJob(),
+    costPerJobUsd: costPerJob(storeId),
     plan: { requestCap: storeUsage?.cap ?? 0, used: storeUsage?.requests ?? 0 },
+    budget: { requests: caps.requests, samples: caps.samples, searchCalls: caps.searchCalls, tokens: caps.tokens, costUsd: caps.costUsd },
+    defaultCap: { jobsPerMonth: caps.requests, costUsd: caps.costUsd },
     emails: members.filter((m) => m.role !== "viewer").map((m) => m.email),
     otherJobsPerMonth: sum(schedules.filter((s) => s.status === "active").map((s) => s.jobsPerMonth)),
   };

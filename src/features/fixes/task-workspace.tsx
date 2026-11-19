@@ -164,6 +164,9 @@ export function TaskWorkspace({ storeId, detail, role, actorName, assignees }: P
         </Button>
       );
       break;
+    case "failed":
+      primary = execution.failure ? <Button variant="primary" icon="alert-triangle" onClick={() => goTo("execution")}>Review failure</Button> : null;
+      break;
     default:
       primary = null;
   }
@@ -280,6 +283,7 @@ export function TaskWorkspace({ storeId, detail, role, actorName, assignees }: P
               label: "Execution",
               content: (
                 <TaskExecutionTab
+                  storeId={storeId}
                   execution={execution}
                   remote={remote}
                   draft={draft}

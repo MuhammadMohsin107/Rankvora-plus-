@@ -8,16 +8,17 @@ import {
   DEMO_CHANNELS,
   DEMO_COMPETITORS,
   DEMO_CURRENT_USER_ID,
-  DEMO_GROUPS,
+  ALL_GROUPS,
+  ALL_PROMPTS,
   DEMO_MEMBERS,
   DEMO_ORG,
   DEMO_PRODUCTS,
-  DEMO_PROMPTS,
   DEMO_STORES,
   DEMO_USAGE,
 } from "@/demo/shared";
-import { REGISTRY_RUNS } from "@/demo/registry";
-import { buildRunResponses } from "@/demo/shared-records";
+import { registryFor } from "@/demo/registry";
+import { DEMO_FINDINGS, buildRunResponses } from "@/demo/shared-records";
+import { OPEN_FINDING_STATUSES, OPEN_TASK_STATUSES } from "@/lib/record-status";
 import type {
   AiChannel,
   AlertHeadline,
@@ -57,9 +58,11 @@ function ownedCitation(runId: string): Rate {
 }
 
 function withComputedSummary(store: Store): Store {
-  if (store.id !== "runpro-pk" || !store.summary) return store;
-  const latest = REGISTRY_RUNS[REGISTRY_RUNS.length - 1];
-  const previous = REGISTRY_RUNS[REGISTRY_RUNS.length - 2];
+  const reg = registryFor(store.id);
+  if (!store.summary || reg.runs.length === 0) return store;
+  const latest = reg.runs[reg.runs.length - 1];
+  const previous = reg.runs.length > 1 ? reg.runs[reg.runs.length - 2] : latest;
+  const nextRunAt = reg.schedules.filter((s) => s.status === "active" && s.nextRunAt).map((s) => s.nextRunAt as string).sort()[0] ?? null;
   return {
     ...store,
     summary: {
@@ -70,6 +73,12 @@ function withComputedSummary(store: Store): Store {
       recommendationPrevious: previous.recommendation,
       ownedCitation: ownedCitation(latest.id),
       ownedCitationPrevious: ownedCitation(previous.id),
+      openFindings: DEMO_FINDINGS.filter((f) => f.storeId === store.id && OPEN_FINDING_STATUSES.has(f.status)).length,
+      pendingTasks: reg.tasks.filter((t) => OPEN_TASK_STATUSES.has(t.status)).length,
+      openAlerts: DEMO_ALERTS.filter((a) => a.storeId === store.id && !a.read).length,
+      activePrompts: ALL_PROMPTS.filter((p) => p.storeId === store.id && p.status === "active").length,
+      lastRunAt: latest.scheduledFor,
+      nextRunAt,
     },
   };
 }
@@ -102,11 +111,11 @@ export async function listCompetitors(storeId: string): Promise<Competitor[]> {
 }
 
 export async function listPromptGroups(storeId: string): Promise<PromptGroup[]> {
-  return DEMO_GROUPS.filter((g) => g.storeId === storeId);
+  return ALL_GROUPS.filter((g) => g.storeId === storeId);
 }
 
 export async function listPromptsBase(storeId: string): Promise<PromptBase[]> {
-  return DEMO_PROMPTS.filter((p) => p.storeId === storeId);
+  return ALL_PROMPTS.filter((p) => p.storeId === storeId);
 }
 
 export async function listProducts(storeId: string): Promise<ProductService[]> {

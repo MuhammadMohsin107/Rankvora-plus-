@@ -284,6 +284,8 @@ export type ObservationRun = { runId: string; label: string; n: number; d: numbe
 
 export type ObservationRow = {
   id: string;
+  /** Market and language of the run, e.g. "AE · EN". */
+  locale: string;
   promptId: string;
   promptText: string;
   groupName: string;
@@ -355,6 +357,10 @@ export type ScheduleFormContext = {
   timezones: { value: string; label: string }[];
   costPerJobUsd: number;
   plan: { requestCap: number; used: number };
+  /** Monthly monitoring budget of the store (the caps shown on the Usage tab). */
+  budget: UsageCaps;
+  /** Starting values for a new schedule's usage cap. */
+  defaultCap: { jobsPerMonth: number; costUsd: number };
   emails: string[];
   otherJobsPerMonth: number;
 };

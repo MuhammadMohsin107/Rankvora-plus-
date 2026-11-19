@@ -1,7 +1,8 @@
 /**
  * DEMONSTRATION DATA — not real.
- * Fixes module detail around the shared findings (fnd-001…011) and registry
- * tasks (task-001…008). Fixed timestamps only. Read through src/services/fixes.ts.
+ * Fixes module detail around the shared findings and registry tasks of each store:
+ * runpro-pk (fnd-001…011, task-001…008) and runpro-ae (fnd-ae-001…006, task-ae-001…006).
+ * Fixed timestamps only. Read through src/services/fixes.ts.
  *
  * Wording rules honoured here: no causal claims, "Applied" is never "verified",
  * causes are classified confirmed / likely / hypothesis.
@@ -10,7 +11,6 @@ import type {
   FindingExtras,
   Recommendation,
   TaskDetailData,
-  TaskSummary,
 } from "@/types/fixes";
 
 const RP_URL = "https://runpro.pk";
@@ -33,7 +33,7 @@ export function demoDigest(seed: string): string {
 // Finding extras: rationale, criteria, evidence, observations
 // ---------------------------------------------------------------------------
 
-export const FINDING_EXTRAS: Record<string, FindingExtras> = {
+const PK_FINDING_EXTRAS: Record<string, FindingExtras> = {
   "fnd-001": {
     severityRationale: "Medium: the product page omits facts that shoppers and AI answers need for suitability questions. Nothing is broken.",
     priorityRationale: "P2: affects one product page and two tracked prompts; no revenue-critical error.",
@@ -174,7 +174,7 @@ const rec = (x: Partial<Recommendation> & Pick<Recommendation, "id" | "findingId
   ...x,
 });
 
-export const RECOMMENDATIONS: Recommendation[] = [
+const PK_RECOMMENDATIONS: Recommendation[] = [
   rec({
     id: "rec-fnd-001-a",
     findingId: "fnd-001",
@@ -479,7 +479,7 @@ const SHOPIFY = (scopes: string[]) => ({
   scopesRequired: scopes,
 });
 
-export const TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
+const PK_TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
   "task-001": { blockers: [] },
   "task-002": { blockers: [] },
   "task-003": { blockers: ["Remote page changed since draft: /collections/sale"] },
@@ -494,7 +494,7 @@ type TaskDetailSeed = Omit<TaskDetailData, "task">;
 
 const EMPTY_ROLLBACK = { available: false, laterEdit: null, record: null };
 
-export const TASK_DETAILS: Record<string, TaskDetailSeed> = {
+const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
   "task-001": {
     recommendationId: "rec-fnd-001-a",
     createdAt: "2026-10-22T09:30:00Z",
@@ -1044,4 +1044,801 @@ export const TASK_DETAILS: Record<string, TaskDetailSeed> = {
   },
 };
 
-export const TASK_ORDER: TaskSummary["id"][] = Object.keys(TASK_DETAILS);
+
+// ===========================================================================
+// runpro-ae (RunPro UAE · WooCommerce · runpro.ae)
+// ===========================================================================
+
+const AE_URL = "https://runpro.ae";
+
+/** WooCommerce connector as recorded today: write access was rejected on 18 Nov (store integration: needs attention). */
+const WOO = (required: string[], note?: string) => ({
+  label: "WooCommerce",
+  store: "runpro.ae",
+  state: "needs_attention" as const,
+  scopesGranted: ["read"],
+  scopesRequired: required,
+  note,
+});
+
+const AE_FINDING_EXTRAS: Record<string, FindingExtras> = {
+  "fnd-ae-001": {
+    severityRationale: "High: without Product and Offer data, price, currency and availability are not machine-readable on product pages. Nothing visible to shoppers is broken.",
+    priorityRationale: "P1: affects all 3 sampled product pages and is shared by every product on the template. A small, reviewable change.",
+    verificationCriteria: [
+      "Product and Offer JSON-LD present on all 3 sampled product pages",
+      "priceCurrency is AED and price equals the visible price",
+      "Markup validates without errors",
+      "Re-crawl shows no product page without Product markup",
+    ],
+    evidence: [
+      { id: "e1", kind: "page", url: `${AE_URL}/product/daily-trainer`, note: "No Product or Offer JSON-LD; breadcrumb markup only", auditId: "aud-ae-001" },
+      { id: "e2", kind: "page", url: `${AE_URL}/product/marathon-elite`, note: "No Product or Offer JSON-LD; breadcrumb markup only", auditId: "aud-ae-001" },
+      { id: "e3", kind: "page", url: `${AE_URL}/product/glide-2`, note: "Stray Offer block only, no Product wrapper (see fnd-ae-002)", auditId: "aud-ae-001" },
+      { id: "e4", kind: "prompt", promptId: "p-ae-002", note: "Purchase-intent prompt, where price and availability facts matter. Context only." },
+      { id: "e5", kind: "prompt", promptId: "p-ae-005", note: "Purchase-intent prompt, where price and availability facts matter. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-09-16T05:28:00Z", source: "Initial audit", sourceHref: "audits/aud-ae-001", note: "3 of 3 sampled product pages lack Product markup" },
+      { id: "o2", at: "2026-11-05T05:33:00Z", source: "Full audit — November", sourceHref: "audits/aud-ae-002", note: "Still missing on the same 3 pages" },
+      { id: "o3", at: "2026-11-19T06:10:00Z", source: "Scheduled page re-check", note: "Live template unchanged; the staged template is not live" },
+    ],
+  },
+  "fnd-ae-002": {
+    severityRationale: "High: structured data reports USD while the page shows AED. A wrong currency can fail merchant-listing validation and mislead systems that read structured data.",
+    priorityRationale: "P1: one page, but price data is customer-facing and the fix is two lines.",
+    verificationCriteria: ["Offer priceCurrency is AED", "Offer price equals the visible price (AED 1,280)", "Structured data validates without price or currency warnings"],
+    evidence: [{ id: "e1", kind: "page", url: `${AE_URL}/product/glide-2`, note: "Offer: priceCurrency USD, price 349. Visible price: AED 1,280", auditId: "aud-ae-001" }],
+    observations: [
+      { id: "o1", at: "2026-09-16T05:31:00Z", source: "Initial audit", sourceHref: "audits/aud-ae-001", note: "Mismatch confirmed" },
+      { id: "o2", at: "2026-11-05T05:35:00Z", source: "Full audit — November", sourceHref: "audits/aud-ae-002", note: "Still USD" },
+      { id: "o3", at: "2026-11-19T06:11:00Z", source: "Scheduled page re-check", note: "Live value unchanged: the apply on 18 Nov did not write" },
+    ],
+  },
+  "fnd-ae-003": {
+    severityRationale: "Medium: delivery area, time and returns window are facts shoppers and AI answers look for on a product page. Nothing is broken.",
+    priorityRationale: "P2: affects 2 of 4 sampled product pages; confidence is medium because the sample is small.",
+    verificationCriteria: ["Delivery area and time stated on the product page", "Returns window stated on the product page", "Every stated fact matches the shipping and returns policy pages"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${AE_URL}/product/glide-2`, note: "Shipping mentioned in the footer only; returns on a separate page", auditId: "aud-ae-002" },
+      { id: "e2", kind: "page", url: `${AE_URL}/product/daily-trainer`, note: "Shipping mentioned in the footer only; returns on a separate page", auditId: "aud-ae-002" },
+      { id: "e3", kind: "prompt", promptId: "p-ae-002", note: "Purchase-intent prompt; delivery and returns are typical follow-up questions. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-11-05T05:33:00Z", source: "Full audit — November", sourceHref: "audits/aud-ae-002", note: "2 of 4 sampled product pages" },
+      { id: "o2", at: "2026-11-19T06:12:00Z", source: "Scheduled page re-check", note: "Unchanged" },
+    ],
+  },
+  "fnd-ae-004": {
+    severityRationale: "Medium: a competitor domain is cited far more often than the owned domain on two local buying prompts. Citation-capable responses only.",
+    priorityRationale: "P2: two local prompts; the cause is not established and confidence is medium.",
+    verificationCriteria: [
+      "Owned-domain citations counted on p-ae-002 and p-ae-005 with n / d",
+      "Same channels, models and search modes as the baseline",
+      "Failed requests excluded and reported separately",
+    ],
+    evidence: [
+      { id: "e1", kind: "response", responseId: "resp-aud-ae-002-07", note: "OpenAI · p-ae-002 · sample 1 · cites gulfrun.example" },
+      { id: "e2", kind: "response", responseId: "resp-aud-ae-002-10", note: "Gemini · p-ae-002 · sample 1 · cites gulfrun.example" },
+      { id: "e3", kind: "response", responseId: "resp-aud-ae-002-25", note: "OpenAI · p-ae-005 · sample 1 · cites gulfrun.example" },
+      { id: "e4", kind: "response", responseId: "resp-aud-ae-002-09", note: "OpenAI · p-ae-002 · sample 3 · the one response citing runpro.ae" },
+      { id: "e5", kind: "prompt", promptId: "p-ae-002", note: "Local buying prompt, Dubai" },
+      { id: "e6", kind: "prompt", promptId: "p-ae-005", note: "Local buying prompt, Abu Dhabi" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-11-05T05:38:00Z", source: "Full audit — November", sourceHref: "audits/aud-ae-002", note: "gulfrun.example 10 of 12, runpro.ae 1 of 12" },
+      { id: "o2", at: "2026-11-14T06:12:00Z", source: "Focused audit — Dubai local prompts", sourceHref: "audits/aud-ae-003", note: "9 of 12 requests succeeded; gulfrun.example 6 of 9, runpro.ae 2 of 9. 3 failed requests excluded." },
+      { id: "o3", at: "2026-11-18T05:30:00Z", source: "Weekly monitoring — 18 Nov", sourceHref: "monitoring/runs/run-ae-006", note: "gulfrun.example 9 of 12, runpro.ae 1 of 12" },
+    ],
+  },
+  "fnd-ae-005": {
+    severityRationale: "Low: redirecting URLs in a sitemap waste crawl budget. No visitor sees an error.",
+    priorityRationale: "P3: 9 legacy URLs; low-risk change.",
+    verificationCriteria: ["No sitemap URL redirects to runpro.pk", "Every sitemap URL returns HTTP 200 on runpro.ae", "Sitemap fetch returns valid XML"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${AE_URL}/sitemap.xml`, note: "9 of 214 sitemap URLs return 301 to runpro.pk", auditId: "aud-ae-001" },
+      { id: "e2", kind: "page", url: `${AE_URL}/sitemap.xml`, note: "0 of 205 sitemap URLs redirect", auditId: "aud-ae-002" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-09-16T05:26:00Z", source: "Initial audit", sourceHref: "audits/aud-ae-001", note: "9 redirecting URLs" },
+      { id: "o2", at: "2026-11-05T05:30:00Z", source: "Verification — Full audit November", sourceHref: "audits/aud-ae-002", note: "0 redirecting URLs" },
+    ],
+  },
+  "fnd-ae-006": {
+    severityRationale: "Low: one prompt, 2 channels, brand absent. Low confidence that a site change would matter; answers vary between runs.",
+    priorityRationale: "P3: single informational prompt. Accepted by the owner on 12 Nov; revisit in January.",
+    verificationCriteria: ["Re-run p-ae-003 on the same channels with 3 samples each", "Report brand mentions with numerator and denominator", "Failed requests reported separately"],
+    evidence: [
+      { id: "e1", kind: "response", responseId: "resp-aud-ae-002-13", note: "OpenAI · sample 1 · brand absent; cites gulfrun.example" },
+      { id: "e2", kind: "response", responseId: "resp-aud-ae-002-16", note: "Gemini · sample 1 · brand absent; cites gulfrun.example" },
+      { id: "e3", kind: "prompt", promptId: "p-ae-003", note: "Hot-weather running prompt" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-11-05T05:39:00Z", source: "Full audit — November", sourceHref: "audits/aud-ae-002", note: "6 of 6 successful responses absent" },
+      { id: "o2", at: "2026-11-18T05:30:00Z", source: "Weekly monitoring — 18 Nov", sourceHref: "monitoring/runs/run-ae-006", note: "6 of 6 successful responses absent" },
+    ],
+  },
+};
+
+const AE_RECOMMENDATIONS: Recommendation[] = [
+  rec({
+    id: "rec-fnd-ae-001-a",
+    findingId: "fnd-ae-001",
+    title: "Add Product and Offer JSON-LD to the WooCommerce product template",
+    problem: "Product pages expose breadcrumb markup only. Price, currency and availability are not machine-readable.",
+    evidenceIds: ["e1", "e2", "e3"],
+    cause: { classification: "confirmed", basis: "Markup read directly from 3 product pages in the 16 Sep and 5 Nov audits." },
+    action: "Add one Product block with a nested Offer (name, sku, price, priceCurrency AED, availability) to the single-product template, rendered from the WooCommerce product record.",
+    why: "Structured data states price, currency and availability in a form crawlers can read. It does not guarantee rich results, rankings or AI citations.",
+    expectedOutcome: "Every product page renders valid Product and Offer markup that matches the visible price in AED.",
+    effort: "medium",
+    risk: "medium",
+    suggestedMode: "cms_staged",
+    dependencies: ["WooCommerce write access", "Legacy Offer block on Glide 2 replaced first (task-ae-002), to avoid a duplicate Offer"],
+    limitations: ["The template change affects every product page once published", "Rendering is previewed on one page; the other sampled pages are re-checked after publish"],
+    verificationPlan: ["Re-crawl the 3 sampled product pages", "Validate Product and Offer markup", "Confirm price and currency equal the visible values"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-06T09:00:00Z",
+    taskId: "task-ae-001",
+  }),
+  rec({
+    id: "rec-fnd-ae-002-a",
+    findingId: "fnd-ae-002",
+    title: "Set the Glide 2 Offer to AED 1,280",
+    problem: "The Offer block says USD 349; the page shows AED 1,280.",
+    evidenceIds: ["e1"],
+    cause: { classification: "confirmed", basis: "The legacy snippet in the product meta data carries USD 349. The WooCommerce store currency and the visible price are AED 1,280." },
+    action: "Change priceCurrency from USD to AED and price from 349 to 1280 in the legacy Offer block of /product/glide-2, in one write.",
+    why: "A wrong currency in structured data can fail merchant-listing checks. Changing the currency alone would publish AED 349, so both values change together. No ranking effect is claimed.",
+    expectedOutcome: "Offer currency and price equal the visible price.",
+    effort: "small",
+    risk: "high",
+    suggestedMode: "approved_apply",
+    dependencies: ["Owner or admin approval of the exact diff", "WooCommerce write access"],
+    limitations: ["Writes to a live product page", "Cached copies may show the old values for a short time"],
+    verificationPlan: ["Re-crawl the page", "Compare Offer currency and price to the visible price", "Run structured-data validation"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T09:00:00Z",
+    taskId: "task-ae-002",
+  }),
+  rec({
+    id: "rec-fnd-ae-003-a",
+    findingId: "fnd-ae-003",
+    title: "Add a UAE delivery and returns section to product pages",
+    problem: "Delivery and returns facts sit in the footer and on a separate page, not on the product page.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "likely", basis: "Both affected pages mention shipping in the footer only (2 of 4 sampled pages) and link to a separate returns page." },
+    action: "Add a short Delivery and returns section below the description, using only facts from the shipping and returns policy pages.",
+    why: "Shoppers and AI answers can quote delivery and returns only when the product page states them. This does not guarantee a mention.",
+    expectedOutcome: "Each product page states the delivery area, time and returns window, matching the policy pages.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "ai_draft",
+    dependencies: ["Owner or admin confirms the policy wording"],
+    limitations: ["Facts come from the policy pages crawled on 5 Nov", "A person adds the section in WooCommerce; no write by Rankvora Plus"],
+    verificationPlan: ["Re-crawl the 2 affected product pages", "Check each stated fact against the policy pages"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-17T09:00:00Z",
+    taskId: "task-ae-003",
+  }),
+  rec({
+    id: "rec-fnd-ae-004-a",
+    findingId: "fnd-ae-004",
+    title: "Review Dubai local citations against GulfRun",
+    problem: "gulfrun.example is cited in 10 of 12 responses to the two local prompts; runpro.ae in 1 of 12.",
+    evidenceIds: ["e1", "e2", "e3", "e4"],
+    cause: { classification: "hypothesis", basis: "Local pages or listings may be stronger on the competitor side. Not established; answers vary between runs." },
+    action: "Read the cited GulfRun pages and the runpro.ae pages that could answer the same question, then write a note on whether the gap is content, listings or neither.",
+    why: "A large gap on two local prompts deserves a look before any content is changed. Three audits are not a trend.",
+    expectedOutcome: "A short note that names the gap or records normal variation.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "guidance",
+    limitations: ["Citation counts vary between runs", "3 failed requests in the focused audit are excluded, not counted as absent"],
+    verificationPlan: ["Re-run p-ae-002 and p-ae-005 with the same channels and 3 samples", "Report owned-domain citations as n / d"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-18T10:30:00Z",
+    taskId: "task-ae-004",
+  }),
+  rec({
+    id: "rec-fnd-ae-004-b",
+    findingId: "fnd-ae-004",
+    title: "Add a Dubai and Abu Dhabi delivery page",
+    problem: "No page on runpro.ae answers where and how fast RunPro delivers in each emirate.",
+    evidenceIds: ["e5", "e6"],
+    cause: { classification: "hypothesis", basis: "Untested. No evidence that a dedicated page changes which sources are cited." },
+    action: "Draft a delivery page for Dubai and Abu Dhabi that states delivery times and fees from the shipping policy, and link it from the footer.",
+    why: "An owned page with local facts gives channels something to cite. Citations are not guaranteed.",
+    expectedOutcome: "A live page whose facts match the shipping policy.",
+    effort: "medium",
+    risk: "medium",
+    suggestedMode: "cms_staged",
+    dependencies: ["Review of the task-ae-003 wording first"],
+    limitations: ["Hypothesis only", "Indexing time is outside our control"],
+    verificationPlan: ["Check the page returns 200 and is indexable", "Re-run p-ae-002 and p-ae-005 as context only"],
+  }),
+  rec({
+    id: "rec-fnd-ae-005-a",
+    findingId: "fnd-ae-005",
+    title: "Exclude 9 redirecting legacy URLs from the sitemap",
+    problem: "9 sitemap URLs return 301 to runpro.pk.",
+    evidenceIds: ["e1"],
+    cause: { classification: "confirmed", basis: "Each URL returned 301 to runpro.pk in the initial audit sitemap check." },
+    action: "Set the 9 legacy products to 'exclude from sitemap' in WooCommerce. No page content changes.",
+    why: "A sitemap should list only URLs that return 200 on the same domain.",
+    expectedOutcome: "The regenerated sitemap lists no redirecting URL.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "approved_apply",
+    dependencies: ["Owner or admin approval of the exact diff"],
+    limitations: ["Takes effect when the sitemap regenerates"],
+    verificationPlan: ["Re-crawl the sitemap", "Count URLs that redirect or return an error"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-10-27T09:00:00Z",
+    taskId: "task-ae-005",
+  }),
+  rec({
+    id: "rec-fnd-ae-006-a",
+    findingId: "fnd-ae-006",
+    title: "Rewrite hot-weather guidance on the homepage",
+    problem: "The brand is absent from every successful answer to the hot-weather prompt.",
+    evidenceIds: ["e1", "e2", "e3"],
+    cause: { classification: "hypothesis", basis: "The homepage may lack hot-weather guidance. One prompt, 2 channels; answers vary between runs." },
+    action: "Review the homepage copy on climate and propose a short hot-weather note using only supported product facts.",
+    why: "A page that states the guidance gives shoppers and channels an owned source. No mention is guaranteed.",
+    expectedOutcome: "A short, factual hot-weather note on the homepage.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "guidance",
+    limitations: ["Hypothesis only", "Based on one prompt"],
+    verificationPlan: ["Re-run p-ae-003 on the same channels with 3 samples"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-06T09:00:00Z",
+    decisionNote: "Task rejected on 12 Nov: accepted risk, revisit in January.",
+    taskId: "task-ae-006",
+  }),
+];
+
+// ---- Task details ----------------------------------------------------------
+
+const AE_FACT_SHIPPING = "Shipping policy page, crawl 5 Nov";
+const AE_FACT_RETURNS = "Returns policy page, crawl 5 Nov";
+
+const TEMPLATE_BEFORE = `{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Shop", "item": "${AE_URL}/shop" },
+        { "@type": "ListItem", "position": 2, "name": "RunPro Daily Trainer" }
+      ]
+    }
+  ]
+}`;
+const TEMPLATE_AFTER = `{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Shop", "item": "${AE_URL}/shop" },
+        { "@type": "ListItem", "position": 2, "name": "RunPro Daily Trainer" }
+      ]
+    },
+    {
+      "@type": "Product",
+      "name": "RunPro Daily Trainer",
+      "sku": "RP-DTR",
+      "brand": { "@type": "Brand", "name": "RunPro" },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "AED",
+        "price": "429.00",
+        "availability": "https://schema.org/InStock",
+        "url": "${AE_URL}/product/daily-trainer"
+      }
+    }
+  ]
+}`;
+
+const OFFER_BEFORE = `{
+  "@context": "https://schema.org",
+  "@type": "Offer",
+  "url": "${AE_URL}/product/glide-2",
+  "priceCurrency": "USD",
+  "price": "349",
+  "availability": "https://schema.org/InStock"
+}`;
+const OFFER_AFTER = OFFER_BEFORE.replace('"priceCurrency": "USD"', '"priceCurrency": "AED"').replace('"price": "349"', '"price": "1280"');
+
+const DELIVERY_AFTER =
+  "Delivery and returns (UAE)\n\nDelivery: standard delivery takes 2 to 4 working days across the UAE. Orders over AED 250 ship free; below that, delivery costs AED 20. Same-day delivery is available in Dubai.\nReturns: unworn shoes in the original box can be returned within 14 days of delivery. Start a return from your account or contact support.\nFull policies: runpro.ae/shipping and runpro.ae/returns.";
+const DELIVERY_ALT =
+  "Delivery and returns (UAE)\n\nDelivery: standard delivery takes 2 to 4 working days across the UAE. Orders over AED 250 ship free; below that, delivery costs AED 20.\nReturns: unworn shoes in the original box can be returned within 14 days of delivery. Start a return from your account or contact support.\nFull policies: runpro.ae/shipping and runpro.ae/returns.";
+
+const SITEMAP_SLUGS = ["glide-1", "daily-trainer-1", "marathon-pro-2024", "kids-runner-2", "trail-grip-3", "road-lite-1", "sprint-spike-1", "recovery-slide-1", "stride-trail-1"];
+
+const AE_TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
+  "task-ae-001": { blockers: ["Publish needs approval and WooCommerce write access", "Waiting for task-ae-002 (legacy Offer on Glide 2)"] },
+  "task-ae-002": { blockers: ["WooCommerce write access was rejected. Reconnect before retrying."] },
+  "task-ae-003": { blockers: [] },
+  "task-ae-004": { blockers: [] },
+  "task-ae-005": { blockers: [] },
+  "task-ae-006": { blockers: [] },
+};
+
+const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
+  // Staged on WooCommerce, not published, awaiting publish approval.
+  "task-ae-001": {
+    recommendationId: "rec-fnd-ae-001-a",
+    createdAt: "2026-11-06T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Product and Offer JSON-LD present on all 3 sampled product pages", "priceCurrency is AED and price equals the visible price", "Markup validates without errors"],
+    dependencies: [
+      { label: "Staging approved (12 Nov)", met: true },
+      { label: "Publish approval of the staged template", met: false },
+      { label: "WooCommerce write access", met: false },
+      { label: "task-ae-002: legacy Offer on Glide 2 replaced, to avoid a duplicate Offer", met: false },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Product daily-trainer · rendered JSON-LD (template preview)",
+      language: "json-ld",
+      before: TEMPLATE_BEFORE,
+      after: TEMPLATE_AFTER,
+      sourceFacts: [
+        { label: "Name and SKU", value: "RunPro Daily Trainer · RP-DTR", source: "WooCommerce product record, read 10 Nov" },
+        { label: "Price and currency", value: "AED 429.00", source: "WooCommerce product record and visible price, crawl 5 Nov" },
+        { label: "Availability", value: "In stock", source: "WooCommerce stock status, read 10 Nov" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-10T10:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "pending",
+      diffHash: demoDigest("task-ae-001-template"),
+      writes: [
+        "WooCommerce single-product JSON-LD template: the staged copy becomes live",
+        "Applies to every product page once published",
+        "Staging was approved on 12 Nov. This request covers publishing the staged template.",
+      ],
+      requestedBy: "Hira Malik",
+      requestedAt: "2026-11-18T09:40:00Z",
+    },
+    execution: {
+      connector: WOO(["read", "write"], "Staged on 12 Nov, before write access was rejected on 18 Nov. Publishing needs write access."),
+      cmsState: "staged",
+      remote: {
+        resource: "Template · single-product JSON-LD (staged copy)",
+        versionAtDraft: "staged v1",
+        versionNow: "staged v1",
+        hashAtDraft: demoDigest("ae-template-staged-1"),
+        hashNow: demoDigest("ae-template-staged-1"),
+        checkedAt: "2026-11-19T08:30:00Z",
+        changed: false,
+        note: "Read-only check. The staged copy is unchanged since 12 Nov and is not live.",
+      },
+      fields: [
+        { field: "Single-product JSON-LD template", before: "Breadcrumb only", after: "Breadcrumb, Product and Offer", outcome: "pending", note: "Staged 12 Nov. Not live until published." },
+        { field: "Glide 2 · legacy Offer block", before: "Stray Offer, USD 349", after: "Replaced by the template", outcome: "skipped", note: "Held until task-ae-002 corrects it, so the page never shows two Offers." },
+      ],
+      completedAt: "2026-11-10T10:30:00Z",
+      stagedAt: "2026-11-12T10:20:00Z",
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing is live. Discard the staged copy instead." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Product and Offer markup on daily-trainer", expect: "Present" },
+        { id: "c2", label: "Product and Offer markup on marathon-elite", expect: "Present" },
+        { id: "c3", label: "priceCurrency AED and price equals visible price", expect: "Equal" },
+        { id: "c4", label: "Markup validates", expect: "No errors" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-09-16T05:28:00Z", actor: "Audit aud-ae-001", kind: "created", title: "Finding fnd-ae-001 detected" },
+      { id: "h2", at: "2026-11-06T09:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-10T10:00:00Z", actor: "Drafting model", kind: "draft", title: "Template patch drafted", detail: "Preview rendered on daily-trainer" },
+      { id: "h4", at: "2026-11-11T09:00:00Z", actor: "Hira Malik", kind: "approval", title: "Staging approval requested" },
+      { id: "h5", at: "2026-11-12T09:30:00Z", actor: "Omar Farooq", kind: "approval", title: "Staging approved", detail: "Staged draft only. Publishing needs a separate approval." },
+      { id: "h6", at: "2026-11-12T10:20:00Z", actor: "System", kind: "execution", title: "Staged in WooCommerce", detail: "Remote check passed. Not live." },
+      { id: "h7", at: "2026-11-18T09:40:00Z", actor: "Hira Malik", kind: "approval", title: "Publish approval requested", detail: "Owner or admin must approve publishing the staged template" },
+      { id: "h8", at: "2026-11-19T08:30:00Z", actor: "System", kind: "execution", title: "Remote check: staged copy unchanged", detail: "Write access is still rejected, so publishing is blocked" },
+    ],
+  },
+
+  // Apply attempt failed because the WooCommerce connection needs attention. Nothing changed on the live site.
+  "task-ae-002": {
+    recommendationId: "rec-fnd-ae-002-a",
+    createdAt: "2026-11-10T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Offer priceCurrency is AED", "Offer price equals the visible price (AED 1,280)", "Structured data validates without price or currency warnings"],
+    dependencies: [
+      { label: "Owner or admin approval of the exact diff", met: true },
+      { label: "WooCommerce write access", met: false },
+      { label: "Live value unchanged since draft", met: true },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Product glide-2 · meta_data _legacy_offer_jsonld",
+      language: "json-ld",
+      before: OFFER_BEFORE,
+      after: OFFER_AFTER,
+      sourceFacts: [
+        { label: "Visible price", value: "AED 1,280", source: "Crawl 19 Nov, /product/glide-2" },
+        { label: "Store currency", value: "AED", source: "WooCommerce settings, read 10 Nov" },
+        { label: "Product price", value: "AED 1,280", source: "WooCommerce product record, read 10 Nov" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-10T09:40:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-ae-002-patch"),
+      writes: [
+        "WooCommerce product glide-2 · meta_data _legacy_offer_jsonld",
+        "2 lines changed: priceCurrency USD → AED, price 349 → 1280, in one write",
+        "Live on the product page after save",
+      ],
+      requestedBy: "Omar Farooq",
+      requestedAt: "2026-11-11T10:00:00Z",
+      decidedBy: "Sana Iqbal",
+      decidedAt: "2026-11-12T09:15:00Z",
+    },
+    execution: {
+      connector: WOO(["read", "write"], "Write access was rejected on 18 Nov. Reconnect in store settings to restore it."),
+      cmsState: "draft",
+      remote: {
+        resource: "Product glide-2 · meta_data _legacy_offer_jsonld",
+        versionAtDraft: "rev 31",
+        versionNow: "rev 31",
+        hashAtDraft: demoDigest("ae-glide-offer-31"),
+        hashNow: demoDigest("ae-glide-offer-31"),
+        checkedAt: "2026-11-19T08:32:00Z",
+        changed: false,
+        note: "Re-read after the failed attempt. The live value is unchanged.",
+      },
+      fields: [
+        { field: "priceCurrency", before: "USD", after: "AED", outcome: "failed", note: "Not written: HTTP 401 woocommerce_rest_cannot_edit" },
+        { field: "price", before: "349", after: "1280", outcome: "failed", note: "Not written. Changed together with priceCurrency so the page never shows AED 349." },
+      ],
+      completedAt: "2026-11-10T09:50:00Z",
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      failure: {
+        at: "2026-11-18T05:25:40Z",
+        stage: "apply",
+        code: "woocommerce_rest_cannot_edit",
+        message: "HTTP 401: Sorry, you cannot edit this resource. The API key now has read-only permission.",
+        attempts: [
+          { at: "2026-11-18T05:25:10Z", result: "HTTP 401 woocommerce_rest_cannot_edit" },
+          { at: "2026-11-18T05:25:25Z", result: "HTTP 401 woocommerce_rest_cannot_edit" },
+          { at: "2026-11-18T05:25:40Z", result: "HTTP 401 woocommerce_rest_cannot_edit. Retries stopped: the error is not temporary." },
+        ],
+        retryable: true,
+        retryBlockedBy: "The WooCommerce connection needs attention. Write access must be restored first.",
+        nothingWritten: true,
+        nextStep: "Reconnect WooCommerce with a read and write API key, then retry. The approved diff and the unchanged remote copy are reused.",
+      },
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing was written, so there is nothing to roll back." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Offer priceCurrency equals AED", expect: "AED" },
+        { id: "c2", label: "Offer price equals the visible price", expect: "AED 1,280" },
+        { id: "c3", label: "Structured data validates", expect: "No price or currency warnings" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-09-16T05:31:00Z", actor: "Audit aud-ae-001", kind: "created", title: "Finding fnd-ae-002 detected" },
+      { id: "h2", at: "2026-11-10T09:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved" },
+      { id: "h3", at: "2026-11-10T09:40:00Z", actor: "Drafting model", kind: "draft", title: "Patch drafted", detail: "2 lines changed" },
+      { id: "h4", at: "2026-11-11T10:00:00Z", actor: "Omar Farooq", kind: "approval", title: "Approval requested", detail: "Owner or admin must approve the exact diff" },
+      { id: "h5", at: "2026-11-12T09:15:00Z", actor: "Sana Iqbal", kind: "approval", title: "Approved exact diff" },
+      { id: "h6", at: "2026-11-17T16:00:00Z", actor: "Omar Farooq", kind: "status", title: "Apply scheduled", detail: "Maintenance window 18 Nov 09:25 Dubai time" },
+      { id: "h7", at: "2026-11-18T05:25:05Z", actor: "System", kind: "execution", title: "Remote check passed", detail: "rev 31, unchanged since draft" },
+      { id: "h8", at: "2026-11-18T05:25:40Z", actor: "System", kind: "execution", title: "Apply failed", detail: "HTTP 401 woocommerce_rest_cannot_edit, 3 attempts. Nothing was written." },
+      { id: "h9", at: "2026-11-18T05:30:00Z", actor: "System", kind: "status", title: "Task marked failed; connection needs attention", detail: "WooCommerce write access rejected" },
+      { id: "h10", at: "2026-11-19T08:32:00Z", actor: "System", kind: "execution", title: "Re-read after failure", detail: "Live value unchanged (rev 31)" },
+    ],
+  },
+
+  // AI draft of a UAE delivery and returns section, waiting for approval of the wording.
+  "task-ae-003": {
+    recommendationId: "rec-fnd-ae-003-a",
+    createdAt: "2026-11-17T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Delivery area and time are stated on the product page", "The returns window is stated on the product page", "Every stated fact matches the shipping and returns policy pages"],
+    dependencies: [
+      { label: "Shipping and returns policy pages crawled (5 Nov)", met: true },
+      { label: "Owner or admin confirms the wording", met: false },
+    ],
+    draft: {
+      kind: "text",
+      resource: "Product pages · Delivery and returns section (Glide 2 shown)",
+      field: "Delivery and returns section",
+      before: "",
+      after: DELIVERY_AFTER,
+      alternate: { after: DELIVERY_ALT, unsupportedClaims: [] },
+      sourceFacts: [
+        { label: "Delivery time", value: "2 to 4 working days across the UAE", source: AE_FACT_SHIPPING },
+        { label: "Free delivery", value: "Orders over AED 250", source: AE_FACT_SHIPPING },
+        { label: "Delivery fee", value: "AED 20 below the free-delivery threshold", source: AE_FACT_SHIPPING },
+        { label: "Returns window", value: "14 days from delivery, unworn, original box", source: AE_FACT_RETURNS },
+      ],
+      unsupportedClaims: [{ text: "Same-day delivery is available in Dubai.", reason: "The shipping policy lists 2 to 4 working days only." }],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-18T08:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "pending",
+      diffHash: demoDigest("task-ae-003-copy"),
+      writes: [
+        "No write by Rankvora Plus",
+        "Approval confirms the delivery and returns wording and its source facts",
+        "Hira Malik then adds the section in WooCommerce and marks the task applied",
+      ],
+      requestedBy: "Hira Malik",
+      requestedAt: "2026-11-18T08:30:00Z",
+    },
+    execution: {
+      connector: WOO(["read"], "Only read access is needed to compare the page. An AI draft makes no write."),
+      cmsState: "draft",
+      remote: {
+        resource: "Product glide-2 · description",
+        versionAtDraft: "rev 31",
+        versionNow: "rev 31",
+        hashAtDraft: demoDigest("ae-glide-desc-31"),
+        hashNow: demoDigest("ae-glide-desc-31"),
+        checkedAt: "2026-11-19T08:34:00Z",
+        changed: false,
+      },
+      fields: [{ field: "Delivery and returns section", before: "(none)", after: "4 lines", outcome: "pending", note: "Applied by a person after approval" }],
+      completedAt: "2026-11-18T08:20:00Z",
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing has been applied." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Delivery area and time on the product page", expect: "Present" },
+        { id: "c2", label: "Returns window on the product page", expect: "Present" },
+        { id: "c3", label: "Stated facts match the policy pages", expect: "No mismatch" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-05T05:33:00Z", actor: "Audit aud-ae-002", kind: "created", title: "Finding fnd-ae-003 detected" },
+      { id: "h2", at: "2026-11-17T09:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-18T08:00:00Z", actor: "Drafting model", kind: "draft", title: "Draft v1 generated", detail: "1 unsupported claim flagged" },
+      { id: "h4", at: "2026-11-18T08:30:00Z", actor: "Hira Malik", kind: "approval", title: "Approval requested", detail: "Owner or admin must confirm the policy wording" },
+    ],
+  },
+
+  // Guidance only, unassigned.
+  "task-ae-004": {
+    recommendationId: "rec-fnd-ae-004-a",
+    createdAt: "2026-11-18T10:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["The cited GulfRun and runpro.ae pages are compared", "A short note records whether the gap is content, listings or neither"],
+    dependencies: [{ label: "Assignee chosen", met: false }],
+    draft: {
+      kind: "guidance",
+      owner: "Unassigned",
+      steps: [
+        { title: "Open the cited responses", detail: "Read samples resp-aud-ae-002-07, -10 and -25 for p-ae-002 and p-ae-005, and the one sample that cites runpro.ae (-09)." },
+        { title: "List the cited GulfRun pages", detail: "Note which GulfRun page each answer cites and which question it answers." },
+        { title: "Compare with runpro.ae", detail: "Find the runpro.ae page that could answer the same question and check what it states: store location, delivery and returns." },
+        { title: "Check local listings", detail: "Look at how RunPro appears for Dubai and Abu Dhabi in map and directory listings." },
+        { title: "Write a note", detail: "Content gap, listing gap or neither. Do not change pages on the evidence of one audit." },
+      ],
+      sourceFacts: [
+        { label: "November audit", value: "gulfrun.example cited in 10 of 12 · runpro.ae in 1 of 12", source: "Audit aud-ae-002, prompts p-ae-002 and p-ae-005" },
+        { label: "Focused re-check", value: "gulfrun.example 6 of 9 · runpro.ae 2 of 9 (3 failed requests excluded)", source: "Audit aud-ae-003" },
+        { label: "Weekly run", value: "gulfrun.example 9 of 12 · runpro.ae 1 of 12", source: "Monitoring run-ae-006" },
+      ],
+    },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora Plus.", diffHash: null, writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "guidance",
+      remote: null,
+      fields: [],
+      completedAt: null,
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Guidance only." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Re-run p-ae-002 and p-ae-005 with the same channels and 3 samples", expect: "Counts reported as n / d" },
+        { id: "c2", label: "Failed requests reported separately", expect: "Not counted as absent" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-05T05:38:00Z", actor: "Audit aud-ae-002", kind: "created", title: "Finding fnd-ae-004 detected" },
+      { id: "h2", at: "2026-11-18T10:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved" },
+      { id: "h3", at: "2026-11-18T10:31:00Z", actor: "System", kind: "status", title: "Task suggested", detail: "No assignee yet" },
+    ],
+  },
+
+  // Sitemap redirects removed and verified by the next audit.
+  "task-ae-005": {
+    recommendationId: "rec-fnd-ae-005-a",
+    createdAt: "2026-10-27T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["No sitemap URL redirects to runpro.pk", "Every sitemap URL returns HTTP 200 on runpro.ae"],
+    dependencies: [
+      { label: "Owner or admin approval of the exact diff", met: true },
+      { label: "WooCommerce write access (at the time)", met: true },
+    ],
+    draft: {
+      kind: "batch",
+      resource: "Sitemap entries (9 legacy product URLs)",
+      items: SITEMAP_SLUGS.map((slug, i) => ({
+        id: `b${i + 1}`,
+        pageUrl: `${AE_URL}/product/${slug}`,
+        linkText: "Sitemap entry",
+        from: "In sitemap.xml (301 to runpro.pk)",
+        to: "Excluded from sitemap",
+        result: "applied" as const,
+      })),
+      sourceFacts: [
+        { label: "Redirecting URLs", value: "9 of 214 sitemap URLs return 301 to runpro.pk", source: "Audit aud-ae-001, sitemap check, 16 Sep" },
+        { label: "Rule", value: "The sitemap lists only URLs that return 200 on runpro.ae", source: "Website readiness criteria 1.4" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-10-27T10:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-ae-005-sitemap"),
+      writes: ["WooCommerce · 9 legacy products set to 'exclude from sitemap'", "No page content changes", "Takes effect when the sitemap regenerates"],
+      requestedBy: "Omar Farooq",
+      requestedAt: "2026-10-28T08:00:00Z",
+      decidedBy: "Sana Iqbal",
+      decidedAt: "2026-10-28T09:20:00Z",
+    },
+    execution: {
+      connector: WOO(["read", "write"], "This task wrote on 29 Oct, before write access was rejected on 18 Nov."),
+      cmsState: "published",
+      remote: {
+        resource: "Sitemap exclusions · 9 products",
+        versionAtDraft: "rev 12",
+        versionNow: "rev 12",
+        hashAtDraft: demoDigest("ae-sitemap-12"),
+        hashNow: demoDigest("ae-sitemap-12"),
+        checkedAt: "2026-10-29T07:39:00Z",
+        changed: false,
+        note: "Checked just before the write.",
+      },
+      fields: SITEMAP_SLUGS.map((slug) => ({ field: `${slug} · exclude from sitemap`, before: "Included", after: "Excluded", outcome: "written" as const })),
+      completedAt: "2026-10-27T10:30:00Z",
+      stagedAt: null,
+      appliedAt: "2026-10-29T07:40:00Z",
+      publishedAt: "2026-10-29T07:41:00Z",
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Verified on 5 Nov. Reverting the exclusions would be a new task." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Sitemap URLs that redirect", expect: "0" },
+        { id: "c2", label: "Sitemap fetch", expect: "HTTP 200, valid XML" },
+        { id: "c3", label: "Audit crawl coverage", expect: "Comparable with the baseline audit" },
+      ],
+      outcome: {
+        result: "verified_success",
+        ranAt: "2026-11-05T05:30:00Z",
+        sourceLabel: "Full audit — November",
+        sourceHref: "audits/aud-ae-002",
+        findingEffect: "Finding fnd-ae-005 set to Verified resolved.",
+        checks: [
+          { id: "c1", label: "Sitemap URLs that redirect", before: { status: "fail", detail: "9 of 214 URLs return 301 to runpro.pk (16 Sep)" }, after: { status: "pass", detail: "0 of 205 URLs redirect" } },
+          { id: "c2", label: "Sitemap fetch", before: { status: "pass", detail: "HTTP 200, valid XML" }, after: { status: "pass", detail: "HTTP 200, valid XML" } },
+          { id: "c3", label: "Audit crawl coverage", before: { status: "warning", detail: "41 of 60 sampled pages reached (aud-ae-001)" }, after: { status: "pass", detail: "58 of 60 sampled pages reached (aud-ae-002)" } },
+        ],
+      },
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-09-16T05:26:00Z", actor: "Audit aud-ae-001", kind: "created", title: "Finding fnd-ae-005 detected" },
+      { id: "h2", at: "2026-10-27T09:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved" },
+      { id: "h3", at: "2026-10-27T10:00:00Z", actor: "Drafting model", kind: "draft", title: "Batch drafted", detail: "9 resources" },
+      { id: "h4", at: "2026-10-28T09:20:00Z", actor: "Sana Iqbal", kind: "approval", title: "Approved exact diff" },
+      { id: "h5", at: "2026-10-29T07:40:00Z", actor: "System", kind: "execution", title: "Applied", detail: "Remote check passed; 9 of 9 written" },
+      { id: "h6", at: "2026-10-29T07:41:00Z", actor: "System", kind: "execution", title: "Published", detail: "Sitemap regenerated" },
+      { id: "h7", at: "2026-11-05T05:30:00Z", actor: "Audit aud-ae-002", kind: "verification", title: "Verified success", detail: "3 of 3 checks passed" },
+    ],
+  },
+
+  // Rejected, reason recorded.
+  "task-ae-006": {
+    recommendationId: "rec-fnd-ae-006-a",
+    createdAt: "2026-11-06T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["The homepage states hot-weather suitability using supported facts only", "p-ae-003 re-run on the same channels with 3 samples"],
+    dependencies: [{ label: "Assignee chosen", met: true }],
+    rejection: {
+      by: "Sana Iqbal",
+      at: "2026-11-12T10:00:00Z",
+      reason: "Not pursued now. One prompt, low confidence, and answers vary between runs. Accepted as a risk; revisit in January if the brand is still absent.",
+    },
+    draft: {
+      kind: "guidance",
+      owner: "Hira Malik",
+      steps: [
+        { title: "Review the homepage climate copy", detail: "Note whether the homepage says anything about running in heat." },
+        { title: "List supported product facts", detail: "Use only facts from the spec sheet, such as upper material and cushioning." },
+        { title: "Propose a short note", detail: "Two sentences at most. Do not claim a result in answers." },
+      ],
+      sourceFacts: [
+        { label: "Prompt p-ae-003", value: "Brand absent in 6 of 6 successful responses (2 channels x 3 samples)", source: "Audit aud-ae-002 and monitoring run-ae-006" },
+        { label: "Cited source", value: "gccfitness.example hot-weather running shoes", source: "Responses resp-aud-ae-002-13 to -18" },
+      ],
+    },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora Plus.", diffHash: null, writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "guidance",
+      remote: null,
+      fields: [],
+      completedAt: null,
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Guidance only." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Homepage states hot-weather suitability", expect: "Present" },
+        { id: "c2", label: "p-ae-003 re-run with 3 samples per channel", expect: "Counts reported as n / d" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-05T05:39:00Z", actor: "Audit aud-ae-002", kind: "created", title: "Finding fnd-ae-006 detected" },
+      { id: "h2", at: "2026-11-06T09:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-12T10:00:00Z", actor: "Sana Iqbal", kind: "status", title: "Task rejected", detail: "Accepted risk; revisit in January. Finding set to Accepted risk." },
+    ],
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Merged exports (all stores). Ids never collide between stores.
+// ---------------------------------------------------------------------------
+
+export const FINDING_EXTRAS: Record<string, FindingExtras> = { ...PK_FINDING_EXTRAS, ...AE_FINDING_EXTRAS };
+export const RECOMMENDATIONS: Recommendation[] = [...PK_RECOMMENDATIONS, ...AE_RECOMMENDATIONS];
+export const TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = { ...PK_TASK_SUMMARY_EXTRAS, ...AE_TASK_SUMMARY_EXTRAS };
+export const TASK_DETAILS: Record<string, TaskDetailSeed> = { ...PK_TASK_DETAILS, ...AE_TASK_DETAILS };

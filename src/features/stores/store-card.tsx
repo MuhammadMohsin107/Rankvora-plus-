@@ -58,7 +58,7 @@ export function StoreCard({ store }: { store: Store }) {
         </>
       ) : (
         <div className="mt-auto flex flex-col gap-3 border-t border-line p-4">
-          <p className="flex items-center gap-2 text-[13px] text-fg-muted"><Icon name="alert-circle" size={15} className="text-warning" />No tracking data yet.</p>
+          <p className="flex items-start gap-2 text-[13px] text-fg-muted"><Icon name="alert-circle" size={15} className="mt-0.5 shrink-0 text-warning" /><span>Mention rate: N/A. No AI channel is connected, so nothing is tracked yet.</span></p>
           <ButtonLink href={`/stores/${store.id}/settings`} variant="secondary" size="sm" className="self-start">Continue setup</ButtonLink>
         </div>
       )}

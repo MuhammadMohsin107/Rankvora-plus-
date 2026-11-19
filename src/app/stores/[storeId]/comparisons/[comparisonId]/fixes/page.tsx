@@ -12,6 +12,7 @@ import { Mono, Timeline } from "@/components/ui/misc";
 import { formatDate, formatPoints, formatShortDate } from "@/lib/format";
 import { pointChange } from "@/lib/stats";
 import type { StatusValue } from "@/lib/status";
+import { NotComputed } from "@/features/comparison/compatibility";
 import { comparisonStaticParams, getComparisonDetail } from "@/services/comparison";
 import type { FixTimelineItem } from "@/types/comparison";
 
@@ -44,6 +45,7 @@ async function ComparisonFixesPageContent(props: PageProps<"/stores/[storeId]/co
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
+  if (detail.result.verdict === "not_comparable") return <NotComputed checks={detail.result.checks} what="Fixes timeline" />;
   const { fixes, rangeFrom, rangeTo } = detail;
 
   return (

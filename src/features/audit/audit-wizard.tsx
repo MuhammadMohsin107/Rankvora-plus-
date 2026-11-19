@@ -29,9 +29,6 @@ const TITLES: { title: string; subtitle?: string }[] = [
   { title: "Ready to start?" },
 ];
 
-/** Where the demo lands after "Start audit": the in-progress November audit. */
-const DEMO_AUDIT_ID = "aud-004";
-
 function stepError(step: number, data: WizardData, s: WizardState): string | null {
   switch (step) {
     case 0:
@@ -71,12 +68,14 @@ export function AuditWizard({ data }: { data: WizardData }) {
 
   const start = () => {
     setStarting(true);
+    // Demo: no audit is created. The wizard lands on the store's running audit, else its latest full audit.
+    const landing = data.landingAudit;
     toast.push({
       title: "Audit started",
-      description: `${usage.jobs} AI jobs and about ${usage.pages} pages queued. Demo: opening the November audit.`,
+      description: `${usage.jobs} AI jobs and about ${usage.pages} pages queued.${landing ? ` Demo: opening "${landing.title}".` : " Demo: no audit is created."}`,
       tone: "success",
     });
-    router.push(`/stores/${data.store.id}/audits/${DEMO_AUDIT_ID}`);
+    router.push(landing ? `/stores/${data.store.id}/audits/${landing.id}` : `/stores/${data.store.id}/audits`);
   };
 
   const body = [

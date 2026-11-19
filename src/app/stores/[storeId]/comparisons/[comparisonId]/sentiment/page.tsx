@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { StackedBar, type Segment } from "@/components/charts/bars";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { HeadlineCard } from "@/features/comparison/headline";
+import { NotComputed } from "@/features/comparison/compatibility";
 import { comparisonStaticParams, getComparisonDetail } from "@/services/comparison";
 import type { SentimentCounts } from "@/types/comparison";
 
@@ -37,6 +38,7 @@ async function ComparisonSentimentPageContent(props: PageProps<"/stores/[storeId
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
+  if (detail.result.verdict === "not_comparable") return <NotComputed checks={detail.result.checks} what="Sentiment" />;
   const { result } = detail;
   const positive = result.headline.find((m) => m.id === "positive-sentiment")!;
 

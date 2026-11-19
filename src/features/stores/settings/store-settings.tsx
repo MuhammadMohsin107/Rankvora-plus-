@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { Status } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Callout } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ConfirmDialog } from "@/components/ui/overlay";
@@ -44,7 +44,7 @@ export type StoreSettingsData = {
   promptCount: number;
 };
 
-type SetupItem = { id: string; label: string; done: boolean; optional?: boolean; tab?: TabId; href?: string };
+type SetupItem = { id: string; label: string; action: string; done: boolean; optional?: boolean; tab?: TabId; href?: string };
 
 export function StoreSettings({ data }: { data: StoreSettingsData }) {
   const { store } = data;
@@ -86,16 +86,16 @@ export function StoreSettings({ data }: { data: StoreSettingsData }) {
   /* Setup checklist (drives the "Finish setup" callout and the Mark ready gate). */
   const consoleState = integrations.searchConsole.state;
   const setupItems: SetupItem[] = [
-    { id: "brand", label: "Brand description", done: (versions[0]?.description ?? "").trim().length > 0, tab: "brand" },
-    { id: "channels", label: "AI channels", done: savedChannelIds.length > 0, tab: "profile" },
-    { id: "prompts", label: "Prompts", done: data.promptCount > 0, href: `/stores/${store.id}/prompts` },
-    { id: "competitors", label: "Confirmed competitors", done: competitors.some((c) => c.status === "confirmed"), optional: true, tab: "competitors" },
-    { id: "products", label: "Products and services", done: products.length > 0, optional: true, tab: "products" },
-    { id: "console", label: "Search Console", done: consoleState === "connected", optional: true, tab: "integrations" },
+    { id: "brand", label: "Brand description", action: "Add brand description", done: (versions[0]?.description ?? "").trim().length > 0, tab: "brand" },
+    { id: "channels", label: "AI channels", action: "Choose AI channels", done: savedChannelIds.length > 0, tab: "profile" },
+    { id: "prompts", label: "Prompts", action: "Add prompts", done: data.promptCount > 0, href: `/stores/${store.id}/prompts/new` },
+    { id: "competitors", label: "Confirmed competitors", action: "Confirm a competitor", done: competitors.some((c) => c.status === "confirmed"), optional: true, tab: "competitors" },
+    { id: "products", label: "Products and services", action: "Add products", done: products.length > 0, optional: true, tab: "products" },
+    { id: "console", label: "Search Console", action: "Connect Search Console", done: consoleState === "connected", optional: true, tab: "integrations" },
   ];
-  const required = setupItems.filter((item) => !item.optional);
-  const requiredDone = required.every((item) => item.done);
   const doneCount = setupItems.filter((item) => item.done).length;
+  /** The one thing to do next: the first required item that is not done. */
+  const nextItem = setupItems.find((item) => !item.done && !item.optional);
 
   const commerceState = integrations.commerce.state;
   const reactivateBlocked = status === "disconnected" && commerceState !== "connected" && commerceState !== "manual" ? "Reconnect the integration first." : undefined;
@@ -265,12 +265,20 @@ export function StoreSettings({ data }: { data: StoreSettingsData }) {
             actions={
               status === "ready" ? (
                 <Button size="sm" variant="primary" icon="play" onClick={() => setPending("active")}>Activate</Button>
+              ) : nextItem ? (
+                nextItem.href ? (
+                  <ButtonLink href={nextItem.href} size="sm" variant="primary" icon="arrow-right">{nextItem.action}</ButtonLink>
+                ) : (
+                  <Button size="sm" variant="primary" icon="arrow-right" onClick={() => nextItem.tab && goTab(nextItem.tab)}>{nextItem.action}</Button>
+                )
               ) : (
-                <Button size="sm" variant="primary" icon="check-circle" disabled={!requiredDone} onClick={() => setPending("ready")}>Mark ready</Button>
+                <Button size="sm" variant="primary" icon="check-circle" onClick={() => setPending("ready")}>Mark ready</Button>
               )
             }
           >
-            <p className="tnum text-xs text-fg-muted">{doneCount} of {setupItems.length} done{requiredDone ? "" : " · required items first"}</p>
+            <p className="tnum text-xs text-fg-muted">
+              {doneCount} of {setupItems.length} done{nextItem ? ` · next: ${nextItem.label}` : ""}
+            </p>
             <ul className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
               {setupItems.map((item) => (
                 <li key={item.id} className="flex items-center justify-between gap-2">

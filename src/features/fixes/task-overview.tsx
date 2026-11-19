@@ -94,6 +94,12 @@ export function TaskOverviewTab({ storeId, detail, status, assignee, assignees, 
       </div>
 
       <div className="flex min-w-0 flex-col gap-4">
+        {status === "rejected" && detail.rejection ? (
+          <Callout tone="neutral" title="Rejected">
+            <p>{detail.rejection.reason}</p>
+            <p className="tnum mt-1 text-xs text-fg-subtle">{detail.rejection.by} · {formatDate(detail.rejection.at)}</p>
+          </Callout>
+        ) : null}
         {task.blockers.length > 0 ? (
           <Callout tone="warning" title="Blockers">
             <ul className="flex list-disc flex-col gap-1 pl-4">

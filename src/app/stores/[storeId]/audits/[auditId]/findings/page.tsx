@@ -29,7 +29,10 @@ async function AuditFindingsPageContent(props: PageProps<"/stores/[storeId]/audi
 
   return (
     <div className="flex flex-col gap-4">
-      <Callout tone="neutral">Statuses are current, not as of the snapshot.</Callout>
+      <Callout tone="neutral">
+        Statuses are current, not as of the snapshot.
+        {audit.lanes.includes("website_readiness") ? "" : " This audit assessed AI visibility only; the register also lists website findings recorded earlier."}
+      </Callout>
       <FindingsTable findings={findings} storeId={storeId} />
     </div>
   );

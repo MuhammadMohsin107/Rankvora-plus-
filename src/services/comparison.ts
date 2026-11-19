@@ -4,19 +4,7 @@
  * runs the deterministic engine in src/features/comparison/engine.ts.
  * Pure engine functions live there so the browser can run the same preview.
  */
-import {
-  COMPARISON_LIMITATIONS,
-  COMPARISON_TYPES,
-  COMPETITOR_DOMAINS,
-  COMPLETED_TASK_STATES,
-  METHODOLOGY,
-  OWNED_DOMAINS,
-  TYPE_DEFAULT_TARGET,
-  TYPE_LABEL,
-  TYPE_PRESETS,
-  WINDOW_PRESETS,
-} from "@/demo/comparison";
-import { RP } from "@/demo/registry";
+import { COMPARISON_LIMITATIONS, COMPARISON_TYPES, COMPLETED_TASK_STATES, comparisonConfigFor, METHODOLOGY, TYPE_LABEL } from "@/demo/comparison";
 import { compareSides, type EngineContext } from "@/features/comparison/engine";
 import { resolveSide } from "@/features/comparison/sides";
 import { channelLabel } from "@/lib/labels";
@@ -39,13 +27,14 @@ import type { ResponseSample } from "@/types/shared-records";
 
 export { COMPARISON_LIMITATIONS, COMPARISON_TYPES, METHODOLOGY, TYPE_LABEL };
 
-export function wizardCatalog(): WizardCatalog {
+export function wizardCatalog(storeId: string): WizardCatalog {
+  const config = comparisonConfigFor(storeId);
   return {
     types: COMPARISON_TYPES,
-    presets: TYPE_PRESETS,
-    defaultTargets: TYPE_DEFAULT_TARGET,
+    presets: config.presets,
+    defaultTargets: config.defaultTargets,
     aggregation: METHODOLOGY.aggregation,
-    windows: WINDOW_PRESETS,
+    windows: config.windows,
     matching: METHODOLOGY.matching,
   };
 }
@@ -55,9 +44,8 @@ export function wizardCatalog(): WizardCatalog {
 // ---------------------------------------------------------------------------
 
 function recordsFor(storeId: string): ComparisonRecord[] {
-  if (storeId !== RP) return [];
-  const reports = registry.reports();
-  return registry.comparisons().map((c) => ({
+  const reports = registry.reports(storeId);
+  return registry.comparisons(storeId).map((c) => ({
     ...c,
     reportId: reports.find((r) => r.type === "comparison" && r.sourceId === c.id)?.id ?? null,
   }));
@@ -149,12 +137,13 @@ export function toCore(row: SlotRow): SlotCore {
 }
 
 export async function listSnapshots(storeId: string): Promise<SnapshotRef[]> {
-  if (storeId !== RP) return [];
   const audits: SnapshotRef[] = registry
-    .audits()
+    .audits(storeId)
     .filter((a) => a.snapshotId)
     .map((a) => ({ snapshotId: a.snapshotId!, sourceId: a.id, kind: "audit", title: a.title, date: a.startedAt }));
-  const runs: SnapshotRef[] = registry.runs().map((r) => ({ snapshotId: r.snapshotId, sourceId: r.id, kind: "monitoring", title: `Monitoring run ${r.id.slice(4)}`, date: r.scheduledFor }));
+  const runs: SnapshotRef[] = registry
+    .runs(storeId)
+    .map((r) => ({ snapshotId: r.snapshotId, sourceId: r.id, kind: "monitoring", title: `Monitoring run ${r.id.match(/(\d+)$/)?.[1] ?? r.id}`, date: r.scheduledFor }));
   return [...audits, ...runs].sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
@@ -173,13 +162,14 @@ async function loadSide(storeId: string, reference: string, brand: string, snaps
 // ---------------------------------------------------------------------------
 
 export async function engineContext(storeId: string): Promise<EngineContext> {
+  const config = comparisonConfigFor(storeId);
   const [channels, prompts, competitors] = await Promise.all([listChannels(), listPromptsBase(storeId), listCompetitors(storeId)]);
   return {
     channelLabels: Object.fromEntries(channels.map((c) => [c.id, channelLabel(c)])),
     promptText: Object.fromEntries(prompts.map((p) => [p.id, p.text])),
     competitors: competitors.filter((c) => c.status === "confirmed").map((c) => ({ id: c.id, name: c.name })),
-    ownedDomains: OWNED_DOMAINS,
-    competitorDomains: COMPETITOR_DOMAINS,
+    ownedDomains: config.ownedDomains,
+    competitorDomains: config.competitorDomains,
   };
 }
 
@@ -187,10 +177,10 @@ export async function engineContext(storeId: string): Promise<EngineContext> {
 // Fixes timeline context
 // ---------------------------------------------------------------------------
 
-function fixesBetween(from: string, to: string): FixTimelineItem[] {
-  const runs = registry.runs();
+function fixesBetween(storeId: string, from: string, to: string): FixTimelineItem[] {
+  const runs = registry.runs(storeId);
   return registry
-    .tasks()
+    .tasks(storeId)
     .filter((t) => t.dueAt && t.dueAt >= from && t.dueAt <= to)
     .sort((a, b) => (a.dueAt! < b.dueAt! ? -1 : 1))
     .map((t) => {
@@ -237,7 +227,7 @@ export async function getComparisonDetail(storeId: string, comparisonId: string)
     current: current.info,
     filters,
     result,
-    fixes: fixesBetween(rangeFrom, rangeTo),
+    fixes: fixesBetween(storeId, rangeFrom, rangeTo),
     rangeFrom,
     rangeTo,
   };

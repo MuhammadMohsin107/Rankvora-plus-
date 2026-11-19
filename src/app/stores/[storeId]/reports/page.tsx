@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { ButtonLink } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/feedback";
+import { NoHistory } from "@/features/comparison/no-history";
 import { ReportsView } from "@/features/reports/reports-view";
 import { getStore, storeIds } from "@/services/core";
 import { listHistorical, listReports } from "@/services/reports";
@@ -27,12 +27,7 @@ async function ReportsPageContent(props: PageProps<"/stores/[storeId]/reports">)
     return (
       <>
         <PageHeader title="Reports" />
-        <EmptyState
-          icon="reports"
-          title="No reports yet"
-          description="Reports are created when an audit, a monitoring run or a comparison completes."
-          action={<ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>}
-        />
+        <NoHistory storeId={storeId} kind="reports" hasChannel={store.channelIds.length > 0} />
       </>
     );
   }

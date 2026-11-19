@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { Badge, Status } from "@/components/ui/badge";
@@ -21,7 +22,7 @@ import { shortHash } from "./task-approval";
 import { BATCH_BADGE } from "./task-draft";
 
 const CMS_STEPS: CmsState[] = ["draft", "staged", "applied", "published"];
-const WRITTEN: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "verified_success", "partially_verified", "failed"]);
+const WRITTEN: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "verified_success", "partially_verified"]);
 const ROLLBACK_STATUSES: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "partially_verified", "failed"]);
 
 const OUTCOME: Record<FieldOutcome["outcome"], { label: string; tone: "neutral" | "success" | "warning" | "danger"; icon: Parameters<typeof Badge>[0]["icon"] }> = {
@@ -42,15 +43,16 @@ export function cmsStateFor(status: TaskStatus, record: CmsState, mode: Executio
   return record;
 }
 
-function nextWrite(status: TaskStatus, mode: ExecutionMode): { label: string; target: TaskStatus } | null {
+function nextWrite(status: TaskStatus, mode: ExecutionMode, platform: string): { label: string; target: TaskStatus } | null {
   if (mode === "guidance" || mode === "ai_draft") return null;
-  if (status === "approved" || status === "queued") return mode === "cms_staged" ? { label: "Stage draft", target: "staged" } : { label: "Apply to Shopify", target: "applied" };
-  if (status === "staged") return { label: "Apply to Shopify", target: "applied" };
+  if (status === "approved" || status === "queued") return mode === "cms_staged" ? { label: "Stage draft", target: "staged" } : { label: `Apply to ${platform}`, target: "applied" };
+  if (status === "staged") return { label: `Apply to ${platform}`, target: "applied" };
   if (status === "applied") return { label: "Publish", target: "published" };
   return null;
 }
 
 type Props = {
+  storeId: string;
   execution: ExecutionRecord;
   remote: RemoteCheck | null;
   draft: TaskDraft;
@@ -76,7 +78,7 @@ function Scope({ name, ok }: { name: string; ok?: boolean }) {
 }
 
 /** Connector, scopes, remote version check, exact diff, per-field outcome, CMS state and rollback. */
-export function TaskExecutionTab({ execution, remote, draft, text, status, mode, approvalState, diffHash, viewRole, batch, onWrite, onRollback, onRedraft }: Props) {
+export function TaskExecutionTab({ storeId, execution, remote, draft, text, status, mode, approvalState, diffHash, viewRole, batch, onWrite, onRollback, onRedraft }: Props) {
   const toast = useToast();
   const [confirm, setConfirm] = useState<{ label: string; target: TaskStatus } | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -86,14 +88,22 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
   const { connector, rollback } = execution;
   const cms = cmsStateFor(status, execution.cmsState, mode);
   const stepIndex = Math.max(0, CMS_STEPS.indexOf(cms));
-  const write = nextWrite(status, mode);
+  const platform = connector?.label ?? "the store";
+  const write = nextWrite(status, mode, platform);
   const canExecute = viewRole === "owner" || viewRole === "admin" || viewRole === "editor";
   const changed = Boolean(remote?.changed);
+  const failure = execution.failure ?? null;
+  const connectionBlock = connector && connector.state !== "connected" ? `${connector.label} connection needs attention. Reconnect it first.` : null;
+  const stageWord = failure?.stage === "stage" ? "staging" : failure?.stage === "publish" ? "publish" : "apply";
+  const retryTarget: TaskStatus = failure?.stage === "stage" ? "staged" : failure?.stage === "publish" ? "published" : "applied";
+  const retry = failure && status === "failed" && mode !== "guidance" && mode !== "ai_draft" ? { label: `Retry ${stageWord}`, target: retryTarget } : null;
 
   let writeBlock: string | null = null;
-  if (write) {
+  if (write || retry) {
     if (!canExecute) writeBlock = "Your role cannot run execution.";
     else if (approvalState !== "approved") writeBlock = "Needs an approved diff first.";
+    else if (connectionBlock) writeBlock = connectionBlock;
+    else if (retry && failure?.retryBlockedBy) writeBlock = failure.retryBlockedBy;
   }
 
   const fields: FieldOutcome[] = execution.fields.map((f) => {
@@ -115,6 +125,7 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
           <CardHeader title="Connector" />
           <CardBody className="flex flex-col gap-3">
             {connector ? (
+              <>
               <KeyValue
                 columns={1}
                 items={[
@@ -142,6 +153,11 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
                   },
                 ]}
               />
+              {connector.note ? <p className="text-xs text-fg-subtle">{connector.note}</p> : null}
+              {connector.state !== "connected" ? (
+                <Link href={`/stores/${storeId}/settings`} className="text-[13px] font-medium text-accent-text hover:underline">Open store settings to reconnect</Link>
+              ) : null}
+              </>
             ) : (
               <Callout tone="neutral" title="No connector used">
                 {mode === "guidance" ? "A person makes any change." : "A person applied this change outside Rankvora Plus."}
@@ -163,6 +179,34 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
           </Card>
         )}
       </div>
+
+      {failure ? (
+        <Card>
+          <CardHeader title="Last attempt failed" subtitle={`${failure.stage === "stage" ? "Staging" : failure.stage === "publish" ? "Publish" : "Apply"} · ${formatDateTime(failure.at)} UTC`} />
+          <CardBody className="flex flex-col gap-3">
+            <Callout tone="danger" title={failure.nothingWritten ? "Failed. Nothing was changed on the live site." : "Failed. Part of the change may have been written."}>
+              <p>{failure.message}</p>
+              <p className="mt-1 font-mono text-xs">{failure.code}</p>
+            </Callout>
+            <ul className="divide-y divide-line rounded-control border border-line">
+              {failure.attempts.map((attempt, index) => (
+                <li key={attempt.at} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-[13px]">
+                  <span className="text-fg">Attempt {index + 1}</span>
+                  <span className="tnum text-xs text-fg-muted">{formatDateTime(attempt.at)} UTC · {attempt.result}</span>
+                </li>
+              ))}
+            </ul>
+            <KeyValue
+              columns={2}
+              items={[
+                { label: "Retry", value: failure.retryBlockedBy ? <Badge tone="warning" icon="lock">Blocked</Badge> : failure.retryable ? <Badge tone="success" icon="check-circle">Available</Badge> : <Badge tone="neutral">Not possible</Badge> },
+                { label: "Rollback", value: failure.nothingWritten ? "Not needed" : "See rollback below" },
+              ]}
+            />
+            <p className="text-[13px] text-fg-muted">{failure.retryBlockedBy ? `${failure.retryBlockedBy} ` : ""}{failure.nextStep}</p>
+          </CardBody>
+        </Card>
+      ) : null}
 
       {remote ? (
         <Card>
@@ -290,6 +334,11 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
             {write.label}
           </Button>
         ) : null}
+        {retry ? (
+          <Button variant="primary" icon="refresh" disabled={Boolean(writeBlock) || changed} title={changed ? "Resource changed since draft" : undefined} onClick={() => setConfirm(retry)}>
+            {retry.label}
+          </Button>
+        ) : null}
         {canRollback ? (
           <Button
             variant="danger-ghost"
@@ -309,7 +358,7 @@ export function TaskExecutionTab({ execution, remote, draft, text, status, mode,
             {writeBlock}
           </span>
         ) : null}
-        {!write && !canRollback && !rolledBack ? <span className="text-xs text-fg-subtle">{rollback.unavailableReason ?? "No execution step available."}</span> : null}
+        {!write && !retry && !canRollback && !rolledBack ? <span className="text-xs text-fg-subtle">{rollback.unavailableReason ?? "No execution step available."}</span> : null}
       </div>
 
       <ConfirmDialog

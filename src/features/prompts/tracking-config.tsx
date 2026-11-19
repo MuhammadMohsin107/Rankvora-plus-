@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
@@ -39,7 +41,12 @@ export function TrackingConfig({ prompt, groups, products, channels, onEdit }: P
               label: active ? "Runs on" : "Will run on",
               value:
                 channels.length === 0 ? (
-                  <span className="text-fg-muted">No AI channels for this store.</span>
+                  <span className="text-[13px] text-fg-muted">
+                    Not tracked: no AI channel is selected.{" "}
+                    <Link href={`/stores/${prompt.storeId}/settings`} className="font-medium text-accent-text hover:underline">
+                      Choose channels
+                    </Link>
+                  </span>
                 ) : (
                   <ul className="flex flex-col gap-1">
                     {channels.map((c) => (

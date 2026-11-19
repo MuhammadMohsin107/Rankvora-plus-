@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
 import { AuditWizard } from "@/features/audit/audit-wizard";
+import { AuditSetupBlocked } from "@/features/audit/setup-blocked";
 import { getWizardData } from "@/services/audit";
 import { storeIds } from "@/services/core";
 
@@ -24,6 +25,16 @@ async function NewAuditPageContent(props: PageProps<"/stores/[storeId]/audits/ne
 
   const header = <PageHeader title="Start audit" breadcrumb={[{ label: "Audits", href: `/stores/${storeId}/audits` }, { label: "New" }]} />;
 
+  // Blocked state: no AI channel is connected, so the wizard cannot be completed.
+  if (data.channels.length === 0) {
+    return (
+      <>
+        {header}
+        <AuditSetupBlocked storeId={storeId} storeName={data.store.name} />
+      </>
+    );
+  }
+
   const activePrompts = data.prompts.filter((p) => p.status === "active").length;
   if (activePrompts === 0) {
     return (
@@ -33,15 +44,6 @@ async function NewAuditPageContent(props: PageProps<"/stores/[storeId]/audits/ne
       </>
     );
   }
-  if (data.channels.length === 0) {
-    return (
-      <>
-        {header}
-        <EmptyState icon="plug" title="No AI channels" description="Choose at least one provider channel for this store." action={<ButtonLink href={`/stores/${storeId}/settings`} variant="primary">Open store settings</ButtonLink>} />
-      </>
-    );
-  }
-
   return (
     <>
       {header}

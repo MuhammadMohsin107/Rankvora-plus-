@@ -59,7 +59,7 @@ async function AuditLayoutContent({ children, params }: LayoutProps<"/stores/[st
         }
         actions={
           <>
-            <ConfigDrawerButton config={audit.config} channels={channels.map((c) => ({ id: c.id, label: channelLabel(c) }))} />
+            <ConfigDrawerButton config={audit.config} lanes={audit.lanes} channels={channels.map((c) => ({ id: c.id, label: channelLabel(c) }))} />
             {audit.provisional ? (
               <CancelAuditButton completedJobs={audit.succeededJobs + audit.failedJobs} assessedPages={audit.pages?.n ?? 0} />
             ) : (

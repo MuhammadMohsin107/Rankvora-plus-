@@ -1,7 +1,7 @@
 /**
  * DEMONSTRATION DATA — not real.
  * Audit detail around the registry audits (src/demo/registry.ts): configuration,
- * live progress of aud-004, and the website-readiness lane for runpro.pk
+ * live progress of aud-004, and the website-readiness lane for runpro.pk and runpro.ae
  * (crawled pages, checks, AI crawler access). Read it only through src/services/audit.ts.
  *
  * Headline numbers (jobs, mention/recommendation, page coverage) come from the registry
@@ -82,11 +82,26 @@ const DEFAULT_DEPTH: Record<PageType, number> = { home: 0, collection: 1, produc
 
 type PageSeed = Partial<Omit<CrawledPage, "id" | "url" | "path" | "type">>;
 
-function pg(n: number, path: string, type: PageType, title: string | null, seed: PageSeed = {}): CrawledPage {
-  const lcpMs = 1700 + ((n * 173) % 1300);
-  const url = `${SITE}${path === "/" ? "/" : path}`;
+/** What differs between stores when a crawled page is built. */
+type PageProfile = {
+  idPrefix: string;
+  site: string;
+  /** Lab LCP before any per-page override. */
+  lcp: (n: number) => number;
+  deliveryText: string;
+};
+
+const PK_PAGE_PROFILE: PageProfile = {
+  idPrefix: "pg",
+  site: SITE,
+  lcp: (n) => 1700 + ((n * 173) % 1300),
+  deliveryText: "Free delivery across Pakistan.",
+};
+
+function makePage(profile: PageProfile, n: number, path: string, type: PageType, title: string | null, seed: PageSeed = {}): CrawledPage {
+  const url = `${profile.site}${path === "/" ? "/" : path}`;
   return {
-    id: `pg-${String(n).padStart(2, "0")}`,
+    id: `${profile.idPrefix}-${String(n).padStart(2, "0")}`,
     url,
     path,
     type,
@@ -104,7 +119,7 @@ function pg(n: number, path: string, type: PageType, title: string | null, seed:
     canonical: url,
     canonicalSelf: true,
     title,
-    metaDescription: title ? `${title.split("|")[0].trim()} from RunPro. Free delivery across Pakistan.` : null,
+    metaDescription: title ? `${title.split("|")[0].trim()} from RunPro. ${profile.deliveryText}` : null,
     h1: title ? [title.split(/[|—]/)[0].trim()] : [],
     h2: [],
     schemaTypes: ["BreadcrumbList"],
@@ -114,12 +129,14 @@ function pg(n: number, path: string, type: PageType, title: string | null, seed:
     outInternal: 24 + ((n * 5) % 30),
     outExternal: n % 4,
     brokenLinks: [],
-    lab: { lcpMs, cls: ((n * 7) % 12) / 100, tbtMs: 90 + ((n * 29) % 260) },
+    lab: { lcpMs: profile.lcp(n), cls: ((n * 7) % 12) / 100, tbtMs: 90 + ((n * 29) % 260) },
     field: null,
     crawledAt: "",
     ...seed,
   };
 }
+
+const pg = (n: number, path: string, type: PageType, title: string | null, seed: PageSeed = {}) => makePage(PK_PAGE_PROFILE, n, path, type, title, seed);
 
 const MISSING_META: PageSeed = { metaDescription: null };
 
@@ -347,3 +364,312 @@ export const BASE_CRAWLERS: CrawlerAccess[] = [
     findingId: null,
   },
 ];
+
+// ===========================================================================
+// runpro-ae (WooCommerce, https://runpro.ae)
+// Audits aud-ae-001 (initial, 16 Sep), aud-ae-002 (full, 5 Nov) and aud-ae-003 (focused,
+// AI lane only, 14 Nov). Headline numbers agree with REGISTRY_AE_AUDITS and findings
+// fnd-ae-001 … fnd-ae-006 (src/demo/shared-records.ts).
+// ===========================================================================
+
+export const AE_SITE = "https://runpro.ae";
+
+const aeBaseConfig: AuditConfig = {
+  promptScope: "all_active",
+  promptIds: [],
+  channelIds: ["ch-openai", "ch-gemini"],
+  samples: 3,
+  market: "AE",
+  language: "en",
+  startPoints: ["Homepage", "Sitemap"],
+  maxUrls: 100,
+  maxDepth: 4,
+  pageTypes: ["Home", "Collections", "Products", "Guides", "Pages"],
+  excludedPaths: ["/cart", "/checkout", "/my-account", "/wp-admin", "/wc-ajax"],
+  criteriaVersion: "2.1",
+  analysisVersion: "1.2",
+  integrations: { searchConsole: false, pageSpeed: true, cms: true },
+  limits: { maxRequests: 100, concurrency: 4, budgetUsd: 4 },
+};
+
+export const AE_AUDIT_CONFIGS: Record<string, AuditConfig> = {
+  "aud-ae-001": { ...aeBaseConfig, criteriaVersion: "1.4" },
+  "aud-ae-002": aeBaseConfig,
+  // Focused, AI lane only: 2 prompts × 2 channels × 3 samples = 12 requests. No website settings apply.
+  "aud-ae-003": {
+    ...aeBaseConfig,
+    promptScope: "ids",
+    promptIds: ["p-ae-002", "p-ae-005"],
+    startPoints: [],
+    maxUrls: 0,
+    maxDepth: 0,
+    pageTypes: [],
+    excludedPaths: [],
+    integrations: { searchConsole: false, pageSpeed: false, cms: false },
+    limits: { maxRequests: 24, concurrency: 2, budgetUsd: 1.5 },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Website lane: pages
+// ---------------------------------------------------------------------------
+
+const AE_PAGE_PROFILE: PageProfile = {
+  idPrefix: "pg-ae",
+  site: AE_SITE,
+  lcp: (n) => 1600 + ((n * 137) % 800),
+  deliveryText: "Delivery across the UAE.",
+};
+
+const pa = (n: number, path: string, type: PageType, title: string | null, seed: PageSeed = {}) => makePage(AE_PAGE_PROFILE, n, path, type, title, seed);
+
+/** A sitemap URL that answers 301 to the Pakistan store (audit aud-ae-001 only). */
+const paRedirect = (n: number, path: string, type: PageType): CrawledPage =>
+  pa(n, path, type, null, {
+    status: 301,
+    finalUrl: `https://runpro.pk${path}`,
+    redirectHops: 1,
+    indexable: false,
+    metaRobots: null,
+    canonical: null,
+    canonicalSelf: false,
+    schemaTypes: [],
+    words: 0,
+    lab: null,
+    sizeKb: 1,
+    depth: 1,
+  });
+
+const AE_NO_META: PageSeed = { metaDescription: null };
+const AE_SLOW = (lcpMs: number): PageSeed => ({ lab: { lcpMs, cls: 0.08, tbtMs: 240 } });
+
+export const AE_BASE_PAGES: CrawledPage[] = [
+  pa(1, "/", "home", "RunPro UAE — Running shoes delivered across the UAE", {
+    schemaTypes: ["Organization", "WebSite", "WebPage"],
+    h2: ["Shop by terrain", "Bestsellers", "Delivery across the UAE"],
+    words: 610,
+    inlinks: 96,
+    outInternal: 42,
+  }),
+  pa(2, "/shop", "collection", "Shop running shoes | RunPro UAE", { schemaTypes: ["BreadcrumbList", "ItemList"], h2: ["Filter by terrain", "All shoes"] }),
+  pa(3, "/product-category/road", "collection", "Road running shoes | RunPro UAE", { schemaTypes: ["BreadcrumbList", "ItemList"] }),
+  pa(4, "/product-category/trail", "collection", "Trail running shoes | RunPro UAE", { schemaTypes: ["BreadcrumbList", "ItemList"] }),
+  pa(5, "/product-category/everyday", "collection", "Everyday running shoes | RunPro UAE", { schemaTypes: ["BreadcrumbList", "ItemList"] }),
+  pa(6, "/product-category/sale", "collection", "Sale — running shoes | RunPro UAE", { ...AE_SLOW(2900), schemaTypes: ["BreadcrumbList", "ItemList"] }),
+  pa(7, "/product-category/men", "collection", "Men's running shoes | RunPro UAE", { schemaTypes: ["BreadcrumbList", "ItemList"] }),
+  pa(8, "/product-category/women", "collection", "Women's running shoes | RunPro UAE", { ...AE_NO_META, schemaTypes: ["BreadcrumbList", "ItemList"] }),
+  pa(9, "/product/glide-2", "product", "RunPro Glide 2 — Road running shoe | RunPro UAE", {
+    // No Product node; a standalone Offer fragment from an old currency plugin reports USD.
+    schemaTypes: ["BreadcrumbList", "Offer"],
+    schemaIssues: ["No Product JSON-LD", "Standalone Offer fragment: priceCurrency USD, price 349. Visible price is AED 1,280"],
+    h2: ["Description", "Additional information", "Reviews"],
+    words: 240,
+    ...AE_SLOW(2900),
+    metaDescription: "RunPro Glide 2 road running shoe. AED 1,280, delivery across the UAE.",
+  }),
+  pa(10, "/product/daily-trainer", "product", "RunPro Daily Trainer — Everyday running shoe | RunPro UAE", {
+    schemaTypes: ["BreadcrumbList"],
+    schemaIssues: ["No Product JSON-LD"],
+    h2: ["Description", "Additional information", "Reviews"],
+    words: 230,
+  }),
+  pa(11, "/product/marathon-elite", "product", "RunPro Marathon Elite — Long-distance running shoe | RunPro UAE", {
+    schemaTypes: ["BreadcrumbList"],
+    schemaIssues: ["No Product JSON-LD"],
+    h2: ["Description", "Delivery and returns", "Reviews"],
+    words: 310,
+    ...AE_SLOW(2700),
+  }),
+  pa(12, "/blog", "guide", "RunPro Journal — running guides for the UAE", { ...AE_SLOW(3100), schemaTypes: ["Blog", "BreadcrumbList"], h2: ["Latest guides"] }),
+  pa(13, "/blog/best-time-to-run-in-dubai", "guide", "Best time of day to run in Dubai | RunPro Journal", {
+    publishedAt: "2026-10-08T07:00:00Z",
+    schemaTypes: ["Article", "BreadcrumbList"],
+    h2: ["Early morning", "Evening", "Heat and hydration", "Treadmill days"],
+    words: 980,
+  }),
+  pa(14, "/blog/choosing-running-shoes-uae", "guide", "How to choose running shoes in the UAE | RunPro Journal", { schemaTypes: ["Article", "BreadcrumbList"], h2: ["Know your terrain", "Fit and sizing", "Cushioning"], words: 1120 }),
+  pa(15, "/blog/marathon-training-abu-dhabi", "guide", "Marathon training in Abu Dhabi: a 16-week plan | RunPro Journal", { schemaTypes: ["Article", "BreadcrumbList"], words: 1380 }),
+  pa(16, "/about-us", "page", "About RunPro UAE", { schemaTypes: ["AboutPage", "BreadcrumbList"], words: 480 }),
+  pa(17, "/contact", "page", "Contact RunPro UAE", { schemaTypes: ["ContactPage", "BreadcrumbList"] }),
+  pa(18, "/delivery-and-returns", "policy", "Delivery and returns in the UAE | RunPro UAE", { words: 540 }),
+  pa(19, "/size-guide", "page", "Running shoe size guide | RunPro UAE", { ...AE_NO_META }),
+  pa(20, "/faq", "page", "Frequently asked questions | RunPro UAE", { ...AE_NO_META, schemaTypes: ["FAQPage", "BreadcrumbList"] }),
+  pa(21, "/privacy-policy", "policy", "Privacy policy | RunPro UAE"),
+  pa(22, "/terms-and-conditions", "policy", "Terms and conditions | RunPro UAE"),
+  pa(23, "/product-category/new-arrivals", "collection", "New arrivals | RunPro UAE", { publishedAt: "2026-10-20T07:00:00Z", schemaTypes: ["BreadcrumbList", "ItemList"] }),
+  // Sitemap URLs copied from the Pakistan store; they redirect to runpro.pk (aud-ae-001 only).
+  paRedirect(24, "/products/glide-2", "product"),
+  paRedirect(25, "/products/stride-trail", "product"),
+  paRedirect(26, "/products/daily-trainer", "product"),
+  paRedirect(27, "/products/marathon-elite", "product"),
+  paRedirect(28, "/products/flat-foot-support", "product"),
+  paRedirect(29, "/products/aero-sprint", "product"),
+  paRedirect(30, "/products/cushion-max", "product"),
+  paRedirect(31, "/collections/road", "collection"),
+  paRedirect(32, "/collections/trail", "collection"),
+];
+
+const AE_REDIRECT_PATHS = AE_BASE_PAGES.filter((p) => p.status === 301).map((p) => p.path);
+const AE_PRODUCT_PATHS = ["/product/glide-2", "/product/daily-trainer", "/product/marathon-elite"];
+const AE_SLOW_PATHS = ["/blog", "/product-category/sale", "/product/glide-2", "/product/marathon-elite"];
+const AE_NO_META_PATHS = ["/product-category/women", "/size-guide", "/faq"];
+const AE_NO_ALT_PATHS = ["/product-category/sale", "/product-category/women", "/product/marathon-elite"];
+
+// ---------------------------------------------------------------------------
+// Website lane: checks (state as of aud-ae-002; aud-ae-001 overrides)
+// ---------------------------------------------------------------------------
+
+const AE_ROBOTS = "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\nDisallow: /cart/\nDisallow: /checkout/\nDisallow: /my-account/";
+
+export const AE_BASE_CHECKS: WebsiteCheck[] = [
+  ck("chk-ae-01", "reachability", "Homepage responds with 200", "pass", "Request", "GET https://runpro.ae/  →  200 OK · 538 ms"),
+  ck("chk-ae-02", "indexing", "robots.txt is reachable and parseable", "pass", "Request", "GET https://runpro.ae/robots.txt  →  200 OK · text/plain · 11 lines"),
+  ck("chk-ae-03", "indexing", "AI crawler rules reviewed per user-agent", "pass", "robots.txt", "OAI-SearchBot and ChatGPT-User: default group applies (allowed).\nGPTBot: Disallow: /  (model training only, separate from ChatGPT search)."),
+  ck("chk-ae-04", "indexing", "Search Console indexing coverage", "not_assessed", "Scope", "Search Console is not connected for runpro.ae. Indexing coverage was not assessed."),
+  ck("chk-ae-05", "canonical", "Indexable pages declare a self-referencing canonical", "pass", "Crawl result", "58 of 58 assessed indexable pages carry rel=canonical to themselves", { affected: 0 }),
+  ck("chk-ae-06", "sitemaps", "Sitemap is declared in robots.txt", "pass", "robots.txt", "Sitemap: https://runpro.ae/sitemap.xml"),
+  ck("chk-ae-07", "sitemaps", "Sitemap URLs return 200 and are indexable", "pass", "Sitemap audit", "0 of 55 sitemap URLs return a non-200 status. The 9 redirecting URLs from the September audit are no longer listed.", {
+    affected: 0,
+    findingId: "fnd-ae-005",
+  }),
+  ck("chk-ae-08", "linking", "Internal links resolve to final URLs (no 404 or redirect)", "pass", "Link extraction", "0 internal links return 404 or redirect on 58 assessed pages", { affected: 0 }),
+  ck("chk-ae-09", "rendering", "Core content is present in raw HTML", "pass", "Raw vs rendered", "Title, H1, price and description present before JavaScript runs on 8 of 8 sampled product and category pages", { affected: 0 }),
+  ck("chk-ae-10", "url_quality", "Hreflang annotations", "not_applicable", "Scope", "No other language versions of runpro.ae exist. runpro.pk is audited as its own store."),
+  ck("chk-ae-11", "url_quality", "Clean URLs without session or tracking parameters", "pass", "Crawl result", "0 of 60 in-scope URLs contain session or tracking parameters", { affected: 0 }),
+  ck("chk-ae-12", "metadata", "Each indexable page has a unique title", "pass", "Crawl result", "58 of 58 assessed titles are unique", { affected: 0 }),
+  ck("chk-ae-13", "metadata", "Meta description present (up to 160 characters)", "warning", "Crawl result", "6 of 58 assessed pages have no meta description", { affected: 6, paths: AE_NO_META_PATHS }),
+  ck("chk-ae-14", "mobile_a11y", "Images have alternative text", "warning", "Crawl result", "7 of 58 assessed pages contain <img> elements without alt text", { affected: 7, paths: AE_NO_ALT_PATHS }),
+  ck("chk-ae-15", "mobile_a11y", "Largest Contentful Paint up to 2.5 s (lab, mobile)", "warning", "PageSpeed lab data", "Lab LCP above 2.5 s (simulated mobile) on 4 pages:\n/blog  3.1 s\n/product-category/sale  2.9 s\n/product/glide-2  2.9 s\n/product/marathon-elite  2.7 s", {
+    affected: 4,
+    paths: AE_SLOW_PATHS,
+  }),
+  ck("chk-ae-16", "mobile_a11y", "Field performance (CrUX)", "inconclusive", "CrUX", "Origin-level field data exists. 58 of 58 assessed URLs have no URL-level field data."),
+  ck("chk-ae-17", "structured_data", "Product and Offer structured data on product pages", "fail", "JSON-LD", "No Product node found in JSON-LD on 3 of 3 sampled product pages.\nTypes present: BreadcrumbList (WooCommerce breadcrumb markup).", {
+    affected: 3,
+    paths: AE_PRODUCT_PATHS,
+    findingId: "fnd-ae-001",
+  }),
+  ck("chk-ae-18", "structured_data", "Currency in JSON-LD matches the visible currency", "fail", "JSON-LD vs page", '{ "@type": "Offer", "price": "349", "priceCurrency": "USD" }\n// standalone Offer fragment, not attached to a Product\nVisible price: AED 1,280', {
+    affected: 1,
+    paths: ["/product/glide-2"],
+    findingId: "fnd-ae-002",
+  }),
+  ck("chk-ae-19", "structured_data", "Organization schema includes sameAs and contactPoint", "pass", "JSON-LD", '{ "@type": "Organization", "name": "RunPro", "sameAs": [3 profiles], "contactPoint": [1] }', { affected: 0 }),
+  ck("chk-ae-20", "content_entity", "Product pages state UAE delivery area, delivery time and returns", "warning", "Page content", "4 sampled product pages:\n/product/glide-2  footer shipping line only; returns on /delivery-and-returns\n/product/daily-trainer  footer shipping line only; returns on /delivery-and-returns\n/product/marathon-elite  UAE delivery and returns stated\n/product/stride-trail  UAE delivery and returns stated", {
+    affected: 2,
+    paths: ["/product/glide-2", "/product/daily-trainer"],
+    findingId: "fnd-ae-003",
+  }),
+  ck("chk-ae-21", "content_entity", "Product pages state key attributes (surface, cushioning, weight)", "pass", "Page content", "Glide 2, Daily Trainer and Marathon Elite: surface suitability, cushioning level and weight stated", { affected: 0 }),
+  ck("chk-ae-22", "content_entity", "Brand name is spelled consistently", "pass", "Text scan", 'Official spelling "RunPro" on all 6 core pages', { affected: 0 }),
+  ck("chk-ae-23", "content_entity", "An indexable page covers hot-weather running", "warning", "Topic coverage", 'No dedicated page covers "running shoes for hot weather". /blog/best-time-to-run-in-dubai mentions heat in 1 of 4 sections.'),
+  ck("chk-ae-24", "content_entity", "Delivery and returns policy pages are discoverable", "pass", "Page content", "/delivery-and-returns is linked from the footer on all 58 assessed pages", { affected: 0 }),
+];
+
+const AE_REDIRECT_LINES = AE_REDIRECT_PATHS.slice(0, 4)
+  .map((p) => `${p}  →  301 https://runpro.pk${p}`)
+  .join("\n");
+
+export const AE_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = {
+  "aud-ae-001": {
+    coverage: { inScope: 60, assessed: 41, excluded: 6, blocked: 4, unvisited: 15 },
+    pageIds: [
+      "pg-ae-01", "pg-ae-02", "pg-ae-03", "pg-ae-04", "pg-ae-05", "pg-ae-06", "pg-ae-07", "pg-ae-08", "pg-ae-09", "pg-ae-10", "pg-ae-11", "pg-ae-12",
+      "pg-ae-14", "pg-ae-15", "pg-ae-16", "pg-ae-17", "pg-ae-18", "pg-ae-19", "pg-ae-20", "pg-ae-21", "pg-ae-22",
+      "pg-ae-24", "pg-ae-25", "pg-ae-26", "pg-ae-27", "pg-ae-28", "pg-ae-29", "pg-ae-30", "pg-ae-31", "pg-ae-32",
+    ],
+    // Criteria 1.4 has no product-page delivery check.
+    checkIds: AE_BASE_CHECKS.filter((c) => c.id !== "chk-ae-20").map((c) => c.id),
+    overrides: {
+      "chk-ae-05": { snippet: "32 of 32 assessed indexable pages carry rel=canonical to themselves" },
+      "chk-ae-07": {
+        status: "warning",
+        affected: 9,
+        affectedPaths: AE_REDIRECT_PATHS,
+        findingId: "fnd-ae-005",
+        snippet: `9 of 64 sitemap URLs answer 301 to the Pakistan store (runpro.pk):\n${AE_REDIRECT_LINES}\n… and 5 more`,
+      },
+      "chk-ae-08": {
+        status: "warning",
+        affected: 3,
+        affectedPaths: ["/", "/blog", "/about-us"],
+        findingId: null,
+        snippet: '<a href="/collections/road">  →  301 https://runpro.pk/collections/road\nFound on /, /blog and /about-us',
+      },
+      "chk-ae-12": { snippet: "32 of 32 assessed indexable titles are unique" },
+      "chk-ae-13": { affected: 11, snippet: "11 of 41 assessed pages have no meta description" },
+      "chk-ae-14": { affected: 9, snippet: "9 of 41 assessed pages contain <img> elements without alt text" },
+      "chk-ae-15": {
+        affected: 6,
+        snippet: "Lab LCP above 2.5 s (simulated mobile) on 6 pages. Slowest four:\n/blog  3.1 s\n/product-category/sale  2.9 s\n/product/glide-2  2.9 s\n/product/marathon-elite  2.7 s",
+      },
+      "chk-ae-16": { snippet: "Origin-level field data exists. 41 of 41 assessed URLs have no URL-level field data." },
+      "chk-ae-23": { snippet: 'No indexed page covers "running shoes for hot weather".' },
+      "chk-ae-24": { snippet: "/delivery-and-returns is linked from the footer on all 41 assessed pages" },
+    },
+    crawlerOverrides: {},
+    notice: "Criteria 1.4: the product-page delivery and returns check did not exist yet. It first runs in the November audit.",
+  },
+  "aud-ae-002": {
+    coverage: { inScope: 60, assessed: 58, excluded: 6, blocked: 0, unvisited: 2 },
+    pageIds: [
+      "pg-ae-01", "pg-ae-02", "pg-ae-03", "pg-ae-04", "pg-ae-05", "pg-ae-06", "pg-ae-07", "pg-ae-08", "pg-ae-09", "pg-ae-10", "pg-ae-11", "pg-ae-12",
+      "pg-ae-13", "pg-ae-14", "pg-ae-15", "pg-ae-16", "pg-ae-17", "pg-ae-18", "pg-ae-19", "pg-ae-20", "pg-ae-21", "pg-ae-22", "pg-ae-23",
+    ],
+    checkIds: "all",
+    overrides: {},
+    crawlerOverrides: {},
+    notice: null,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// AI crawler access (reported separately per crawler, never merged)
+// ---------------------------------------------------------------------------
+
+export const AE_BASE_CRAWLERS: CrawlerAccess[] = [
+  {
+    id: "oai-searchbot",
+    name: "OAI-SearchBot",
+    purpose: "ChatGPT search",
+    allowed: true,
+    rule: `(no OAI-SearchBot group)\n${AE_ROBOTS}`,
+    consequence: "Covered by the default rule, except /cart, /checkout, /my-account and /wp-admin. Pages can be crawled for ChatGPT search.",
+    findingId: null,
+  },
+  {
+    id: "gptbot",
+    name: "GPTBot",
+    purpose: "Model training",
+    allowed: false,
+    rule: "User-agent: GPTBot\nDisallow: /",
+    consequence: "This crawler cannot fetch any page. It affects model training only; ChatGPT search and user-requested visits have their own rules.",
+    findingId: null,
+  },
+  {
+    id: "chatgpt-user",
+    name: "ChatGPT-User",
+    purpose: "User-requested visits",
+    allowed: true,
+    rule: `(no ChatGPT-User group)\n${AE_ROBOTS}`,
+    consequence: "Covered by the default rule. A ChatGPT user can have a page fetched on request.",
+    findingId: null,
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Per-store lookup used by src/services/audit.ts
+// ---------------------------------------------------------------------------
+
+export type WebsiteBase = { pages: CrawledPage[]; checks: WebsiteCheck[]; crawlers: CrawlerAccess[] };
+
+export const WEBSITE_BASES: Record<string, WebsiteBase> = {
+  "runpro-pk": { pages: BASE_PAGES, checks: BASE_CHECKS, crawlers: BASE_CRAWLERS },
+  "runpro-ae": { pages: AE_BASE_PAGES, checks: AE_BASE_CHECKS, crawlers: AE_BASE_CRAWLERS },
+};
+
+/** Configuration of every audit of every store, keyed by audit id (ids never collide across stores). */
+export const ALL_AUDIT_CONFIGS: Record<string, AuditConfig> = { ...AUDIT_CONFIGS, ...AE_AUDIT_CONFIGS };
+
+/** Website-lane variant of every audit that has a website lane. */
+export const ALL_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = { ...WEBSITE_VARIANTS, ...AE_WEBSITE_VARIANTS };

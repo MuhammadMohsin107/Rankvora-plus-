@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Callout, Section } from "@/components/ui/card";
 import { ExcludedTable, MatchedTable, UnmatchedTable } from "@/features/comparison/prompts-tables";
+import { NotComputed } from "@/features/comparison/compatibility";
 import { comparisonStaticParams, engineContext, getComparisonDetail, getPromptRows } from "@/services/comparison";
 
 export const metadata: Metadata = { title: "Comparison prompts" };
@@ -19,6 +20,7 @@ async function ComparisonPromptsPageContent(props: PageProps<"/stores/[storeId]/
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
+  if (detail.result.verdict === "not_comparable") return <NotComputed checks={detail.result.checks} what="Prompt pairs" />;
   const [rows, ctx] = await Promise.all([getPromptRows(storeId, comparisonId), engineContext(storeId)]);
   const { result } = detail;
   const context = { promptText: ctx.promptText, channelLabels: ctx.channelLabels };

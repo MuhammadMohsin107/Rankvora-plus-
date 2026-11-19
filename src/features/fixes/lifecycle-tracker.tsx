@@ -26,6 +26,8 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
   const appliedDone = Boolean(execution.appliedAt) || APPLIED.has(status);
   const publishedDone = Boolean(execution.publishedAt) || status === "published" || status === "verification_pending" || status === "verified_success";
   const noPublishStep = mode === "guidance" || mode === "ai_draft";
+  /** A failed write attempt: nothing is applied and nothing can be verified yet. */
+  const writeFailed = status === "failed" && Boolean(execution.failure);
 
   const steps: Step[] = [
     {
@@ -39,21 +41,21 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
       id: "applied",
       label: "Applied",
       hint: "Change written or done",
-      state: rolledBack && execution.appliedAt ? "reverted" : appliedDone ? "done" : "pending",
-      at: execution.appliedAt,
+      state: writeFailed ? "failed" : rolledBack && execution.appliedAt ? "reverted" : appliedDone ? "done" : "pending",
+      at: writeFailed ? (execution.failure?.at ?? null) : execution.appliedAt,
     },
     {
       id: "published",
       label: "Published",
       hint: "Live to visitors",
-      state: noPublishStep ? "na" : rolledBack && execution.publishedAt ? "reverted" : publishedDone ? "done" : "pending",
+      state: noPublishStep ? "na" : writeFailed ? "pending" : rolledBack && execution.publishedAt ? "reverted" : publishedDone ? "done" : "pending",
       at: execution.publishedAt,
     },
     {
       id: "verified",
       label: "Verified",
       hint: "Re-check passed",
-      state: status === "verified_success" ? "done" : status === "partially_verified" ? "partial" : status === "failed" ? "failed" : rolledBack ? "na" : "pending",
+      state: status === "verified_success" ? "done" : status === "partially_verified" ? "partial" : status === "failed" && !writeFailed ? "failed" : rolledBack ? "na" : "pending",
       at: null,
     },
   ];
@@ -71,7 +73,7 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
                 <Icon name={verifiedPending ? "clock" : view.icon} size={18} className={cn("mt-0.5 shrink-0", verifiedPending ? "text-warning" : view.tone)} />
                 <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-fg">{step.label}</p>
-                  <p className="text-xs text-fg-muted">{verifiedPending ? "Pending" : view.text}</p>
+                  <p className="text-xs text-fg-muted">{verifiedPending ? "Pending" : step.id === "applied" && writeFailed ? (execution.failure?.nothingWritten ? "Failed, nothing written" : "Failed") : view.text}</p>
                   {step.at && step.state !== "na" ? <p className="tnum mt-0.5 text-xs text-fg-subtle">{formatDateTime(step.at)}</p> : null}
                 </div>
               </li>

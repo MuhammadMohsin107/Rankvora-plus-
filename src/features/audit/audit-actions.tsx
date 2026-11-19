@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { KeyValue } from "@/components/ui/card";
 import { ConfirmDialog, Drawer } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
-import type { AuditConfig } from "@/types/audit";
+import type { AuditConfig, AuditLane } from "@/types/audit";
 
 const PROMPT_SCOPE = { all_active: "All active prompts", groups: "Selected groups", ids: "Specific prompts" } as const;
 
@@ -21,8 +21,9 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Immutable run configuration, shown in a drawer. */
-export function ConfigDrawerButton({ config, channels }: { config: AuditConfig; channels: { id: string; label: string }[] }) {
+export function ConfigDrawerButton({ config, channels, lanes }: { config: AuditConfig; channels: { id: string; label: string }[]; lanes: AuditLane[] }) {
   const [open, setOpen] = useState(false);
+  const hasWebsite = lanes.includes("website_readiness");
   const onOff = (v: boolean) => (
     <Badge tone={v ? "success" : "neutral"} icon={v ? "check-circle" : "minus-circle"}>
       {v ? "On" : "Off"}
@@ -55,15 +56,19 @@ export function ConfigDrawerButton({ config, channels }: { config: AuditConfig; 
             />
           </Group>
           <Group title="Website readiness">
-            <KeyValue
-              columns={1}
-              items={[
-                { label: "Start points", value: config.startPoints.join(", ") },
-                { label: "Page types", value: config.pageTypes.join(", ") },
-                { label: "Excluded paths", value: <span className="font-mono text-xs">{config.excludedPaths.join("  ")}</span> },
-                { label: "Max URLs · depth", value: <span className="tnum">{config.maxUrls} · {config.maxDepth}</span> },
-              ]}
-            />
+            {hasWebsite ? (
+              <KeyValue
+                columns={1}
+                items={[
+                  { label: "Start points", value: config.startPoints.join(", ") },
+                  { label: "Page types", value: config.pageTypes.join(", ") },
+                  { label: "Excluded paths", value: <span className="font-mono text-xs">{config.excludedPaths.join("  ")}</span> },
+                  { label: "Max URLs · depth", value: <span className="tnum">{config.maxUrls} · {config.maxDepth}</span> },
+                ]}
+              />
+            ) : (
+              <p className="text-[13px] text-fg-muted">Not part of this audit. The site was not crawled.</p>
+            )}
           </Group>
           <Group title="Criteria and integrations">
             <KeyValue
@@ -71,9 +76,13 @@ export function ConfigDrawerButton({ config, channels }: { config: AuditConfig; 
               items={[
                 { label: "Criteria version", value: <span className="tnum">{config.criteriaVersion}</span> },
                 { label: "Analysis version", value: <span className="tnum">{config.analysisVersion}</span> },
-                { label: "Search Console", value: onOff(config.integrations.searchConsole) },
-                { label: "PageSpeed (lab)", value: onOff(config.integrations.pageSpeed) },
-                { label: "CMS connector", value: onOff(config.integrations.cms) },
+                ...(hasWebsite
+                  ? [
+                      { label: "Search Console", value: onOff(config.integrations.searchConsole) },
+                      { label: "PageSpeed (lab)", value: onOff(config.integrations.pageSpeed) },
+                      { label: "CMS connector", value: onOff(config.integrations.cms) },
+                    ]
+                  : []),
               ]}
             />
           </Group>

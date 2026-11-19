@@ -3,7 +3,6 @@
  * runs, comparisons) and builds the per-type report content from the generated
  * response samples, so every number agrees with the source it reports on.
  */
-import { RP } from "@/demo/registry";
 import { AUDIT_REPORT_LIMITATIONS, COMPARISON_LIMITATIONS, MONITORING_REPORT_LIMITATIONS } from "@/demo/comparison";
 import { matchSlots } from "@/features/comparison/engine";
 import { channelLabel } from "@/lib/labels";
@@ -25,8 +24,7 @@ import type { ResponseSample } from "@/types/shared-records";
 export { AUDIT_REPORT_LIMITATIONS, COMPARISON_LIMITATIONS, MONITORING_REPORT_LIMITATIONS };
 
 function recordsFor(storeId: string): ReportRecord[] {
-  if (storeId !== RP) return [];
-  return registry.reports().map((r) => ({
+  return registry.reports(storeId).map((r) => ({
     ...r,
     sourceHref:
       r.type === "audit" ? `/stores/${storeId}/audits/${r.sourceId}` : r.type === "monitoring" ? `/stores/${storeId}/monitoring/runs/${r.sourceId}` : `/stores/${storeId}/comparisons/${r.sourceId}`,
@@ -48,10 +46,9 @@ export async function reportStaticParams(): Promise<{ storeId: string; reportId:
 }
 
 export async function listHistorical(storeId: string): Promise<HistoricalRecord[]> {
-  if (storeId !== RP) return [];
-  const reports = registry.reports();
+  const reports = registry.reports(storeId);
   const reportFor = (sourceId: string) => reports.find((r) => r.sourceId === sourceId)?.id ?? null;
-  const audits: HistoricalRecord[] = registry.audits().map((a) => ({
+  const audits: HistoricalRecord[] = registry.audits(storeId).map((a) => ({
     id: a.id,
     kind: "audit",
     title: a.title,
@@ -61,7 +58,7 @@ export async function listHistorical(storeId: string): Promise<HistoricalRecord[
     href: `/stores/${storeId}/audits/${a.id}`,
     reportId: reportFor(a.id),
   }));
-  const runs: HistoricalRecord[] = registry.runs().map((r) => ({
+  const runs: HistoricalRecord[] = registry.runs(storeId).map((r) => ({
     id: r.id,
     kind: "monitoring",
     title: `Weekly monitoring — ${r.id}`,
@@ -71,7 +68,7 @@ export async function listHistorical(storeId: string): Promise<HistoricalRecord[
     href: `/stores/${storeId}/monitoring/runs/${r.id}`,
     reportId: reportFor(r.id),
   }));
-  const comparisons: HistoricalRecord[] = registry.comparisons().map((c) => ({
+  const comparisons: HistoricalRecord[] = registry.comparisons(storeId).map((c) => ({
     id: c.id,
     kind: "comparison",
     title: c.title,
@@ -117,11 +114,11 @@ async function channelLabels(): Promise<Record<string, string>> {
 }
 
 export async function getAuditReportData(storeId: string, auditId: string): Promise<AuditReportData | null> {
-  const audit = registry.audits().find((a) => a.id === auditId);
+  const audit = registry.audits(storeId).find((a) => a.id === auditId);
   if (!audit) return null;
   const [responses, findings, labels] = await Promise.all([listRunResponses(storeId, auditId), listFindings(storeId), channelLabels()]);
   const linked = findings.filter((f) => f.auditId === auditId);
-  const tasks = registry.tasks().filter((t) => linked.some((f) => f.id === t.findingId));
+  const tasks = registry.tasks(storeId).filter((t) => linked.some((f) => f.id === t.findingId));
   const evidence = responses.filter((r) => r.status === "succeeded" && r.outcome === "recommended").slice(0, 3);
   return {
     kind: "audit",
@@ -151,7 +148,7 @@ export async function getAuditReportData(storeId: string, auditId: string): Prom
 }
 
 export async function getMonitoringReportData(storeId: string, runId: string): Promise<MonitoringReportData | null> {
-  const runs = registry.runs();
+  const runs = registry.runs(storeId);
   const index = runs.findIndex((r) => r.id === runId);
   if (index < 0) return null;
   const run = runs[index];
@@ -233,9 +230,9 @@ export async function getReportData(storeId: string, report: ReportRecord): Prom
 }
 
 /** Progress of the source behind a report that is still generating. */
-export async function getGeneratingProgress(report: ReportRecord): Promise<{ jobs: { done: number; total: number }; pages: { done: number; total: number } | null } | null> {
+export async function getGeneratingProgress(storeId: string, report: ReportRecord): Promise<{ jobs: { done: number; total: number }; pages: { done: number; total: number } | null } | null> {
   if (report.type !== "audit") return null;
-  const audit = registry.audits().find((a) => a.id === report.sourceId);
+  const audit = registry.audits(storeId).find((a) => a.id === report.sourceId);
   if (!audit) return null;
   return {
     jobs: { done: audit.succeededJobs + audit.failedJobs, total: audit.plannedJobs },

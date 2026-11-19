@@ -13,6 +13,7 @@ import { SEARCH_MODE_LABEL } from "@/lib/labels";
 import type { SearchMode } from "@/types/core";
 import type { WizardData } from "@/types/audit";
 
+import { integrationsHref } from "./labels";
 import {
   KIND_OPTIONS,
   LANGUAGES,
@@ -228,7 +229,7 @@ export function StepWebsite({ data, state, set }: StepProps) {
           ) : null}
           <Checkbox
             label="CMS import"
-            description={data.integrations.cms ? "Product and page URLs from the connected store" : "Connect the CMS in store settings to enable"}
+            description={data.integrations.cms ? "Product and page URLs from the connected store" : data.integrations.cmsNeedsAttention ? "The CMS connection needs attention. Fix it in store settings to enable" : "Connect the CMS in store settings to enable"}
             checked={state.startCms}
             disabled={!data.integrations.cms}
             onChange={(e) => set({ startCms: e.target.checked })}
@@ -305,7 +306,7 @@ export function StepCriteria({ data, state, set }: StepProps) {
               data.integrations.searchConsole ? (
                 <Badge tone="success" icon="check-circle">Connected</Badge>
               ) : (
-                <Link href={`/stores/${data.store.id}/settings`} className="text-xs font-medium text-accent-text hover:underline">Connect</Link>
+                <Link href={integrationsHref(data.store.id)} className="text-xs font-medium text-accent-text hover:underline">Connect</Link>
               )
             }
           />
@@ -319,8 +320,13 @@ export function StepCriteria({ data, state, set }: StepProps) {
             extra={
               data.integrations.cms ? (
                 <Badge tone="success" icon="check-circle">Connected</Badge>
+              ) : data.integrations.cmsNeedsAttention ? (
+                <>
+                  <Badge tone="warning" icon="alert-triangle">Needs attention</Badge>
+                  <Link href={integrationsHref(data.store.id)} className="text-xs font-medium text-accent-text hover:underline">Fix</Link>
+                </>
               ) : (
-                <Link href={`/stores/${data.store.id}/settings`} className="text-xs font-medium text-accent-text hover:underline">Connect</Link>
+                <Link href={integrationsHref(data.store.id)} className="text-xs font-medium text-accent-text hover:underline">Connect</Link>
               )
             }
           />

@@ -24,6 +24,13 @@ const SECTIONS = [
   { id: "sources", title: "Sources and versions" },
 ];
 
+const NOT_COMPARABLE_SECTIONS = [
+  { id: "summary", title: "Executive summary" },
+  { id: "methodology", title: "Methodology" },
+  { id: "limitations", title: "Limitations" },
+  { id: "sources", title: "Sources and versions" },
+];
+
 type Methodology = { version: string; matching: string; aggregation: string; rules: string[] };
 
 const toRow = (m: MetricResult, label?: string): BarCompareRow => ({
@@ -68,6 +75,55 @@ export function ComparisonReport({
     { label: "Current snapshot", id: current.reference, href: `${base}/export` },
   ];
   const completed = fixes.filter((f) => f.completed);
+
+  if (result.verdict === "not_comparable") {
+    return (
+      <ReportFrame sections={NOT_COMPARABLE_SECTIONS}>
+        <ReportSection id="summary" number={1} title="Executive summary">
+          <VerdictBanner
+            verdict={result.verdict}
+            coverage={result.coverage}
+            unmatched={result.unmatched.length}
+            excluded={result.excluded.length}
+            checks={result.checks}
+            actions={<ButtonLink href={`${base}/quality`} variant="secondary" size="sm">Checks</ButtonLink>}
+          />
+          <p className="text-[13px] text-fg-muted">A hard check failed, so no rate, change or breakdown is computed for this comparison.</p>
+        </ReportSection>
+
+        <ReportSection id="methodology" number={2} title="Methodology">
+          <KeyValue
+            columns={2}
+            items={[
+              { label: "Aggregation", value: methodology.aggregation },
+              { label: "Matching", value: methodology.matching },
+            ]}
+          />
+          <ul className="flex list-disc flex-col gap-1 pl-4 text-xs text-fg-muted">
+            {methodology.rules.map((rule) => (
+              <li key={rule}>{rule}</li>
+            ))}
+          </ul>
+        </ReportSection>
+
+        <ReportSection id="limitations" number={3} title="Limitations">
+          <Limitations items={limitations} />
+        </ReportSection>
+
+        <ReportSection id="sources" number={4} title="Sources and versions">
+          <SourceLinks sources={sources} />
+          <KeyValue
+            columns={2}
+            items={[
+              { label: "Generated", value: <span className="tnum">{formatDateTime(report.createdAt)} UTC</span> },
+              { label: "Baseline runs", value: <span className="flex flex-wrap gap-1">{baseline.runIds.map((id) => <Mono key={id}>{id}</Mono>)}</span> },
+              { label: "Current runs", value: <span className="flex flex-wrap gap-1">{current.runIds.map((id) => <Mono key={id}>{id}</Mono>)}</span> },
+            ]}
+          />
+        </ReportSection>
+      </ReportFrame>
+    );
+  }
 
   return (
     <ReportFrame sections={SECTIONS}>

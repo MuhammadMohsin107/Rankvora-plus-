@@ -22,7 +22,7 @@ import {
   PERMISSIONS,
   ROLE_PERMISSIONS,
 } from "@/demo/settings";
-import { getOrgUsage, listChannels, listCompetitors, listMembers, listStores } from "@/services/core";
+import { getOrgUsage, listChannels, listCompetitors, listMembers, listPromptsBase, listStores } from "@/services/core";
 import type { Competitor, ProviderCode } from "@/types/core";
 import type {
   ActivityEntry,
@@ -80,6 +80,8 @@ export async function listPendingInvites(): Promise<PendingInvite[]> {
 
 export async function getBilling(): Promise<BillingOverview> {
   const [stores, members, usage] = await Promise.all([listStores(), listMembers(), getOrgUsage()]);
+  /** Active prompts count toward the plan limit even when a store has no AI channel yet. */
+  const activePrompts = (await Promise.all(stores.map((store) => listPromptsBase(store.id)))).reduce((sum, list) => sum + list.filter((p) => p.status === "active").length, 0);
   const providers: { code: Extract<ProviderCode, "openai" | "gemini" | "perplexity">; label: string }[] = [
     { code: "openai", label: "OpenAI" },
     { code: "gemini", label: "Gemini" },
@@ -104,7 +106,6 @@ export async function getBilling(): Promise<BillingOverview> {
 
   const totalRequests = providerUsage.reduce((sum, row) => sum + row.requests, 0);
   const totalCap = providerUsage.reduce((sum, row) => sum + row.cap, 0);
-  const activePrompts = stores.reduce((sum, store) => sum + (store.summary?.activePrompts ?? 0), 0);
 
   return {
     planName: DEMO_PLAN.name,

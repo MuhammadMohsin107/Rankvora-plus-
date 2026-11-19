@@ -10,6 +10,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { HeadlineCard } from "@/features/comparison/headline";
 import { CITATION_SOURCE_LABEL } from "@/lib/labels";
+import { NotComputed } from "@/features/comparison/compatibility";
 import { comparisonStaticParams, getComparisonDetail } from "@/services/comparison";
 
 export const metadata: Metadata = { title: "Comparison citations" };
@@ -24,6 +25,7 @@ async function ComparisonCitationsPageContent(props: PageProps<"/stores/[storeId
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
+  if (detail.result.verdict === "not_comparable") return <NotComputed checks={detail.result.checks} what="Citations" />;
   const { result } = detail;
   const citation = result.headline.find((m) => m.id === "citation")!;
   const sourceOf = (domain: string) => result.domains.find((d) => d.domain === domain)?.source ?? "third_party";

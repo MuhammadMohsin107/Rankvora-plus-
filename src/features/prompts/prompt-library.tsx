@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
 import { Badge, Status } from "@/components/ui/badge";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button, ButtonLink, IconButton } from "@/components/ui/button";
 import { Callout, Metric, MetricCell, MetricGrid } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/form";
 import { Menu, type MenuItem } from "@/components/ui/menu";
@@ -36,6 +36,7 @@ export function PromptLibrary({ store, initialPrompts, initialGroups }: { store:
   const groupSeq = useRef(0);
 
   const base = `/stores/${store.id}/prompts`;
+  const untracked = store.channelCount === 0;
   const groupName = (id: string | null) => groups.find((g) => g.id === id)?.name ?? null;
 
   const counts = useMemo(() => {
@@ -126,7 +127,7 @@ export function PromptLibrary({ store, initialPrompts, initialGroups }: { store:
     { id: "status", header: "Status", sort: (r) => STATUS_ORDER[r.status], cell: (r) => <Status kind="prompt" value={r.status} /> },
     { id: "version", header: "Version", hideBelow: "2xl", sort: (r) => r.version, cell: (r) => <span className="tnum text-fg-muted">v{r.version}</span> },
     { id: "source", header: "Source", hideBelow: "2xl", sort: (r) => SOURCE_LABEL[r.source], cell: (r) => <span className="whitespace-nowrap text-fg-muted">{SOURCE_LABEL[r.source]}</span> },
-    { id: "last", header: "Latest result", hideBelow: "lg", cell: (r) => <LastResults results={r.lastResults} /> },
+    { id: "last", header: "Latest result", hideBelow: "lg", cell: (r) => <LastResults results={r.lastResults} reason={untracked ? "No AI channel" : undefined} /> },
     {
       id: "updated",
       header: "Updated",
@@ -182,6 +183,20 @@ export function PromptLibrary({ store, initialPrompts, initialGroups }: { store:
           <Metric label="Core set" value={String(summary.core)} info="Core prompts are the stable set used to compare results over time." />
         </MetricCell>
       </MetricGrid>
+
+      {untracked ? (
+        <Callout
+          tone="warning"
+          title="No AI channel is selected for this store"
+          actions={
+            <ButtonLink href={`/stores/${store.id}/settings`} variant="primary" size="sm">
+              Choose AI channels
+            </ButtonLink>
+          }
+        >
+          Prompts are saved, but nothing is tracked until a channel is selected. Results show N/A, not 0%.
+        </Callout>
+      ) : null}
 
       {activeTotal > 0 && summary.neutral === 0 ? (
         <Callout tone="warning" title="Every active prompt names the brand">

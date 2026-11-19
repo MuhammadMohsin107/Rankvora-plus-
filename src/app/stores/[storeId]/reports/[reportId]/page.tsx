@@ -73,7 +73,7 @@ async function ReportPageContent(props: PageProps<"/stores/[storeId]/reports/[re
   );
 
   if (report.status === "generating") {
-    const progress = await getGeneratingProgress(report);
+    const progress = await getGeneratingProgress(storeId, report);
     return (
       <>
         {header(null)}
@@ -120,12 +120,21 @@ async function ReadyReport({ storeId, report, header }: { storeId: string; repor
 
   const detail = await getComparisonDetail(storeId, data.comparisonId);
   if (!detail) notFound();
-  const promptRows = await getPromptRows(storeId, data.comparisonId);
+  const notComparable = detail.result.verdict === "not_comparable";
+  const promptRows = notComparable ? [] : await getPromptRows(storeId, data.comparisonId);
   const evidence = promptRows.filter((r) => r.change !== "unchanged").slice(0, 4);
-  const json = JSON.stringify({ report: report.id, comparison: detail.record.id, verdict: detail.result.verdict, coverage: detail.result.coverage, metrics: detail.result.headline }, null, 2);
+  // A comparison that failed a hard check exports its checks only: no rate or change is produced.
+  const json = JSON.stringify(
+    notComparable
+      ? { report: report.id, comparison: detail.record.id, verdict: detail.result.verdict, checks: detail.result.checks }
+      : { report: report.id, comparison: detail.record.id, verdict: detail.result.verdict, coverage: detail.result.coverage, metrics: detail.result.headline },
+    null,
+    2,
+  );
+  const csv = notComparable ? toCsv(["check", "state", "detail"], detail.result.checks.map((c) => [c.label, c.state, c.detail])) : aggregateCsv(detail.result);
   return (
     <>
-      {header(<ExportActions baseName={report.id} csv={aggregateCsv(detail.result)} json={json} />)}
+      {header(<ExportActions baseName={report.id} csv={csv} json={json} />)}
       <ComparisonReport
         report={report}
         detail={detail}

@@ -45,7 +45,7 @@ export function PromptDetail({ data }: { data: PromptDetailData }) {
     setPrompt((current) => ({ ...current, status, updatedAt: DEMO_NOW }));
     const done = { active: "activated", paused: "paused", archived: "archived", draft: "restored as draft" }[status];
     log(done.charAt(0).toUpperCase() + done.slice(1), "status");
-    toast.push({ title: `Prompt ${done}`, description: status === "active" ? "It runs in the next audit and monitoring run." : status === "archived" ? "Results and versions stay available." : undefined });
+    toast.push({ title: `Prompt ${done}`, description: status === "active" ? (channels.length === 0 ? "It runs once an AI channel is selected for this store." : "It runs in the next audit and monitoring run.") : status === "archived" ? "Results and versions stay available." : undefined });
   };
 
   const commitWording = (text: string) => {
@@ -114,7 +114,7 @@ export function PromptDetail({ data }: { data: PromptDetailData }) {
               {
                 id: "results",
                 label: "Results",
-                content: <ResultsSection results={data.results} channels={channels} versions={versions} status={prompt.status} />,
+                content: <ResultsSection results={data.results} channels={channels} versions={versions} status={prompt.status} storeId={store.id} />,
               },
               { id: "versions", label: "Versions", count: versions.length, content: <VersionHistory key={versions.length} versions={versions} /> },
               {

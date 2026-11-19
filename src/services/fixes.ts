@@ -3,7 +3,7 @@
  * the real remediation services later. Screens only import from here.
  */
 import { FINDING_EXTRAS, RECOMMENDATIONS, TASK_DETAILS, TASK_SUMMARY_EXTRAS } from "@/demo/fixes";
-import { getCurrentUser, listMembers, listPromptsBase } from "@/services/core";
+import { getCurrentUser, listMembers, listPromptsBase, listStoreChannels } from "@/services/core";
 import { getFinding, getResponse, listFindings, registry } from "@/services/records";
 import type {
   AssigneeOption,
@@ -22,7 +22,7 @@ async function summaries(storeId: string): Promise<TaskSummary[]> {
   if (findings.length === 0) return [];
   const byId = new Map(findings.map((f) => [f.id, f]));
   return registry
-    .tasks()
+    .tasks(storeId)
     .filter((t) => byId.has(t.findingId))
     .map((t) => ({
       id: t.id,
@@ -37,6 +37,12 @@ async function summaries(storeId: string): Promise<TaskSummary[]> {
       priority: t.priority,
       blockers: TASK_SUMMARY_EXTRAS[t.id]?.blockers ?? [],
     }));
+}
+
+/** What a store needs before Fixes can show anything: findings come from audits, and audits need a connected AI platform. */
+export async function getFixesSetup(storeId: string): Promise<{ hasAiPlatform: boolean }> {
+  const channels = await listStoreChannels(storeId);
+  return { hasAiPlatform: channels.length > 0 };
 }
 
 export async function listTaskSummaries(storeId: string): Promise<TaskSummary[]> {
@@ -121,14 +127,14 @@ export async function getTaskDetail(storeId: string, taskId: string): Promise<Ta
   return { task, ...seed };
 }
 
-/** Pairs for generateStaticParams on finding detail routes (stores with data only). */
+/** Pairs for generateStaticParams on finding detail routes (every store; stores without findings add none). */
 export async function findingStaticParams(storeIds: string[]): Promise<{ storeId: string; findingId: string }[]> {
   const out: { storeId: string; findingId: string }[] = [];
   for (const storeId of storeIds) for (const f of await listFindings(storeId)) out.push({ storeId, findingId: f.id });
   return out;
 }
 
-/** Pairs for generateStaticParams on task detail routes (stores with data only). */
+/** Pairs for generateStaticParams on task detail routes (every store; stores without tasks add none). */
 export async function taskStaticParams(storeIds: string[]): Promise<{ storeId: string; taskId: string }[]> {
   const out: { storeId: string; taskId: string }[] = [];
   for (const storeId of storeIds) for (const t of await summaries(storeId)) out.push({ storeId, taskId: t.id });

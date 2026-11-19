@@ -6,6 +6,7 @@ import { StackedBar } from "@/components/charts/bars";
 import { LineChart, type LineSeries } from "@/components/charts/line-chart";
 import { Status } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, Metric } from "@/components/ui/card";
+import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
 import { Segmented } from "@/components/ui/form";
 import { Mono } from "@/components/ui/misc";
@@ -22,6 +23,7 @@ type Props = {
   channels: ChannelOption[];
   versions: PromptVersion[];
   status: PromptStatus;
+  storeId: string;
 };
 
 const GRID: Record<number, string> = {
@@ -65,7 +67,7 @@ function outcomeOf(response: ResponseSample) {
   return <Status kind="recommendation" value={value} />;
 }
 
-export function ResultsSection({ results, channels, versions, status }: Props) {
+export function ResultsSection({ results, channels, versions, status, storeId }: Props) {
   const [metric, setMetric] = useState<"mention" | "recommendation">("mention");
   const [view, setView] = useState<"pooled" | "provider">("pooled");
   const { runs, providers, pooled, latest, period } = results;
@@ -93,6 +95,21 @@ export function ResultsSection({ results, channels, versions, status }: Props) {
     const summary = values.length >= 2 ? `${metric === "mention" ? "Mention" : "Recommendation"} rate per monitoring run, from ${values[0].toFixed(0)}% to ${values[values.length - 1].toFixed(0)}%.` : "Not enough runs for a trend.";
     return { series, markers, summary, minD: Math.min(...sizes, Infinity), maxD: Math.max(...sizes, 0) };
   }, [runs, channels, metric, view, versions]);
+
+  if (runs.length === 0 && channels.length === 0) {
+    return (
+      <EmptyState
+        icon="monitoring"
+        title="Results are N/A"
+        description="No AI channel is selected for this store, so nothing is tracked. This is not 0%."
+        action={
+          <ButtonLink href={`/stores/${storeId}/settings`} variant="primary">
+            Choose AI channels
+          </ButtonLink>
+        }
+      />
+    );
+  }
 
   if (runs.length === 0) {
     const archived = status === "archived";

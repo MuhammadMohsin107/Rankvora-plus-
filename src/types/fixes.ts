@@ -232,8 +232,31 @@ export type RollbackRecord = {
   preservedEdits: string[];
 };
 
+/** A failed write attempt. Nothing is changed on the live site unless `nothingWritten` is false. */
+export type ExecutionFailure = {
+  at: string;
+  stage: "stage" | "apply" | "publish";
+  code: string;
+  message: string;
+  attempts: { at: string; result: string }[];
+  /** Whether a retry can succeed once the cause is fixed. */
+  retryable: boolean;
+  /** Plain reason a retry is blocked right now, or null when a retry is available. */
+  retryBlockedBy: string | null;
+  nothingWritten: boolean;
+  nextStep: string;
+};
+
 export type ExecutionRecord = {
-  connector: { label: string; store: string; state: "connected" | "needs_attention" | "disconnected"; scopesGranted: string[]; scopesRequired: string[] } | null;
+  connector: {
+    label: string;
+    store: string;
+    state: "connected" | "needs_attention" | "disconnected";
+    scopesGranted: string[];
+    scopesRequired: string[];
+    /** Context for scopes or state that differ from when the task last wrote. */
+    note?: string;
+  } | null;
   cmsState: CmsState;
   /** Result of the pre-write remote version/hash check. */
   remote: RemoteCheck | null;
@@ -242,6 +265,8 @@ export type ExecutionRecord = {
   stagedAt: string | null;
   appliedAt: string | null;
   publishedAt: string | null;
+  /** Set when the last write attempt failed. */
+  failure?: ExecutionFailure;
   rollback: {
     available: boolean;
     unavailableReason?: string;
@@ -292,6 +317,8 @@ export type TaskDetailData = {
   execution: ExecutionRecord;
   verification: VerificationRecord;
   history: HistoryEvent[];
+  /** Why the task was rejected (status rejected only). */
+  rejection?: { by: string; at: string; reason: string };
 };
 
 export type AssigneeOption = { id: string; name: string; role: string };

@@ -12,6 +12,7 @@ import { EmptyState, Progress } from "@/components/ui/feedback";
 import { Icon } from "@/components/ui/icon";
 import { AuditHistoryTable } from "@/features/audit/audit-history-table";
 import { LaneCards } from "@/features/audit/lane-cards";
+import { AuditSetupBlocked } from "@/features/audit/setup-blocked";
 import { SummarySwitch } from "@/features/audit/summary-switch";
 import { getStore, storeIds } from "@/services/core";
 import { getAudit, getLaneSummary, getWizardData, listAudits } from "@/services/audit";
@@ -42,6 +43,15 @@ async function AuditsPageContent(props: PageProps<"/stores/[storeId]/audits">) {
 
   const [audits, wizard] = await Promise.all([listAudits(storeId), getWizardData(storeId)]);
   if (audits.length === 0) {
+    // No AI channel: nothing can run, so the one action is to connect a platform.
+    if (!wizard || wizard.channels.length === 0) {
+      return (
+        <>
+          <PageHeader title="Audits" />
+          <AuditSetupBlocked storeId={storeId} storeName={store.name} />
+        </>
+      );
+    }
     const hasPrompts = (wizard?.prompts.filter((p) => p.status === "active").length ?? 0) > 0;
     return (
       <>

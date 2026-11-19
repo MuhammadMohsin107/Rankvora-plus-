@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { ExportPanel } from "@/features/comparison/export-panel";
 import { aggregateCsv, rowLevelCsv } from "@/features/comparison/export";
 import { formatDateTime } from "@/lib/format";
+import { NotComputed } from "@/features/comparison/compatibility";
 import { comparisonStaticParams, getComparisonDetail, METHODOLOGY } from "@/services/comparison";
 
 export const metadata: Metadata = { title: "Comparison export" };
@@ -19,6 +20,7 @@ async function ComparisonExportPageContent(props: PageProps<"/stores/[storeId]/c
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
+  if (detail.result.verdict === "not_comparable") return <NotComputed checks={detail.result.checks} what="Export" />;
   const { result, record, baseline, current } = detail;
 
   const json = JSON.stringify(

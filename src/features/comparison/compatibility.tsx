@@ -1,5 +1,6 @@
 import { Status } from "@/components/ui/badge";
 import { Callout } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/feedback";
 import type { Tone } from "@/lib/status";
 import type { Check, Comparability } from "@/types/comparison";
 import type { Rate } from "@/types/core";
@@ -80,5 +81,17 @@ export function VerdictBanner({
         </ul>
       ) : null}
     </Callout>
+  );
+}
+
+/** Shown on a tab of a comparison that failed a hard check: no rate, change or export is produced. */
+export function NotComputed({ checks, what }: { checks: Check[]; what: string }) {
+  const failed = checks.filter((c) => c.kind === "hard" && c.state === "fail");
+  return (
+    <EmptyState
+      icon="x-circle"
+      title={`${what} not computed`}
+      description={`This comparison is not comparable, so no numbers are produced. ${failed.map((c) => c.detail).join(" ")}`.trim()}
+    />
   );
 }

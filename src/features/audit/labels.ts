@@ -37,6 +37,9 @@ export const PAGE_TYPE_LABEL: Record<PageType, string> = {
   policy: "Policy",
 };
 
+/** Store settings, integrations tab (where AI platforms and connectors are connected). */
+export const integrationsHref = (storeId: string) => `/stores/${storeId}/settings?tab=integrations`;
+
 export function formatMinutes(totalSeconds: number): string {
   const m = Math.max(1, Math.round(totalSeconds / 60));
   if (m < 60) return `${m} min`;

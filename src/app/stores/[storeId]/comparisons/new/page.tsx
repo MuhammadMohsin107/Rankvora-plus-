@@ -5,8 +5,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shell/page-header";
-import { ButtonLink } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/feedback";
+import { NoHistory } from "@/features/comparison/no-history";
 import { NewComparisonWizard } from "@/features/comparison/wizard";
 import { getWizardData, wizardCatalog } from "@/services/comparison";
 import { getStore, storeIds } from "@/services/core";
@@ -32,12 +31,7 @@ async function NewComparisonPageContent(props: PageProps<"/stores/[storeId]/comp
     return (
       <>
         {header}
-        <EmptyState
-          icon="compare"
-          title="Two snapshots needed"
-          description="Run an audit or a monitoring run first."
-          action={<ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>}
-        />
+        <NoHistory storeId={storeId} kind="snapshots" hasChannel={store.channelIds.length > 0} />
       </>
     );
   }
@@ -45,7 +39,7 @@ async function NewComparisonPageContent(props: PageProps<"/stores/[storeId]/comp
   return (
     <>
       {header}
-      <NewComparisonWizard storeId={storeId} data={data} catalog={wizardCatalog()} />
+      <NewComparisonWizard storeId={storeId} data={data} catalog={wizardCatalog(storeId)} />
     </>
   );
 }

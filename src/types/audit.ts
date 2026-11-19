@@ -103,9 +103,21 @@ export type AuditSummary = {
   reportVersion: string | null;
 };
 
+/** What the audit consumed. Cost is an estimate from typical per-request pricing, not an invoice. */
+export type AuditUsage = {
+  requests: { attempted: number; succeeded: number; failed: number };
+  searchCalls: number;
+  inputTokens: number;
+  outputTokens: number;
+  pagesCrawled: number;
+  estimatedCostUsd: number;
+  budgetUsd: number;
+};
+
 export type AuditDetail = AuditSummary & {
   config: AuditConfig;
   coverage: AuditCoverage;
+  usage: AuditUsage;
   limitations: { id: string; tone: "warning" | "info" | "neutral"; text: string }[];
   progress: AuditProgress | null;
   /** Previous comparable audit (same scope family) for baselines, or null. */
@@ -128,7 +140,14 @@ export type BreakdownRow = {
   failed: number;
 };
 
-export type CompetitorRow = { id: string; name: string; mentioned: Rate; isBrand: boolean };
+export type CompetitorRow = {
+  id: string;
+  name: string;
+  mentioned: Rate;
+  isBrand: boolean;
+  /** A suggested (not yet confirmed) competitor that appears in the answers. */
+  suggested?: boolean;
+};
 
 export type CitationDomainRow = { domain: string; source: "owned" | "competitor" | "third_party"; count: number };
 
@@ -277,8 +296,12 @@ export type WizardData = {
   prompts: WizardPrompt[];
   groups: { id: string; name: string }[];
   channels: WizardChannel[];
-  integrations: { searchConsole: boolean; cms: boolean };
+  integrations: { searchConsole: boolean; cms: boolean; cmsNeedsAttention: boolean };
   knownPages: number | null;
   costPerJobUsd: number;
   costPerPageUsd: number;
+  /** Starting values taken from the store's latest full audit. */
+  defaults: { samples: number; maxUrls: number; maxDepth: number; maxRequests: number; concurrency: number; budgetUsd: number; excludedPaths: string[] };
+  /** Where the demo "Start audit" lands: the running audit, else the latest full one. */
+  landingAudit: { id: string; title: string } | null;
 };

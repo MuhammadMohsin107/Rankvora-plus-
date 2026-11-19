@@ -133,8 +133,8 @@ function initialState(ctx: ScheduleFormContext, config: ScheduleConfig | null, n
     maxConcurrency: config?.maxConcurrency ?? 3,
     maxAttempts: config?.retry.maxAttempts ?? 3,
     backoffSeconds: config?.retry.backoffSeconds ?? 30,
-    capJobs: config?.usageCap.jobsPerMonth ?? 600,
-    capCost: config?.usageCap.costUsd ?? 20,
+    capJobs: config?.usageCap.jobsPerMonth ?? ctx.defaultCap.jobsPerMonth,
+    capCost: config?.usageCap.costUsd ?? ctx.defaultCap.costUsd,
     categories: config ? config.alerts.categories.filter((t) => ALL_TYPES.includes(t)) : ALL_TYPES,
     threshold: config?.alerts.threshold ?? THRESHOLDS[1],
     persistence: config ? persistenceOf(config) : "2of3",
@@ -547,6 +547,19 @@ export function ScheduleForm({ ctx, mode, scheduleId, initial }: { ctx: Schedule
             </div>
             <Progress value={Math.min(jobsPerMonth, remainingPlan)} max={Math.max(remainingPlan, 1)} label="Estimated share of remaining plan requests" tone={jobsPerMonth > remainingPlan ? "danger" : jobsPerMonth > remainingPlan * 0.8 ? "warning" : "accent"} />
             {ctx.otherJobsPerMonth > 0 ? <p className="tnum text-xs text-fg-subtle">Active schedules already plan ~{formatNumber(ctx.otherJobsPerMonth)} jobs / month.</p> : null}
+          </div>
+          <div className="flex flex-col gap-1.5 border-t border-line pt-3">
+            <div className="flex items-baseline justify-between text-xs text-fg-muted">
+              <span>This schedule against its cap</span>
+              <span className="tnum">{formatNumber(jobsPerMonth)} / {formatNumber(s.capJobs)} jobs</span>
+            </div>
+            <Progress value={Math.min(jobsPerMonth, s.capJobs)} max={Math.max(s.capJobs, 1)} label="Estimated jobs per month against the schedule usage cap" tone={jobsPerMonth > s.capJobs ? "danger" : jobsPerMonth > s.capJobs * 0.8 ? "warning" : "accent"} />
+            <div className="flex items-baseline justify-between text-xs text-fg-muted">
+              <span>Cost against its cap (estimate)</span>
+              <span className="tnum">~{formatUsd(costPerMonth)} / {formatUsd(s.capCost)}</span>
+            </div>
+            <Progress value={Math.min(costPerMonth, s.capCost)} max={Math.max(s.capCost, 1)} label="Estimated cost per month against the schedule cost cap" tone={costPerMonth > s.capCost ? "danger" : costPerMonth > s.capCost * 0.8 ? "warning" : "accent"} />
+            <p className="tnum text-xs text-fg-subtle">Store monthly budget: {formatNumber(ctx.budget.requests)} requests · {formatNumber(ctx.budget.searchCalls)} search calls · {formatUsd(ctx.budget.costUsd)} estimate.</p>
           </div>
         </CardBody>
       </Card>

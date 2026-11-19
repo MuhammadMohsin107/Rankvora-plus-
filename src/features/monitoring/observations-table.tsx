@@ -97,7 +97,7 @@ export function ObservationsTable({ rows }: { rows: ObservationRow[] }) {
         ]}
         empty={<EmptyState icon="monitoring" title="No observations yet" />}
       />
-      <Drawer open={open !== null} onClose={() => setOpenId(null)} title={open?.promptText ?? "Evidence"} description={open ? `${open.channelLabel} · market PK · EN` : undefined} size="lg">
+      <Drawer open={open !== null} onClose={() => setOpenId(null)} title={open?.promptText ?? "Evidence"} description={open ? `${open.channelLabel} · market ${open.locale}` : undefined} size="lg">
         {open ? <Evidence row={open} /> : null}
       </Drawer>
     </>

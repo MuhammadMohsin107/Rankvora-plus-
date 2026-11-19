@@ -35,8 +35,16 @@ export function ResultMark({ result }: { result: LastResult }) {
   );
 }
 
-export function LastResults({ results }: { results: LastResult[] }) {
-  if (results.length === 0) return <span className="text-xs text-fg-subtle">N/A</span>;
+/** `reason` explains an empty list, for example a store with no AI channel. Never shown as 0%. */
+export function LastResults({ results, reason }: { results: LastResult[]; reason?: string }) {
+  if (results.length === 0) {
+    return (
+      <span className="text-xs text-fg-subtle" title={reason}>
+        N/A
+        {reason ? <span className="block">{reason}</span> : null}
+      </span>
+    );
+  }
   return (
     <ul className="flex min-w-[10.5rem] flex-col gap-0.5" aria-label="Latest result by provider">
       {results.map((r) => (

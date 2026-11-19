@@ -248,3 +248,151 @@ export const REGISTRY_REPORTS: RegistryReport[] = [
   { id: "rep-aud-001", type: "audit", title: "Initial audit", sourceId: "aud-001", period: "12 Aug 2026", createdAt: "2026-08-12T06:40:00Z", version: "Criteria 1.4", status: "ready" },
   { id: "rep-aud-004", type: "audit", title: "Full audit — November", sourceId: "aud-004", period: "19 Nov 2026", createdAt: "2026-11-19T08:42:00Z", version: "Criteria 2.1", status: "generating" },
 ];
+
+// ===========================================================================
+// Store "runpro-ae" (RunPro UAE). Same shapes and rules as runpro-pk above.
+// 5 active prompts × 2 channels (OpenAI, Gemini) × 3 samples = 30 planned jobs per full run.
+// Ids are prefixed "-ae-" so they never collide with runpro-pk records.
+// ===========================================================================
+
+export const AE = "runpro-ae";
+export const PLANNED_JOBS_PER_RUN_AE = 30;
+
+export const REGISTRY_AE_AUDITS: RegistryAudit[] = [
+  {
+    id: "aud-ae-003",
+    title: "Focused audit — Dubai local prompts",
+    type: "focused",
+    lanes: ["ai_visibility"],
+    status: "partially_completed",
+    startedAt: "2026-11-14T06:00:00Z",
+    completedAt: "2026-11-14T06:12:00Z",
+    snapshotId: "snap-aud-ae-003",
+    mention: { n: 3, d: 9 },
+    recommendation: { n: 1, d: 9 },
+    plannedJobs: 12,
+    succeededJobs: 9,
+    failedJobs: 3,
+    findingsCreated: 0,
+    pages: null,
+    createdBy: "Hira Malik",
+  },
+  {
+    id: "aud-ae-002",
+    title: "Full audit — November",
+    type: "full",
+    lanes: ["ai_visibility", "website_readiness"],
+    status: "completed",
+    startedAt: "2026-11-05T05:00:00Z",
+    completedAt: "2026-11-05T05:41:00Z",
+    snapshotId: "snap-aud-ae-002",
+    mention: { n: 7, d: 30 },
+    recommendation: { n: 3, d: 30 },
+    plannedJobs: 30,
+    succeededJobs: 30,
+    failedJobs: 0,
+    findingsCreated: 3,
+    pages: { n: 58, d: 60 },
+    createdBy: "Hira Malik",
+  },
+  {
+    id: "aud-ae-001",
+    title: "Initial audit",
+    type: "initial",
+    lanes: ["ai_visibility", "website_readiness"],
+    status: "completed_with_warnings",
+    startedAt: "2026-09-16T05:00:00Z",
+    completedAt: "2026-09-16T05:34:00Z",
+    snapshotId: "snap-aud-ae-001",
+    mention: { n: 4, d: 28 },
+    recommendation: { n: 1, d: 28 },
+    plannedJobs: 30,
+    succeededJobs: 28,
+    failedJobs: 2,
+    findingsCreated: 3,
+    pages: { n: 41, d: 60 },
+    createdBy: "Sana Iqbal",
+  },
+];
+
+const aeRun = (n: number, date: string, mention: Rate, rec: Rate, failed: number, cost: number): RegistryRun => ({
+  id: `run-ae-00${n}`,
+  scheduleId: "sch-ae-001",
+  scheduledFor: `${date}T05:00:00Z`,
+  status: failed > 0 ? "completed_with_warnings" : "completed",
+  mention,
+  recommendation: rec,
+  plannedJobs: 30,
+  succeededJobs: 30 - failed,
+  failedJobs: failed,
+  snapshotId: `snap-mon-ae-00${n}`,
+  costUsd: cost,
+});
+
+/** Weekly runs of schedule sch-ae-001 (Wednesdays 09:00 Dubai), oldest → newest. run-ae-006 is the latest. */
+export const REGISTRY_AE_RUNS: RegistryRun[] = [
+  aeRun(1, "2026-10-14", { n: 3, d: 30 }, { n: 1, d: 30 }, 0, 2.0),
+  aeRun(2, "2026-10-21", { n: 4, d: 29 }, { n: 2, d: 29 }, 1, 2.0),
+  aeRun(3, "2026-10-28", { n: 4, d: 30 }, { n: 2, d: 30 }, 0, 2.0),
+  aeRun(4, "2026-11-04", { n: 5, d: 28 }, { n: 2, d: 28 }, 2, 2.1),
+  aeRun(5, "2026-11-11", { n: 6, d: 30 }, { n: 3, d: 30 }, 0, 2.0),
+  aeRun(6, "2026-11-18", { n: 9, d: 30 }, { n: 3, d: 30 }, 0, 2.1),
+];
+
+export const REGISTRY_AE_SCHEDULES: typeof REGISTRY_SCHEDULES = [
+  { id: "sch-ae-001", name: "RunPro UAE weekly check", frequency: "Weekly · Wed 09:00", timezone: "Asia/Dubai", status: "active", promptCount: 5, channelIds: ["ch-openai", "ch-gemini"], samples: 3, nextRunAt: "2026-11-25T05:00:00Z" },
+  { id: "sch-ae-002", name: "Dubai local prompts — daily Gemini", frequency: "Daily · 10:00", timezone: "Asia/Dubai", status: "paused", promptCount: 2, channelIds: ["ch-gemini"], samples: 1, nextRunAt: null },
+];
+
+export const REGISTRY_AE_COMPARISONS: RegistryComparison[] = [
+  { id: "cmp-ae-001", title: "Initial audit vs latest monitoring", type: "initial_vs_latest", baseline: "snap-aud-ae-001", current: "snap-mon-ae-006", status: "completed_with_warnings", comparability: "partially_comparable", createdAt: "2026-11-18T10:05:00Z", createdBy: "Hira Malik", methodologyVersion: "1.0" },
+  { id: "cmp-ae-002", title: "October vs November (monitoring)", type: "period_vs_period", baseline: "2026-10-01 – 2026-10-31", current: "2026-11-01 – 2026-11-19", status: "completed", comparability: "comparable", createdAt: "2026-11-19T07:30:00Z", createdBy: "Sana Iqbal", methodologyVersion: "1.0" },
+  { id: "cmp-ae-003", title: "Audit September vs audit November", type: "snapshot_vs_snapshot", baseline: "snap-aud-ae-001", current: "snap-aud-ae-002", status: "completed", comparability: "comparable", createdAt: "2026-11-06T09:00:00Z", createdBy: "Omar Farooq", methodologyVersion: "1.0" },
+  { id: "cmp-ae-004", title: "Before vs after: product schema fix", type: "before_after_fixes", baseline: "snap-aud-ae-001", current: "snap-aud-ae-003", status: "insufficient_data", comparability: "insufficient_data", createdAt: "2026-11-15T08:20:00Z", createdBy: "Hira Malik", methodologyVersion: "1.0" },
+];
+
+/** 4 of these are open → matches the store summary "pending tasks". */
+export const REGISTRY_AE_TASKS: RegistryTask[] = [
+  { id: "task-ae-001", title: "Add Product and Offer schema to the WooCommerce product template", findingId: "fnd-ae-001", status: "staged", assignee: "Hira Malik", dueAt: "2026-11-25T00:00:00Z", mode: "cms_staged", risk: "medium", priority: "P1" },
+  { id: "task-ae-002", title: "Switch JSON-LD priceCurrency from USD to AED", findingId: "fnd-ae-002", status: "failed", assignee: "Omar Farooq", dueAt: "2026-11-20T00:00:00Z", mode: "approved_apply", risk: "high", priority: "P1" },
+  { id: "task-ae-003", title: "Add UAE delivery and returns section to product pages", findingId: "fnd-ae-003", status: "pending_approval", assignee: "Hira Malik", dueAt: "2026-11-27T00:00:00Z", mode: "ai_draft", risk: "low", priority: "P2" },
+  { id: "task-ae-004", title: "Review Dubai local citations against GulfRun", findingId: "fnd-ae-004", status: "suggested", assignee: null, dueAt: null, mode: "guidance", risk: "low", priority: "P2" },
+  { id: "task-ae-005", title: "Remove redirecting URLs from the sitemap", findingId: "fnd-ae-005", status: "verified_success", assignee: "Omar Farooq", dueAt: "2026-11-08T00:00:00Z", mode: "approved_apply", risk: "low", priority: "P3" },
+  { id: "task-ae-006", title: "Rewrite hot-weather guidance on the homepage", findingId: "fnd-ae-006", status: "rejected", assignee: "Hira Malik", dueAt: null, mode: "guidance", risk: "low", priority: "P3" },
+];
+
+export const REGISTRY_AE_REPORTS: RegistryReport[] = [
+  { id: "rep-cmp-ae-002", type: "comparison", title: "October vs November (monitoring)", sourceId: "cmp-ae-002", period: "1 Oct – 19 Nov 2026", createdAt: "2026-11-19T07:40:00Z", version: "Methodology 1.0", status: "ready" },
+  { id: "rep-cmp-ae-001", type: "comparison", title: "Initial audit vs latest monitoring", sourceId: "cmp-ae-001", period: "16 Sep – 18 Nov 2026", createdAt: "2026-11-18T10:15:00Z", version: "Methodology 1.0", status: "ready" },
+  { id: "rep-cmp-ae-003", type: "comparison", title: "Audit September vs audit November", sourceId: "cmp-ae-003", period: "16 Sep – 5 Nov 2026", createdAt: "2026-11-06T09:10:00Z", version: "Methodology 1.0", status: "ready" },
+  { id: "rep-mon-ae-006", type: "monitoring", title: "Weekly monitoring — 18 Nov", sourceId: "run-ae-006", period: "18 Nov 2026", createdAt: "2026-11-18T05:40:00Z", version: "Analysis 1.2", status: "ready" },
+  { id: "rep-mon-ae-005", type: "monitoring", title: "Weekly monitoring — 11 Nov", sourceId: "run-ae-005", period: "11 Nov 2026", createdAt: "2026-11-11T05:40:00Z", version: "Analysis 1.2", status: "ready" },
+  { id: "rep-aud-ae-003", type: "audit", title: "Focused audit — Dubai local prompts", sourceId: "aud-ae-003", period: "14 Nov 2026", createdAt: "2026-11-14T06:13:00Z", version: "Criteria 2.1", status: "failed" },
+  { id: "rep-aud-ae-002", type: "audit", title: "Full audit — November", sourceId: "aud-ae-002", period: "5 Nov 2026", createdAt: "2026-11-05T05:45:00Z", version: "Criteria 2.1", status: "ready" },
+  { id: "rep-aud-ae-001", type: "audit", title: "Initial audit", sourceId: "aud-ae-001", period: "16 Sep 2026", createdAt: "2026-09-16T05:40:00Z", version: "Criteria 1.4", status: "ready" },
+];
+
+export type StoreRegistry = {
+  audits: RegistryAudit[];
+  runs: RegistryRun[];
+  schedules: typeof REGISTRY_SCHEDULES;
+  comparisons: RegistryComparison[];
+  tasks: RegistryTask[];
+  reports: RegistryReport[];
+  plannedJobsPerRun: number;
+};
+
+const EMPTY_REGISTRY: StoreRegistry = { audits: [], runs: [], schedules: [], comparisons: [], tasks: [], reports: [], plannedJobsPerRun: 0 };
+
+const REGISTRIES: Record<string, StoreRegistry> = {
+  [RP]: { audits: REGISTRY_AUDITS, runs: REGISTRY_RUNS, schedules: REGISTRY_SCHEDULES, comparisons: REGISTRY_COMPARISONS, tasks: REGISTRY_TASKS, reports: REGISTRY_REPORTS, plannedJobsPerRun: PLANNED_JOBS_PER_RUN },
+  [AE]: { audits: REGISTRY_AE_AUDITS, runs: REGISTRY_AE_RUNS, schedules: REGISTRY_AE_SCHEDULES, comparisons: REGISTRY_AE_COMPARISONS, tasks: REGISTRY_AE_TASKS, reports: REGISTRY_AE_REPORTS, plannedJobsPerRun: PLANNED_JOBS_PER_RUN_AE },
+};
+
+/** Registry of one store; stores without run history (e.g. homefit-uk) get empty lists. */
+export function registryFor(storeId: string): StoreRegistry {
+  return REGISTRIES[storeId] ?? EMPTY_REGISTRY;
+}
+
+/** Ids of every store that has registry data. */
+export const REGISTRY_STORE_IDS = Object.keys(REGISTRIES);

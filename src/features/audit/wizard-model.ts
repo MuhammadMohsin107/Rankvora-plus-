@@ -73,23 +73,23 @@ export function initialState(data: WizardData): WizardState {
     searchModes: Object.fromEntries(data.channels.map((c) => [c.id, c.searchMode])),
     market: data.store.market,
     language: data.store.language,
-    samples: 2,
+    samples: data.defaults.samples,
     startHomepage: true,
     startSitemap: true,
     startUrlList: false,
     startCms: false,
     urlList: "",
-    maxDepth: 4,
+    maxDepth: data.defaults.maxDepth,
     pageTypes: PAGE_TYPE_OPTIONS.map((p) => p.value),
-    excludedPaths: "/cart\n/checkout\n/account",
+    excludedPaths: data.defaults.excludedPaths.join("\n"),
     criteria: "2.1",
     searchConsole: data.integrations.searchConsole,
     pageSpeed: true,
     cms: data.integrations.cms,
-    maxUrls: 150,
-    maxRequests: 200,
-    concurrency: 4,
-    budgetUsd: 8,
+    maxUrls: data.defaults.maxUrls,
+    maxRequests: data.defaults.maxRequests,
+    concurrency: data.defaults.concurrency,
+    budgetUsd: data.defaults.budgetUsd,
   };
 }
 
@@ -149,7 +149,15 @@ export function limitations(data: WizardData, state: WizardState, usage: Usage):
   if (state.web) {
     if (!state.searchConsole) out.push({ id: "gsc", tone: "warning", text: "Search Console is off. Indexing coverage checks will be marked not assessed." });
     if (!state.pageSpeed) out.push({ id: "psi", tone: "warning", text: "PageSpeed is off. Performance checks will be marked not assessed." });
-    if (!state.cms) out.push({ id: "cms", tone: "info", text: "No CMS connector. Product facts are compared from crawled HTML only." });
+    if (!state.cms) {
+      out.push({
+        id: "cms",
+        tone: "info",
+        text: data.integrations.cmsNeedsAttention
+          ? "The CMS connection needs attention, so the connector is off. Product facts are compared from crawled HTML only."
+          : "No CMS connector. Product facts are compared from crawled HTML only.",
+      });
+    }
     out.push({ id: "field", tone: "info", text: "Field performance data is usually unavailable for low-traffic pages. Lab data is labelled as lab." });
   }
   if (usage.overRequests) out.push({ id: "requests", tone: "warning", text: `${usage.jobs} requests exceed the ${state.maxRequests} request limit. The audit would stop at the limit and be partially completed.` });

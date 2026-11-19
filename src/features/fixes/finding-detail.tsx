@@ -348,7 +348,7 @@ export function FindingDetail({ storeId, data, role, assignees }: Props) {
         }}
       >
         <p>{active?.title}</p>
-        <p className="mt-2">Approving makes it eligible for a task. It does not edit the site or write to Shopify.</p>
+        <p className="mt-2">Approving makes it eligible for a task. It does not edit the site or write to the store.</p>
       </ConfirmDialog>
 
       <Dialog

@@ -89,6 +89,8 @@ export type StoreContext = {
   market: string;
   marketName: string;
   language: string;
+  /** AI channels selected for the store. 0 means nothing is tracked yet and results are N/A. */
+  channelCount: number;
 };
 
 export type ExistingPrompt = { id: string; text: string; status: PromptStatus };

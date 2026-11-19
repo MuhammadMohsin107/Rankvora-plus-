@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { HeadlineCard } from "@/features/comparison/headline";
+import { NotComputed } from "@/features/comparison/compatibility";
 import { comparisonStaticParams, getComparisonDetail } from "@/services/comparison";
 import type { MetricResult } from "@/types/comparison";
 
@@ -44,6 +45,7 @@ async function ComparisonCompetitorsPageContent(props: PageProps<"/stores/[store
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
+  if (detail.result.verdict === "not_comparable") return <NotComputed checks={detail.result.checks} what="Competitor view" />;
   const { result } = detail;
   const brand = result.headline.find((m) => m.id === "mention")!;
   const sov = result.headline.find((m) => m.id === "share-of-voice")!;

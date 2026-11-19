@@ -4,10 +4,6 @@
  * from the shared response samples so they always agree with the registry.
  */
 import {
-  AE_LATEST_RUN,
-  AE_RESULTS,
-  DEMO_EXTRA_GROUPS,
-  DEMO_EXTRA_PROMPTS,
   DEMO_TEMPLATES,
   PROMPT_EDITS,
   PROMPT_META,
@@ -38,10 +34,21 @@ import type {
 } from "@/types/prompts";
 import type { ResponseSample } from "@/types/shared-records";
 
-const AUDIT_IDS = ["aud-001", "aud-002"];
+/**
+ * Audits whose response samples count toward prompt results. runpro-pk leaves out the
+ * 6-response verification audit (aud-003) and the unfinished audit (aud-004).
+ */
+const AUDIT_IDS: Record<string, string[]> = {
+  "runpro-pk": ["aud-001", "aud-002"],
+  "runpro-ae": ["aud-ae-001", "aud-ae-002", "aud-ae-003"],
+};
+
+const auditIdsFor = (storeId: string): string[] => AUDIT_IDS[storeId] ?? registry.audits(storeId).filter((a) => a.status !== "in_progress").map((a) => a.id);
+
+const ZERO_COUNTS: ResultCounts = { mention: { n: 0, d: 0 }, recommendation: { n: 0, d: 0 }, failed: 0, requests: 0 };
 
 function storeContext(store: Store): StoreContext {
-  return { id: store.id, name: store.name, brandName: store.brandName, market: store.market, marketName: store.marketName, language: store.language };
+  return { id: store.id, name: store.name, brandName: store.brandName, market: store.market, marketName: store.marketName, language: store.language, channelCount: store.channelIds.length };
 }
 
 function channelOptions(channels: AiChannel[]): ChannelOption[] {
@@ -63,12 +70,12 @@ function toRecord(base: PromptBase, store: Store): PromptRecord {
 async function listRecords(storeId: string): Promise<PromptRecord[]> {
   const store = await getStore(storeId);
   if (!store) return [];
-  const base = [...(await listPromptsBase(storeId)), ...DEMO_EXTRA_PROMPTS.filter((p) => p.storeId === storeId)];
+  const base = await listPromptsBase(storeId);
   return base.map((p) => toRecord(p, store));
 }
 
 async function listGroups(storeId: string): Promise<PromptGroup[]> {
-  return [...(await listPromptGroups(storeId)), ...DEMO_EXTRA_GROUPS.filter((g) => g.storeId === storeId)];
+  return listPromptGroups(storeId);
 }
 
 /** All {storeId, promptId} pairs, for generateStaticParams. */
@@ -94,24 +101,6 @@ function counts(responses: ResponseSample[]): ResultCounts {
   };
 }
 
-function lettersToCounts(letters: string): ResultCounts {
-  const mention = [...letters].filter((l) => l === "R" || l === "M").length;
-  const recommended = [...letters].filter((l) => l === "R").length;
-  return { mention: { n: mention, d: letters.length }, recommendation: { n: recommended, d: letters.length }, failed: 0, requests: letters.length };
-}
-
-function sumCounts(parts: ResultCounts[]): ResultCounts {
-  return parts.reduce<ResultCounts>(
-    (acc, p) => ({
-      mention: { n: acc.mention.n + p.mention.n, d: acc.mention.d + p.mention.d },
-      recommendation: { n: acc.recommendation.n + p.recommendation.n, d: acc.recommendation.d + p.recommendation.d },
-      failed: acc.failed + p.failed,
-      requests: acc.requests + p.requests,
-    }),
-    { mention: { n: 0, d: 0 }, recommendation: { n: 0, d: 0 }, failed: 0, requests: 0 },
-  );
-}
-
 function stateOf(c: ResultCounts, recommended: number): ResultState {
   if (c.requests === 0) return "na";
   if (c.mention.d === 0) return "failed";
@@ -124,22 +113,15 @@ type StoreResponses = { monitoring: Map<string, ResponseSample[]>; audits: Map<s
 async function loadResponses(storeId: string): Promise<StoreResponses> {
   const monitoring = new Map<string, ResponseSample[]>();
   const audits = new Map<string, ResponseSample[]>();
-  for (const run of registry.runs()) monitoring.set(run.id, await listRunResponses(storeId, run.id));
-  for (const id of AUDIT_IDS) audits.set(id, await listRunResponses(storeId, id));
+  for (const run of registry.runs(storeId)) monitoring.set(run.id, await listRunResponses(storeId, run.id));
+  for (const id of auditIdsFor(storeId)) audits.set(id, await listRunResponses(storeId, id));
   return { monitoring, audits };
 }
 
-function lastResultsFor(promptId: string, channels: AiChannel[], store: Store, responses: StoreResponses): LastResult[] {
-  const latestRunId = registry.runs().at(-1)?.id;
+function lastResultsFor(promptId: string, channels: AiChannel[], storeId: string, responses: StoreResponses): LastResult[] {
+  const latestRunId = registry.runs(storeId).at(-1)?.id;
   const latest = latestRunId ? (responses.monitoring.get(latestRunId) ?? []).filter((r) => r.promptId === promptId) : [];
-  const ae = store.id === "runpro-ae" ? AE_RESULTS[promptId] : undefined;
   return channels.map<LastResult>((channel) => {
-    if (ae) {
-      const letters = ae[channel.id] ?? "";
-      const c = lettersToCounts(letters);
-      const rec = [...letters].filter((l) => l === "R").length;
-      return { channelId: channel.id, label: channel.providerLabel, state: stateOf(c, rec), mentioned: c.mention.n, samples: c.mention.d, failed: 0 };
-    }
     const own = latest.filter((r) => r.channelId === channel.id);
     const c = counts(own);
     return { channelId: channel.id, label: channel.providerLabel, state: stateOf(c, c.recommendation.n), mentioned: c.mention.n, samples: c.mention.d, failed: c.failed };
@@ -150,7 +132,7 @@ export async function getLibrary(storeId: string): Promise<LibraryData | null> {
   const store = await getStore(storeId);
   if (!store) return null;
   const [records, groups, channels, responses] = await Promise.all([listRecords(storeId), listGroups(storeId), listStoreChannels(storeId), loadResponses(storeId)]);
-  const prompts = records.map<LibraryPrompt>((p) => ({ ...p, lastResults: lastResultsFor(p.id, channels, store, responses) }));
+  const prompts = records.map<LibraryPrompt>((p) => ({ ...p, lastResults: lastResultsFor(p.id, channels, storeId, responses) }));
   return { store: storeContext(store), prompts, groups, channels: channelOptions(channels) };
 }
 
@@ -164,8 +146,6 @@ function buildVersions(prompt: PromptRecord, responses: StoreResponses): PromptV
   for (const group of [responses.monitoring, responses.audits]) {
     for (const [runId, list] of group) for (const r of list) if (r.promptId === prompt.id) note(r.promptVersion, runId);
   }
-  // runpro-ae has one run without stored samples: it used the only version.
-  if (prompt.storeId === "runpro-ae") note(1, AE_LATEST_RUN.runId);
 
   const edits = PROMPT_EDITS[prompt.id] ?? [{ version: 1, text: prompt.text, changedBy: prompt.createdBy, changedAt: prompt.createdAt, note: null }];
   return edits
@@ -194,19 +174,9 @@ function buildActivity(prompt: PromptRecord, versions: PromptVersion[]): PromptA
 }
 
 function buildResults(prompt: PromptRecord, channels: AiChannel[], responses: StoreResponses): PromptResults {
-  if (prompt.storeId === "runpro-ae") {
-    const ae = AE_RESULTS[prompt.id];
-    if (!ae) return { providers: [], pooled: sumCounts([]), runs: [], latest: [], period: null };
-    const byChannel: Record<string, ResultCounts> = {};
-    for (const channel of channels) byChannel[channel.id] = lettersToCounts(ae[channel.id] ?? "");
-    const providers = channels.map((channel) => ({ channelId: channel.id, label: channel.providerLabel, channelLabel: channelLabel(channel), ...byChannel[channel.id] }));
-    const pooled = sumCounts(Object.values(byChannel));
-    return { providers, pooled, runs: [{ runId: AE_LATEST_RUN.runId, date: AE_LATEST_RUN.at, pooled, byChannel }], latest: [], period: formatShortDate(AE_LATEST_RUN.at) };
-  }
-
   const runs: RunResult[] = [];
   const all: ResponseSample[] = [];
-  for (const run of registry.runs()) {
+  for (const run of registry.runs(prompt.storeId)) {
     const own = (responses.monitoring.get(run.id) ?? []).filter((r) => r.promptId === prompt.id);
     if (own.length === 0) continue;
     all.push(...own);
@@ -223,7 +193,7 @@ function buildResults(prompt: PromptRecord, channels: AiChannel[], responses: St
   const auditResponses = [...responses.audits.values()].flat().filter((r) => r.promptId === prompt.id);
   const latest = [...all, ...auditResponses].sort((a, b) => Date.parse(b.requestedAt) - Date.parse(a.requestedAt) || b.id.localeCompare(a.id)).slice(0, 6);
   const period = runs.length ? `${formatShortDate(runs[0].date)} – ${formatDate(runs[runs.length - 1].date)}` : null;
-  return { providers, pooled: counts(all), runs, latest, period };
+  return { providers, pooled: runs.length ? counts(all) : ZERO_COUNTS, runs, latest, period };
 }
 
 export async function getPromptDetail(storeId: string, promptId: string): Promise<PromptDetailData | null> {

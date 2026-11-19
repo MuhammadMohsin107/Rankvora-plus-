@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { BarCompare, type BarCompareRow } from "@/components/charts/bars";
 import { Callout, Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
+import { NotComputed } from "@/features/comparison/compatibility";
 import { comparisonStaticParams, getComparisonDetail } from "@/services/comparison";
 import type { ChannelSegment, MetricResult } from "@/types/comparison";
 
@@ -37,6 +38,7 @@ async function ComparisonPlatformsPageContent(props: PageProps<"/stores/[storeId
   const { storeId, comparisonId } = await props.params;
   const detail = await getComparisonDetail(storeId, comparisonId);
   if (!detail) notFound();
+  if (detail.result.verdict === "not_comparable") return <NotComputed checks={detail.result.checks} what="Platform segments" />;
   const { channels } = detail.result;
   const changed = channels.filter((c) => c.modelChanged);
 

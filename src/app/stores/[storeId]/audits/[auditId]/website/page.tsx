@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Callout, Card, CardBody, CardHeader, Metric, MetricCell, MetricGrid, Section } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { ChecksTable, PagesTable } from "@/features/audit/website-tables";
-import { auditParams, getAudit, getWebsiteLane } from "@/services/audit";
+import { ButtonLink } from "@/components/ui/button";
+import { AUDIT_TYPE_LABEL } from "@/features/audit/labels";
+import { auditParams, getAudit, getWebsiteLane, listAudits } from "@/services/audit";
 
 export const metadata: Metadata = { title: "Website readiness" };
 
@@ -19,12 +21,30 @@ export async function generateStaticParams() {
 
 async function WebsiteReadinessPageContent(props: PageProps<"/stores/[storeId]/audits/[auditId]/website">) {
   const { storeId, auditId } = await props.params;
-  const [audit, lane] = await Promise.all([getAudit(storeId, auditId), getWebsiteLane(storeId, auditId)]);
-  if (!audit || !lane) notFound();
+  const [audit, lane, audits] = await Promise.all([getAudit(storeId, auditId), getWebsiteLane(storeId, auditId), listAudits(storeId)]);
+  if (!audit) notFound();
 
   if (!audit.lanes.includes("website_readiness")) {
-    return <EmptyState icon="globe" title="Website readiness was not part of this audit" />;
+    // Designed state: a different scope, not an empty result. Point to the latest audit that did crawl the site.
+    const withWebsite = audits.find((a) => !a.provisional && a.lanes.includes("website_readiness"));
+    return (
+      <EmptyState
+        icon="globe"
+        title="Website readiness was not part of this audit"
+        description={`This ${AUDIT_TYPE_LABEL[audit.type].toLowerCase()} audit assessed AI visibility only. The site was not crawled and no checks ran, so there are no pass rates or crawler results here. This is not a score of zero.`}
+        action={
+          withWebsite ? (
+            <ButtonLink href={`/stores/${storeId}/audits/${withWebsite.id}/website`} variant="primary" trailingIcon="arrow-right">
+              View website readiness in {withWebsite.title}
+            </ButtonLink>
+          ) : (
+            <ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start an audit with website readiness</ButtonLink>
+          )
+        }
+      />
+    );
   }
+  if (!lane) notFound();
 
   const { coverage } = lane;
 

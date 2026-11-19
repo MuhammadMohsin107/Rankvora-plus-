@@ -114,7 +114,7 @@ export function StoresView({ stores }: { stores: Store[] }) {
       id: "mention",
       header: "Brand mention rate",
       sort: (s) => mentionPct(s),
-      cell: (s) => (s.summary ? <RateInline n={s.summary.mention.n} d={s.summary.mention.d} /> : <span className="text-xs text-fg-subtle">No data yet</span>),
+      cell: (s) => (s.summary ? <RateInline n={s.summary.mention.n} d={s.summary.mention.d} /> : <span className="text-xs text-fg-subtle" title="No AI channel is connected, so nothing is tracked yet. This is not 0%.">N/A · no tracking data</span>),
     },
     { id: "integrations", header: "Integrations", hideBelow: "lg", cell: (s) => <IntegrationPair integrations={s.integrations} /> },
     {

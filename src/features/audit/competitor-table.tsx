@@ -17,6 +17,7 @@ export function CompetitorTable({ rows }: { rows: CompetitorRow[] }) {
         <span className="flex items-center gap-2 font-medium">
           {r.name}
           {r.isBrand ? <Badge tone="accent">Your brand</Badge> : null}
+          {r.suggested ? <Badge tone="neutral" title="Suggested, not yet confirmed in store settings">Suggested</Badge> : null}
         </span>
       ),
     },

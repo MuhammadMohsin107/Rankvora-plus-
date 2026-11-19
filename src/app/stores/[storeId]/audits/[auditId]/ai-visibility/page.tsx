@@ -71,7 +71,10 @@ async function AiVisibilityPageContent(props: PageProps<"/stores/[storeId]/audit
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
         <Card as="section">
-          <CardHeader title="Competitors" info="Competitors confirmed for this store. Each rate is responses that name the competitor ÷ successful responses." />
+          <CardHeader
+            title="Competitors"
+            info={`Competitors confirmed for this store${lane.competitors.some((r) => r.suggested) ? ", plus suggested ones that appear in answers" : ""}. Each rate is responses that name the competitor ÷ successful responses.`}
+          />
           <CardBody>
             <CompetitorTable rows={lane.competitors} />
           </CardBody>

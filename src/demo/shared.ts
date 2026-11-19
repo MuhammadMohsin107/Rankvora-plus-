@@ -6,6 +6,7 @@
  * Coverage rule: store "runpro-pk" has full data in every module. The other
  * stores have lighter data so empty states appear naturally.
  */
+import { DEMO_EXTRA_GROUPS, DEMO_EXTRA_PROMPTS } from "@/demo/prompts";
 import type {
   AiChannel,
   AlertHeadline,
@@ -156,7 +157,12 @@ export const DEMO_COMPETITORS: Competitor[] = [
   { id: "c-trail", storeId: "runpro-pk", name: "TrailMate", domains: ["trailmate.example"], aliases: [], status: "confirmed", market: null },
   { id: "c-pace", storeId: "runpro-pk", name: "PaceLab", domains: ["pacelab.example"], aliases: [], status: "suggested", market: "PK" },
   { id: "c-brandx-ae", storeId: "runpro-ae", name: "Brand X", domains: ["brandx.example"], aliases: [], status: "confirmed", market: "AE" },
+  { id: "c-swift-ae", storeId: "runpro-ae", name: "SwiftStride", domains: ["swiftstride.example"], aliases: ["Swift Stride"], status: "confirmed", market: "AE" },
+  { id: "c-desert", storeId: "runpro-ae", name: "DesertRun", domains: ["desertrun.example"], aliases: [], status: "confirmed", market: "AE" },
   { id: "c-gulf", storeId: "runpro-ae", name: "GulfRun", domains: ["gulfrun.example"], aliases: [], status: "suggested", market: "AE" },
+  { id: "c-ironnest-uk", storeId: "homefit-uk", name: "IronNest", domains: ["ironnest.example"], aliases: ["Iron Nest"], status: "confirmed", market: "GB" },
+  { id: "c-flexform-uk", storeId: "homefit-uk", name: "FlexForm", domains: ["flexform.example"], aliases: [], status: "confirmed", market: "GB" },
+  { id: "c-liftloft-uk", storeId: "homefit-uk", name: "LiftLoft", domains: ["liftloft.example"], aliases: [], status: "suggested", market: "GB" },
 ];
 
 export const DEMO_GROUPS: PromptGroup[] = [
@@ -208,11 +214,21 @@ export const DEMO_PROMPTS: PromptBase[] = [
   p("p-014", "RunPro vs SwiftStride for road running", "comparison", "g-comparison", "archived", { topic: "Road running", version: 2 }),
 ];
 
+/** Prompts and groups of every store (runpro-pk above, the other stores from src/demo/prompts.ts). */
+export const ALL_PROMPTS: PromptBase[] = [...DEMO_PROMPTS, ...DEMO_EXTRA_PROMPTS];
+export const ALL_GROUPS: PromptGroup[] = [...DEMO_GROUPS, ...DEMO_EXTRA_GROUPS];
+
 export const DEMO_PRODUCTS: ProductService[] = [
   { id: "pr-glide", storeId: "runpro-pk", title: "RunPro Glide 2", category: "Road running", url: "https://runpro.pk/products/glide-2" },
   { id: "pr-trail", storeId: "runpro-pk", title: "RunPro Stride Trail", category: "Trail running", url: "https://runpro.pk/products/stride-trail" },
   { id: "pr-daily", storeId: "runpro-pk", title: "RunPro Daily Trainer", category: "Everyday running", url: "https://runpro.pk/products/daily-trainer" },
   { id: "pr-marathon", storeId: "runpro-pk", title: "RunPro Marathon Elite", category: "Long distance", url: "https://runpro.pk/products/marathon-elite" },
+  { id: "pr-ae-glide", storeId: "runpro-ae", title: "RunPro Glide 2", category: "Road running", url: "https://runpro.ae/product/glide-2" },
+  { id: "pr-ae-daily", storeId: "runpro-ae", title: "RunPro Daily Trainer", category: "Everyday running", url: "https://runpro.ae/product/daily-trainer" },
+  { id: "pr-ae-marathon", storeId: "runpro-ae", title: "RunPro Marathon Elite", category: "Long distance", url: "https://runpro.ae/product/marathon-elite" },
+  { id: "pr-uk-rack", storeId: "homefit-uk", title: "HomeFit Folding Squat Rack", category: "Racks and benches", url: "https://homefit.example/products/folding-squat-rack" },
+  { id: "pr-uk-dumbbell", storeId: "homefit-uk", title: "HomeFit Adjustable Dumbbell Set 2-24 kg", category: "Free weights", url: "https://homefit.example/products/adjustable-dumbbells" },
+  { id: "pr-uk-rower", storeId: "homefit-uk", title: "HomeFit Compact Rowing Machine", category: "Cardio", url: "https://homefit.example/products/compact-rower" },
 ];
 
 export const DEMO_ALERTS: AlertHeadline[] = [
@@ -221,15 +237,24 @@ export const DEMO_ALERTS: AlertHeadline[] = [
   { id: "al-003", storeId: "runpro-pk", severity: "low", title: "Owned citation gained on Perplexity", at: "2026-11-17T04:52:00Z", read: false },
   { id: "al-004", storeId: "runpro-ae", severity: "medium", title: "Commerce connection needs attention", at: "2026-11-18T05:30:00Z", read: true },
   { id: "al-005", storeId: "runpro-pk", severity: "info", title: "Weekly monitoring run completed with warnings", at: "2026-11-17T05:12:00Z", read: true },
+  // runpro-ae: unread = open (al-006…008); read = resolved or auto-closed.
+  { id: "al-006", storeId: "runpro-ae", severity: "high", title: "Commerce connection still needs attention: product sync failed 3 times", at: "2026-11-19T06:00:00Z", read: false },
+  { id: "al-007", storeId: "runpro-ae", severity: "medium", title: "New mention: “Where can I buy running shoes in Dubai?” on OpenAI", at: "2026-11-18T05:25:00Z", read: false },
+  { id: "al-008", storeId: "runpro-ae", severity: "low", title: "Owned citation gained on OpenAI for the Dubai buying prompt", at: "2026-11-18T05:26:00Z", read: false },
+  { id: "al-009", storeId: "runpro-ae", severity: "medium", title: "New recommendation: “RunPro vs Brand X running shoes in the UAE” on Gemini", at: "2026-11-11T05:24:00Z", read: true },
+  { id: "al-010", storeId: "runpro-ae", severity: "medium", title: "New mention: “RunPro vs Brand X running shoes in the UAE” on Gemini", at: "2026-11-04T05:24:00Z", read: true },
+  { id: "al-011", storeId: "runpro-ae", severity: "info", title: "Weekly monitoring run completed with warnings (2 of 30 jobs failed)", at: "2026-11-04T05:26:00Z", read: true },
 ];
 
 export const DEMO_USAGE: OrgUsage = {
   periodLabel: "Nov 2026",
   requestCap: 2400,
-  requests: 1306,
+  requests: 1054,
   perStore: [
     { storeId: "runpro-pk", requests: 912, cap: 1500 },
-    { storeId: "runpro-ae", requests: 394, cap: 700 },
+    // 3 weekly runs (4, 11, 18 Nov) x 30 requests, the 5 Nov full audit (30) and the 14 Nov focused audit (12),
+    // plus 10 retry requests for the 5 failed jobs in that period (2 jobs in run-ae-004, 3 in aud-ae-003).
+    { storeId: "runpro-ae", requests: 142, cap: 700 },
     { storeId: "homefit-uk", requests: 0, cap: 200 },
   ],
 };
