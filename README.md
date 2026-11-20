@@ -100,9 +100,9 @@ Cloudflare build. If the build image cannot provide the Node version in
 **From your machine:** run `npx wrangler login` once, then `npm run deploy`.
 
 **Database (Cloudflare D1):** demo state is saved to a D1 database bound as `DB`
-in `wrangler.jsonc`. Before the first Cloudflare deploy create the database and
-put its id into `wrangler.jsonc` (the committed value is a placeholder, so the
-Git-connected build fails until you do). Local setup, remote steps, backup and
+in `wrangler.jsonc`. The database `rankvora-plus` already exists in the Cloudflare account that
+deploys this Worker and its real id is committed. Without a valid id the deploy fails
+(`binding DB of type d1 must have a valid database_id`). Local setup, remote steps, backup and
 data policy: [docs/d1-setup.md](docs/d1-setup.md).
 
 ## Tests

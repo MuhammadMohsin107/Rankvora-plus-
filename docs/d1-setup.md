@@ -36,8 +36,10 @@ How it fits together: `wrangler.jsonc` binds D1 as `DB`; schema in
 4. Deploy: `npm run deploy`, or push to the repository connected to Workers Builds.
 5. Verify: open `https://<your-worker>.workers.dev/api/health`. Expected `{"status":"ok","d1":"connected"}`.
 
-Important: with the placeholder id in `wrangler.jsonc` the Git-connected Cloudflare build fails
-(wrangler cannot resolve the database). Do steps 1 to 3 and commit the real id before the next push.
+Status: steps 1 to 3 are done for the account that deploys the Worker (database `rankvora-plus`, id committed
+in `wrangler.jsonc`, `0000` migration applied remotely). A placeholder or wrong id makes the Git-connected build fail at
+the deploy step with `binding DB of type d1 must have a valid database_id [code: 10021]`. If you have more than one
+Cloudflare account, create the database in the account shown in the build log (`/accounts/<id>/workers/...`).
 
 ### Optional: apply migrations on every deploy
 
