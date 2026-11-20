@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Status } from "@/components/ui/badge";
+import { Badge, Status } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChipInput } from "@/components/ui/chip-input";
 import { EmptyState } from "@/components/ui/feedback";
@@ -10,6 +10,7 @@ import { Field, Input, Select } from "@/components/ui/form";
 import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
 import { DataTable, type Column } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { simulatedToast } from "@/demo-state";
 import type { Competitor } from "@/types/core";
 
 import { normalizeWebsite, validateRequired } from "../validation";
@@ -55,13 +56,13 @@ export function CompetitorsTab({ storeId, competitors, market, marketName, readO
     if (nameError || domainError || !site.host) return;
     const next: Competitor = { id: nextId("local-comp", competitors.map((c) => c.id)), storeId, name: name.trim(), domains: [site.host], aliases, status: "confirmed", market: scope === "market" ? market : null };
     onChange([...competitors, next], `Competitor added: ${next.name}`);
-    toast.push({ title: `${next.name} added`, description: "Confirmed. Demo action: nothing was changed on a server." });
+    toast.push(simulatedToast(`Competitor added: ${next.name}`));
     closeAdd();
   };
 
   const setStatus = (c: Competitor, status: Competitor["status"], verb: string) => {
     onChange(competitors.map((x) => (x.id === c.id ? { ...x, status } : x)), `Competitor ${verb}: ${c.name}`);
-    toast.push({ title: `${c.name} ${verb}`, description: "Demo action: nothing was changed on a server." });
+    toast.push(simulatedToast(`Competitor ${verb}: ${c.name}`));
   };
 
   const columns: Column<Competitor>[] = [
@@ -72,13 +73,19 @@ export function CompetitorsTab({ storeId, competitors, market, marketName, readO
       cell: (c) => (
         <div className="min-w-0">
           <p className="font-medium text-fg">{c.name}</p>
-          <p className="truncate text-xs text-fg-subtle">{c.domains.join(", ")}</p>
+          <p className="truncate text-helper text-fg-muted">{c.domains.join(", ") || "No domain"}</p>
         </div>
       ),
     },
-    { id: "aliases", header: "Aliases", hideBelow: "md", cell: (c) => (c.aliases.length ? c.aliases.join(", ") : <span className="text-fg-subtle">None</span>) },
-    { id: "market", header: "Market", hideBelow: "sm", sort: (c) => c.market ?? "", cell: (c) => (c.market ? `${c.market}` : <span className="text-fg-subtle">All markets</span>) },
-    { id: "status", header: "Status", sort: (c) => STATUS_ORDER[c.status], cell: (c) => <Status kind="competitor" value={c.status} /> },
+    { id: "aliases", header: "Aliases", hideBelow: "md", cell: (c) => (c.aliases.length ? c.aliases.join(", ") : <span className="text-fg-muted">None</span>) },
+    { id: "market", header: "Market", hideBelow: "sm", sort: (c) => c.market ?? "", cell: (c) => (c.market ? `${c.market}` : <span className="text-fg-muted">All markets</span>) },
+    { id: "status", header: "Status", sort: (c) => STATUS_ORDER[c.status], cell: (c) => (
+        <span className="flex flex-wrap items-center gap-1.5">
+          <Status kind="competitor" value={c.status} />
+          {c.status === "suggested" ? <Badge tone="neutral" icon="sparkles">Demo suggestion</Badge> : null}
+        </span>
+      ),
+    },
     {
       id: "actions",
       header: "Actions",

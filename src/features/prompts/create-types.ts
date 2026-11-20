@@ -1,3 +1,4 @@
+import { COUNTRIES, LANGUAGES } from "@/features/stores/options";
 import type { PromptIntent, PromptScope, PromptStatus } from "@/types/core";
 import type { StoreContext } from "@/types/prompts";
 
@@ -18,29 +19,17 @@ export function initialForm(store: StoreContext): ManualForm {
   return { text: "", intent: "discovery", topic: "", groupId: "", market: store.market, language: store.language, scope: "both", status: "draft", productIds: [], isCore: false };
 }
 
-/** A prompt added during this session (demo only: nothing is persisted). */
-export type SessionPrompt = { id: string; text: string };
+/** Same country and language lists as the website forms, so a prompt can never use a market the website cannot. */
+export const MARKET_OPTIONS = COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
 
-export const MARKET_OPTIONS = [
-  { value: "PK", label: "Pakistan" },
-  { value: "AE", label: "United Arab Emirates" },
-  { value: "GB", label: "United Kingdom" },
-  { value: "US", label: "United States" },
-  { value: "SA", label: "Saudi Arabia" },
-  { value: "IN", label: "India" },
-];
-
-export const LANGUAGE_OPTIONS = [
-  { value: "en", label: "English" },
-  { value: "ur", label: "Urdu" },
-  { value: "ar", label: "Arabic" },
-];
+export const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
 /** State of the AI suggestions tab, kept by the parent so switching tabs loses nothing. */
 export type AiState = {
   batch: number;
+  /** Suggestion ids hidden by the user. */
   dismissed: string[];
-  /** Suggestion id → the text that was added. */
+  /** Suggestion id -> id of the prompt created from it. */
   accepted: Record<string, string>;
   loading: boolean;
 };

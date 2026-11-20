@@ -4,8 +4,8 @@
  * Prompt-module detail around src/demo/shared.ts (which owns the 14 runpro-pk
  * prompts, groups and products). Adds: the runpro-ae library (5 active prompts
  * plus paused, draft and archived ones), the homefit-uk setup-in-progress
- * library, creation metadata, earlier wording of edited prompts, organization
- * templates and AI suggestions. Fixed timestamps only. Read it through
+ * library, creation metadata, earlier wording of edited prompts and organization
+ * templates. Fixed timestamps only. Read it through
  * src/services/prompts.ts.
  *
  * Consistency notes
@@ -21,7 +21,7 @@
  * - homefit-uk has no AI channel: nothing is tracked, no prompt has results.
  */
 import type { PromptBase, PromptGroup } from "@/types/core";
-import type { PromptSuggestion, PromptTemplate } from "@/types/prompts";
+import type { PromptTemplate } from "@/types/prompts";
 
 export type PromptMeta = { createdAt: string; createdBy: string; activatedAt?: string; productIds?: string[] };
 
@@ -58,6 +58,17 @@ export const PROMPT_META: Record<string, PromptMeta> = {
   "p-uk-006": { createdAt: "2026-11-13T11:20:00Z", createdBy: "Omar Farooq", productIds: ["pr-uk-rower"] },
   "p-uk-007": { createdAt: "2026-11-11T09:10:00Z", createdBy: "Hira Malik", activatedAt: "2026-11-11T09:15:00Z", productIds: ["pr-uk-rack"] },
   "p-uk-008": { createdAt: "2026-11-17T15:00:00Z", createdBy: "Hira Malik" },
+  "p-nu-001": { createdAt: "2026-10-06T09:00:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z" },
+  "p-nu-002": { createdAt: "2026-10-06T09:02:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z", productIds: ["pr-nu-mealplan"] },
+  "p-nu-003": { createdAt: "2026-10-06T09:04:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z" },
+  "p-nu-004": { createdAt: "2026-10-06T09:06:00Z", createdBy: "Hira Malik", activatedAt: "2026-10-06T09:30:00Z" },
+  "p-nu-005": { createdAt: "2026-10-06T09:08:00Z", createdBy: "Hira Malik", activatedAt: "2026-10-06T09:30:00Z" },
+  "p-nu-006": { createdAt: "2026-10-07T07:30:00Z", createdBy: "Omar Farooq", activatedAt: "2026-10-07T07:35:00Z", productIds: ["pr-nu-basics"] },
+  "p-nu-007": { createdAt: "2026-10-07T07:32:00Z", createdBy: "Omar Farooq", activatedAt: "2026-10-07T07:35:00Z" },
+  "p-nu-008": { createdAt: "2026-10-14T10:00:00Z", createdBy: "Hira Malik", activatedAt: "2026-10-14T10:10:00Z", productIds: ["pr-nu-basics"] },
+  "p-nu-009": { createdAt: "2026-11-12T08:30:00Z", createdBy: "Hira Malik", productIds: ["pr-nu-newsletter"] },
+  "p-nu-010": { createdAt: "2026-10-08T11:00:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-08T11:05:00Z" },
+  "p-nu-011": { createdAt: "2026-11-17T14:00:00Z", createdBy: "Omar Farooq", productIds: ["pr-nu-consult"] },
 };
 
 type EarlierVersion = { version: number; text: string; changedBy: string; changedAt: string; note: string | null };
@@ -85,6 +96,18 @@ export const PROMPT_EDITS: Record<string, EarlierVersion[]> = {
     { version: 1, text: "RunPro or SwiftStride for running in Dubai?", changedBy: "Hira Malik", changedAt: "2026-09-14T08:06:00Z", note: null },
     { version: 2, text: "RunPro vs SwiftStride for road running in Dubai", changedBy: "Omar Farooq", changedAt: "2026-09-15T10:00:00Z", note: "Limited to road running" },
   ],
+  "p-nu-003": [
+    { version: 1, text: "Nutrition or NourishWell for learning healthy eating?", changedBy: "Sana Iqbal", changedAt: "2026-10-06T09:04:00Z", note: null },
+    { version: 2, text: "Nutrition vs NourishWell: which is better for beginners learning healthy eating?", changedBy: "Hira Malik", changedAt: "2026-10-27T09:00:00Z", note: "Added the beginner audience" },
+  ],
+  "p-nu-008": [
+    { version: 1, text: "Is the Nutrition course good?", changedBy: "Hira Malik", changedAt: "2026-10-14T10:00:00Z", note: null },
+    { version: 2, text: "Is the Nutrition Basics course worth it?", changedBy: "Omar Farooq", changedAt: "2026-11-03T08:30:00Z", note: "Named the course" },
+  ],
+  "p-nu-010": [
+    { version: 1, text: "Nutrition or VitaPlate for meal prep ideas?", changedBy: "Sana Iqbal", changedAt: "2026-10-08T11:00:00Z", note: null },
+    { version: 2, text: "Nutrition vs VitaPlate for weekly meal prep ideas", changedBy: "Hira Malik", changedAt: "2026-10-20T09:15:00Z", note: "Made the period explicit" },
+  ],
   "p-uk-007": [
     { version: 1, text: "Are HomeFit racks sturdy?", changedBy: "Hira Malik", changedAt: "2026-11-11T09:10:00Z", note: null },
     { version: 2, text: "Are HomeFit folding racks sturdy enough for heavy lifting?", changedBy: "Omar Farooq", changedAt: "2026-11-12T13:30:00Z", note: "Made the question specific" },
@@ -100,6 +123,8 @@ export const PROMPT_STATUS_EVENTS: Record<string, { at: string; actor: string; t
   "p-ae-009": { at: "2026-09-15T14:00:00Z", actor: "Omar Farooq", title: "Archived" },
   "p-uk-005": { at: "2026-11-12T16:00:00Z", actor: "Hira Malik", title: "Paused" },
   "p-uk-007": { at: "2026-11-13T10:00:00Z", actor: "Omar Farooq", title: "Paused" },
+  "p-nu-008": { at: "2026-11-05T09:00:00Z", actor: "Hira Malik", title: "Paused" },
+  "p-nu-010": { at: "2026-11-04T10:00:00Z", actor: "Sana Iqbal", title: "Archived" },
 };
 
 // ---------------------------------------------------------------------------
@@ -114,6 +139,10 @@ export const DEMO_EXTRA_GROUPS: PromptGroup[] = [
   { id: "g-uk-discovery", storeId: "homefit-uk", name: "Discovery" },
   { id: "g-uk-buying", storeId: "homefit-uk", name: "Buying guide" },
   { id: "g-uk-comparison", storeId: "homefit-uk", name: "Comparison" },
+  { id: "g-nu-discovery", storeId: "nutrition", name: "Discovery" },
+  { id: "g-nu-guides", storeId: "nutrition", name: "Guides" },
+  { id: "g-nu-comparison", storeId: "nutrition", name: "Comparison" },
+  { id: "g-nu-services", storeId: "nutrition", name: "Courses & services" },
 ];
 
 const make =
@@ -137,6 +166,8 @@ const make =
 
 const ae = make("runpro-ae", /runpro/i, "2026-09-14T08:10:00Z", "Running shoes");
 const uk = make("homefit-uk", /homefit/i, "2026-11-10T14:40:00Z", "Home gym");
+// "Nutrition" is also an ordinary word, so a prompt names the brand only when it says "Nutrition vs", "Nutrition Basics" or "Nutrition course".
+const nu = make("nutrition", /Nutrition (vs|or|Basics|course)/, "2026-10-06T09:30:00Z", "Nutrition basics");
 
 export const DEMO_EXTRA_PROMPTS: PromptBase[] = [
   // runpro-ae: five active prompts. They are the only prompts in the generated runs and audits.
@@ -161,60 +192,45 @@ export const DEMO_EXTRA_PROMPTS: PromptBase[] = [
   uk("p-uk-006", "Best compact rowing machines under £500 in the UK?", "recommendation", "g-uk-buying", { status: "draft", topic: "Price", source: "imported", scope: "monitoring", updatedAt: "2026-11-13T11:20:00Z" }),
   uk("p-uk-007", "Are HomeFit folding racks sturdy enough for heavy lifting?", "product_service", null, { status: "paused", version: 2, topic: "Durability", updatedAt: "2026-11-13T10:00:00Z" }),
   uk("p-uk-008", "What are good alternatives to FlexForm home gym machines?", "alternative", "g-uk-comparison", { status: "draft", topic: "Alternatives", source: "template", scope: "audit", updatedAt: "2026-11-17T15:00:00Z" }),
+
+  // nutrition (demo informational website): seven active prompts. They are the only prompts in the generated runs and audits.
+  nu("p-nu-001", "What are the best websites for reliable nutrition advice?", "discovery", "g-nu-discovery", { isCore: true, topic: "Trusted sources" }),
+  nu("p-nu-002", "How do I build a balanced weekly meal plan?", "informational", "g-nu-guides", { isCore: true, topic: "Meal planning" }),
+  nu("p-nu-003", "Nutrition vs NourishWell: which is better for beginners learning healthy eating?", "comparison", "g-nu-comparison", { isCore: true, version: 2, topic: "Beginners", updatedAt: "2026-10-27T09:00:00Z" }),
+  nu("p-nu-004", "Which nutrition websites explain macros clearly for beginners?", "recommendation", "g-nu-guides", { topic: "Macros" }),
+  nu("p-nu-005", "What are good alternatives to BalancedBite for meal-planning guidance?", "alternative", "g-nu-comparison", { topic: "Alternatives", source: "ai_generated" }),
+  nu("p-nu-006", "Where can I take a free nutrition basics course online?", "product_service", "g-nu-services", { topic: "Courses", source: "ai_generated", updatedAt: "2026-10-07T07:35:00Z" }),
+  nu("p-nu-007", "How much protein do I need each day?", "informational", "g-nu-guides", { topic: "Protein", source: "imported", updatedAt: "2026-10-07T07:35:00Z" }),
+  // nutrition: prompts in other states. None of them ran in an audit or monitoring run since they were paused, archived or created.
+  nu("p-nu-008", "Is the Nutrition Basics course worth it?", "product_service", "g-nu-services", { status: "paused", version: 2, topic: "Courses", updatedAt: "2026-11-05T09:00:00Z" }),
+  nu("p-nu-009", "Which nutrition newsletters are worth subscribing to?", "discovery", "g-nu-discovery", { status: "draft", topic: "Newsletters", source: "ai_generated", scope: "audit", updatedAt: "2026-11-12T08:30:00Z" }),
+  nu("p-nu-010", "Nutrition vs VitaPlate for weekly meal prep ideas", "comparison", "g-nu-comparison", { status: "archived", version: 2, topic: "Meal prep", updatedAt: "2026-11-04T10:00:00Z" }),
+  nu("p-nu-011", "Where can I find a registered dietitian in Singapore?", "local_market", null, { status: "draft", topic: "Buying locally", source: "imported", scope: "monitoring", updatedAt: "2026-11-17T14:00:00Z" }),
 ];
 
 // ---------------------------------------------------------------------------
-// Store profiles, templates and AI suggestions
+// Website profiles and templates (AI suggestions are built from the profile in features/prompts/suggestions.ts)
 // ---------------------------------------------------------------------------
 
-export type StoreProfile = { category: string; item: string; city: string; need: string };
+export type WebsiteProfile = { category: string; item: string; city: string; need: string; /** Phrase for the brands of the category. Defaults to "<category> brands". */ brands?: string };
 
-export const STORE_PROFILES: Record<string, StoreProfile> = {
+export const STORE_PROFILES: Record<string, WebsiteProfile> = {
   "runpro-pk": { category: "running shoes", item: "running shoe", city: "Lahore", need: "flat feet" },
   "runpro-ae": { category: "running shoes", item: "running shoe", city: "Dubai", need: "hot weather" },
   "homefit-uk": { category: "home gym equipment", item: "home gym machine", city: "London", need: "small spaces" },
+  nutrition: { category: "nutrition websites", brands: "nutrition websites and brands", item: "nutrition information", city: "Singapore", need: "meal planning" },
 };
 
-const FALLBACK_PROFILE: StoreProfile = { category: "products", item: "product", city: "your city", need: "everyday use" };
+const FALLBACK_PROFILE: WebsiteProfile = { category: "products", item: "product", city: "your city", need: "everyday use" };
 
-export const profileFor = (storeId: string): StoreProfile => STORE_PROFILES[storeId] ?? FALLBACK_PROFILE;
+export const profileFor = (storeId: string): WebsiteProfile => STORE_PROFILES[storeId] ?? FALLBACK_PROFILE;
 
-/** Organization-level templates. Placeholders are filled from the store profile. */
+/** Organization-level templates. Placeholders are filled from the website profile. */
 export const DEMO_TEMPLATES: PromptTemplate[] = [
-  { id: "t-brands", title: "Best brands in a market", text: "What are the best {category} brands in {market}?", intent: "discovery", topic: "Category" },
+  { id: "t-brands", title: "Best brands in a market", text: "What are the best {brands} in {market}?", intent: "discovery", topic: "Category" },
   { id: "t-recommend", title: "Affordable recommendation", text: "Which affordable {category} would you recommend?", intent: "recommendation", topic: "Everyday use" },
   { id: "t-versus", title: "Brand versus competitor", text: "{brand} versus {competitor}: which is better for everyday use?", intent: "comparison", topic: "Comparison" },
   { id: "t-alternative", title: "Alternatives to a competitor", text: "What are good alternatives to {competitor}?", intent: "alternative", topic: "Alternatives" },
-  { id: "t-local", title: "Where to buy locally", text: "Where can I buy {category} in {city}?", intent: "local_market", topic: "Buying locally" },
+  { id: "t-local", title: "Find locally", text: "Where can I find {category} in {city}?", intent: "local_market", topic: "Buying locally" },
   { id: "t-guide", title: "How to choose", text: "How do I choose the right {category}?", intent: "informational", topic: "Buying guide" },
 ];
-
-/** Two batches of six suggestions generated from the store profile (demonstration, not model output). */
-export function buildSuggestionBatches(profile: StoreProfile, brand: string, competitor: string, marketName: string): PromptSuggestion[][] {
-  const mk = (id: string, text: string, intent: PromptSuggestion["intent"], topic: string): PromptSuggestion => ({
-    id,
-    text,
-    intent,
-    topic,
-    brandSpecific: text.toLowerCase().includes(brand.toLowerCase()),
-  });
-  const { category, item, city, need } = profile;
-  return [
-    [
-      mk("s-1", `What are the best ${category} brands in ${marketName}?`, "discovery", "Category"),
-      mk("s-2", `Which ${category} would you recommend for beginners?`, "recommendation", "Beginners"),
-      mk("s-3", `Where can I buy ${category} in ${city}?`, "local_market", "Buying locally"),
-      mk("s-4", `How should I choose ${category}?`, "informational", "Buying guide"),
-      mk("s-5", `${brand} versus ${competitor}: which is better for everyday use?`, "comparison", "Comparison"),
-      mk("s-6", `Is ${brand} a good ${item} brand?`, "product_service", "Brand"),
-    ],
-    [
-      mk("s-7", `What are good alternatives to ${competitor}?`, "alternative", "Alternatives"),
-      mk("s-8", `Best ${category} on a small budget in ${marketName}?`, "recommendation", "Price"),
-      mk("s-9", `Which ${category} brands deliver across ${marketName}?`, "discovery", "Availability"),
-      mk("s-10", `What should I look for in ${category} for ${need}?`, "informational", "Fit"),
-      mk("s-11", `Does ${brand} sell ${category} that last?`, "product_service", "Durability"),
-      mk("s-12", `Top-rated ${category} brands in ${city}`, "discovery", "Local"),
-    ],
-  ];
-}

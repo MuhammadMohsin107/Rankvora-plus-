@@ -2,78 +2,121 @@
 
 import { useState } from "react";
 
+import { HeaderAction } from "@/components/shell/page-chrome";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody } from "@/components/ui/card";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/form";
+import { ConfirmDialog } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
-import { TIMEZONES } from "@/features/stores/options";
-import { validateRequired } from "@/features/stores/validation";
+import { demoStore, simulatedToast, useDemoMeta, useDemoReset, useDemoSettings } from "@/demo-state";
+import type { OrgGeneral } from "@/types/settings";
 
-type Values = { name: string; timezone: string };
+import { downloadFile } from "./invoice-files";
+import { COUNTRIES, LANGUAGES, TIMEZONES, validateText, withCurrent } from "./options";
+import { sameJson, useSyncedDraft } from "./use-draft";
 
-export function GeneralForm({ initial }: { initial: Values }) {
+/** Organization profile and defaults. Saved under demo-state key `org.general`. */
+export function GeneralForm({ initial }: { initial: OrgGeneral }) {
   const toast = useToast();
-  const [saved, setSaved] = useState<Values>(initial);
-  const [values, setValues] = useState<Values>(initial);
+  const { value: saved, save } = useDemoSettings<OrgGeneral>("org.general", initial);
+  const [values, setValues] = useSyncedDraft<OrgGeneral>(saved);
   const [touched, setTouched] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const reset = useDemoReset();
+  const meta = useDemoMeta();
 
-  const dirty = values.name !== saved.name || values.timezone !== saved.timezone;
-  const nameError = validateRequired(values.name, "Organization name", 2, 80);
-  const timezones = TIMEZONES.includes(values.timezone) ? TIMEZONES : [values.timezone, ...TIMEZONES];
+  const dirty = !sameJson(saved, values);
+  const nameError = validateText(values.name, "Organization name", 2, 80);
+  const timezones = withCurrent(TIMEZONES, values.timezone);
 
-  const save = () => {
+  const onSave = () => {
     setTouched(true);
     if (nameError) return;
-    setSaving(true);
-    window.setTimeout(() => {
-      setSaved(values);
-      setSaving(false);
-      toast.push({ title: "Settings saved", description: "Demo: nothing was changed on a server." });
-    }, 500);
+    save({ ...values, name: values.name.trim() }, { kind: "settings.saved", label: "Organization settings saved" });
+    toast.push(simulatedToast("Organization settings saved"));
+  };
+
+  const exportData = () => {
+    downloadFile("rankvora-demo-data.json", "application/json", `${JSON.stringify(demoStore.getSnapshot(), null, 2)}\n`);
+    toast.push(simulatedToast("Demo data file prepared", "info"));
   };
 
   return (
-    <Card className="max-w-2xl">
-      <CardBody>
-        <form
-          className="flex flex-col gap-4"
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault();
-            save();
-          }}
-        >
-          <Field label="Organization name" required error={touched ? (nameError ?? undefined) : undefined}>
-            {({ id, describedBy, invalid }) => (
-              <Input id={id} aria-describedby={describedBy} invalid={invalid} value={values.name} autoComplete="organization" onChange={(e) => setValues({ ...values, name: e.target.value })} onBlur={() => setTouched(true)} />
-            )}
-          </Field>
-          <Field label="Default time zone" hint="Used for new stores and schedules">
-            {({ id, describedBy }) => (
-              <Select id={id} aria-describedby={describedBy} value={values.timezone} onChange={(e) => setValues({ ...values, timezone: e.target.value })}>
-                {timezones.map((tz) => (
-                  <option key={tz} value={tz}>{tz}</option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <div className="flex items-center gap-2 pt-1">
-            <Button type="submit" variant="primary" loading={saving} disabled={!dirty}>Save changes</Button>
-            <Button
-              variant="ghost"
-              disabled={!dirty || saving}
-              onClick={() => {
-                setValues(saved);
-                setTouched(false);
-              }}
-            >
-              Reset
-            </Button>
-            {!dirty ? <span className="text-xs text-fg-subtle">No changes</span> : null}
-          </div>
-        </form>
-      </CardBody>
-    </Card>
+    <div className="flex max-w-2xl flex-col gap-6">
+      <HeaderAction>
+        <Button variant="primary" disabled={!dirty} onClick={onSave}>Save changes</Button>
+      </HeaderAction>
+
+      <Card>
+        <CardHeader title="Profile" actions={dirty ? <Button variant="ghost" size="sm" onClick={() => { setValues(saved); setTouched(false); }}>Discard changes</Button> : null} />
+        <CardBody>
+          <form
+            className="flex flex-col gap-4"
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSave();
+            }}
+          >
+            <Field label="Organization name" required error={touched ? (nameError ?? undefined) : undefined}>
+              {({ id, describedBy, invalid }) => (
+                <Input id={id} aria-describedby={describedBy} invalid={invalid} value={values.name} autoComplete="organization" onChange={(e) => setValues({ ...values, name: e.target.value })} onBlur={() => setTouched(true)} />
+              )}
+            </Field>
+            <Field label="Time zone" hint="Used for new websites and schedules.">
+              {({ id, describedBy }) => (
+                <Select id={id} aria-describedby={describedBy} value={values.timezone} onChange={(e) => setValues({ ...values, timezone: e.target.value })}>
+                  {timezones.map((tz) => (
+                    <option key={tz} value={tz}>{tz}</option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+              <Field label="Default market">
+                {({ id }) => (
+                  <Select id={id} value={values.market} onChange={(e) => setValues({ ...values, market: e.target.value })}>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+              <Field label="Default language">
+                {({ id }) => (
+                  <Select id={id} value={values.language} onChange={(e) => setValues({ ...values, language: e.target.value })}>
+                    {LANGUAGES.map((l) => (
+                      <option key={l.value} value={l.value}>{l.label}</option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="Demo data" />
+        <CardBody className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" icon="download" onClick={exportData}>Export as JSON</Button>
+          <Button variant="secondary" icon="undo" disabled={!meta.hasChanges} onClick={() => setResetOpen(true)}>Reset demo data</Button>
+          <span className="tnum text-helper text-fg-subtle">{meta.hasChanges ? `${meta.changeCount} local changes` : "No local changes"}</span>
+        </CardBody>
+      </Card>
+
+      <ConfirmDialog
+        open={resetOpen}
+        onClose={() => setResetOpen(false)}
+        onConfirm={() => {
+          reset();
+          setResetOpen(false);
+        }}
+        title="Reset demo data?"
+        confirmLabel="Reset demo data"
+      >
+        <p>Every change made in this browser is removed and the starting demo data returns.</p>
+      </ConfirmDialog>
+    </div>
   );
 }

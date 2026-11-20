@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { SimulatedBadge } from "@/components/ui/demo";
 import { Button, IconButton } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Textarea } from "@/components/ui/form";
@@ -13,7 +14,7 @@ import type { BatchItem, DraftFact, TaskDraft, TaskStatus, UnsupportedClaim } fr
 
 import { CodeDiff } from "./code-diff";
 
-export const LOCKED_STATUSES: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "verified_success", "partially_verified", "failed", "rolled_back", "rejected", "superseded"]);
+export const LOCKED_STATUSES: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "verified_success", "partially_verified", "failed", "rolled_back", "rejected", "cancelled", "superseded"]);
 
 export const BATCH_BADGE: Record<BatchItem["result"], { label: string; tone: "info" | "warning" | "neutral" | "success" | "danger"; icon: Parameters<typeof Badge>[0]["icon"] }> = {
   ready: { label: "Ready", tone: "info", icon: "check-circle" },
@@ -35,7 +36,7 @@ function ClaimText({ text, claims }: { text: string; claims: UnsupportedClaim[] 
     if (span.start < cursor) return;
     if (span.start > cursor) out.push(<span key={`t${index}`}>{text.slice(cursor, span.start)}</span>);
     out.push(
-      <mark key={`m${index}`} title="Unsupported claim" className="rounded-sm bg-warning-soft px-0.5 font-medium text-warning underline decoration-wavy decoration-1 underline-offset-2">
+      <mark key={`m${index}`} title="Unsupported claim" className="rounded-sm bg-warning-soft px-0.5 font-medium text-warning-text underline decoration-wavy decoration-1 underline-offset-2">
         {text.slice(span.start, span.start + span.len)}
       </mark>,
     );
@@ -74,6 +75,7 @@ type Props = {
   version: number;
   onGenerate: () => void;
   onReset: () => void;
+  onSave: () => void;
   dirty: boolean;
   needsReapproval: boolean;
   batch: Record<string, BatchItem["result"]>;
@@ -81,7 +83,7 @@ type Props = {
 };
 
 /** AI-assisted drafting: generate / regenerate (simulated), source facts, unsupported claims, editor, preview and diff. */
-export function TaskDraftTab({ draft, status, text, onText, claims, generating, version, onGenerate, onReset, dirty, needsReapproval, batch, onBatch }: Props) {
+export function TaskDraftTab({ draft, status, text, onText, claims, generating, version, onGenerate, onReset, onSave, dirty, needsReapproval, batch, onBatch }: Props) {
   const toast = useToast();
   const locked = LOCKED_STATUSES.has(status);
 
@@ -92,7 +94,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
           <CardHeader
             title="Steps"
             subtitle={`Owner: ${draft.owner}`}
-            info="Guidance only. Rankvora Plus makes no change to the site."
+            info="Guidance only. Rankvora AI makes no change to the site."
             actions={
               <Button
                 size="sm"
@@ -128,7 +130,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap items-center gap-1.5">
-        <Badge tone="accent" icon="sparkles">{draft.modelLabel}</Badge>
+        <SimulatedBadge />
         <Badge tone="neutral">Draft v{version}</Badge>
         <Badge tone="neutral" icon="clock">{formatDateTime(draft.generatedAt)} UTC</Badge>
         {dirty ? <Badge tone="warning" icon="pencil">Edited, unsaved</Badge> : null}
@@ -142,10 +144,10 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
         </Button>
         <Button
           size="sm"
-          variant="primary"
+          variant="secondary"
           icon="check"
           disabled={locked || !dirty}
-          onClick={() => toast.push({ title: "Draft saved", description: needsReapproval ? "The diff changed, so approval is needed again. Demo action, not saved." : "Demo action, not saved." })}
+          onClick={onSave}
         >
           Save draft
         </Button>
@@ -160,7 +162,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
           <CardHeader title="Batch" subtitle={draft.resource} info="Each resource gets its own result. Excluded rows are never written." />
           <CardBody className="flex flex-col gap-3 pt-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge tone="accent" icon="sparkles">{draft.modelLabel}</Badge>
+              <SimulatedBadge />
               <Badge tone="neutral" icon="clock">{formatDateTime(draft.generatedAt)} UTC</Badge>
             </div>
             <ul className="divide-y divide-line rounded-control border border-line">
@@ -257,7 +259,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
             )}
             {live.length === 0 ? (
               <p className="flex items-center gap-1.5 text-[13px] text-fg-muted">
-                <Icon name="check-circle" size={15} className="text-success" />
+                <Icon name="check-circle" size={15} className="text-success-icon" />
                 No unsupported claims flagged.
               </p>
             ) : (

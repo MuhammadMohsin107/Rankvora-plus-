@@ -2,28 +2,31 @@
  * Data access for the Prompt module. Reads demonstration data today; later these
  * functions will call the real prompt services. Per-prompt results are derived
  * from the shared response samples so they always agree with the registry.
+ *
+ * Every function works for any website id. Websites that only exist in this browser
+ * (created through the Add website wizard) get an "unresolved" context and the client
+ * fills in the website fields from the local demo state.
  */
-import {
-  DEMO_TEMPLATES,
-  PROMPT_EDITS,
-  PROMPT_META,
-  PROMPT_STATUS_EVENTS,
-  buildSuggestionBatches,
-  profileFor,
-} from "@/demo/prompts";
+import { DEMO_TEMPLATES, PROMPT_EDITS, PROMPT_META, PROMPT_STATUS_EVENTS, profileFor } from "@/demo/prompts";
 import { formatDate, formatShortDate } from "@/lib/format";
 import { SOURCE_LABEL, channelLabel } from "@/lib/labels";
-import { getCurrentUser, getStore, listCompetitors, listProducts, listPromptGroups, listPromptsBase, listStoreChannels, storeIds } from "@/services/core";
+import { getCurrentUser, getStore, listCompetitors, listProducts, listPromptGroups, listPromptsBase, listStoreChannels, listStores, storeIds } from "@/services/core";
+import { listSchedules } from "@/services/monitoring";
 import { listRunResponses, registry } from "@/services/records";
 import type { AiChannel, PromptBase, PromptGroup, Store } from "@/types/core";
 import type {
   ChannelOption,
+  CitationSummary,
+  CompetitorMention,
   LastResult,
   LibraryData,
   LibraryPrompt,
   NewPromptData,
+  Observation,
   PromptActivityItem,
+  PromptContext,
   PromptDetailData,
+  PromptEvidence,
   PromptRecord,
   PromptResults,
   PromptVersion,
@@ -41,14 +44,19 @@ import type { ResponseSample } from "@/types/shared-records";
 const AUDIT_IDS: Record<string, string[]> = {
   "runpro-pk": ["aud-001", "aud-002"],
   "runpro-ae": ["aud-ae-001", "aud-ae-002", "aud-ae-003"],
+  // nutrition leaves out the 6-response verification audit (aud-nu-004), like runpro-pk.
+  nutrition: ["aud-nu-001", "aud-nu-002", "aud-nu-003", "aud-nu-005"],
 };
 
 const auditIdsFor = (storeId: string): string[] => AUDIT_IDS[storeId] ?? registry.audits(storeId).filter((a) => a.status !== "in_progress").map((a) => a.id);
 
 const ZERO_COUNTS: ResultCounts = { mention: { n: 0, d: 0 }, recommendation: { n: 0, d: 0 }, failed: 0, requests: 0 };
+const EMPTY_RESULTS: PromptResults = { providers: [], pooled: ZERO_COUNTS, runs: [], latest: [], period: null };
+const EMPTY_EVIDENCE: PromptEvidence = { lastObservation: null, competitors: [], citationResponses: 0, citations: [], schedules: [] };
+const TOP_DOMAINS = 5;
 
 function storeContext(store: Store): StoreContext {
-  return { id: store.id, name: store.name, brandName: store.brandName, market: store.market, marketName: store.marketName, language: store.language, channelCount: store.channelIds.length };
+  return { id: store.id, name: store.name, brandName: store.brandName, market: store.market, marketName: store.marketName, language: store.language, channelCount: store.channelIds.length, resolved: true };
 }
 
 function channelOptions(channels: AiChannel[]): ChannelOption[] {
@@ -85,6 +93,59 @@ export async function promptStaticParams(): Promise<{ storeId: string; promptId:
     for (const prompt of await listRecords(storeId)) pairs.push({ storeId, promptId: prompt.id });
   }
   return pairs;
+}
+
+// ---------------------------------------------------------------------------
+// Context shared by library, detail and create screens
+// ---------------------------------------------------------------------------
+
+/** For a website the server does not know (created in this browser). The client fills in the real fields. */
+function unresolvedContext(storeId: string, actor: string): PromptContext {
+  return {
+    store: { id: storeId, name: "Website", brandName: "", market: "", marketName: "", language: "en", channelCount: 0, resolved: false },
+    channels: [],
+    groups: [],
+    products: [],
+    existing: [],
+    actor,
+    otherWebsites: [],
+    profile: { brand: "", category: "products", brands: "product brands", market: "", city: "your city", competitor: "a leading brand", item: "product", need: "everyday use" },
+    templates: DEMO_TEMPLATES,
+    competitors: [],
+  };
+}
+
+export async function getPromptContext(storeId: string): Promise<PromptContext> {
+  const user = await getCurrentUser();
+  const store = await getStore(storeId);
+  if (!store) return unresolvedContext(storeId, user.name);
+  const [records, groups, products, channels, competitors, stores] = await Promise.all([
+    listRecords(storeId),
+    listGroups(storeId),
+    listProducts(storeId),
+    listStoreChannels(storeId),
+    listCompetitors(storeId),
+    listStores(),
+  ]);
+  const confirmed = competitors.filter((c) => c.status === "confirmed").map((c) => c.name);
+  const profile = profileFor(storeId);
+  const otherWebsites = await Promise.all(
+    stores
+      .filter((other) => other.id !== storeId)
+      .map(async (other) => ({ id: other.id, name: other.name, texts: (await listPromptsBase(other.id)).map((p) => p.text) })),
+  );
+  return {
+    store: storeContext(store),
+    channels: channelOptions(channels),
+    groups,
+    products,
+    existing: records.map((p) => ({ id: p.id, storeId, text: p.text, status: p.status })),
+    actor: user.name,
+    otherWebsites,
+    profile: { brand: store.brandName, category: profile.category, brands: profile.brands ?? `${profile.category} brands`, market: store.marketName, city: profile.city, competitor: confirmed[0] ?? "a leading brand", item: profile.item, need: profile.need },
+    templates: DEMO_TEMPLATES,
+    competitors: confirmed,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -128,12 +189,15 @@ function lastResultsFor(promptId: string, channels: AiChannel[], storeId: string
   });
 }
 
-export async function getLibrary(storeId: string): Promise<LibraryData | null> {
+export async function getLibrary(storeId: string): Promise<LibraryData> {
   const store = await getStore(storeId);
-  if (!store) return null;
-  const [records, groups, channels, responses] = await Promise.all([listRecords(storeId), listGroups(storeId), listStoreChannels(storeId), loadResponses(storeId)]);
+  const context = await getPromptContext(storeId);
+  if (!store) return { storeId, context, prompts: [], inLatestRun: 0 };
+  const [records, channels, responses] = await Promise.all([listRecords(storeId), listStoreChannels(storeId), loadResponses(storeId)]);
   const prompts = records.map<LibraryPrompt>((p) => ({ ...p, lastResults: lastResultsFor(p.id, channels, storeId, responses) }));
-  return { store: storeContext(store), prompts, groups, channels: channelOptions(channels) };
+  const latestRunId = registry.runs(storeId).at(-1)?.id;
+  const inLatestRun = latestRunId ? new Set((responses.monitoring.get(latestRunId) ?? []).map((r) => r.promptId)).size : 0;
+  return { storeId, context, prompts, inLatestRun };
 }
 
 // ---------------------------------------------------------------------------
@@ -196,25 +260,62 @@ function buildResults(prompt: PromptRecord, channels: AiChannel[], responses: St
   return { providers, pooled: runs.length ? counts(all) : ZERO_COUNTS, runs, latest, period };
 }
 
-export async function getPromptDetail(storeId: string, promptId: string): Promise<PromptDetailData | null> {
+function buildEvidence(prompt: PromptRecord, channels: AiChannel[], responses: StoreResponses, schedules: PromptEvidence["schedules"]): PromptEvidence {
+  const own = [...[...responses.monitoring.values()].flat(), ...[...responses.audits.values()].flat()].filter((r) => r.promptId === prompt.id);
+  const ok = own.filter((r) => r.status === "succeeded");
+
+  const names = new Map<string, string>();
+  for (const r of ok) for (const c of r.competitors) names.set(c.id, c.name);
+  const competitors: CompetitorMention[] = [...names].map(([id, name]) => ({
+    id,
+    name,
+    mentioned: { n: ok.filter((r) => r.competitors.some((c) => c.id === id && c.mentioned)).length, d: ok.length },
+  }));
+  competitors.sort((a, b) => b.mentioned.n - a.mentioned.n || a.name.localeCompare(b.name));
+
+  const withCitations = ok.filter((r) => r.citationSupport === "returned");
+  const byDomain = new Map<string, { source: CitationSummary["source"]; ids: Set<string> }>();
+  for (const r of withCitations) {
+    for (const c of r.citations) {
+      const entry = byDomain.get(c.domain) ?? { source: c.source, ids: new Set<string>() };
+      entry.ids.add(r.id);
+      byDomain.set(c.domain, entry);
+    }
+  }
+  const citations: CitationSummary[] = [...byDomain]
+    .map(([domain, entry]) => ({ domain, source: entry.source, cited: { n: entry.ids.size, d: withCitations.length } }))
+    .sort((a, b) => b.cited.n - a.cited.n || a.domain.localeCompare(b.domain))
+    .slice(0, TOP_DOMAINS);
+
+  const latest = [...own].sort((a, b) => Date.parse(b.requestedAt) - Date.parse(a.requestedAt) || b.id.localeCompare(a.id))[0];
+  const lastObservation: Observation = latest
+    ? { runId: latest.runId, kind: latest.runKind, at: latest.requestedAt, channelLabel: channels.find((c) => c.id === latest.channelId)?.providerLabel ?? latest.providerLabel }
+    : null;
+  return { lastObservation, competitors, citationResponses: withCitations.length, citations, schedules };
+}
+
+/** Detail for a prompt. `prompt` is null when the id is not in the static data (a prompt created in this browser). */
+export async function getPromptDetail(storeId: string, promptId: string): Promise<PromptDetailData> {
+  const context = await getPromptContext(storeId);
+  const empty: PromptDetailData = { storeId, context, prompt: null, versions: [], activity: [], results: EMPTY_RESULTS, evidence: EMPTY_EVIDENCE };
   const store = await getStore(storeId);
-  if (!store) return null;
+  if (!store) return empty;
   const records = await listRecords(storeId);
   const prompt = records.find((p) => p.id === promptId);
-  if (!prompt) return null;
-  const [groups, products, channels, responses, user] = await Promise.all([listGroups(storeId), listProducts(storeId), listStoreChannels(storeId), loadResponses(storeId), getCurrentUser()]);
+  if (!prompt) return empty;
+  const [channels, responses, schedules] = await Promise.all([listStoreChannels(storeId), loadResponses(storeId), listSchedules(storeId)]);
   const versions = buildVersions(prompt, responses);
+  const onSchedules = schedules
+    .filter((sch) => sch.config.promptIds.includes(prompt.id))
+    .map((sch) => ({ id: sch.id, name: sch.name, frequency: sch.frequencyLabel, status: sch.status }));
   return {
-    store: storeContext(store),
+    storeId,
+    context,
     prompt,
     versions,
     activity: buildActivity(prompt, versions),
     results: buildResults(prompt, channels, responses),
-    channels: channelOptions(channels),
-    groups,
-    products,
-    existing: records.filter((p) => p.id !== prompt.id).map((p) => ({ id: p.id, text: p.text, status: p.status })),
-    actor: user.name,
+    evidence: buildEvidence(prompt, channels, responses, onSchedules),
   };
 }
 
@@ -222,20 +323,6 @@ export async function getPromptDetail(storeId: string, promptId: string): Promis
 // Creation
 // ---------------------------------------------------------------------------
 
-export async function getNewPromptData(storeId: string): Promise<NewPromptData | null> {
-  const store = await getStore(storeId);
-  if (!store) return null;
-  const [records, groups, products, channels, competitors] = await Promise.all([listRecords(storeId), listGroups(storeId), listProducts(storeId), listStoreChannels(storeId), listCompetitors(storeId)]);
-  const profile = profileFor(storeId);
-  const competitor = competitors.find((c) => c.status === "confirmed")?.name ?? "a leading brand";
-  return {
-    store: storeContext(store),
-    groups,
-    products,
-    existing: records.map((p) => ({ id: p.id, text: p.text, status: p.status })),
-    channels: channelOptions(channels),
-    suggestionBatches: buildSuggestionBatches(profile, store.brandName, competitor, store.marketName),
-    templates: DEMO_TEMPLATES,
-    profile: { brand: store.brandName, category: profile.category, market: store.marketName, city: profile.city, competitor },
-  };
+export async function getNewPromptData(storeId: string): Promise<NewPromptData> {
+  return { storeId, context: await getPromptContext(storeId) };
 }

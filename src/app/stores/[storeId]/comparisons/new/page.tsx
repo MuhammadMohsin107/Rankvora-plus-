@@ -1,14 +1,13 @@
 import { Suspense } from "react";
-
-import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PageFallback } from "@/components/shell/page-fallback";
 import { PageHeader } from "@/components/shell/page-header";
 import { NoHistory } from "@/features/comparison/no-history";
 import { NewComparisonWizard } from "@/features/comparison/wizard";
-import { getWizardData, wizardCatalog } from "@/services/comparison";
-import { getStore, storeIds } from "@/services/core";
+import { getWizardData, listComparisons, wizardCatalog } from "@/services/comparison";
+import { getCurrentUser, getStore, listPromptGroups, listPromptsBase, storeIds } from "@/services/core";
 
 export const metadata: Metadata = { title: "New comparison" };
 
@@ -23,23 +22,21 @@ async function NewComparisonPageContent(props: PageProps<"/stores/[storeId]/comp
   const data = await getWizardData(storeId);
   if (!data) notFound();
 
-  const header = (
-    <PageHeader title="New comparison" />
-  );
-
   if (data.snapshots.length < 2) {
     return (
       <>
-        {header}
+        <PageHeader title="New comparison" />
         <NoHistory storeId={storeId} kind="snapshots" hasChannel={store.channelIds.length > 0} />
       </>
     );
   }
 
+  const [prompts, groups, records, user] = await Promise.all([listPromptsBase(storeId), listPromptGroups(storeId), listComparisons(storeId), getCurrentUser()]);
+
   return (
     <>
-      {header}
-      <NewComparisonWizard storeId={storeId} data={data} catalog={wizardCatalog(storeId)} />
+      <PageHeader title="New comparison" />
+      <NewComparisonWizard storeId={storeId} data={data} catalog={wizardCatalog(storeId)} prompts={prompts} groups={groups} records={records} createdBy={user.name} />
     </>
   );
 }

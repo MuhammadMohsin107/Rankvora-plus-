@@ -1,38 +1,43 @@
 /**
- * Aggregates the headline pieces of every module for the store Dashboard.
- * Reads only shared records (registry, findings, generated responses), so the
- * Dashboard never contradicts the module screens.
+ * Aggregates the headline pieces of every module for the Dashboard and the Portfolio.
+ * Reads only shared records (registry, findings, generated responses), so these screens
+ * never contradict the module screens. Everything returned is plain JSON so a client view can
+ * layer local demo-state changes (alerts read, tasks approved, ...) on top.
  */
-import { registryFor, type RegistryAudit, type RegistryRun, type RegistryTask } from "@/demo/registry";
-import { DEMO_COMPETITORS, DEMO_ALERTS } from "@/demo/shared";
+import { registryFor } from "@/demo/registry";
+import { ALL_PROMPTS, DEMO_ALERTS, DEMO_COMPETITORS, DEMO_STORES } from "@/demo/shared";
 import { buildRunResponses, DEMO_FINDINGS } from "@/demo/shared-records";
 import { getComparisonDetail } from "@/services/comparison";
 import type { Comparability, MetricResult } from "@/types/comparison";
-import { OPEN_FINDING_STATUSES, OPEN_TASK_STATUSES } from "@/lib/record-status";
-import type { Finding } from "@/types/shared-records";
+import type { ActivityItem, AlertHeadline, PromptBase, Rate } from "@/types/core";
 
-const PRIORITY_ORDER = { P0: 0, P1: 1, P2: 2, P3: 3 } as const;
+export type DashboardFinding = { id: string; storeId: string; title: string; priority: "P0" | "P1" | "P2" | "P3"; severity: "critical" | "high" | "medium" | "low" | "informational"; status: string; /** First prompt and task linked to the finding (evidence chain). */ promptId?: string; taskId?: string };
+export type DashboardTask = { id: string; storeId: string; title: string; status: string; findingId: string; priority: "P0" | "P1" | "P2" | "P3"; dueAt: string | null };
 
 export type DashboardData = {
-  trend: { runId: string; date: string; mention: { n: number; d: number }; recommendation: { n: number; d: number } }[];
-  findings: Finding[];
-  tasks: RegistryTask[];
+  storeId: string;
+  trend: { runId: string; date: string; mention: Rate; recommendation: Rate }[];
+  /** Every finding of the website. The view keeps the open ones after local changes. */
+  findings: DashboardFinding[];
+  tasks: DashboardTask[];
+  /** Responses naming each confirmed or suggested competitor in the latest run. */
   competitors: { id: string; name: string; status: "confirmed" | "suggested" | "archived"; n: number; d: number }[];
-  monitoring: {
-    schedule: ReturnType<typeof registryFor>["schedules"][number];
-    lastRun: RegistryRun;
-    openAlerts: number;
-    inProgressAudit: RegistryAudit | null;
-  };
+  alerts: AlertHeadline[];
+  lastRun: { id: string; scheduledFor: string; status: string; succeededJobs: number; plannedJobs: number };
+  schedule: { id: string; name: string; status: string; nextRunAt: string | null };
+  inProgressAudit: { id: string; title: string; done: number; planned: number } | null;
+  channelCount: number;
+  /** Prompts of the website. The view adds locally created ones (usePrompts). */
+  prompts: PromptBase[];
   /** Headline of the latest completed comparison; same engine and numbers as the Comparison module. */
   comparison: { id: string; title: string; verdict: Comparability; matchedPairs: number; baselineSlots: number; mention: MetricResult | null; recommendation: MetricResult | null } | null;
-  activity: { id: string; title: string; detail: string; at: string; tone: "success" | "warning" | "accent" | "neutral" | "info"; icon: "check-circle" | "alert-triangle" | "audit" | "monitoring" | "compare" | "fixes" }[];
+  activity: ActivityItem[];
 };
 
-type Activity = DashboardData["activity"];
+type Authored = Omit<ActivityItem, "websiteId">;
 
-/** Authored activity feed per store (demonstration data). */
-const ACTIVITY: Record<string, Activity> = {
+/** Authored activity feed per website (demonstration data). */
+const ACTIVITY: Record<string, Authored[]> = {
   "runpro-pk": [
     { id: "act-2", title: "Weekly run completed with warnings", detail: "run-008 · failed requests excluded from rates", at: "2026-11-17T05:12:00Z", tone: "warning", icon: "monitoring" },
     { id: "act-3", title: "Guide published, verification pending", detail: "task-004 · Publish beginner buying guide", at: "2026-11-15T09:00:00Z", tone: "info", icon: "fixes" },
@@ -46,7 +51,24 @@ const ACTIVITY: Record<string, Activity> = {
     { id: "act-ae-4", title: "Task verified", detail: "task-ae-005 · Sitemap redirects removed", at: "2026-11-08T09:30:00Z", tone: "success", icon: "fixes" },
     { id: "act-ae-5", title: "Full audit completed", detail: "aud-ae-002 · 3 findings created", at: "2026-11-05T05:41:00Z", tone: "success", icon: "check-circle" },
   ],
+  nutrition: [
+    { id: "act-nu-1", title: "Triggered audit partially completed", detail: "aud-nu-005 · 3 of 12 requests failed", at: "2026-11-18T05:09:00Z", tone: "warning", icon: "audit" },
+    { id: "act-nu-2", title: "Fix published, verification pending", detail: "task-nu-005 · Organization schema sameAs added", at: "2026-11-17T04:10:00Z", tone: "info", icon: "fixes" },
+    { id: "act-nu-3", title: "Task verified", detail: "task-nu-003 · Noindex tag removed from the course page", at: "2026-11-16T03:12:00Z", tone: "success", icon: "fixes" },
+    { id: "act-nu-4", title: "Verification audit completed", detail: "aud-nu-004 · Course page indexing", at: "2026-11-16T03:11:00Z", tone: "success", icon: "check-circle" },
+    { id: "act-nu-5", title: "Weekly run completed", detail: "run-nu-006 · 42 / 42 requests succeeded", at: "2026-11-16T01:44:00Z", tone: "success", icon: "monitoring" },
+  ],
+  "homefit-uk": [
+    { id: "act-uk-1", title: "Website added", detail: "Setup in progress · no AI channel selected", at: "2026-11-10T14:00:00Z", tone: "neutral", icon: "globe" },
+  ],
 };
+
+/** Authored activity of every website, with the website id attached. */
+export async function listActivity(storeId?: string): Promise<ActivityItem[]> {
+  return Object.entries(ACTIVITY)
+    .filter(([id]) => !storeId || id === storeId)
+    .flatMap(([websiteId, items]) => items.map((item) => ({ ...item, websiteId })));
+}
 
 export async function getDashboardData(storeId: string): Promise<DashboardData | null> {
   const reg = registryFor(storeId);
@@ -54,13 +76,15 @@ export async function getDashboardData(storeId: string): Promise<DashboardData |
 
   const latest = reg.runs[reg.runs.length - 1];
   const responses = buildRunResponses(latest.id).filter((r) => r.status === "succeeded");
-  const competitors = DEMO_COMPETITORS.filter((c) => c.storeId === storeId && c.status !== "archived").map((c) => ({
-    id: c.id,
-    name: c.name,
-    status: c.status,
-    n: responses.filter((r) => r.competitors.some((x) => x.name === c.name && x.mentioned)).length,
-    d: responses.length,
-  }));
+  const competitors = DEMO_COMPETITORS.filter((c) => c.storeId === storeId && c.status !== "archived")
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      n: responses.filter((r) => r.competitors.some((x) => x.name === c.name && x.mentioned)).length,
+      d: responses.length,
+    }))
+    .sort((a, b) => b.n - a.n);
 
   const newestCompleted = [...reg.comparisons]
     .filter((c) => c.status === "completed" || c.status === "completed_with_warnings")
@@ -68,18 +92,21 @@ export async function getDashboardData(storeId: string): Promise<DashboardData |
   const cmp = newestCompleted ? await getComparisonDetail(storeId, newestCompleted.id) : null;
   const openAudit = reg.audits.find((a) => a.status === "in_progress") ?? null;
   const schedule = reg.schedules.find((s) => s.status === "active") ?? reg.schedules[0];
+  const store = DEMO_STORES.find((s) => s.id === storeId);
+  const prompts = ALL_PROMPTS.filter((p) => p.storeId === storeId);
 
   return {
+    storeId,
     trend: reg.runs.map((r) => ({ runId: r.id, date: r.scheduledFor, mention: r.mention, recommendation: r.recommendation })),
-    findings: DEMO_FINDINGS.filter((f) => f.storeId === storeId && OPEN_FINDING_STATUSES.has(f.status)).sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]),
-    tasks: reg.tasks.filter((t) => OPEN_TASK_STATUSES.has(t.status)),
-    competitors: competitors.sort((a, b) => b.n - a.n),
-    monitoring: {
-      schedule,
-      lastRun: latest,
-      openAlerts: DEMO_ALERTS.filter((a) => a.storeId === storeId && !a.read).length,
-      inProgressAudit: openAudit,
-    },
+    findings: DEMO_FINDINGS.filter((f) => f.storeId === storeId).map((f) => ({ id: f.id, storeId, title: f.title, priority: f.priority, severity: f.severity, status: f.status, promptId: f.affectedPromptIds[0], taskId: f.taskIds[0] })),
+    tasks: reg.tasks.map((t) => ({ id: t.id, storeId, title: t.title, status: t.status, findingId: t.findingId, priority: t.priority, dueAt: t.dueAt })),
+    competitors,
+    alerts: DEMO_ALERTS.filter((a) => a.storeId === storeId),
+    lastRun: { id: latest.id, scheduledFor: latest.scheduledFor, status: latest.status, succeededJobs: latest.succeededJobs, plannedJobs: latest.plannedJobs },
+    schedule: { id: schedule.id, name: schedule.name, status: schedule.status, nextRunAt: schedule.nextRunAt },
+    inProgressAudit: openAudit ? { id: openAudit.id, title: openAudit.title, done: openAudit.succeededJobs + openAudit.failedJobs, planned: openAudit.plannedJobs } : null,
+    channelCount: store?.channelIds.length ?? 0,
+    prompts,
     comparison: cmp
       ? {
           id: cmp.record.id,
@@ -91,6 +118,13 @@ export async function getDashboardData(storeId: string): Promise<DashboardData |
           recommendation: cmp.result.headline.find((m) => m.id === "recommendation") ?? null,
         }
       : null,
-    activity: ACTIVITY[storeId] ?? [],
+    activity: (await listActivity(storeId)),
   };
+}
+
+export type PortfolioTask = { id: string; storeId: string; title: string; status: string };
+
+/** Pending-work rows across websites for the Portfolio (tasks only: id, website, title, status). */
+export async function listPortfolioTasks(): Promise<PortfolioTask[]> {
+  return DEMO_STORES.flatMap((s) => registryFor(s.id).tasks.map((t) => ({ id: t.id, storeId: s.id, title: t.title, status: t.status })));
 }

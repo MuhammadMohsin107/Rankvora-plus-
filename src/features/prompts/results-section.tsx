@@ -7,6 +7,7 @@ import { LineChart, type LineSeries } from "@/components/charts/line-chart";
 import { Status } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, Metric } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
+import { ChartEmpty } from "@/components/charts/chart-states";
 import { EmptyState } from "@/components/ui/feedback";
 import { Segmented } from "@/components/ui/form";
 import { Mono } from "@/components/ui/misc";
@@ -40,8 +41,8 @@ function RateCell({ title, subtitle, counts, showFailed = true }: { title: strin
   return (
     <div className="flex min-w-0 flex-col gap-4 bg-surface p-4">
       <div className="min-w-0">
-        <p className="truncate text-[13px] font-semibold text-fg">{title}</p>
-        <p className="truncate text-xs text-fg-subtle" title={subtitle}>{subtitle}</p>
+        <p className="truncate text-body-sm font-semibold text-fg">{title}</p>
+        <p className="truncate text-helper text-fg-muted" title={subtitle}>{subtitle}</p>
       </div>
       <Metric
         label="Mention rate"
@@ -77,8 +78,9 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
     const point = (counts: ResultCounts, i: number) => ({
       x: labels[i],
       y: pct(counts, metric),
-      n: counts.mention.d,
-      detail: `${counts[metric].n} / ${counts[metric].d}${counts.failed ? ` · ${counts.failed} failed` : ""}`,
+      numerator: counts[metric].n,
+      denominator: counts[metric].d,
+      detail: counts.failed ? `${counts.failed} failed, excluded` : undefined,
     });
     const series: LineSeries[] =
       view === "pooled"
@@ -101,10 +103,10 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
       <EmptyState
         icon="monitoring"
         title="Results are N/A"
-        description="No AI channel is selected for this store, so nothing is tracked. This is not 0%."
+        description="No AI provider is selected, so nothing is tracked. This is not 0%."
         action={
-          <ButtonLink href={`/stores/${storeId}/settings`} variant="primary">
-            Choose AI channels
+          <ButtonLink href={`/stores/${storeId}/settings`} variant="secondary">
+            Choose providers
           </ButtonLink>
         }
       />
@@ -117,30 +119,30 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
       <EmptyState
         icon="monitoring"
         title="No results yet"
-        description={archived ? "Archived prompts do not run." : status === "active" ? "Results appear after the next run." : "Only active prompts run in audits and monitoring."}
+        description={archived ? "Archived prompts do not run." : status === "active" ? "Results appear after the next run." : "Only active prompts run."}
       />
     );
   }
 
-  const cells = [{ id: "pooled", title: "All providers", subtitle: "Pooled responses", counts: pooled }, ...providers.map((p) => ({ id: p.channelId, title: p.label, subtitle: p.channelLabel, counts: p }))];
+  const cells = providers.map((p) => ({ id: p.channelId, title: p.label, subtitle: p.channelLabel, counts: p }));
   const requestsOk = pooled.requests - pooled.failed;
 
   return (
     <div className="flex flex-col gap-5">
       <Card as="section">
         <CardHeader
-          title="Rates by provider"
+          title="By provider"
           subtitle={`${runs.length} monitoring ${runs.length === 1 ? "run" : "runs"}${period ? ` · ${period}` : ""}`}
-          info="Failed requests are counted separately and are never treated as the brand being absent."
+          info="Failed requests are counted separately. They are never treated as the brand being absent."
         />
         <CardBody>
           <div className={cn("grid gap-px overflow-hidden rounded-card border border-line bg-line", GRID[Math.min(cells.length, 4)])}>
             {cells.map((cell) => (
-              <RateCell key={cell.id} title={cell.title} subtitle={cell.subtitle} counts={cell.counts} showFailed={cell.id !== "pooled"} />
+              <RateCell key={cell.id} title={cell.title} subtitle={cell.subtitle} counts={cell.counts} />
             ))}
           </div>
           <div className="mt-4 flex flex-col gap-1.5">
-            <p className="text-xs font-medium text-fg-muted">Requests</p>
+            <p className="text-helper font-medium text-fg-muted">Requests</p>
             <StackedBar
               unit="requests"
               segments={[
@@ -164,12 +166,12 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
         />
         <CardBody>
           {runs.length < 2 ? (
-            <p className="text-[13px] text-fg-muted">A trend needs at least two runs.</p>
+            <ChartEmpty title="Not enough runs" detail="A trend needs at least two monitoring runs." height={160} />
           ) : (
             <>
               <LineChart series={chart.series} summary={chart.summary} markers={chart.markers} yFormat={(v) => `${v.toFixed(0)}%`} yLabel={metric === "mention" ? "Mention rate" : "Recommendation rate"} />
-              <p className="tnum mt-2 text-xs text-fg-subtle">
-                Each point uses {chart.minD === chart.maxD ? chart.minD : `${chart.minD}–${chart.maxD}`} successful responses: directional. Dashed lines mark the first run on a new wording version.
+              <p className="tnum mt-2 text-helper text-fg-muted">
+                {chart.minD === chart.maxD ? chart.minD : `${chart.minD}–${chart.maxD}`} successful responses per point. Markers show new versions.
               </p>
             </>
           )}
@@ -180,15 +182,15 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
         <CardHeader title="Latest responses" subtitle="API answer samples" />
         <CardBody className="pt-2">
           {latest.length === 0 ? (
-            <p className="text-[13px] text-fg-muted">No response samples are stored for this run.</p>
+            <p className="text-body-sm text-fg-muted">No response samples yet.</p>
           ) : (
             <ul className="divide-y divide-line">
               {latest.map((response) => (
                 <li key={response.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 py-2.5">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                    <span className="text-[13px] font-medium text-fg">{response.providerLabel}</span>
+                    <span className="text-body-sm font-medium text-fg">{response.providerLabel}</span>
                     <Mono>{response.runId}</Mono>
-                    <span className="tnum text-xs text-fg-subtle">{formatShortDate(response.requestedAt)} · sample {response.sample} · v{response.promptVersion}</span>
+                    <span className="tnum text-helper text-fg-muted">{formatShortDate(response.requestedAt)} · sample {response.sample} · v{response.promptVersion}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     {outcomeOf(response)}

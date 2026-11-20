@@ -6,7 +6,8 @@
 export type Role = "owner" | "admin" | "editor" | "auditor" | "viewer";
 
 export type StoreStatus = "draft" | "needs_review" | "ready" | "active" | "paused" | "disconnected" | "archived";
-export type StorePlatform = "shopify" | "woocommerce" | "wordpress" | "webflow" | "custom" | "manual";
+/** Site type. Shopify is one option among many; user-facing labels come from lib/labels (siteTypeLabel). */
+export type StorePlatform = "shopify" | "woocommerce" | "wordpress" | "webflow" | "wix" | "squarespace" | "custom" | "manual";
 export type IntegrationState = "connected" | "needs_attention" | "disconnected" | "manual" | "not_connected";
 
 export type Organization = {
@@ -60,6 +61,9 @@ export type Store = {
   createdAt: string;
   /** null while setup is incomplete — no tracking data yet. */
   summary: StoreSummary | null;
+  /** Present on websites created in the browser (demo-state). Never on seeded websites. */
+  simulated?: true;
+  origin?: "local-demo";
 };
 
 export type ProviderCode = "openai" | "gemini" | "perplexity" | "anthropic";
@@ -131,4 +135,18 @@ export type OrgUsage = {
   requestCap: number;
   requests: number;
   perStore: { storeId: string; requests: number; cap: number }[];
+};
+
+/** One line of the unified activity timeline (authored activity or a locally recorded demo event). */
+export type ActivityItem = {
+  id: string;
+  title: string;
+  detail: string;
+  at: string;
+  tone: "success" | "warning" | "accent" | "neutral" | "info";
+  icon: "check-circle" | "alert-triangle" | "audit" | "monitoring" | "compare" | "fixes" | "globe" | "settings" | "bell" | "reports" | "prompts";
+  /** Website the item belongs to. */
+  websiteId: string;
+  /** True for items recorded by an action in this browser. */
+  simulated?: boolean;
 };

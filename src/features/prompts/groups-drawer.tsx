@@ -7,6 +7,7 @@ import { Button, IconButton } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
 import { ConfirmDialog, Drawer } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
+import { simulatedToast } from "@/demo-state";
 import { pluralize } from "@/lib/format";
 import type { PromptGroup } from "@/types/core";
 
@@ -40,7 +41,7 @@ export function GroupsDrawer({ open, onClose, groups, counts, ungrouped, onCreat
     onCreate(value);
     setName("");
     setError(undefined);
-    toast.push({ title: "Group created", description: value });
+    toast.push({ ...simulatedToast("Group created"), description: value });
   };
 
   const saveRename = () => {
@@ -51,12 +52,12 @@ export function GroupsDrawer({ open, onClose, groups, counts, ungrouped, onCreat
     onRename(editing.id, value);
     setEditing(null);
     setEditError(undefined);
-    toast.push({ title: "Group renamed", description: value });
+    toast.push({ ...simulatedToast("Group renamed"), description: value });
   };
 
   return (
     <>
-      <Drawer open={open} onClose={onClose} title="Manage groups" description="Groups organise the library and audit scope." size="md">
+      <Drawer open={open} onClose={onClose} title="Manage groups" description="Groups organise the library." size="md">
         <form
           className="flex items-end gap-2"
           onSubmit={(event) => {
@@ -73,7 +74,7 @@ export function GroupsDrawer({ open, onClose, groups, counts, ungrouped, onCreat
         </form>
 
         <ul className="mt-5 divide-y divide-line rounded-control border border-line">
-          {groups.length === 0 ? <li className="px-3 py-4 text-[13px] text-fg-muted">No groups yet.</li> : null}
+          {groups.length === 0 ? <li className="px-3 py-4 text-body-sm text-fg-muted">No groups yet.</li> : null}
           {groups.map((group) => {
             const isEditing = editing?.id === group.id;
             return (
@@ -99,7 +100,7 @@ export function GroupsDrawer({ open, onClose, groups, counts, ungrouped, onCreat
                 ) : (
                   <>
                     <div className="min-w-0 flex-1 self-center">
-                      <p className="truncate text-[13px] font-medium text-fg">{group.name}</p>
+                      <p className="truncate text-body-sm font-medium text-fg">{group.name}</p>
                     </div>
                     <Badge tone="neutral" className="self-center">{pluralize(counts[group.id] ?? 0, "prompt")}</Badge>
                     <IconButton icon="pencil" label={`Rename ${group.name}`} size="sm" onClick={() => setEditing({ id: group.id, value: group.name })} />
@@ -110,7 +111,7 @@ export function GroupsDrawer({ open, onClose, groups, counts, ungrouped, onCreat
             );
           })}
         </ul>
-        <p className="mt-3 text-xs text-fg-subtle"><span className="tnum">{pluralize(ungrouped, "prompt")}</span> ungrouped</p>
+        <p className="mt-3 text-helper text-fg-muted"><span className="tnum">{pluralize(ungrouped, "prompt")}</span> ungrouped</p>
       </Drawer>
 
       <ConfirmDialog
@@ -122,7 +123,7 @@ export function GroupsDrawer({ open, onClose, groups, counts, ungrouped, onCreat
           if (!removing) return;
           const count = counts[removing.id] ?? 0;
           onDelete(removing.id);
-          toast.push({ title: "Group deleted", description: count ? `${pluralize(count, "prompt")} now ungrouped.` : undefined });
+          toast.push({ ...simulatedToast("Group deleted"), description: count ? `${pluralize(count, "prompt")} now ungrouped.` : undefined });
           setRemoving(null);
         }}
       >

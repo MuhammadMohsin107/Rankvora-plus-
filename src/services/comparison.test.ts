@@ -115,6 +115,81 @@ describe("runpro-ae comparisons", () => {
   });
 });
 
+describe("nutrition comparisons", () => {
+  const NU = "nutrition";
+
+  it("agrees with the registry verdicts and statuses", async () => {
+    const records = await listComparisons(NU);
+    expect(records.map((r) => r.id)).toEqual(["cmp-nu-001", "cmp-nu-002", "cmp-nu-003", "cmp-nu-004"]);
+    for (const record of records) {
+      const detail = await getComparisonDetail(NU, record.id);
+      expect(detail?.result.verdict, record.id).toBe(record.comparability);
+      expect(detail?.record.status, record.id).toBe(record.status);
+    }
+  });
+
+  it("never merges the slots of p-nu-003 across its 27 Oct rewording (cmp-nu-002, cmp-nu-004)", async () => {
+    for (const id of ["cmp-nu-002", "cmp-nu-004"]) {
+      const { result } = (await getComparisonDetail(NU, id))!;
+      expect(result.matchedPairs, id).toBe(36);
+      expect(result.coverage, id).toEqual({ n: 36, d: 42 });
+      expect(result.unmatched, id).toHaveLength(12);
+      expect(result.unmatched.every((u) => u.promptId === "p-nu-003" && u.reason === "version_changed"), id).toBe(true);
+      expect(result.prompts.map((p) => p.promptId), id).not.toContain("p-nu-003");
+      expect(result.checks.find((c) => c.id === "prompt-versions")?.state, id).toBe("warn");
+    }
+  });
+
+  it("is partially comparable when the run type differs and a baseline job failed (cmp-nu-001)", async () => {
+    const { result } = (await getComparisonDetail(NU, "cmp-nu-001"))!;
+    expect(result.verdict).toBe("partially_comparable");
+    expect(result.checks.find((c) => c.id === "run-type")?.state).toBe("warn");
+    expect(result.wholeSource).toEqual({ baseline: { n: 11, d: 38 }, current: { n: 18, d: 42 } });
+    expect(result.coverage).toEqual({ n: 33, d: 42 });
+    expect(result.excluded.map((e) => e.reason)).toEqual(["failed_baseline", "failed_baseline", "failed_baseline"]);
+    const mention = result.headline.find((m) => m.id === "mention")!;
+    expect(mention.baseline).toEqual({ n: 6, d: 33 });
+    expect(mention.current).toEqual({ n: 11, d: 33 });
+  });
+
+  it("uses only the runs of this website in the October and November windows (cmp-nu-002)", async () => {
+    const detail = (await getComparisonDetail(NU, "cmp-nu-002"))!;
+    expect(detail.baseline.runIds).toEqual(["run-nu-001", "run-nu-002", "run-nu-003"]);
+    expect(detail.current.runIds).toEqual(["run-nu-004", "run-nu-005", "run-nu-006"]);
+    expect(detail.result.wholeSource).toEqual({ baseline: { n: 33, d: 115 }, current: { n: 48, d: 123 } });
+  });
+
+  it("is insufficient when the verification audit shares only 6 slots (cmp-nu-003)", async () => {
+    const { result } = (await getComparisonDetail(NU, "cmp-nu-003"))!;
+    expect(result.matchedPairs).toBe(6);
+    expect(result.verdict).toBe("insufficient_data");
+    expect(result.headline.every((m) => m.sample !== "ok")).toBe(true);
+  });
+
+  it("classifies the website's own and competitor domains", async () => {
+    const { result } = (await getComparisonDetail(NU, "cmp-nu-001"))!;
+    expect(result.domains.filter((d) => d.source === "owned").map((d) => d.domain)).toEqual(["nutrition.example"]);
+    expect(result.domains.filter((d) => d.source === "competitor").map((d) => d.domain)).toEqual(["nourishwell.example"]);
+  });
+
+  it("lists nutrition snapshots in date order", async () => {
+    const snaps = await listSnapshots(NU);
+    expect(snaps.map((s) => s.snapshotId)).toEqual([
+      "snap-aud-nu-001",
+      "snap-mon-nu-001",
+      "snap-mon-nu-002",
+      "snap-aud-nu-002",
+      "snap-mon-nu-003",
+      "snap-mon-nu-004",
+      "snap-mon-nu-005",
+      "snap-aud-nu-003",
+      "snap-mon-nu-006",
+      "snap-aud-nu-004",
+      "snap-aud-nu-005",
+    ]);
+  });
+});
+
 describe("a store without runs", () => {
   it("has nothing to compare or report, and does not crash", async () => {
     const store = "homefit-uk";

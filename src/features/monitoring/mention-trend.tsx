@@ -8,6 +8,8 @@ type Props = {
   timeline: TimelinePoint[];
   providers: { channelId: string; label: string; tone: 1 | 2 | 3 | 4 | 5 }[];
   markers: { x: string; label: string }[];
+  /** One extra line per provider. Off by default: the pooled line is the headline. */
+  showProviders?: boolean;
 };
 
 const point = (label: string, rate: { n: number; d: number } | undefined) => {
@@ -16,11 +18,11 @@ const point = (label: string, rate: { n: number; d: number } | undefined) => {
 };
 
 /** Mention rate per run: pooled line plus one line per provider, with n / d on every point. */
-export function MentionTrend({ timeline, providers, markers }: Props) {
+export function MentionTrend({ timeline, providers, markers, showProviders = false }: Props) {
   const dashes = ["dashed", "dotted", "dashed"] as const;
   const series: LineSeries[] = [
     { id: "all", label: "All providers (pooled)", tone: 1, dash: "solid", points: timeline.map((p) => point(p.label, p.overall)) },
-    ...providers.map<LineSeries>((prov, i) => ({
+    ...(showProviders ? providers : []).map<LineSeries>((prov, i) => ({
       id: prov.channelId,
       label: prov.label,
       tone: ((i % 3) + 2) as 2 | 3 | 4,

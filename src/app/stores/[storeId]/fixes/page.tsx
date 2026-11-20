@@ -9,7 +9,7 @@ import { FindingsInbox } from "@/features/fixes/findings-inbox";
 import { FixesEmpty } from "@/features/fixes/fixes-empty";
 import { FixesTabs } from "@/features/fixes/fixes-tabs";
 import { getStore, storeIds } from "@/services/core";
-import { getFixesSetup, listFindingRows, listTaskSummaries } from "@/services/fixes";
+import { getActor, getFixesSetup, listAssignees, listFindingRows, listTaskSummaries } from "@/services/fixes";
 
 export const metadata: Metadata = { title: "Fixes" };
 
@@ -22,14 +22,14 @@ async function FixesInboxPageContent(props: PageProps<"/stores/[storeId]/fixes">
   const store = await getStore(storeId);
   if (!store) notFound();
 
-  const [rows, tasks, setup] = await Promise.all([listFindingRows(storeId), listTaskSummaries(storeId), getFixesSetup(storeId)]);
-  const tabs = <FixesTabs storeId={storeId} findings={rows.length} tasks={tasks.length} />;
+  const [rows, tasks, setup, assignees, actor] = await Promise.all([listFindingRows(storeId), listTaskSummaries(storeId), getFixesSetup(storeId), listAssignees(), getActor()]);
+  const tabs = <FixesTabs storeId={storeId} findings={rows.length} tasks={tasks} />;
 
   if (rows.length === 0) {
     return (
       <>
         <PageHeader title="Fixes" tabs={tabs} />
-        <FixesEmpty storeId={storeId} storeName={store.name} kind="findings" hasAiPlatform={setup.hasAiPlatform} hasFindings={false} />
+        <FixesEmpty storeId={storeId} kind="findings" hasAiPlatform={setup.hasAiPlatform} hasFindings={false} />
       </>
     );
   }
@@ -37,7 +37,7 @@ async function FixesInboxPageContent(props: PageProps<"/stores/[storeId]/fixes">
   return (
     <>
       <PageHeader title="Fixes" tabs={tabs} />
-      <FindingsInbox storeId={storeId} rows={rows} />
+      <FindingsInbox storeId={storeId} rows={rows} tasks={tasks} assignees={assignees} actorName={actor.name} />
     </>
   );
 }

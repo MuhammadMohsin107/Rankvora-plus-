@@ -25,9 +25,17 @@ export type ImportRow = {
   line: number;
   text: string;
   intent: string;
+  topic: string;
+  /** Group label for display ("Ungrouped" when none). */
   group: string;
+  /** Group name as written in the file, empty when none. */
+  groupName: string;
   scope: string;
   status: string;
+  language: string;
+  /** Two-letter country code (market). */
+  market: string;
+  isCore: boolean;
   result: ImportRowResult;
   /** Reasons (invalid / duplicate) or short notes (create). */
   notes: string[];
@@ -108,7 +116,7 @@ export function previewImport(input: string, defaults: ImportDefaults): ImportPr
     const groupName = (record.group ?? "").trim();
     if (groupName && !defaults.groups.some((g) => g.name.toLowerCase() === groupName.toLowerCase())) notes.push(`New group “${groupName}”`);
 
-    const base = { line, text, intent, group: groupName || "Ungrouped", scope, status };
+    const base = { line, text: text.trim(), intent, topic: (record.topic ?? "").trim(), group: groupName || "Ungrouped", groupName, scope, status, language: language.toLowerCase(), market: country.toUpperCase(), isCore: parseBool(record.is_core ?? "") === true };
     if (problems.length > 0) return { ...base, result: "invalid", notes: problems };
 
     const earlier = seen.find((s) => normalisePrompt(s.text) === normalisePrompt(text));

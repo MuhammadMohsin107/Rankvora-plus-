@@ -162,7 +162,7 @@ export async function copyTemplateToStore(
         .limit(1);
       if (duplicate) {
         throw conflict(
-          "This store already has a prompt with the same wording.",
+          "This website already has a prompt with the same wording.",
         );
       }
 
@@ -192,7 +192,7 @@ export async function copyTemplateToStore(
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw conflict("This store already has a prompt with the same wording.");
+      throw conflict("This website already has a prompt with the same wording.");
     }
     throw error;
   }

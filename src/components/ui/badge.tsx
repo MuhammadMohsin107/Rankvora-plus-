@@ -5,13 +5,27 @@ import { STATUS, type StatusKind, type StatusValue, type Tone } from "@/lib/stat
 
 import { Icon, type IconName } from "./icon";
 
+/**
+ * Text uses the -text tones (>= 4.5:1 on the soft fill); fills and borders use the bright tones.
+ * Exported because Callout and other primitives share the same tone recipe.
+ */
 export const toneClass: Record<Tone, string> = {
   neutral: "bg-surface-2 text-fg-muted border-line",
   accent: "bg-accent-soft text-accent-text border-transparent",
-  success: "bg-success-soft text-success border-transparent",
-  warning: "bg-warning-soft text-warning border-transparent",
-  danger: "bg-danger-soft text-danger border-transparent",
-  info: "bg-info-soft text-info border-transparent",
+  success: "bg-success-soft text-success-text border-success/20",
+  warning: "bg-warning-soft text-warning-text border-warning/30",
+  danger: "bg-danger-soft text-danger-text border-danger/20",
+  info: "bg-info-soft text-info-text border-info/20",
+};
+
+/** Bright tone for icons only (never for text). */
+export const toneIconClass: Record<Tone, string> = {
+  neutral: "text-fg-subtle",
+  accent: "text-accent",
+  success: "text-success-icon",
+  warning: "text-warning-icon",
+  danger: "text-danger-icon",
+  info: "text-info-icon",
 };
 
 type BadgeProps = {
@@ -27,12 +41,12 @@ export function Badge({ tone = "neutral", icon, children, className, title }: Ba
     <span
       title={title}
       className={cn(
-        "inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 text-xs font-medium leading-none",
+        "inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 text-helper font-medium leading-none",
         toneClass[tone],
         className,
       )}
     >
-      {icon ? <Icon name={icon} size={12} className={icon === "loader" ? "animate-spin" : undefined} /> : null}
+      {icon ? <Icon name={icon} size={12} className={cn(toneIconClass[tone], icon === "loader" && "animate-spin")} /> : null}
       {children}
     </span>
   );
@@ -58,10 +72,20 @@ export function Status<K extends StatusKind>({ kind, value, label, className, co
   );
 }
 
-/** Small dot + text, for dense lists where a pill is too heavy. */
+/** Marks content that comes from the built-in demonstration data set. */
+export function DemoBadge({ className }: { className?: string }) {
+  return <Status kind="demo" value="demo" className={className} />;
+}
+
+/** Marks an action whose result was produced locally, not by a real external operation. */
+export function SimulatedBadge({ className }: { className?: string }) {
+  return <Status kind="demo" value="simulated" className={className} />;
+}
+
+/** Small dot + text, for dense lists where a pill is too heavy. The dot always sits beside a label. */
 export function StatusDot({ tone, children }: { tone: Tone; children: ReactNode }) {
   const dot: Record<Tone, string> = {
-    neutral: "bg-fg-subtle",
+    neutral: "bg-fg-faint",
     accent: "bg-accent",
     success: "bg-success",
     warning: "bg-warning",
@@ -69,7 +93,7 @@ export function StatusDot({ tone, children }: { tone: Tone; children: ReactNode 
     info: "bg-info",
   };
   return (
-    <span className="inline-flex items-center gap-1.5 text-[13px] text-fg">
+    <span className="inline-flex items-center gap-1.5 text-body-sm text-fg">
       <span aria-hidden="true" className={cn("size-1.5 rounded-full", dot[tone])} />
       {children}
     </span>
@@ -79,10 +103,15 @@ export function StatusDot({ tone, children }: { tone: Tone; children: ReactNode 
 /** Filter chip / removable value. */
 export function Chip({ children, onRemove, removeLabel = "Remove", className }: { children: ReactNode; onRemove?: () => void; removeLabel?: string; className?: string }) {
   return (
-    <span className={cn("inline-flex h-6 items-center gap-1 rounded-full border border-line-strong bg-surface px-2 text-xs text-fg", className)}>
+    <span className={cn("inline-flex h-6 items-center gap-1 rounded-full border border-line-strong bg-surface px-2 text-helper text-fg", className)}>
       {children}
       {onRemove ? (
-        <button type="button" onClick={onRemove} aria-label={removeLabel} className="-mr-0.5 flex size-4 cursor-pointer items-center justify-center rounded-full text-fg-subtle hover:bg-surface-2 hover:text-fg">
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={removeLabel}
+          className="-mr-0.5 flex size-4 cursor-pointer items-center justify-center rounded-full text-fg-subtle transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg pointer-coarse:size-6"
+        >
           <Icon name="x" size={12} />
         </button>
       ) : null}

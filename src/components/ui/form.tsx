@@ -13,7 +13,7 @@ import { cn } from "@/lib/cn";
 import { Icon } from "./icon";
 
 const control =
-  "w-full rounded-control border border-line-strong bg-surface px-3 text-[16px] md:text-sm text-fg placeholder:text-fg-subtle transition-colors duration-[var(--dur-fast)] hover:border-fg-subtle focus-visible:border-accent disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-60 read-only:bg-surface-2 aria-[invalid=true]:border-danger";
+  "w-full rounded-control border border-line-strong bg-surface px-3 text-base text-fg placeholder:text-fg-subtle transition-[border-color,background-color] duration-[var(--dur-fast)] hover:border-fg-faint focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-60 read-only:bg-surface-2 aria-[invalid=true]:border-danger md:text-body";
 
 type FieldProps = {
   label: string;
@@ -32,26 +32,26 @@ export function Field({ label, hint, error, required, className, children }: Fie
   const describedBy = [errorId, hintId].filter(Boolean).join(" ") || undefined;
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="text-[13px] font-medium text-fg">
+      <label htmlFor={id} className="text-label font-medium text-fg">
         {label}
-        {required ? <span className="ml-0.5 text-danger" aria-hidden="true">*</span> : null}
+        {required ? <span className="ml-0.5 text-danger-text" aria-hidden="true">*</span> : null}
         {required ? <span className="sr-only"> (required)</span> : null}
       </label>
       {children({ id, describedBy, invalid: Boolean(error) })}
       {error ? (
-        <p id={errorId} role="alert" className="flex items-center gap-1 text-xs text-danger">
-          <Icon name="alert-circle" size={13} />
+        <p id={errorId} role="alert" className="flex items-center gap-1 text-helper text-danger-text">
+          <Icon name="alert-circle" size={13} className="text-danger-icon" />
           {error}
         </p>
       ) : null}
-      {hint && !error ? <p id={hintId} className="text-xs text-fg-subtle">{hint}</p> : null}
+      {hint && !error ? <p id={hintId} className="text-helper text-fg-subtle">{hint}</p> : null}
     </div>
   );
 }
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean };
 export function Input({ className, invalid, ...rest }: InputProps) {
-  return <input aria-invalid={invalid || undefined} className={cn(control, "h-9 pointer-coarse:h-11", className)} {...rest} />;
+  return <input aria-invalid={invalid || undefined} className={cn(control, "h-control", className)} {...rest} />;
 }
 
 type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean };
@@ -65,12 +65,12 @@ export function Select({ className, invalid, children, ...rest }: SelectProps) {
     <div className="relative">
       <select
         aria-invalid={invalid || undefined}
-        className={cn(control, "h-9 cursor-pointer appearance-none pr-8 pointer-coarse:h-11", className)}
+        className={cn(control, "h-control cursor-pointer appearance-none pr-9", className)}
         {...rest}
       >
         {children}
       </select>
-      <Icon name="chevron-down" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-subtle" />
+      <Icon name="chevron-down" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
     </div>
   );
 }
@@ -84,13 +84,13 @@ export function Checkbox({ label, description, className, id: idProp, ...rest }:
       <input
         id={id}
         type="checkbox"
-        className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-line-strong accent-[var(--accent)]"
+        className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-line-strong accent-[var(--accent)] pointer-coarse:size-5"
         {...rest}
       />
       {label ? (
         <span className="flex flex-col">
-          <span className="text-sm text-fg">{label}</span>
-          {description ? <span className="text-xs text-fg-subtle">{description}</span> : null}
+          <span className="text-body text-fg">{label}</span>
+          {description ? <span className="text-helper text-fg-subtle">{description}</span> : null}
         </span>
       ) : null}
     </label>
@@ -114,14 +114,14 @@ export function Switch({ checked, onChange, label, disabled, className }: Switch
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors duration-[var(--dur)] disabled:cursor-not-allowed disabled:opacity-45 pointer-coarse:h-6 pointer-coarse:w-11",
-        checked ? "bg-accent" : "bg-line-strong",
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors duration-[var(--dur)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-45 pointer-coarse:h-6 pointer-coarse:w-11",
+        checked ? "bg-accent" : "bg-fg-faint",
         className,
       )}
     >
       <span
         className={cn(
-          "inline-block size-4 rounded-full bg-white shadow transition-transform duration-[var(--dur)] pointer-coarse:size-5",
+          "inline-block size-4 rounded-full bg-surface shadow-card transition-transform duration-[var(--dur)] motion-reduce:transition-none pointer-coarse:size-5",
           checked ? "translate-x-[18px] pointer-coarse:translate-x-[22px]" : "translate-x-0.5",
         )}
       />
@@ -149,8 +149,8 @@ export function Segmented<T extends string>({ value, onChange, options, label, s
             aria-pressed={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              "inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] px-2.5 font-medium transition-colors duration-[var(--dur-fast)] pointer-coarse:min-h-10",
-              size === "sm" ? "h-7 text-xs" : "h-8 text-[13px]",
+              "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 font-medium transition-colors duration-[var(--dur-fast)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring pointer-coarse:min-h-10",
+              size === "sm" ? "h-7 text-helper" : "h-8 text-label",
               active ? "bg-surface text-fg shadow-card" : "text-fg-muted hover:text-fg",
             )}
           >
@@ -184,7 +184,7 @@ export function RadioCards<T extends string>({ value, onChange, options, label, 
             <label
               key={option.value}
               className={cn(
-                "flex cursor-pointer items-start gap-2.5 rounded-control border p-3 transition-colors duration-[var(--dur-fast)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent",
+                "flex cursor-pointer items-start gap-3 rounded-control border p-3.5 transition-colors duration-[var(--dur-fast)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
                 checked ? "border-accent bg-accent-soft" : "border-line-strong bg-surface hover:bg-surface-2",
                 option.disabled && "pointer-events-none opacity-50",
               )}
@@ -199,8 +199,8 @@ export function RadioCards<T extends string>({ value, onChange, options, label, 
                 className="mt-0.5 size-4 shrink-0 cursor-pointer accent-[var(--accent)]"
               />
               <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="flex items-center gap-2 text-sm font-medium text-fg">{option.label}{option.badge}</span>
-                {option.description ? <span className="text-xs text-fg-muted">{option.description}</span> : null}
+                <span className="flex items-center gap-2 text-body font-medium text-fg">{option.label}{option.badge}</span>
+                {option.description ? <span className="text-helper text-fg-muted">{option.description}</span> : null}
               </span>
             </label>
           );
@@ -218,14 +218,14 @@ type SearchFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "on
 export function SearchField({ value, onChange, label, className, placeholder = "Search", ...rest }: SearchFieldProps) {
   return (
     <div className={cn("relative", className)}>
-      <Icon name="search" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-subtle" />
+      <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
       <input
         type="search"
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className={cn(control, "h-9 pl-8 pointer-coarse:h-11", value && "pr-8")}
+        className={cn(control, "h-control pl-9", value && "pr-10")}
         {...rest}
       />
       {value ? (
@@ -233,7 +233,7 @@ export function SearchField({ value, onChange, label, className, placeholder = "
           type="button"
           aria-label="Clear search"
           onClick={() => onChange("")}
-          className="absolute right-1.5 top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-fg-subtle hover:bg-surface-2 hover:text-fg"
+          className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-fg-subtle hover:bg-surface-2 hover:text-fg pointer-coarse:size-9"
         >
           <Icon name="x" size={14} />
         </button>

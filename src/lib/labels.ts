@@ -20,14 +20,43 @@ export const SOURCE_LABEL: Record<PromptSource, string> = {
   template: "Template",
 };
 
+/**
+ * User-facing wording. Internal ids and routes keep their old names (`store`, `/stores/...`);
+ * only what a person reads says "Website".
+ */
+export const TERM = {
+  website: "Website",
+  websites: "Websites & Brands",
+  websiteProfile: "Website profile",
+  websiteSettings: "Website settings",
+  selectWebsite: "Select website",
+  addWebsite: "Add website",
+  siteType: "Site type",
+} as const;
+
+/**
+ * Site type labels (display only; enum ids are unchanged). Shopify is one option among many.
+ * Keyed by the StorePlatform enum.
+ */
 export const PLATFORM_LABEL: Record<StorePlatform, string> = {
-  shopify: "Shopify",
-  woocommerce: "WooCommerce",
   wordpress: "WordPress",
+  woocommerce: "WooCommerce",
   webflow: "Webflow",
-  custom: "Custom website",
+  wix: "Wix",
+  squarespace: "Squarespace",
+  shopify: "Shopify",
+  custom: "Custom / other",
   manual: "Manual",
 };
+
+export const EXTRA_SITE_TYPE_LABEL = { wix: "Wix", squarespace: "Squarespace" } as const;
+
+/** Neutral picker order: content and site builders first, commerce connectors after, then custom and manual. */
+export const SITE_TYPE_ORDER = ["wordpress", "webflow", "wix", "squarespace", "woocommerce", "shopify", "custom", "manual"] as const;
+
+export function siteTypeLabel(id: string): string {
+  return (PLATFORM_LABEL as Record<string, string>)[id] ?? (EXTRA_SITE_TYPE_LABEL as Record<string, string>)[id] ?? id;
+}
 
 export const SEARCH_MODE_LABEL: Record<SearchMode, string> = {
   model_only: "Model only",

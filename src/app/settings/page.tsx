@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 
 import { GeneralForm } from "@/features/settings/general-form";
-import { getOrganization } from "@/services/core";
+import { SettingsHeader } from "@/features/settings/settings-header";
+import { getOrgGeneral } from "@/services/settings";
 
-export const metadata: Metadata = { title: "General settings" };
+export const metadata: Metadata = { title: "Organization settings" };
 
 export default async function GeneralSettingsPage() {
-  const org = await getOrganization();
-  return <GeneralForm initial={{ name: org.name, timezone: org.timezone }} />;
+  const initial = await getOrgGeneral();
+  return (
+    <>
+      <SettingsHeader title="Organization settings" />
+      <GeneralForm initial={initial} />
+    </>
+  );
 }

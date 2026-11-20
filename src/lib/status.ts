@@ -11,6 +11,7 @@ const m = (label: string, tone: Tone, icon: IconName): StatusMeta => ({ label, t
  * Every status is shown as icon + text + tone — never colour alone.
  */
 export const STATUS = {
+  /** Website lifecycle. The key stays `store` (internal id); users see "Website". */
   store: {
     draft: m("Draft", "neutral", "circle"),
     needs_review: m("Needs review", "warning", "alert-circle"),
@@ -101,7 +102,9 @@ export const STATUS = {
     partially_verified: m("Partially verified", "warning", "alert-triangle"),
     failed: m("Failed", "danger", "x-circle"),
     rolled_back: m("Rolled back", "neutral", "undo"),
-    rejected: m("Rejected / cancelled", "neutral", "minus-circle"),
+    rejected: m("Rejected", "neutral", "minus-circle"),
+    /** Display label only: `cancelled` is not yet in the TaskStatus union (src/types/fixes.ts). */
+    cancelled: m("Cancelled", "neutral", "minus-circle"),
     superseded: m("Superseded", "neutral", "minus-circle"),
   },
   severity: {
@@ -192,6 +195,11 @@ export const STATUS = {
     not_recommended: m("Not recommended", "danger", "x-circle"),
     unclear: m("Unclear", "neutral", "help"),
     none: m("Not mentioned", "neutral", "minus-circle"),
+  },
+  /** Trust labels for demonstration content. Always icon + label. */
+  demo: {
+    demo: m("Demo", "accent", "flask"),
+    simulated: m("Simulated", "info", "layers"),
   },
 } as const satisfies Record<string, Record<string, StatusMeta>>;
 

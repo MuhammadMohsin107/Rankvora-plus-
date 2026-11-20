@@ -70,6 +70,8 @@ export function ChecksTable({ checks, storeId }: { checks: WebsiteCheck[]; store
           },
         ]}
         onRowClick={(c) => setOpen(c)}
+        mobileCards
+        rowLabel={(c) => c.name}
         empty={<EmptyState icon="audit" title="No checks in this audit" />}
       />
       <Drawer open={open !== null} onClose={() => setOpen(null)} title={open?.name ?? "Check"} description={open ? CHECK_GROUP_LABEL[open.group] : undefined} size="md">
@@ -95,7 +97,7 @@ export function ChecksTable({ checks, storeId }: { checks: WebsiteCheck[]; store
               </section>
             ) : null}
             {open.status === "not_assessed" || open.status === "inconclusive" || open.status === "blocked" || open.status === "error" ? (
-              <Callout tone="info">This check has no determinate result, so it counts against check coverage and not toward a pass rate.</Callout>
+              <Callout tone="info">No determinate result, so it counts against check coverage, not toward a pass rate.</Callout>
             ) : null}
             {open.findingId ? (
               <Link href={`/stores/${storeId}/fixes/findings/${open.findingId}`} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-text hover:underline">
@@ -115,7 +117,7 @@ export function ChecksTable({ checks, storeId }: { checks: WebsiteCheck[]; store
 
 const statusClass = (code: number) => (code >= 500 ? "5xx" : code >= 400 ? "4xx" : code >= 300 ? "3xx" : "2xx");
 
-export function PagesTable({ pages, issues }: { pages: CrawledPage[]; issues: Record<string, PageIssue[]> }) {
+export function PagesTable({ pages, issues, storeId }: { pages: CrawledPage[]; issues: Record<string, PageIssue[]>; storeId: string }) {
   const [open, setOpen] = useState<CrawledPage | null>(null);
 
   const columns: Column<CrawledPage>[] = [
@@ -185,16 +187,18 @@ export function PagesTable({ pages, issues }: { pages: CrawledPage[]; issues: Re
         defaultSort={{ column: "path", dir: "asc" }}
         searchable={{ placeholder: "Search pages", text: (p) => `${p.path} ${p.title ?? ""}` }}
         filters={[
-          { id: "type", label: "Type", options: [...new Set(pages.map((p) => p.type))].map((t) => ({ value: t, label: PAGE_TYPE_LABEL[t] })), value: (p) => p.type },
+          { id: "type", label: "Page type", options: [...new Set(pages.map((p) => p.type))].map((t) => ({ value: t, label: PAGE_TYPE_LABEL[t] })), value: (p) => p.type },
           { id: "http", label: "HTTP", options: [...new Set(pages.map((p) => statusClass(p.status)))].sort().map((c) => ({ value: c, label: c })), value: (p) => statusClass(p.status) },
           { id: "indexing", label: "Indexing", options: [{ value: "yes", label: "Indexable" }, { value: "no", label: "Not indexable" }], value: (p) => (p.indexable ? "yes" : "no") },
           { id: "issues", label: "Issues", options: [{ value: "with", label: "With issues" }, { value: "none", label: "No issues" }], value: (p) => ((issues[p.id]?.length ?? 0) > 0 ? "with" : "none") },
         ]}
         onRowClick={(p) => setOpen(p)}
+        mobileCards
+        rowLabel={(p) => p.path}
         empty={<EmptyState icon="globe" title="No pages crawled yet" />}
       />
       <Drawer open={open !== null} onClose={() => setOpen(null)} title={open?.title ?? open?.path ?? "Page"} size="lg">
-        {open ? <PageInspector page={open} issues={issues[open.id] ?? []} /> : null}
+        {open ? <PageInspector page={open} issues={issues[open.id] ?? []} storeId={storeId} /> : null}
       </Drawer>
     </>
   );

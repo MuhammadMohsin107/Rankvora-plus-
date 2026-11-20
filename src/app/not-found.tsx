@@ -5,10 +5,11 @@ export default function NotFound() {
   return (
     <EmptyState
       icon="search"
-      title="Not found"
-      description="This item does not exist or you do not have access to it."
-      action={<ButtonLink href="/stores" variant="primary">Go to stores</ButtonLink>}
-      className="mt-10"
+      title="Page not found"
+      headingAs="h1"
+      description="It may have moved, or it does not exist in this demo."
+      action={<ButtonLink href="/" variant="primary">Go to portfolio</ButtonLink>}
+      className="mx-auto mt-10 max-w-lg"
     />
   );
 }

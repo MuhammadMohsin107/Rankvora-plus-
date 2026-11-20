@@ -37,8 +37,8 @@ function diffLines(before: string, after: string): Row[] {
 
 const rowTone = {
   same: "text-fg-muted",
-  added: "bg-success-soft text-success",
-  removed: "bg-danger-soft text-danger",
+  added: "bg-success-soft text-success-text",
+  removed: "bg-danger-soft text-danger-text",
 };
 const marker = { same: " ", added: "+", removed: "−" };
 
@@ -52,7 +52,7 @@ export function CodeDiff({ before, after, label }: { before: string; after: stri
       <figcaption className="flex items-center justify-between gap-2 border-b border-line bg-surface-2/70 px-3 py-1.5 text-xs font-medium text-fg-muted">
         <span className="truncate">{label}</span>
         <span className="tnum shrink-0">
-          <span className="text-success">+{added}</span> <span className="text-danger">−{removed}</span>
+          <span className="text-success-text">+{added}</span> <span className="text-danger-text">−{removed}</span>
         </span>
       </figcaption>
       <div className="ui-scroll overflow-x-auto">

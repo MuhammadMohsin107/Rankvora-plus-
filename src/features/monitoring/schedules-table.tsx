@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { Status } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
@@ -9,151 +10,108 @@ import { EmptyState } from "@/components/ui/feedback";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { ConfirmDialog } from "@/components/ui/overlay";
 import { DataTable, type Column } from "@/components/ui/table";
-import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { STATUS } from "@/lib/status";
-import type { ScheduleRow, ScheduleStatus } from "@/types/monitoring";
+import type { ScheduleRec } from "@/types/monitoring";
 
-import { formatUsd } from "./labels";
-import { RunNowDialog, type RunNowTarget } from "./run-now-dialog";
+import { NoSchedules } from "./no-schedules";
+import { useMonitoring, type MonitoringApi } from "./state";
 import { When } from "./when";
 
-export function runTargetOf(row: ScheduleRow): RunNowTarget {
-  return {
-    id: row.id,
-    name: row.name,
-    jobsPerRun: row.jobsPerRun,
-    windowMinutes: row.config.windowMinutes,
-    maxConcurrency: row.config.maxConcurrency,
-    usageCap: `${row.config.usageCap.jobsPerMonth} jobs / month · ${formatUsd(row.config.usageCap.costUsd)} estimate`,
-  };
-}
-
-/** Menu entries shared by the schedules table and the schedule detail header. */
-export function scheduleMenuItems(args: {
-  storeId: string;
-  row: ScheduleRow;
-  status: ScheduleStatus;
-  onToggle: () => void;
-  onRunNow: () => void;
+type MenuArgs = {
+  row: ScheduleRec;
+  api: MonitoringApi;
   onCancel: () => void;
-  /** Only the destructive entry: the other actions are already visible buttons (schedule header). */
-  onlyCancel?: boolean;
-}): MenuItem[] {
-  const { storeId, row, status, onToggle, onRunNow, onCancel, onlyCancel = false } = args;
-  const base = `/stores/${storeId}/monitoring/schedules/${row.id}`;
-  const cancelled = status === "cancelled";
-  if (onlyCancel) return [{ label: "Cancel schedule", icon: "x-circle", tone: "danger", onSelect: onCancel, disabled: cancelled, disabledReason: "Already cancelled" }];
-  const items: MenuItem[] = [];
-  items.push({ label: "Edit", icon: "pencil", href: `${base}/edit`, disabled: cancelled || !row.editable, disabledReason: cancelled ? "Cancelled schedules cannot be edited" : "The prompt library for this store is not part of the demo" });
-  items.push(
-    status === "paused"
-      ? { label: "Resume", icon: "play", onSelect: onToggle }
-      : { label: "Pause", icon: "pause", onSelect: onToggle, disabled: cancelled, disabledReason: "Schedule is cancelled" },
-  );
-  items.push({ label: "Run now", icon: "bolt", onSelect: onRunNow, disabled: cancelled, disabledReason: "Schedule is cancelled" });
-  items.push({ type: "separator" });
-  items.push({ label: "Cancel schedule", icon: "x-circle", tone: "danger", onSelect: onCancel, disabled: cancelled, disabledReason: "Already cancelled" });
-  return items;
+  onDuplicated: (id: string) => void;
+  /** Only the entries that are not already buttons (schedule header). */
+  secondaryOnly?: boolean;
+};
+
+/** Menu entries shared by the schedules table and the schedule detail header. All of them change the shared state. */
+export function scheduleMenuItems({ row, api, onCancel, onDuplicated, secondaryOnly = false }: MenuArgs): MenuItem[] {
+  const base = `${api.base}/schedules/${row.id}`;
+  const cancelled = row.status === "cancelled";
+  const draft = row.status === "draft";
+  const duplicate: MenuItem = {
+    label: "Duplicate",
+    icon: "copy",
+    onSelect: () => {
+      const copy = api.duplicateSchedule(row.id);
+      if (copy) onDuplicated(copy.id);
+    },
+  };
+  const cancel: MenuItem = { label: "Cancel schedule", icon: "x-circle", tone: "danger", onSelect: onCancel, disabled: cancelled, disabledReason: "Already cancelled" };
+  if (secondaryOnly) return [duplicate, { type: "separator" }, cancel];
+  const stateItem: MenuItem = draft
+    ? { label: "Activate", icon: "play", onSelect: () => api.activateSchedule(row.id) }
+    : row.status === "paused"
+      ? { label: "Resume", icon: "play", onSelect: () => api.resumeSchedule(row.id) }
+      : { label: "Pause", icon: "pause", onSelect: () => api.pauseSchedule(row.id), disabled: cancelled, disabledReason: "Schedule is cancelled" };
+  return [
+    { label: "Edit", icon: "pencil", href: `${base}/edit`, disabled: cancelled, disabledReason: "Cancelled schedules cannot be edited" },
+    stateItem,
+    { label: "Run now", icon: "bolt", onSelect: () => api.openRunNow({ scheduleId: row.id }), disabled: cancelled || draft, disabledReason: draft ? "Activate the schedule first" : "Schedule is cancelled" },
+    duplicate,
+    { type: "separator" },
+    cancel,
+  ];
 }
 
 export function CancelScheduleDialog({ name, open, onClose, onConfirm }: { name: string; open: boolean; onClose: () => void; onConfirm: () => void }) {
   return (
     <ConfirmDialog open={open} onClose={onClose} onConfirm={onConfirm} title="Cancel this schedule?" confirmLabel="Cancel schedule" cancelLabel="Keep schedule">
-      Stops all future runs of “{name}”. Past runs, snapshots and alerts are kept. This cannot be undone; you would create a new schedule instead.
+      Stops all future runs of “{name}”. Past runs, snapshots and alerts are kept. To run it again, create a new schedule.
     </ConfirmDialog>
   );
 }
 
-export function SchedulesTable({ storeId, rows, storeTimezone }: { storeId: string; rows: ScheduleRow[]; storeTimezone: string }) {
-  const toast = useToast();
-  const [overrides, setOverrides] = useState<Record<string, ScheduleStatus>>({});
-  const [runTarget, setRunTarget] = useState<string | null>(null);
+export function SchedulesTable() {
+  const api = useMonitoring();
+  const router = useRouter();
+  const { schedules, base, data } = api;
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const cancelRow = schedules.find((r) => r.id === cancelTarget);
 
-  const statusOf = (row: ScheduleRow): ScheduleStatus => overrides[row.id] ?? row.status;
-  const base = `/stores/${storeId}/monitoring`;
-  const targets = useMemo(() => rows.map(runTargetOf), [rows]);
-  const cancelRow = rows.find((r) => r.id === cancelTarget);
+  if (schedules.length === 0) return <NoSchedules />;
 
-  const toggle = (row: ScheduleRow) => {
-    const next: ScheduleStatus = statusOf(row) === "paused" ? "active" : "paused";
-    setOverrides((current) => ({ ...current, [row.id]: next }));
-    toast.push({ title: next === "paused" ? "Schedule paused" : "Schedule resumed", description: next === "paused" ? `${row.name}: no runs until resumed. (Demo)` : `${row.name}: next run follows the timetable. (Demo)`, tone: "success" });
-  };
-
-  const columns: Column<ScheduleRow>[] = [
+  const columns: Column<ScheduleRec>[] = [
     {
       id: "name",
       header: "Schedule",
       sort: (r) => r.name,
-      cell: (r) => (
-        <div className="min-w-0">
-          <Link href={`${base}/schedules/${r.id}`} className="block max-w-72 truncate text-[13px] font-medium text-fg hover:text-accent-text hover:underline">{r.name}</Link>
-          <p className="text-xs text-fg-subtle">v{r.currentVersion} · {r.id}</p>
-        </div>
-      ),
+      cell: (r) => <Link href={`${base}/schedules/${r.id}`} className="block max-w-72 truncate text-body-sm font-medium text-fg hover:text-accent-text hover:underline">{r.name}</Link>,
     },
-    {
-      id: "frequency",
-      header: "Frequency",
-      hideBelow: "md",
-      cell: (r) => (
-        <div>
-          <p className="whitespace-nowrap text-[13px] text-fg">{r.frequencyLabel}</p>
-          <p className="text-xs text-fg-subtle">{r.timezone}</p>
-        </div>
-      ),
-    },
+    { id: "frequency", header: "Frequency", hideBelow: "md", cell: (r) => <span className="whitespace-nowrap text-body-sm text-fg">{r.frequencyLabel}</span> },
     {
       id: "scope",
-      header: "Prompts × providers",
+      header: "Covers",
       hideBelow: "lg",
       cell: (r) => (
-        <div>
-          <p className="tnum whitespace-nowrap text-[13px] text-fg">
-            {r.activePromptCount} × {r.channels.length}
-            {r.activePromptCount !== r.promptCount ? <span className="text-fg-subtle"> ({r.promptCount - r.activePromptCount} skipped)</span> : null}
-          </p>
-          <p className="text-xs text-fg-subtle">{r.channels.map((c) => c.providerLabel).join(", ")} · {r.samples} sample{r.samples === 1 ? "" : "s"}</p>
-        </div>
+        <span className="tnum whitespace-nowrap text-body-sm text-fg">
+          {r.activePromptCount} prompts × {r.channels.length} providers
+          {r.activePromptCount !== r.promptCount ? <span className="text-fg-muted"> ({r.promptCount - r.activePromptCount} skipped)</span> : null}
+        </span>
       ),
     },
     {
       id: "status",
       header: "Status",
-      sort: (r) => statusOf(r),
-      cell: (r) => {
-        const status = statusOf(r);
-        const reason = overrides[r.id] ? null : r.statusReason;
-        return (
-          <div className="flex flex-col items-start gap-1">
-            <Status kind="schedule" value={status} />
-            {reason && status === "needs_attention" ? (
-              <Tooltip content={reason}><span className="inline-flex cursor-help items-center gap-1 text-xs text-fg-subtle" tabIndex={0}>Why?</span></Tooltip>
-            ) : null}
-          </div>
-        );
-      },
+      sort: (r) => r.status,
+      cell: (r) => (
+        <div className="flex flex-col items-start gap-1">
+          <Status kind="schedule" value={r.status} />
+          {r.statusReason && r.status === "needs_attention" ? (
+            <Tooltip content={r.statusReason}><span className="inline-flex cursor-help text-helper text-fg-muted" tabIndex={0}>Why?</span></Tooltip>
+          ) : null}
+        </div>
+      ),
     },
     {
       id: "next",
       header: "Next run",
-      sort: (r) => (statusOf(r) === "paused" || statusOf(r) === "cancelled" ? null : (r.nextRunAt ?? null)),
+      sort: (r) => (r.status === "active" || r.status === "needs_attention" ? (r.nextRunAt ?? null) : null),
       hideBelow: "sm",
-      cell: (r) => (statusOf(r) === "paused" || statusOf(r) === "cancelled" ? <span className="text-fg-subtle">—</span> : <When iso={r.nextRunAt} tz={storeTimezone} />),
-    },
-    {
-      id: "usage",
-      header: "Est. usage",
-      sort: (r) => r.jobsPerMonth,
-      hideBelow: "xl",
-      cell: (r) => (
-        <div>
-          <p className="tnum whitespace-nowrap text-[13px] text-fg">{r.jobsPerRun} jobs / run</p>
-          <p className="tnum whitespace-nowrap text-xs text-fg-subtle">~{r.jobsPerMonth} / mo · ~{formatUsd(r.costPerMonthUsd)} estimate</p>
-        </div>
-      ),
+      cell: (r) => (r.status === "active" || r.status === "needs_attention" ? <When iso={r.nextRunAt} tz={data.timezone} /> : <span className="text-fg-faint">—</span>),
     },
     {
       id: "actions",
@@ -164,7 +122,7 @@ export function SchedulesTable({ storeId, rows, storeTimezone }: { storeId: stri
       cell: (r) => (
         <Menu
           trigger={<IconButton icon="more" label={`Actions for ${r.name}`} size="sm" />}
-          items={scheduleMenuItems({ storeId, row: r, status: statusOf(r), onToggle: () => toggle(r), onRunNow: () => setRunTarget(r.id), onCancel: () => setCancelTarget(r.id) })}
+          items={scheduleMenuItems({ row: r, api, onCancel: () => setCancelTarget(r.id), onDuplicated: (id) => router.push(`${base}/schedules/${id}/edit`) })}
         />
       ),
     },
@@ -174,30 +132,20 @@ export function SchedulesTable({ storeId, rows, storeTimezone }: { storeId: stri
     <>
       <DataTable
         label="Monitoring schedules"
-        data={rows}
+        data={schedules}
         rowKey={(r) => r.id}
         columns={columns}
-        searchable={{ placeholder: "Search schedules", text: (r) => `${r.name} ${r.id} ${r.timezone}` }}
-        filters={[
-          {
-            id: "status",
-            label: "Status",
-            options: Object.entries(STATUS.schedule).map(([value, meta]) => ({ value, label: meta.label })),
-            value: (r) => statusOf(r),
-          },
-        ]}
+        mobileCards
+        searchable={{ placeholder: "Search schedules", text: (r) => `${r.name} ${r.timezone}` }}
+        filters={[{ id: "status", label: "Status", options: Object.entries(STATUS.schedule).filter(([value]) => value !== "validating").map(([value, meta]) => ({ value, label: meta.label })), value: (r) => r.status }]}
         empty={<EmptyState icon="monitoring" title="No schedules" />}
       />
-      <RunNowDialog open={runTarget !== null} onClose={() => setRunTarget(null)} schedules={targets} scheduleId={runTarget ?? undefined} />
       <CancelScheduleDialog
         name={cancelRow?.name ?? ""}
         open={cancelTarget !== null}
         onClose={() => setCancelTarget(null)}
         onConfirm={() => {
-          if (cancelRow) {
-            setOverrides((current) => ({ ...current, [cancelRow.id]: "cancelled" }));
-            toast.push({ title: "Schedule cancelled", description: `${cancelRow.name}: future runs removed; past runs kept. (Demo)`, tone: "success" });
-          }
+          if (cancelRow) api.cancelSchedule(cancelRow.id);
           setCancelTarget(null);
         }}
       />

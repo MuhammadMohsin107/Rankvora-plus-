@@ -74,25 +74,173 @@ export type RolePermissions = Record<Role, PermissionId[]>;
 
 export type PendingInvite = { id: string; email: string; role: Role; invitedAt: string; invitedBy: string };
 
-/* ───────── Billing ───────── */
+/* ───────── Team ───────── */
 
-export type ProviderUsage = { provider: ProviderCode; label: string; requests: number; cap: number; searchCalls: number; estimatedCostUsd: number };
+export type MemberStatus = "active" | "invited" | "deactivated";
 
-export type StoreProviderUsage = { storeId: string; storeName: string; byProvider: Partial<Record<ProviderCode, number>>; total: number; cap: number };
+/** A person in the Team list. Extends the shared Member with invite state and website access. */
+export type TeamMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  initials: string;
+  lastActive: string | null;
+  status: MemberStatus;
+  invitedAt: string | null;
+  invitedBy: string | null;
+  /** Website ids this person can open. null means every website. */
+  websiteIds: string[] | null;
+};
 
-export type PlanLimit = { id: string; label: string; used: number; limit: number; unit: string };
+/* ───────── Billing (demonstration only: no payments, no card data) ───────── */
 
-export type Invoice = { id: string; period: string; issuedOn: string; amountUsd: number; status: "paid" | "upcoming" };
+export type PlanId = "starter" | "growth" | "agency";
 
-export type BillingOverview = {
-  planName: string;
-  periodLabel: string;
-  planLimits: PlanLimit[];
-  providerUsage: ProviderUsage[];
-  storeUsage: StoreProviderUsage[];
-  totalRequests: number;
-  totalCap: number;
-  invoices: Invoice[];
+export type PlanLimits = {
+  websites: number;
+  prompts: number;
+  /** AI provider requests per month. */
+  requests: number;
+  /** Web search calls per month. */
+  searchCalls: number;
+  seats: number;
+  /** Estimated provider cost included per month, USD. */
+  usageAllowanceUsd: number;
+};
+
+export type BillingPlan = {
+  id: PlanId;
+  name: string;
+  /** USD per month. */
+  priceUsd: number;
+  limits: PlanLimits;
+  monitoring: string;
+  retentionMonths: number;
+};
+
+export type InvoiceStatus = "paid" | "open" | "failed" | "refunded";
+
+export type BillingInvoice = {
+  id: string;
+  issuedOn: string;
+  /** Short label, e.g. "Nov 2026". */
+  period: string;
+  description: string;
+  amountUsd: number;
+  status: InvoiceStatus;
+  /** Why it failed or was refunded. */
+  note?: string;
+};
+
+export type PaymentMethod = {
+  brand: "Visa" | "Mastercard" | "Amex";
+  /** Last 4 digits of a demo test card only. */
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  holder: string;
+};
+
+export type BillingContact = {
+  name: string;
+  email: string;
+  legalName: string;
+  addressLine: string;
+  city: string;
+  country: string;
+  postalCode: string;
+  taxId: string;
+};
+
+/** Everything the Billing screens change locally. Saved under the demo-state key `org.billing`. */
+export type BillingState = {
+  planId: PlanId;
+  /** Extra requests (and matching search calls) bought for the current period. */
+  credits: number;
+  /** ISO date the subscription ends, or null while it renews. */
+  cancelAt: string | null;
+  paymentMethod: PaymentMethod;
+  contact: BillingContact;
+  createdInvoices: BillingInvoice[];
+  invoiceStatus: Record<string, InvoiceStatus>;
+};
+
+export type CreditPack = { id: string; requests: number; priceUsd: number };
+
+/** Requests for one website in the current period, by provider. */
+export type WebsiteUsageSeed = {
+  websiteId: string;
+  requests: Partial<Record<"openai" | "gemini" | "perplexity", number>>;
+};
+
+export type UsageMonth = {
+  /** Short label, e.g. "Aug". */
+  label: string;
+  /** null when nothing was tracked yet. */
+  requests: number | null;
+  /** Plan limit that month, null before a plan existed. */
+  limit: number | null;
+};
+
+export type BillingHistoryEntry = {
+  id: string;
+  at: string;
+  kind: "plan" | "payment" | "addon" | "refund" | "method";
+  title: string;
+  detail?: string;
+};
+
+export type BillingBase = {
+  plans: BillingPlan[];
+  state: BillingState;
+  invoices: BillingInvoice[];
+  packs: CreditPack[];
+  /** Period dates are fixed for the demonstration. */
+  period: { label: string; start: string; end: string; renewsOn: string };
+  /** Unit cost per request, USD, by provider. */
+  unitCostUsd: Record<"openai" | "gemini" | "perplexity", number>;
+  usageSeeds: WebsiteUsageSeed[];
+  history: UsageMonth[];
+  events: BillingHistoryEntry[];
+};
+
+/* ───────── Organization profile and local provider state ───────── */
+
+/** Saved under `org.general`. The shell can read it to show the organization name. */
+export type OrgGeneral = { name: string; timezone: string; market: string; language: string };
+
+/** Saved per provider under `org.providers`. Keys are never stored, only the last 4 characters of a masked demo key. */
+export type ProviderLocalState = {
+  status: IntegrationState;
+  byok: boolean;
+  keyLast4: string | null;
+  lastVerifiedAt: string | null;
+  /** "Notify me" for providers that are not offered yet. */
+  notify: boolean;
+};
+
+/* ───────── Integrations hub ───────── */
+
+export type ConnectorId = "wordpress" | "webflow" | "woocommerce" | "shopify" | "search_console" | "pagespeed";
+
+export type ConnectorBase = {
+  id: ConnectorId;
+  label: string;
+  group: "cms" | "search";
+  /** One short line. */
+  summary: string;
+  /** What Fixes or Audit use it for. */
+  usedFor: string;
+  /** What the simulated "Test connection" returns. */
+  testOutcome: { ok: true } | { ok: false; message: string };
+};
+
+/** Saved per connector under `org.connections`. */
+export type ConnectionState = {
+  status: IntegrationState;
+  websiteIds: string[];
+  lastVerifiedAt: string | null;
 };
 
 /* ───────── Store settings ───────── */
@@ -118,6 +266,8 @@ export type BrandVersion = {
   aliases: string[];
   differentiators: string[];
   description: string;
+  /** Business category (the website industry at the time of the version). */
+  category?: string;
 };
 
 export type DomainAlias = { host: string; kind: "alias" | "redirect" };
@@ -145,8 +295,30 @@ export type IntegrationDetail = {
   };
 };
 
-/* ───────── Add-store sample data ───────── */
+/* ───────── Website brand knowledge (website settings) ───────── */
+
+export type BrandFact = { id: string; label: string; value: string; sourceUrl: string };
+export type BrandFaq = { id: string; question: string; answer: string };
+export type SourcePage = { id: string; url: string; title: string; type: string; confirmed: boolean };
+/** One AI crawler as the latest audit saw it. Read only: reported apart from visibility metrics. */
+export type CrawlerSummaryRow = { id: string; name: string; purpose: string; allowed: boolean; findingId: string | null };
+
+/** Static starting point (demonstration data) for the Brand knowledge tab. */
+export type BrandKnowledgeBase = {
+  facts: BrandFact[];
+  faqs: BrandFaq[];
+  contentContext: string;
+  sourcePages: SourcePage[];
+  crawlers: CrawlerSummaryRow[];
+  /** Audit the crawler summary and source pages came from; null when the website has no audit yet. */
+  auditId: string | null;
+  scannedAt: string | null;
+};
+
+/** Saved under `website.<id>.knowledge`. Crawler rows are never saved: they come from the audit. */
+export type BrandKnowledgeState = Pick<BrandKnowledgeBase, "facts" | "faqs" | "contentContext" | "sourcePages" | "scannedAt">;
+
+/* ───────── Add-website sample data ───────── */
 
 export type SuggestedCompetitor = { id: string; name: string; domain: string; reason: string };
-export type SampleProduct = { id: string; title: string; category: string; url: string };
-export type StoreSetupSample = { suggestedCompetitors: SuggestedCompetitor[]; shopifyProducts: SampleProduct[] };
+export type StoreSetupSample = { suggestedCompetitors: SuggestedCompetitor[] };

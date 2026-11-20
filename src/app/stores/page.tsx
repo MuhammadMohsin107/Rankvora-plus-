@@ -1,22 +1,18 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/shell/page-header";
-import { ButtonLink } from "@/components/ui/button";
-import { StoresView } from "@/features/stores/stores-view";
-import { listStores } from "@/services/core";
+import { WebsitesView } from "@/features/stores/websites-view";
+import { listAlertHeadlines, listStores } from "@/services/core";
+import { listPortfolioTasks } from "@/services/dashboard";
 
-export const metadata: Metadata = { title: "Stores" };
+export const metadata: Metadata = { title: "Websites & Brands" };
 
-export default async function StoresPage() {
-  const stores = await listStores();
+export default async function WebsitesPage() {
+  const [stores, alerts, tasks] = await Promise.all([listStores(), listAlertHeadlines(), listPortfolioTasks()]);
   return (
     <>
-      <PageHeader
-        title="Stores"
-        subtitle={stores.length > 0 ? `${stores.length} ${stores.length === 1 ? "store" : "stores"}` : undefined}
-        actions={stores.length > 0 ? <ButtonLink href="/stores/new" variant="primary" icon="plus">Add store</ButtonLink> : undefined}
-      />
-      <StoresView stores={stores} />
+      <PageHeader title="Websites & Brands" />
+      <WebsitesView stores={stores} alerts={alerts} tasks={tasks} />
     </>
   );
 }

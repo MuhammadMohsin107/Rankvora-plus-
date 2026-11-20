@@ -3,14 +3,25 @@
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/feedback";
 
-export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+type ErrorProps = {
+  error: unknown;
+  /** Re-fetches and re-renders the failed segment (Next.js 16). */
+  retry?: () => void;
+  /** Clears the error without re-fetching. */
+  reset?: () => void;
+};
+
+export default function Error({ retry, reset }: ErrorProps) {
+  const tryAgain = retry ?? reset;
   return (
     <ErrorState
       title="This page could not load"
-      detail="Try again. If it keeps happening, go back to the portfolio."
+      headingAs="h1"
+      detail="Try again, or go back to the portfolio."
+      className="mx-auto mt-10 max-w-lg"
       action={
-        <div className="flex gap-2">
-          <Button variant="primary" icon="refresh" onClick={reset}>Try again</Button>
+        <div className="flex flex-wrap justify-center gap-2">
+          {tryAgain ? <Button variant="primary" icon="refresh" onClick={() => tryAgain()}>Try again</Button> : null}
           <ButtonLink href="/">Portfolio</ButtonLink>
         </div>
       }

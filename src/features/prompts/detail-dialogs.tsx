@@ -12,6 +12,7 @@ import type { ExistingPrompt, PromptRecord } from "@/types/prompts";
 
 import { LANGUAGE_OPTIONS, MARKET_OPTIONS } from "./create-types";
 import { CharCount, DuplicateNotice } from "./parts";
+import type { ConfigDraft } from "./prompt-ops";
 import { MAX_PROMPT_LENGTH, findDuplicate, validatePromptText } from "./text";
 
 const footerClass = "-mx-5 -mb-4 mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2/60 px-5 py-3";
@@ -28,7 +29,7 @@ type WordingProps = {
   existing: ExistingPrompt[];
   /** Runs that used the current version. */
   currentRuns: number;
-  onCommit: (text: string) => void;
+  onCommit: (text: string, note: string | null) => void;
 };
 
 export function WordingDialog({ open, onClose, ...rest }: WordingProps) {
@@ -41,6 +42,7 @@ export function WordingDialog({ open, onClose, ...rest }: WordingProps) {
 
 function WordingBody({ onClose, prompt, storeId, existing, currentRuns, onCommit }: Omit<WordingProps, "open">) {
   const [text, setText] = useState(prompt.text);
+  const [note, setNote] = useState("");
   const [error, setError] = useState<string | undefined>();
   const [confirming, setConfirming] = useState(false);
   const duplicate = useMemo(() => findDuplicate(text, existing), [text, existing]);
@@ -76,6 +78,9 @@ function WordingBody({ onClose, prompt, storeId, existing, currentRuns, onCommit
           )}
         </Field>
         {duplicate ? <DuplicateNotice match={duplicate} storeId={storeId} /> : null}
+        <Field label="Change note (optional)">
+          {({ id }) => <Input id={id} value={note} maxLength={80} placeholder="e.g. Narrowed to beginners" onChange={(event) => setNote(event.target.value)} />}
+        </Field>
       </div>
       <div className={footerClass}>
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -87,14 +92,14 @@ function WordingBody({ onClose, prompt, storeId, existing, currentRuns, onCommit
         onClose={() => setConfirming(false)}
         onConfirm={() => {
           setConfirming(false);
-          onCommit(text.trim());
+          onCommit(text.trim(), note.trim() || null);
           onClose();
         }}
         title={`Create version v${next}?`}
         confirmLabel={`Create v${next}`}
         tone="primary"
       >
-        Earlier runs keep pointing to v{prompt.version} (used by {pluralize(currentRuns, "run")}), and comparisons will mark it as changed.
+        Earlier runs keep v{prompt.version} ({pluralize(currentRuns, "run")}). Comparisons mark the wording as changed.
       </ConfirmDialog>
     </>
   );
@@ -104,16 +109,7 @@ function WordingBody({ onClose, prompt, storeId, existing, currentRuns, onCommit
 // Tracking configuration (does not create a version).
 // ---------------------------------------------------------------------------
 
-export type ConfigDraft = {
-  intent: PromptIntent;
-  topic: string;
-  scope: PromptScope;
-  market: string;
-  language: string;
-  groupId: string;
-  isCore: boolean;
-  productIds: string[];
-};
+export type { ConfigDraft };
 
 type ConfigProps = {
   open: boolean;
@@ -126,7 +122,7 @@ type ConfigProps = {
 
 export function ConfigDialog({ open, onClose, ...rest }: ConfigProps) {
   return (
-    <Dialog open={open} onClose={onClose} title="Tracking" description="Wording changes create a new version. These settings do not.">
+    <Dialog open={open} onClose={onClose} title="Tracking" description="Changing these does not create a version.">
       <ConfigBody onClose={onClose} {...rest} />
     </Dialog>
   );
@@ -195,7 +191,7 @@ function ConfigBody({ onClose, prompt, groups, products, onSave }: Omit<ConfigPr
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span aria-hidden="true" className="text-[13px] font-medium text-fg">Scope</span>
+          <span aria-hidden="true" className="text-body-sm font-medium text-fg">Scope</span>
           <RadioCards
             label="Scope"
             columns={3}
@@ -207,7 +203,7 @@ function ConfigBody({ onClose, prompt, groups, products, onSave }: Omit<ConfigPr
 
         {products.length > 0 ? (
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="mb-1.5 text-[13px] font-medium text-fg">Linked products</legend>
+            <legend className="mb-1.5 text-body-sm font-medium text-fg">Offerings (optional)</legend>
             <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
               {products.map((product) => (
                 <Checkbox
@@ -223,7 +219,7 @@ function ConfigBody({ onClose, prompt, groups, products, onSave }: Omit<ConfigPr
           </fieldset>
         ) : null}
 
-        <Checkbox label="Core prompt" description="Part of the stable set used to compare results over time." checked={draft.isCore} onChange={(event) => set("isCore", event.target.checked)} />
+        <Checkbox label="Core prompt" description="Stable set for comparing over time." checked={draft.isCore} onChange={(event) => set("isCore", event.target.checked)} />
       </div>
       <div className={footerClass}>
         <Button variant="secondary" onClick={onClose}>Cancel</Button>

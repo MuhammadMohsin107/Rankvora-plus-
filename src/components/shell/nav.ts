@@ -1,37 +1,88 @@
 import type { IconName } from "@/components/ui/icon";
 
-export type NavItem = { label: string; href: string; icon: IconName; exact?: boolean; badgeKey?: "pendingTasks" | "openAlerts" };
+export type NavBadge = "pendingTasks" | "unreadAlerts";
 
-export const ORG_NAV: NavItem[] = [
-  { label: "Portfolio", href: "/", icon: "dashboard", exact: true },
-  { label: "Stores", href: "/stores", icon: "store", exact: true },
-  { label: "Organization settings", href: "/settings", icon: "settings" },
-];
+export type NavItem = {
+  id: string;
+  label: string;
+  href: string;
+  icon: IconName;
+  isActive: (pathname: string) => boolean;
+  badge?: NavBadge;
+};
 
-export function storeNav(storeId: string): NavItem[] {
-  const base = `/stores/${storeId}`;
-  return [
-    { label: "Dashboard", href: base, icon: "dashboard", exact: true },
-    { label: "Prompts", href: `${base}/prompts`, icon: "prompts" },
-    { label: "Audit", href: `${base}/audits`, icon: "audit" },
-    { label: "Fixes", href: `${base}/fixes`, icon: "fixes", badgeKey: "pendingTasks" },
-    { label: "Monitoring", href: `${base}/monitoring`, icon: "monitoring", badgeKey: "openAlerts" },
-    { label: "Comparison", href: `${base}/comparisons`, icon: "compare" },
-    { label: "Reports", href: `${base}/reports`, icon: "reports" },
-    { label: "Store settings", href: `${base}/settings`, icon: "settings" },
+export type NavGroup = {
+  id: "organization" | "website" | "support";
+  label: string;
+  items: NavItem[];
+};
+
+const exact = (href: string) => (pathname: string) => pathname === href;
+const prefix = (href: string) => (pathname: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+/**
+ * Sidebar structure: ORGANIZATION (whole portfolio), WEBSITE (the selected website), SUPPORT.
+ * `websiteId` is the website in context (from the URL, else the last one used). Without one the
+ * website-specific items are left out.
+ */
+export function navGroups(websiteId: string | null): NavGroup[] {
+  const base = websiteId ? `/stores/${websiteId}` : null;
+  const groups: NavGroup[] = [
+    {
+      id: "organization",
+      label: "Organization",
+      items: [
+        { id: "portfolio", label: "Portfolio", href: "/", icon: "layers", isActive: exact("/") },
+        { id: "websites", label: "Websites & Brands", href: "/stores", icon: "globe", isActive: (p) => p === "/stores" || p === "/stores/new" },
+        { id: "team", label: "Team", href: "/settings/members", icon: "users", isActive: prefix("/settings/members") },
+        {
+          id: "org-settings",
+          label: "Organization settings",
+          href: "/settings",
+          icon: "building",
+          isActive: (p) => p === "/settings" || p.startsWith("/settings/notifications"),
+        },
+      ],
+    },
   ];
+
+  if (base) {
+    groups.push({
+      id: "website",
+      label: "Website",
+      items: [
+        { id: "dashboard", label: "Dashboard", href: base, icon: "dashboard", isActive: exact(base) },
+        { id: "prompts", label: "Prompt Library", href: `${base}/prompts`, icon: "prompts", isActive: prefix(`${base}/prompts`) },
+        { id: "audit", label: "Audit", href: `${base}/audits`, icon: "audit", isActive: prefix(`${base}/audits`) },
+        { id: "fixes", label: "Fixes", href: `${base}/fixes`, icon: "fixes", isActive: prefix(`${base}/fixes`), badge: "pendingTasks" },
+        { id: "monitoring", label: "Monitoring", href: `${base}/monitoring`, icon: "monitoring", isActive: prefix(`${base}/monitoring`), badge: "unreadAlerts" },
+        { id: "comparison", label: "Comparison", href: `${base}/comparisons`, icon: "compare", isActive: prefix(`${base}/comparisons`) },
+        { id: "reports", label: "Reports", href: `${base}/reports`, icon: "reports", isActive: prefix(`${base}/reports`) },
+      ],
+    });
+  }
+
+  const support: NavItem[] = [];
+  if (base) support.push({ id: "website-settings", label: "Website settings", href: `${base}/settings`, icon: "settings", isActive: prefix(`${base}/settings`) });
+  support.push(
+    { id: "integrations", label: "Integrations", href: "/integrations", icon: "plug", isActive: (p) => p === "/integrations" || p.startsWith("/integrations/") || p.startsWith("/settings/ai-platforms") },
+    { id: "billing", label: "Billing", href: "/settings/billing", icon: "credit-card", isActive: prefix("/settings/billing") },
+    { id: "help", label: "Help & Support", href: "/help", icon: "help", isActive: prefix("/help") },
+  );
+  groups.push({ id: "support", label: "Support", items: support });
+  return groups;
 }
 
-/** Active store id from the URL, or null in the organization area. */
+/** Website id in the URL, or null in the organization area. */
 export function storeIdFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/stores\/([^/]+)/);
   if (!match || match[1] === "new") return null;
   return match[1];
 }
 
-/** Where to go when switching to another store: same section root, never a nested id. */
-export function switchStoreHref(pathname: string, nextId: string): string {
-  const match = pathname.match(/^\/stores\/[^/]+(\/[^/]+)?/);
+/** Where to go when switching website: the same section root (never a nested id), else the dashboard. */
+export function switchWebsiteHref(pathname: string, nextId: string): string {
+  const match = pathname.match(/^\/stores\/(?!new(?:\/|$))[^/]+(\/[^/]+)?/);
   const section = match?.[1];
   return section ? `/stores/${nextId}${section}` : `/stores/${nextId}`;
 }

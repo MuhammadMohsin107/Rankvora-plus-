@@ -5,10 +5,23 @@
  */
 import type {
   ActivityEntry,
+  BillingBase,
+  BillingContact,
+  BillingHistoryEntry,
+  BillingInvoice,
+  BillingPlan,
+  BillingState,
+  BrandKnowledgeBase,
   BrandVersion,
+  ConnectionState,
+  ConnectorBase,
+  CreditPack,
   DomainRecord,
   IntegrationDetail,
-  Invoice,
+  OrgGeneral,
+  PaymentMethod,
+  UsageMonth,
+  WebsiteUsageSeed,
   NotificationEvent,
   NotificationMatrix,
   NotificationPrefs,
@@ -126,21 +139,28 @@ const AE_OVERRIDE: NotificationMatrix = {
   run_incomplete: ["in_app", "email", "webhook"],
 };
 
+/** nutrition overrides one setting: email when a competitor gains ground (NourishWell is named most often). */
+const NU_OVERRIDE: NotificationMatrix = {
+  ...DEMO_ORG_NOTIFICATIONS.matrix,
+  competitor_increase: ["in_app", "email"],
+};
+
 export const DEMO_STORE_NOTIFICATIONS: StoreNotificationOverride[] = [
   { storeId: "runpro-pk", mode: "override", matrix: PK_OVERRIDE },
   { storeId: "runpro-ae", mode: "override", matrix: AE_OVERRIDE },
   { storeId: "homefit-uk", mode: "inherit", matrix: DEMO_ORG_NOTIFICATIONS.matrix },
+  { storeId: "nutrition", mode: "override", matrix: NU_OVERRIDE },
 ];
 
 /* ───────── Roles ───────── */
 
 export const PERMISSIONS: Permission[] = [
-  { id: "view", label: "View stores and results", info: "Read dashboards, responses and reports." },
-  { id: "edit", label: "Edit stores and prompts", info: "Change store profile, prompts and monitoring schedules." },
+  { id: "view", label: "View websites and results", info: "Read dashboards, responses and reports." },
+  { id: "edit", label: "Edit websites and prompts", info: "Change website profile, prompts and monitoring schedules." },
   { id: "run_audits", label: "Run audits", info: "Start audits and monitoring runs. Uses provider requests." },
   { id: "review", label: "Review findings", info: "Confirm, dismiss or accept risk on findings." },
   { id: "approve", label: "Approve fixes", info: "Approval is separate from editing: editors draft changes, approvers allow them to be applied." },
-  { id: "members", label: "Manage members", info: "Invite people, change roles and remove members." },
+  { id: "members", label: "Manage members", info: "Invite people, change roles and deactivate members." },
 ];
 
 export const ROLE_PERMISSIONS: RolePermissions = {
@@ -155,46 +175,184 @@ export const DEMO_INVITES: PendingInvite[] = [
   { id: "inv-001", email: "farah@client.example", role: "viewer", invitedAt: "2026-11-17T10:20:00Z", invitedBy: "Omar Farooq" },
 ];
 
-/* ───────── Billing ───────── */
+/* ───────── Organization profile ───────── */
 
-export const DEMO_PLAN = {
-  name: "Agency",
-  storeLimit: 5,
-  memberLimit: 10,
-  activePromptLimit: 150,
-};
+export const DEMO_ORG_GENERAL: Pick<OrgGeneral, "market" | "language"> = { market: "PK", language: "en" };
+
+/* ───────── Team ───────── */
 
 /**
- * Requests per store × provider, Nov 2026 to date. Row totals equal DEMO_USAGE.perStore; column sums are the provider totals.
- * runpro-ae: 142 requests = 3 weekly runs, 2 audits and 10 retries (see DEMO_USAGE). homefit-uk has no AI channel, so 0.
+ * Website access per member. A missing id means every website. The client viewer sees one website only.
+ * Owners and admins always see every website.
  */
-export const DEMO_STORE_PROVIDER_REQUESTS: Record<string, Partial<Record<"openai" | "gemini" | "perplexity", number>>> = {
-  "runpro-pk": { openai: 320, gemini: 304, perplexity: 288 },
-  "runpro-ae": { openai: 72, gemini: 70 },
-  "homefit-uk": {},
+export const DEMO_MEMBER_ACCESS: Record<string, string[]> = {
+  "u-zoya": ["runpro-pk"],
 };
 
-export const DEMO_PROVIDER_CAPS = { openai: 900, gemini: 800, perplexity: 700 } as const;
-
-/** One search call per request; cost is a flat per-request estimate (OpenAI 0.075, Gemini 0.045, Perplexity 0.05 USD). */
-export const DEMO_PROVIDER_EXTRAS = {
-  openai: { searchCalls: 392, estimatedCostUsd: 29.4 },
-  gemini: { searchCalls: 374, estimatedCostUsd: 16.83 },
-  perplexity: { searchCalls: 288, estimatedCostUsd: 14.4 },
-} as const;
-
-export const DEMO_INVOICES: Invoice[] = [
-  { id: "inv-2026-11", period: "Nov 2026", issuedOn: "2026-12-01", amountUsd: 149, status: "upcoming" },
-  { id: "inv-2026-10", period: "Oct 2026", issuedOn: "2026-11-01", amountUsd: 149, status: "paid" },
-  { id: "inv-2026-09", period: "Sep 2026", issuedOn: "2026-10-01", amountUsd: 149, status: "paid" },
-  { id: "inv-2026-08", period: "Aug 2026", issuedOn: "2026-09-01", amountUsd: 99, status: "paid" },
+/** Earlier team changes, newest first. Local changes are added from demo-state events. */
+export const DEMO_TEAM_ACTIVITY: { id: string; at: string; actor: string; title: string }[] = [
+  { id: "ta-04", at: "2026-11-17T10:20:00Z", actor: "Omar Farooq", title: "Invited farah@client.example as Viewer" },
+  { id: "ta-03", at: "2026-11-02T09:00:00Z", actor: "Sana Iqbal", title: "Zoya Khan limited to RunPro Pakistan" },
+  { id: "ta-02", at: "2026-10-12T08:30:00Z", actor: "Sana Iqbal", title: "Bilal Ahmed joined as Auditor" },
+  { id: "ta-01", at: "2026-09-20T07:45:00Z", actor: "Sana Iqbal", title: "Omar Farooq changed from Editor to Admin" },
 ];
+
+/* ───────── Billing (demonstration only: no payments, no card data) ───────── */
+
+/** Three invented plans, USD per month. Limits agree with the demo usage in src/demo/shared.ts (2,400 requests per month on Growth). */
+export const DEMO_PLANS: BillingPlan[] = [
+  {
+    id: "starter",
+    name: "Starter",
+    priceUsd: 49,
+    limits: { websites: 2, prompts: 40, requests: 600, searchCalls: 300, seats: 3, usageAllowanceUsd: 25 },
+    monitoring: "Weekly",
+    retentionMonths: 3,
+  },
+  {
+    id: "growth",
+    name: "Growth",
+    priceUsd: 149,
+    limits: { websites: 5, prompts: 150, requests: 2400, searchCalls: 1400, seats: 7, usageAllowanceUsd: 100 },
+    monitoring: "Up to daily",
+    retentionMonths: 12,
+  },
+  {
+    id: "agency",
+    name: "Agency",
+    priceUsd: 399,
+    limits: { websites: 15, prompts: 600, requests: 9600, searchCalls: 4800, seats: 20, usageAllowanceUsd: 400 },
+    monitoring: "Up to every 6 hours",
+    retentionMonths: 24,
+  },
+];
+
+export const DEMO_BILLING_PERIOD = { label: "Nov 2026", start: "2026-11-01", end: "2026-11-30", renewsOn: "2026-12-01" };
+
+/** Flat per-request cost estimate in USD. One search call is made per request. */
+export const DEMO_UNIT_COST_USD = { openai: 0.075, gemini: 0.045, perplexity: 0.05 } as const;
+
+/**
+ * Requests per website and provider, Nov 2026 to date. Totals equal DEMO_USAGE in src/demo/shared.ts
+ * (912 + 142 + 0 + 198 = 1,252). homefit-uk has no AI channel, so 0.
+ */
+export const DEMO_USAGE_SEEDS: WebsiteUsageSeed[] = [
+  { websiteId: "runpro-pk", requests: { openai: 320, gemini: 304, perplexity: 288 } },
+  { websiteId: "runpro-ae", requests: { openai: 72, gemini: 70 } },
+  { websiteId: "homefit-uk", requests: {} },
+  { websiteId: "nutrition", requests: { openai: 66, gemini: 66, perplexity: 66 } },
+];
+
+/** Last six months of AI requests. Nothing was tracked before the first website in August, so Jun and Jul have no data. */
+export const DEMO_USAGE_HISTORY: UsageMonth[] = [
+  { label: "Jun", requests: null, limit: null },
+  { label: "Jul", requests: null, limit: null },
+  { label: "Aug", requests: 318, limit: 600 },
+  { label: "Sep", requests: 1310, limit: 2400 },
+  { label: "Oct", requests: 1742, limit: 2400 },
+  { label: "Nov", requests: 1252, limit: 2400 },
+];
+
+export const DEMO_CREDIT_PACKS: CreditPack[] = [
+  { id: "pack-500", requests: 500, priceUsd: 25 },
+  { id: "pack-2000", requests: 2000, priceUsd: 80 },
+  { id: "pack-5000", requests: 5000, priceUsd: 175 },
+];
+
+/** A demo test card. Only brand and last 4 digits are kept; nothing is charged. */
+export const DEMO_PAYMENT_METHOD: PaymentMethod = { brand: "Visa", last4: "4242", expMonth: 12, expYear: 2028, holder: "Sana Iqbal" };
+
+export const DEMO_BILLING_CONTACT: BillingContact = {
+  name: "Sana Iqbal",
+  email: "billing@northstar.example",
+  legalName: "Northstar Agency Ltd",
+  addressLine: "12 Example Road",
+  city: "Karachi",
+  country: "PK",
+  postalCode: "75500",
+  taxId: "",
+};
+
+export const DEMO_BILLING_STATE: BillingState = {
+  planId: "growth",
+  credits: 0,
+  cancelAt: null,
+  paymentMethod: DEMO_PAYMENT_METHOD,
+  contact: DEMO_BILLING_CONTACT,
+  createdInvoices: [],
+  invoiceStatus: {},
+};
+
+/** One failed and one refunded example are included on purpose. Newest first. */
+export const DEMO_BILLING_INVOICES: BillingInvoice[] = [
+  { id: "INV-2026-1102", issuedOn: "2026-11-17", period: "Nov 2026", description: "Add-on: +500 requests", amountUsd: 25, status: "open", note: "Waiting for payment" },
+  { id: "INV-2026-1101", issuedOn: "2026-11-01", period: "Nov 2026", description: "Growth plan", amountUsd: 149, status: "paid" },
+  { id: "INV-2026-1002", issuedOn: "2026-10-14", period: "Oct 2026", description: "Add-on: +500 requests", amountUsd: 25, status: "failed", note: "Card declined (demo)" },
+  { id: "INV-2026-1001", issuedOn: "2026-10-01", period: "Oct 2026", description: "Growth plan", amountUsd: 149, status: "paid" },
+  { id: "INV-2026-0902", issuedOn: "2026-09-20", period: "Sep 2026", description: "Add-on: +2,000 requests", amountUsd: 80, status: "refunded", note: "Duplicate purchase refunded on 21 Sep (demo)" },
+  { id: "INV-2026-0901", issuedOn: "2026-09-01", period: "Sep 2026", description: "Growth plan", amountUsd: 149, status: "paid" },
+  { id: "INV-2026-0804", issuedOn: "2026-08-04", period: "Aug 2026", description: "Starter plan", amountUsd: 49, status: "paid" },
+];
+
+export const DEMO_BILLING_EVENTS: BillingHistoryEntry[] = [
+  { id: "bh-09", at: "2026-11-17T08:10:00Z", kind: "addon", title: "Add-on invoice created", detail: "INV-2026-1102 · +500 requests · $25" },
+  { id: "bh-08", at: "2026-11-01T00:05:00Z", kind: "payment", title: "Payment received", detail: "INV-2026-1101 · $149" },
+  { id: "bh-07", at: "2026-10-14T11:30:00Z", kind: "payment", title: "Payment failed", detail: "INV-2026-1002 · Card declined (demo)" },
+  { id: "bh-06", at: "2026-10-01T00:05:00Z", kind: "payment", title: "Payment received", detail: "INV-2026-1001 · $149" },
+  { id: "bh-05", at: "2026-09-21T09:00:00Z", kind: "refund", title: "Refund issued", detail: "INV-2026-0902 · $80" },
+  { id: "bh-04", at: "2026-09-20T10:15:00Z", kind: "addon", title: "Add-on purchased", detail: "+2,000 requests · $80" },
+  { id: "bh-03", at: "2026-09-01T00:05:00Z", kind: "plan", title: "Plan changed to Growth", detail: "From Starter · $49 to $149 per month" },
+  { id: "bh-02", at: "2026-08-04T10:30:00Z", kind: "method", title: "Payment method added", detail: "Visa ending 4242 (demo)" },
+  { id: "bh-01", at: "2026-08-04T10:30:00Z", kind: "plan", title: "Subscription started on Starter", detail: "$49 per month" },
+];
+
+export const DEMO_BILLING: BillingBase = {
+  plans: DEMO_PLANS,
+  state: DEMO_BILLING_STATE,
+  invoices: DEMO_BILLING_INVOICES,
+  packs: DEMO_CREDIT_PACKS,
+  period: DEMO_BILLING_PERIOD,
+  unitCostUsd: DEMO_UNIT_COST_USD,
+  usageSeeds: DEMO_USAGE_SEEDS,
+  history: DEMO_USAGE_HISTORY,
+  events: DEMO_BILLING_EVENTS,
+};
+
+/* ───────── Integrations hub ───────── */
+
+/** Optional connectors. Shopify is one of four CMS and commerce options and is never listed first. Nothing here is a real connection. */
+export const DEMO_CONNECTORS: ConnectorBase[] = [
+  { id: "wordpress", label: "WordPress", group: "cms", summary: "Stage and publish approved page changes.", usedFor: "Fixes", testOutcome: { ok: true } },
+  { id: "webflow", label: "Webflow", group: "cms", summary: "Update pages and collections after approval.", usedFor: "Fixes", testOutcome: { ok: true } },
+  {
+    id: "woocommerce",
+    label: "WooCommerce",
+    group: "cms",
+    summary: "Read products and publish approved changes.",
+    usedFor: "Fixes",
+    testOutcome: { ok: false, message: "The key was rejected for write requests (401). Read access still works." },
+  },
+  { id: "shopify", label: "Shopify", group: "cms", summary: "Read products and publish approved changes.", usedFor: "Fixes", testOutcome: { ok: true } },
+  { id: "search_console", label: "Google Search Console", group: "search", summary: "Search queries and indexing for prompt ideas.", usedFor: "Prompt Library", testOutcome: { ok: true } },
+  { id: "pagespeed", label: "PageSpeed Insights", group: "search", summary: "Page speed and Core Web Vitals checks.", usedFor: "Audit", testOutcome: { ok: true } },
+];
+
+/** Starting connection state, consistent with the per-website integrations below. */
+export const DEMO_CONNECTIONS: Record<string, ConnectionState> = {
+  wordpress: { status: "connected", websiteIds: ["nutrition"], lastVerifiedAt: "2026-11-17T04:00:00Z" },
+  webflow: { status: "not_connected", websiteIds: [], lastVerifiedAt: null },
+  woocommerce: { status: "needs_attention", websiteIds: ["runpro-ae"], lastVerifiedAt: "2026-11-18T05:30:00Z" },
+  shopify: { status: "connected", websiteIds: ["runpro-pk"], lastVerifiedAt: "2026-11-19T06:00:00Z" },
+  search_console: { status: "connected", websiteIds: ["runpro-pk", "nutrition"], lastVerifiedAt: "2026-11-19T06:00:00Z" },
+  pagespeed: { status: "not_connected", websiteIds: [], lastVerifiedAt: null },
+};
 
 /* ───────── Store settings ───────── */
 
 export const DEMO_ARCHIVED_COMPETITORS: Competitor[] = [
   { id: "c-stride", storeId: "runpro-pk", name: "StrideCo", domains: ["strideco.example"], aliases: [], status: "archived", market: "PK" },
   { id: "c-track-ae", storeId: "runpro-ae", name: "TrackHouse", domains: ["trackhouse.example"], aliases: [], status: "archived", market: "AE" },
+  { id: "c-fuelnotes-nu", storeId: "nutrition", name: "FuelNotes", domains: ["fuelnotes.example"], aliases: [], status: "archived", market: "SG" },
 ];
 
 export const DEMO_BRAND_VERSIONS: Record<string, BrandVersion[]> = {
@@ -284,6 +442,38 @@ export const DEMO_BRAND_VERSIONS: Record<string, BrandVersion[]> = {
       description: "",
     },
   ],
+  nutrition: [
+    {
+      version: 3,
+      createdAt: "2026-11-04T09:20:00Z",
+      createdBy: "Hira Malik",
+      note: "Added description and differentiators",
+      brandName: "Nutrition",
+      aliases: ["Nutrition Hub"],
+      differentiators: ["Free beginner courses", "Dietitian-reviewed guides"],
+      description: "A nutrition and wellness information website: practical guides, a free basics course and a weekly newsletter. Information only, not medical advice.",
+    },
+    {
+      version: 2,
+      createdAt: "2026-10-20T07:30:00Z",
+      createdBy: "Hira Malik",
+      note: "Added spelling variant",
+      brandName: "Nutrition",
+      aliases: ["Nutrition Hub"],
+      differentiators: [],
+      description: "Nutrition guides and courses for beginners.",
+    },
+    {
+      version: 1,
+      createdAt: "2026-10-06T08:10:00Z",
+      createdBy: "Sana Iqbal",
+      note: "Created at setup",
+      brandName: "Nutrition",
+      aliases: [],
+      differentiators: [],
+      description: "Nutrition guides and courses for beginners.",
+    },
+  ],
 };
 
 export const DEMO_DOMAINS: DomainRecord[] = [
@@ -306,6 +496,15 @@ export const DEMO_DOMAINS: DomainRecord[] = [
     former: [{ host: "runpro-uae.com", from: "2025-11-01T00:00:00Z", to: "2026-09-10T00:00:00Z", reason: "Moved to runpro.ae before launch; 301 redirect to runpro.ae" }],
   },
   { storeId: "homefit-uk", canonical: "homefit.example", aliases: [{ host: "www.homefit.example", kind: "redirect" }], former: [] },
+  {
+    storeId: "nutrition",
+    canonical: "nutrition.example",
+    aliases: [
+      { host: "www.nutrition.example", kind: "redirect" },
+      { host: "learn.nutrition.example", kind: "alias" },
+    ],
+    former: [{ host: "nutrition-guide.example", from: "2025-06-01T00:00:00Z", to: "2026-09-30T00:00:00Z", reason: "Renamed; 301 redirect to nutrition.example" }],
+  },
 ];
 
 export const DEMO_INTEGRATIONS: IntegrationDetail[] = [
@@ -343,8 +542,24 @@ export const DEMO_INTEGRATIONS: IntegrationDetail[] = [
   },
   {
     storeId: "homefit-uk",
-    commerce: { platform: "manual", state: "manual", account: null, scopes: [], lastVerifiedAt: null, note: "Manual store: nothing is written to the site. Fixes are guidance only." },
+    commerce: { platform: "manual", state: "manual", account: null, scopes: [], lastVerifiedAt: null, note: "Manual site: nothing is written to the website. Fixes are guidance only." },
     searchConsole: { state: "not_connected", property: null, lastVerifiedAt: null, note: null },
+  },
+  {
+    storeId: "nutrition",
+    commerce: {
+      platform: "wordpress",
+      state: "connected",
+      account: "nutrition.example",
+      scopes: [
+        { scope: "read_pages", purpose: "Read pages and posts", granted: true },
+        { scope: "edit_pages", purpose: "Stage and publish approved page changes", granted: true },
+        { scope: "read_themes", purpose: "Read theme files for structured data checks", granted: false },
+      ],
+      lastVerifiedAt: "2026-11-17T04:00:00Z",
+      note: null,
+    },
+    searchConsole: { state: "connected", property: "sc-domain:nutrition.example", lastVerifiedAt: "2026-11-19T06:00:00Z", note: null },
   },
 ];
 
@@ -359,9 +574,9 @@ export const DEMO_ACTIVITY: ActivityEntry[] = [
   { id: "act-pk-04", storeId: "runpro-pk", at: "2026-08-10T09:00:00Z", actor: "Sana Iqbal", title: "Status changed: Ready to Active", kind: "store" },
   { id: "act-pk-03", storeId: "runpro-pk", at: "2026-08-04T10:25:00Z", actor: "Sana Iqbal", title: "4 products imported from Shopify", kind: "product" },
   { id: "act-pk-02", storeId: "runpro-pk", at: "2026-08-04T10:20:00Z", actor: "Sana Iqbal", title: "Shopify connected", detail: "Scopes: read_products, read_content, write_content", kind: "integration" },
-  { id: "act-pk-01", storeId: "runpro-pk", at: "2026-08-04T10:00:00Z", actor: "Sana Iqbal", title: "Store created", kind: "store" },
+  { id: "act-pk-01", storeId: "runpro-pk", at: "2026-08-04T10:00:00Z", actor: "Sana Iqbal", title: "Website created", kind: "store" },
 
-  { id: "act-ae-16", storeId: "runpro-ae", at: "2026-11-18T05:30:00Z", actor: "System", title: "Commerce connection needs attention", detail: "Write access was rejected on the last check.", kind: "integration" },
+  { id: "act-ae-16", storeId: "runpro-ae", at: "2026-11-18T05:30:00Z", actor: "System", title: "Connector needs attention", detail: "Write access was rejected on the last check.", kind: "integration" },
   { id: "act-ae-15", storeId: "runpro-ae", at: "2026-11-06T07:45:00Z", actor: "Hira Malik", title: "Brand profile saved as v3", detail: "Added delivery coverage", kind: "brand" },
   { id: "act-ae-14", storeId: "runpro-ae", at: "2026-11-05T05:40:00Z", actor: "System", title: "Competitor suggested: GulfRun", detail: "Cited in answers for local prompts.", kind: "competitor" },
   { id: "act-ae-13", storeId: "runpro-ae", at: "2026-10-30T12:00:00Z", actor: "Sana Iqbal", title: "Notification overrides saved", detail: "Email on new recommendations and owned citations; webhook on late runs.", kind: "notification" },
@@ -376,7 +591,7 @@ export const DEMO_ACTIVITY: ActivityEntry[] = [
   { id: "act-ae-04", storeId: "runpro-ae", at: "2026-09-12T10:05:00Z", actor: "Sana Iqbal", title: "3 products imported from WooCommerce", kind: "product" },
   { id: "act-ae-03", storeId: "runpro-ae", at: "2026-09-12T09:50:00Z", actor: "Sana Iqbal", title: "WooCommerce connected", detail: "REST API key with read and write permission", kind: "integration" },
   { id: "act-ae-02", storeId: "runpro-ae", at: "2026-09-12T09:40:00Z", actor: "Sana Iqbal", title: "Brand profile saved as v1", kind: "brand" },
-  { id: "act-ae-01", storeId: "runpro-ae", at: "2026-09-12T09:30:00Z", actor: "Sana Iqbal", title: "Store created", kind: "store" },
+  { id: "act-ae-01", storeId: "runpro-ae", at: "2026-09-12T09:30:00Z", actor: "Sana Iqbal", title: "Website created", kind: "store" },
 
   { id: "act-uk-10", storeId: "homefit-uk", at: "2026-11-14T09:00:00Z", actor: "System", title: "Competitor suggested: LiftLoft", detail: "Suggested from the product category.", kind: "competitor" },
   { id: "act-uk-09", storeId: "homefit-uk", at: "2026-11-12T15:02:00Z", actor: "Hira Malik", title: "Competitor confirmed: FlexForm", kind: "competitor" },
@@ -384,14 +599,33 @@ export const DEMO_ACTIVITY: ActivityEntry[] = [
   { id: "act-uk-07", storeId: "homefit-uk", at: "2026-11-12T11:20:00Z", actor: "Hira Malik", title: "Brand profile saved as v2", detail: "Added description and differentiators", kind: "brand" },
   { id: "act-uk-06", storeId: "homefit-uk", at: "2026-11-11T10:40:00Z", actor: "Hira Malik", title: "3 products added manually", detail: "Folding Squat Rack, Adjustable Dumbbell Set, Compact Rowing Machine", kind: "product" },
   { id: "act-uk-05", storeId: "homefit-uk", at: "2026-11-10T14:25:00Z", actor: "Hira Malik", title: "Domain alias added: www.homefit.example", detail: "Redirects to homefit.example", kind: "domain" },
-  { id: "act-uk-04", storeId: "homefit-uk", at: "2026-11-10T14:20:00Z", actor: "Hira Malik", title: "Manual platform selected", detail: "No commerce connector. Fixes are guidance only.", kind: "integration" },
+  { id: "act-uk-04", storeId: "homefit-uk", at: "2026-11-10T14:20:00Z", actor: "Hira Malik", title: "Manual site type selected", detail: "No connector. Fixes are guidance only.", kind: "integration" },
   { id: "act-uk-03", storeId: "homefit-uk", at: "2026-11-10T14:13:00Z", actor: "System", title: "Status set to Needs review", detail: "Setup incomplete: no AI channel selected.", kind: "store" },
   { id: "act-uk-02", storeId: "homefit-uk", at: "2026-11-10T14:12:00Z", actor: "Hira Malik", title: "Brand profile saved as v1", kind: "brand" },
-  { id: "act-uk-01", storeId: "homefit-uk", at: "2026-11-10T14:00:00Z", actor: "Hira Malik", title: "Store created", kind: "store" },
+  { id: "act-uk-01", storeId: "homefit-uk", at: "2026-11-10T14:00:00Z", actor: "Hira Malik", title: "Website created", kind: "store" },
+
+  { id: "act-nu-17", storeId: "nutrition", at: "2026-11-18T04:30:00Z", actor: "System", title: "Competitor suggested: GreenFork Guide", detail: "Cited in answers for beginner prompts.", kind: "competitor" },
+  { id: "act-nu-16", storeId: "nutrition", at: "2026-11-17T04:00:00Z", actor: "System", title: "WordPress connection verified", kind: "integration" },
+  { id: "act-nu-15", storeId: "nutrition", at: "2026-11-04T09:20:00Z", actor: "Hira Malik", title: "Brand profile saved as v3", detail: "Added description and differentiators", kind: "brand" },
+  { id: "act-nu-14", storeId: "nutrition", at: "2026-10-30T11:00:00Z", actor: "Sana Iqbal", title: "Notification overrides saved", detail: "Email when a competitor increases.", kind: "notification" },
+  { id: "act-nu-13", storeId: "nutrition", at: "2026-10-29T08:15:00Z", actor: "Omar Farooq", title: "Competitor archived: FuelNotes", detail: "Site closed; no longer appears in answers.", kind: "competitor" },
+  { id: "act-nu-12", storeId: "nutrition", at: "2026-10-20T07:30:00Z", actor: "Hira Malik", title: "Brand profile saved as v2", detail: "Added spelling variant", kind: "brand" },
+  { id: "act-nu-11", storeId: "nutrition", at: "2026-10-07T06:00:00Z", actor: "Sana Iqbal", title: "Status changed: Ready to Active", kind: "store" },
+  { id: "act-nu-10", storeId: "nutrition", at: "2026-10-06T09:35:00Z", actor: "Omar Farooq", title: "Search Console connected", detail: "Property sc-domain:nutrition.example", kind: "integration" },
+  { id: "act-nu-09", storeId: "nutrition", at: "2026-10-06T09:10:00Z", actor: "Omar Farooq", title: "Competitor confirmed: VitaPlate", kind: "competitor" },
+  { id: "act-nu-08", storeId: "nutrition", at: "2026-10-06T09:05:00Z", actor: "Omar Farooq", title: "Competitor confirmed: BalancedBite", kind: "competitor" },
+  { id: "act-nu-07", storeId: "nutrition", at: "2026-10-06T09:00:00Z", actor: "Omar Farooq", title: "Competitor confirmed: NourishWell", kind: "competitor" },
+  { id: "act-nu-06", storeId: "nutrition", at: "2026-10-06T08:45:00Z", actor: "Sana Iqbal", title: "4 products and services added", detail: "Guide, course, newsletter and consultation pages", kind: "product" },
+  { id: "act-nu-05", storeId: "nutrition", at: "2026-10-06T08:30:00Z", actor: "Sana Iqbal", title: "Former domain recorded: nutrition-guide.example", detail: "301 redirect to nutrition.example", kind: "domain" },
+  { id: "act-nu-04", storeId: "nutrition", at: "2026-10-06T08:25:00Z", actor: "Sana Iqbal", title: "Domain alias added: www.nutrition.example", detail: "Redirects to nutrition.example", kind: "domain" },
+  { id: "act-nu-03", storeId: "nutrition", at: "2026-10-06T08:20:00Z", actor: "Sana Iqbal", title: "WordPress connected", detail: "Application password with read and write permission", kind: "integration" },
+  { id: "act-nu-02", storeId: "nutrition", at: "2026-10-06T08:10:00Z", actor: "Sana Iqbal", title: "Brand profile saved as v1", kind: "brand" },
+  { id: "act-nu-01", storeId: "nutrition", at: "2026-10-06T08:00:00Z", actor: "Sana Iqbal", title: "Website created", kind: "store" },
 ];
 
-/* ───────── Add-store sample data ───────── */
+/* ───────── Add-website sample data ───────── */
 
+/** Labelled "Demo suggestions" in the Add website wizard. Not produced by any model. */
 export const DEMO_SETUP_SAMPLE: StoreSetupSample = {
   suggestedCompetitors: [
     { id: "sug-1", name: "SwiftStride", domain: "swiftstride.example", reason: "Often named in category answers" },
@@ -399,10 +633,54 @@ export const DEMO_SETUP_SAMPLE: StoreSetupSample = {
     { id: "sug-3", name: "PaceLab", domain: "pacelab.example", reason: "Shares product category" },
     { id: "sug-4", name: "GulfRun", domain: "gulfrun.example", reason: "Active in nearby markets" },
   ],
-  shopifyProducts: [
-    { id: "shp-1", title: "Daily Trainer", category: "Everyday running", url: "https://store.example/products/daily-trainer" },
-    { id: "shp-2", title: "Trail Runner", category: "Trail running", url: "https://store.example/products/trail-runner" },
-    { id: "shp-3", title: "Road Racer", category: "Road running", url: "https://store.example/products/road-racer" },
-    { id: "shp-4", title: "Recovery Slide", category: "Recovery", url: "https://store.example/products/recovery-slide" },
-  ],
+};
+
+/* ───────── Brand knowledge (demonstration content, authored for the seeded websites) ───────── */
+
+type KnowledgeSeed = Pick<BrandKnowledgeBase, "facts" | "faqs" | "contentContext">;
+
+export const DEMO_BRAND_KNOWLEDGE: Record<string, KnowledgeSeed> = {
+  "runpro-pk": {
+    facts: [
+      { id: "fact-pk-1", label: "Delivery", value: "Nationwide delivery across Pakistan", sourceUrl: "https://runpro.pk/pages/delivery" },
+      { id: "fact-pk-2", label: "Flagship road shoe", value: "RunPro Glide 2, listed at PKR 12,900", sourceUrl: "https://runpro.pk/products/glide-2" },
+      { id: "fact-pk-3", label: "Beginner range", value: "Cushioned shoes for first-time and everyday runners", sourceUrl: "https://runpro.pk/collections/everyday" },
+    ],
+    faqs: [
+      { id: "faq-pk-1", question: "Which RunPro shoe suits a beginner?", answer: "The Daily Trainer and Glide 2 are the cushioned options for new runners." },
+      { id: "faq-pk-2", question: "Does RunPro deliver outside the big cities?", answer: "Yes. Orders ship nationwide from the online store." },
+    ],
+    contentContext: "Running shoe retailer. Key pages: home, road, trail and everyday collections, product pages, a beginner buying guide.",
+  },
+  "runpro-ae": {
+    facts: [
+      { id: "fact-ae-1", label: "Delivery", value: "Delivery across all seven emirates", sourceUrl: "https://runpro.ae/pages/delivery" },
+      { id: "fact-ae-2", label: "Hot-weather range", value: "Breathable uppers for hot-weather running", sourceUrl: "https://runpro.ae/collections/everyday" },
+    ],
+    faqs: [{ id: "faq-ae-1", question: "Are RunPro shoes suitable for summer running in the UAE?", answer: "The range uses breathable uppers made for hot-weather running." }],
+    contentContext: "Running shoe retailer for the UAE. Key pages: home, collections, product pages with AED pricing, delivery and returns.",
+  },
+  "homefit-uk": {
+    facts: [
+      { id: "fact-uk-1", label: "Delivery", value: "Free delivery on UK mainland orders", sourceUrl: "https://homefit.example/pages/delivery" },
+      { id: "fact-uk-2", label: "Product focus", value: "Folding equipment for small flats", sourceUrl: "https://homefit.example/products/folding-squat-rack" },
+    ],
+    faqs: [],
+    contentContext: "",
+  },
+  nutrition: {
+    facts: [
+      { id: "fact-nu-1", label: "Basics course", value: "Free to join, no payment details needed", sourceUrl: "https://nutrition.example/courses/nutrition-basics" },
+      { id: "fact-nu-2", label: "Newsletter", value: "Sent weekly", sourceUrl: "https://nutrition.example/newsletter" },
+      { id: "fact-nu-3", label: "Consultations", value: "Information only; not medical advice", sourceUrl: "https://nutrition.example/consultations" },
+      { id: "fact-nu-4", label: "Guide reviews", value: "Guides are reviewed by registered dietitians (fictional)", sourceUrl: "https://nutrition.example/guides/meal-planning" },
+    ],
+    faqs: [
+      { id: "faq-nu-1", question: "Is the Nutrition Basics course free?", answer: "Yes. The course is free for everyone." },
+      { id: "faq-nu-2", question: "Does Nutrition give medical advice?", answer: "No. Everything on the website is general information only." },
+      { id: "faq-nu-3", question: "Who reviews the guides?", answer: "Registered dietitians (fictional) review each guide. Named credentials are being added to every article." },
+      { id: "faq-nu-4", question: "How often is the newsletter sent?", answer: "Every week." },
+    ],
+    contentContext: "Nutrition and wellness information website. Key pages: home, meal-planning and protein guides, recipes, the free Nutrition Basics course, a weekly newsletter, information-only consultations and a calorie calculator.",
+  },
 };

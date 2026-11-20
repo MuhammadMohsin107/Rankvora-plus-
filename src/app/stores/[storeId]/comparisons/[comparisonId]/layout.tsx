@@ -1,70 +1,58 @@
 import { Suspense } from "react";
-
-import { PageFallback } from "@/components/shell/page-fallback";
 import { notFound } from "next/navigation";
 
-import { PageHeader } from "@/components/shell/page-header";
-import { Badge, Status } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
-import { Mono } from "@/components/ui/misc";
-import { LinkTabs } from "@/components/ui/tabs";
-import { parseWindow } from "@/features/comparison/sides";
-import { formatDate } from "@/lib/format";
-import { comparisonStaticParams, getComparisonDetail, TYPE_LABEL } from "@/services/comparison";
+import { PageFallback } from "@/components/shell/page-fallback";
+import { COMPARISON_LIMITATIONS, METHODOLOGY } from "@/demo/comparison";
+import { ComparisonHeader } from "@/features/comparison/comparison-header";
+import { buildExportBundle } from "@/features/comparison/export";
+import { formatDate, formatShortDate } from "@/lib/format";
+import { STATUS } from "@/lib/status";
+import { comparisonStaticParams, getComparisonDetail } from "@/services/comparison";
+import { getStore } from "@/services/core";
 
 export async function generateStaticParams() {
   return comparisonStaticParams();
 }
 
-function Source({ label, reference, kind }: { label: string; reference: string; kind: string }) {
-  const isWindow = Boolean(parseWindow(reference));
-  return (
-    <span className="flex min-w-0 items-center gap-1.5">
-      <span className="text-xs text-fg-subtle">{label}</span>
-      {isWindow ? <span className="tnum text-[13px] text-fg">{reference}</span> : <Mono>{reference}</Mono>}
-      <Badge tone="neutral">{kind}</Badge>
-    </span>
-  );
-}
-
 async function ComparisonLayoutContent({ children, params }: LayoutProps<"/stores/[storeId]/comparisons/[comparisonId]">) {
   const { storeId, comparisonId } = await params;
-  const detail = await getComparisonDetail(storeId, comparisonId);
+  // Seeded ids are prerendered. A comparison created in the wizard carries its definition in the id and is
+  // computed on demand by the same engine; its title, author and archive state come from this browser.
+  const [detail, store] = await Promise.all([getComparisonDetail(storeId, comparisonId), getStore(storeId)]);
   if (!detail) notFound();
-  const { record, baseline, current, result } = detail;
+  const { record, baseline, current, result, fixes } = detail;
   const base = `/stores/${storeId}/comparisons/${comparisonId}`;
-  const kindLabel = (k: string) => (k === "audit" ? "Audit" : k === "monitoring" ? "Monitoring" : "Mixed");
+  const computed = result.verdict !== "not_comparable";
+
+  const exports = computed
+    ? buildExportBundle(detail, {
+        website: store?.name ?? storeId,
+        createdBy: record.createdBy,
+        createdAt: formatDate(record.createdAt),
+        rules: METHODOLOGY.rules,
+        details: [METHODOLOGY.matching, ...METHODOLOGY.details],
+        limitations: COMPARISON_LIMITATIONS,
+        verdictLabel: STATUS.comparability[result.verdict].label,
+      })
+    : null;
 
   return (
     <>
-      <PageHeader
-        title={record.title}
-        subtitle={`${TYPE_LABEL[record.type]} · created ${formatDate(record.createdAt)} by ${record.createdBy}`}
-        breadcrumb={[{ label: "Comparisons", href: `/stores/${storeId}/comparisons` }, { label: record.id }]}
-        meta={<Status kind="comparability" value={record.comparability} />}
-        actions={record.reportId ? <ButtonLink href={`/stores/${storeId}/reports/${record.reportId}`} variant="primary" icon="reports">Report</ButtonLink> : undefined}
-        tabs={
-          <>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              <Source label="Baseline" reference={baseline.reference} kind={kindLabel(baseline.kind)} />
-              <Source label="Current" reference={current.reference} kind={kindLabel(current.kind)} />
-            </div>
-            <LinkTabs
-              label="Comparison sections"
-              items={[
-                { href: base, label: "Overview", exact: true },
-                { href: `${base}/prompts`, label: "Prompts", count: result.verdict === "not_comparable" ? undefined : result.matchedPairs },
-                { href: `${base}/platforms`, label: "Platforms" },
-                { href: `${base}/competitors`, label: "Competitors" },
-                { href: `${base}/citations`, label: "Citations" },
-                { href: `${base}/sentiment`, label: "Sentiment" },
-                { href: `${base}/fixes`, label: "Fixes timeline" },
-                { href: `${base}/quality`, label: "Data quality" },
-                { href: `${base}/export`, label: "Export" },
-              ]}
-            />
-          </>
-        }
+      <ComparisonHeader
+        storeId={storeId}
+        record={record}
+        seeded={!record.simulated}
+        baselineLabel={baseline.label}
+        currentLabel={current.label}
+        period={`${formatShortDate(detail.rangeFrom)} – ${formatShortDate(detail.rangeTo)}`}
+        exports={exports}
+        tabs={[
+          { href: base, label: "Overview", exact: true },
+          { href: `${base}/prompts`, label: "Prompts", count: computed ? result.matchedPairs : undefined },
+          { href: `${base}/breakdowns`, label: "Breakdowns" },
+          { href: `${base}/fixes`, label: "Fixes", count: fixes.length || undefined },
+          { href: `${base}/quality`, label: "Data quality" },
+        ]}
       />
       {children}
     </>

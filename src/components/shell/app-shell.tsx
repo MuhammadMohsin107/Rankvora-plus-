@@ -1,320 +1,217 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Menu, type MenuItem } from "@/components/ui/menu";
+import { Menu } from "@/components/ui/menu";
 import { Tooltip } from "@/components/ui/tooltip";
+import { SyncIndicator, useDemoCollection, useDemoEvents, useDemoUi, useUnreadAlertCount } from "@/demo-state";
 import { cn } from "@/lib/cn";
-import { formatRelative } from "@/lib/format";
-import { STATUS } from "@/lib/status";
+import { OPEN_TASK_STATUSES } from "@/lib/record-status";
 import type { AlertHeadline, Member, Organization, Store } from "@/types/core";
 
-import { ORG_NAV, storeIdFromPath, storeNav, switchStoreHref, type NavItem } from "./nav";
+import { Breadcrumbs } from "./breadcrumbs";
+import { CommandPalette } from "./command-palette";
+import { navGroups, storeIdFromPath } from "./nav";
+import { Notifications } from "./notifications";
+import { registerActionSlot } from "./page-chrome";
+import { normalizeRoute } from "./route-titles";
+import { buildWebsiteLookup, rowWebsite } from "./row-website";
+import type { SearchIndex, SearchTask } from "./search-types";
+import { Sidebar } from "./sidebar";
+import { UserMenu } from "./user-menu";
+import { WebsiteSelector } from "./website-selector";
 
 type ShellProps = {
   org: Organization;
   user: Member;
+  /** Seeded websites. Websites created in the browser are merged in on the client. */
   stores: Store[];
   alerts: AlertHeadline[];
+  searchIndex: SearchIndex;
   children: ReactNode;
 };
 
-const roleLabel = { owner: "Owner", admin: "Admin", editor: "Editor", auditor: "Auditor", viewer: "Viewer" } as const;
-
-function Logo() {
-  return (
-    <Link href="/" className="flex items-center gap-2 rounded-md px-1 py-0.5" aria-label="Rankvora Plus home">
-      <span aria-hidden="true" className="flex size-7 items-center justify-center rounded-[8px] bg-accent text-accent-fg">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 19V5h7a4 4 0 0 1 0 8H5M12 13l6 6" />
-        </svg>
-      </span>
-      <span className="text-[15px] font-semibold tracking-tight text-fg">Rankvora <span className="text-fg-subtle">Plus</span></span>
-    </Link>
-  );
-}
-
-function NavLink({ item, pathname, count }: { item: NavItem; pathname: string; count?: number }) {
-  const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
-  return (
-    <Link
-      href={item.href}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "group flex h-9 items-center gap-2.5 rounded-control px-2.5 text-[13px] font-medium transition-colors duration-[var(--dur-fast)] pointer-coarse:h-11",
-        active ? "bg-surface text-fg shadow-card ring-1 ring-line" : "text-fg-muted hover:bg-surface-2 hover:text-fg",
-      )}
-    >
-      <Icon name={item.icon} size={17} className={active ? "text-accent-text" : "text-fg-subtle group-hover:text-fg-muted"} />
-      <span className="min-w-0 flex-1 truncate">{item.label}</span>
-      {count ? (
-        <span className="tnum rounded-full bg-accent-soft px-1.5 text-[11px] font-semibold text-accent-text" aria-label={`${count} pending`}>
-          {count}
-        </span>
-      ) : null}
-    </Link>
-  );
-}
-
-function Sidebar({ activeStore, pathname }: { activeStore: Store | null; pathname: string }) {
-  return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto p-3 ui-scroll">
-      <div className="px-1 pt-1">
-        <Logo />
-      </div>
-
-      <nav aria-label="Organization" className="flex flex-col gap-0.5">
-        <p className="flex items-center gap-1.5 px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">
-          <Icon name="building" size={12} /> Organization
-        </p>
-        {ORG_NAV.map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} />
-        ))}
-      </nav>
-
-      {activeStore ? (
-        <nav aria-label={`${activeStore.name} navigation`} className="flex flex-col gap-0.5 rounded-card border border-accent/25 bg-accent-soft/50 p-2">
-          <p className="flex items-center justify-between gap-2 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent-text">
-            <span className="flex items-center gap-1.5"><Icon name="store" size={12} /> Store</span>
-            {activeStore.status !== "active" ? <Badge tone={STATUS.store[activeStore.status].tone} icon={STATUS.store[activeStore.status].icon}>{STATUS.store[activeStore.status].label}</Badge> : null}
-          </p>
-          {storeNav(activeStore.id).map((item) => {
-            const key = item.badgeKey;
-            const count = key && activeStore.summary ? activeStore.summary[key] : undefined;
-            return <NavLink key={item.href} item={item} pathname={pathname} count={count} />;
-          })}
-        </nav>
-      ) : null}
-
-      <p className="mt-auto flex items-center gap-1.5 px-2.5 pb-1 text-[11px] text-fg-subtle">
-        <Icon name="database" size={12} /> Demonstration data
-      </p>
-    </div>
-  );
-}
-
-function StoreSelector({ stores, activeStore, pathname }: { stores: Store[]; activeStore: Store | null; pathname: string }) {
-  const items: MenuItem[] = [
-    { type: "label", label: "Stores" },
-    ...stores.map<MenuItem>((store) => ({
-      label: store.name,
-      href: switchStoreHref(pathname, store.id),
-      meta: (
-        <span className="flex items-center gap-1.5">
-          {store.id === activeStore?.id ? <Icon name="check" size={14} className="text-accent-text" /> : null}
-          <Badge tone={STATUS.store[store.status].tone}>{STATUS.store[store.status].label}</Badge>
-        </span>
-      ),
-    })),
-    { type: "separator" },
-    { label: "All stores", href: "/stores", icon: "store" },
-    { label: "Add store", href: "/stores/new", icon: "plus" },
-  ];
-  return (
-    <Menu
-      align="start"
-      width={300}
-      items={items}
-      trigger={
-        <button
-          type="button"
-          className={cn(
-            "flex h-9 min-w-0 max-w-[16rem] cursor-pointer items-center gap-2 rounded-control border px-2.5 text-[13px] font-medium transition-colors aria-expanded:ring-2 aria-expanded:ring-accent/30 pointer-coarse:h-11",
-            activeStore ? "border-accent/40 bg-accent-soft text-accent-text" : "border-line-strong bg-surface text-fg-muted hover:bg-surface-2",
-          )}
-        >
-          <Icon name="store" size={15} />
-          <span className="min-w-0 truncate">{activeStore ? activeStore.name : "Select store"}</span>
-          <Icon name="chevron-down" size={14} className="shrink-0" />
-        </button>
-      }
-    />
-  );
-}
+const RAIL_WIDTH = "72px";
 
 function OrgSelector({ org }: { org: Organization }) {
   return (
     <Menu
       align="start"
-      width={260}
-      header={<p className="text-xs text-fg-subtle">Organization</p>}
+      width={264}
+      label="Organization"
+      header={<p className="text-helper font-semibold text-fg-muted">Organization</p>}
       items={[
-        { label: org.name, icon: "building", meta: <Icon name="check" size={14} className="text-accent-text" /> },
+        { label: org.name, icon: "building", meta: <Icon name="check" size={16} className="text-accent-text" label="Current organization" /> },
         { type: "separator" },
+        { label: "Portfolio", href: "/", icon: "layers" },
         { label: "Organization settings", href: "/settings", icon: "settings" },
-        { label: "Portfolio overview", href: "/", icon: "dashboard" },
       ]}
       trigger={
         <button
           type="button"
-          className="flex h-9 max-w-[14rem] shrink-0 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-2.5 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 aria-expanded:ring-2 aria-expanded:ring-accent/30 pointer-coarse:h-11"
+          aria-label={`Organization: ${org.name}`}
+          className="flex h-11 max-w-[12rem] shrink-0 cursor-pointer items-center gap-2 rounded-control px-2 text-body-sm font-medium text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 aria-expanded:bg-surface-2"
         >
-          <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded bg-fg text-[10px] font-bold text-canvas">{org.name.charAt(0)}</span>
-          <span className="hidden min-w-0 truncate sm:inline">{org.name}</span>
-          <Icon name="chevron-down" size={14} className="shrink-0 text-fg-subtle" />
+          <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fg text-xs font-semibold text-canvas">{org.name.charAt(0)}</span>
+          <span className="hidden min-w-0 truncate xl:inline">{org.name}</span>
+          <Icon name="chevrons-up-down" size={14} className="hidden shrink-0 text-fg-subtle xl:block" />
         </button>
       }
     />
   );
 }
 
-function NotificationsMenu({ alerts, stores }: { alerts: AlertHeadline[]; stores: Store[] }) {
-  const unread = alerts.filter((a) => !a.read).length;
-  const storeName = (id: string) => stores.find((s) => s.id === id)?.name ?? id;
-  const items: MenuItem[] = alerts.map((alert) => ({
-    label: alert.title,
-    href: `/stores/${alert.storeId}/monitoring/alerts`,
-    meta: (
-      <span className="shrink-0 text-[11px] text-fg-subtle">{formatRelative(alert.at)}</span>
-    ),
-    icon: alert.read ? "bell" : "circle-dot",
-    disabledReason: storeName(alert.storeId),
-  }));
-  return (
-    <Menu
-      align="end"
-      width={380}
-      header={<p className="flex items-center justify-between text-[13px] font-semibold text-fg">Alerts <span className="tnum text-xs font-normal text-fg-subtle">{unread} unread</span></p>}
-      items={[...items, { type: "separator" }, { label: "Open alerts for RunPro Pakistan", href: "/stores/runpro-pk/monitoring/alerts", icon: "arrow-right" }]}
-      trigger={
-        <IconButton
-          icon="bell"
-          label={unread ? `Alerts, ${unread} unread` : "Alerts"}
-          badge={unread ? <span aria-hidden="true" className="tnum absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-semibold text-white">{unread}</span> : null}
-        />
-      }
-    />
-  );
-}
+export function AppShell({ org, user, stores, alerts, searchIndex, children }: ShellProps) {
+  const pathname = normalizeRoute(usePathname());
+  const { ui, toggleSidebar, setLastWebsite } = useDemoUi();
+  const { rows: allWebsites } = useDemoCollection<Store>("websites", stores);
+  const { rows: tasks } = useDemoCollection<SearchTask>("tasks", searchIndex.tasks);
+  const events = useDemoEvents();
 
-function ThemeToggle() {
-  const toggle = () => {
-    const root = document.documentElement;
-    const isDark = root.getAttribute("data-theme") === "dark";
-    const next = isDark ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("rv-theme", next);
-    } catch {
-      /* storage unavailable: theme still applies for this session */
-    }
-  };
-  return (
-    <Tooltip content="Toggle light / dark" side="bottom">
-      <button type="button" onClick={toggle} aria-label="Toggle light or dark theme" className="relative flex size-9 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg pointer-coarse:size-11">
-        <Icon name="moon" size={18} className="rv-moon" />
-        <Icon name="sun" size={18} className="rv-sun" />
-      </button>
-    </Tooltip>
-  );
-}
+  const websites = useMemo(() => allWebsites.filter((w) => w.status !== "archived"), [allWebsites]);
+  const routeId = storeIdFromPath(pathname);
+  const routeWebsite = routeId ? (allWebsites.find((w) => w.id === routeId) ?? null) : null;
+  // Website in context: the one in the URL; in the organization area, the last one used (else the first).
+  const contextWebsite = routeWebsite ?? (routeId ? null : (websites.find((w) => w.id === ui.lastWebsiteId) ?? websites[0] ?? null));
+  const navWebsiteId = routeId ?? contextWebsite?.id ?? null;
 
-function UserMenu({ user }: { user: Member }) {
-  return (
-    <Menu
-      align="end"
-      width={248}
-      header={
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-fg">{user.name}</p>
-          <p className="truncate text-xs text-fg-subtle">{user.email}</p>
-          <Badge tone="accent" className="mt-1.5">{roleLabel[user.role]}</Badge>
-        </div>
-      }
-      items={[
-        { label: "Members & roles", href: "/settings/members", icon: "users" },
-        { label: "Usage & billing", href: "/settings/billing", icon: "credit-card" },
-      ]}
-      trigger={
-        <button type="button" aria-label={`Account menu, ${user.name}`} className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-fg text-[12px] font-semibold text-canvas ring-offset-2 transition-opacity hover:opacity-90 pointer-coarse:size-11">
-          {user.initials}
-        </button>
-      }
-    />
-  );
-}
+  const routeWebsiteId = routeWebsite?.id ?? null;
+  useEffect(() => {
+    if (routeWebsiteId && ui.lastWebsiteId !== routeWebsiteId) setLastWebsite(routeWebsiteId);
+  }, [routeWebsiteId, ui.lastWebsiteId, setLastWebsite]);
 
-export function AppShell({ org, user, stores, alerts, children }: ShellProps) {
-  const pathname = usePathname();
-  const storeId = storeIdFromPath(pathname);
-  const activeStore = stores.find((s) => s.id === storeId) ?? null;
-  // Mobile drawer is open only for the path it was opened on, so navigating closes it.
+  const groups = useMemo(() => navGroups(navWebsiteId), [navWebsiteId]);
+  const unreadAlerts = useUnreadAlertCount(alerts, navWebsiteId ?? undefined);
+  const pendingTasks = useMemo(() => {
+    if (!navWebsiteId) return 0;
+    const lookup = buildWebsiteLookup(events);
+    return tasks.filter((t) => OPEN_TASK_STATUSES.has(t.status) && rowWebsite(t, lookup) === navWebsiteId).length;
+  }, [tasks, events, navWebsiteId]);
+  const counts = { pendingTasks, unreadAlerts };
+
+  // Mobile drawer: open only for the path it was opened on, so navigating closes it.
   const [openFor, setOpenFor] = useState<string | null>(null);
-  const navOpen = openFor === pathname;
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const drawerOpen = openFor === pathname;
+  const drawerRef = useRef<HTMLDialogElement>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
 
   useEffect(() => {
-    const node = dialogRef.current;
+    const node = drawerRef.current;
     if (!node) return;
-    if (navOpen && !node.open) node.showModal();
-    if (!navOpen && node.open) node.close();
-  }, [navOpen]);
+    if (drawerOpen && !node.open) node.showModal();
+    if (!drawerOpen && node.open) node.close();
+  }, [drawerOpen]);
 
+  // Ctrl/Cmd+K toggles the command palette from anywhere.
   useEffect(() => {
-    const node = dialogRef.current;
-    if (!node) return;
-    const onClose = () => setOpenFor(null);
-    node.addEventListener("close", onClose);
-    return () => node.removeEventListener("close", onClose);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey) {
+        event.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // After a route change, focus moves to the main region so keyboard and screen reader users start at the new page.
+  const mainRef = useRef<HTMLElement>(null);
+  const previousPath = useRef(pathname);
+  useEffect(() => {
+    if (previousPath.current === pathname) return;
+    previousPath.current = pathname;
+    mainRef.current?.focus({ preventScroll: true });
+  }, [pathname]);
+
+  const collapsed = ui.sidebarCollapsed;
+
   return (
-    <div className="min-h-dvh lg:pl-[260px]">
-      <a href="#main" className="sr-only z-[80] rounded-control bg-accent px-3 py-2 text-sm font-medium text-accent-fg focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
+    <div className="min-h-dvh min-w-0 lg:pl-[var(--shell-w)]" style={{ "--shell-w": collapsed ? RAIL_WIDTH : "var(--sidebar-w)" } as CSSProperties}>
+      <a href="#main" className="sr-only z-[80] rounded-control bg-accent px-3 py-2 text-body font-medium text-accent-fg focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
         Skip to main content
       </a>
 
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] border-r border-line bg-sidebar lg:block">
-        <Sidebar activeStore={activeStore} pathname={pathname} />
+      <aside aria-label="Sidebar" className="fixed inset-y-0 left-0 z-30 hidden w-[var(--shell-w)] border-r border-line bg-sidebar transition-[width] duration-[var(--dur)] ease-[var(--ease)] lg:block">
+        <Sidebar groups={groups} pathname={pathname} counts={counts} collapsed={collapsed} onToggleCollapsed={toggleSidebar} />
       </aside>
 
       <dialog
-        ref={dialogRef}
+        ref={drawerRef}
         aria-label="Navigation"
+        onClose={() => setOpenFor(null)}
         onClick={(event) => {
-          if (event.target === dialogRef.current) setOpenFor(null);
+          if (event.target === drawerRef.current) setOpenFor(null);
         }}
-        className="ui-drawer m-0 mr-auto h-dvh max-h-dvh w-[min(300px,88vw)] rounded-none border-r border-line bg-sidebar p-0 shadow-pop lg:hidden"
+        className="ui-drawer m-0 mr-auto h-dvh max-h-dvh w-[min(var(--sidebar-w),88vw)] max-w-none overflow-hidden rounded-none border-r border-line bg-sidebar p-0 shadow-pop lg:hidden"
       >
-        <div className="flex h-full flex-col">
-          <div className="flex justify-end px-2 pt-2">
-            <IconButton icon="x" label="Close navigation" size="sm" onClick={() => setOpenFor(null)} />
+        {drawerOpen ? (
+          <div className="relative h-full">
+            <Sidebar
+              groups={groups}
+              pathname={pathname}
+              counts={counts}
+              onSearch={() => {
+                setOpenFor(null);
+                setSearchOpen(true);
+              }}
+            />
+            <IconButton icon="x" label="Close navigation" className="absolute right-2 top-2.5" onClick={() => setOpenFor(null)} />
           </div>
-          <div className="min-h-0 flex-1">
-            <Sidebar activeStore={activeStore} pathname={pathname} />
-          </div>
-        </div>
+        ) : null}
       </dialog>
 
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur supports-[backdrop-filter]:bg-canvas/80">
-        <div className="flex h-14 items-center gap-2 px-3 sm:px-5">
-          <IconButton icon="menu" label="Open navigation" className="lg:hidden" onClick={() => setOpenFor(pathname)} />
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <OrgSelector org={org} />
-            <span aria-hidden="true" className="hidden text-line-strong sm:inline">/</span>
-            <StoreSelector stores={stores} activeStore={activeStore} pathname={pathname} />
+        <div className="flex h-header items-center gap-2 px-page">
+          <IconButton icon="menu" label="Open navigation" className="-ml-1 shrink-0 lg:hidden" onClick={() => setOpenFor(pathname)} />
+          <div className="hidden lg:block"><OrgSelector org={org} /></div>
+          <div className="flex min-w-0 shrink items-center">
+            <WebsiteSelector websites={websites} active={contextWebsite} pathname={pathname} />
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <div className="hidden md:block"><Tooltip content="All data shown is sample data" side="bottom">
-              <span tabIndex={0} className="mr-1 inline-flex h-6 items-center gap-1 rounded-full border border-dashed border-line-strong px-2 text-[11px] font-medium text-fg-subtle">
-                <Icon name="database" size={12} /> Demo data
+          <div className="@container hidden min-w-0 flex-1 pl-1 md:block">
+            <Breadcrumbs pathname={pathname} />
+          </div>
+          <div className="min-w-0 flex-1 md:hidden" />
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            {/* The page's ONE primary action lands here (see HeaderAction in page-chrome). */}
+            <div ref={registerActionSlot} className="flex shrink-0 items-center gap-2 empty:hidden" />
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search"
+              title="Search (Ctrl K)"
+              aria-keyshortcuts="Control+K Meta+K"
+              className={cn(
+                "hidden h-10 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-3 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg sm:inline-flex",
+                "2xl:w-52 2xl:justify-start",
+              )}
+            >
+              <Icon name="search" size={16} />
+              <span className="hidden 2xl:inline">Search</span>
+              <kbd className="ml-auto hidden font-sans text-xs text-fg-subtle 2xl:inline">Ctrl K</kbd>
+            </button>
+            <Tooltip content="Demo data. Nothing here is real." side="bottom">
+              <span tabIndex={0} className="hidden h-7 items-center gap-1 rounded-full border border-dashed border-line-strong px-1.5 text-xs font-medium text-fg-muted sm:inline-flex lg:px-2">
+                <Icon name="database" size={14} />
+                <span className="hidden lg:inline">Demo data</span>
+                <span className="sr-only lg:hidden">Demo data</span>
               </span>
-            </Tooltip></div>
-            <ThemeToggle />
-            <NotificationsMenu alerts={alerts} stores={stores} />
+            </Tooltip>
+            <SyncIndicator className="hidden lg:inline-flex" />
+            <Notifications alerts={alerts} websites={websites} contextWebsiteId={navWebsiteId} />
             <UserMenu user={user} />
           </div>
         </div>
       </header>
 
-      <main id="main" tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[1360px] px-3 py-5 outline-none sm:px-5 sm:py-6">
+      <main id="main" ref={mainRef} tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[1360px] px-page py-6 outline-none sm:py-8">
         {children}
       </main>
+
+      {searchOpen ? <CommandPalette index={searchIndex} websites={websites} contextWebsiteId={navWebsiteId} onClose={closeSearch} /> : null}
     </div>
   );
 }

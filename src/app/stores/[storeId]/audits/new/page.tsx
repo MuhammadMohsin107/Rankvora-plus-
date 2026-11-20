@@ -5,8 +5,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shell/page-header";
-import { ButtonLink } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/feedback";
 import { AuditWizard } from "@/features/audit/audit-wizard";
 import { AuditSetupBlocked } from "@/features/audit/setup-blocked";
 import { getWizardData } from "@/services/audit";
@@ -23,27 +21,18 @@ async function NewAuditPageContent(props: PageProps<"/stores/[storeId]/audits/ne
   const data = await getWizardData(storeId);
   if (!data) notFound();
 
-  const header = <PageHeader title="Start audit" breadcrumb={[{ label: "Audits", href: `/stores/${storeId}/audits` }, { label: "New" }]} />;
+  const header = <PageHeader title="Start audit" />;
 
   // Blocked state: no AI channel is connected, so the wizard cannot be completed.
   if (data.channels.length === 0) {
     return (
       <>
         {header}
-        <AuditSetupBlocked storeId={storeId} storeName={data.store.name} />
+        <AuditSetupBlocked storeName={data.store.name} />
       </>
     );
   }
 
-  const activePrompts = data.prompts.filter((p) => p.status === "active").length;
-  if (activePrompts === 0) {
-    return (
-      <>
-        {header}
-        <EmptyState icon="prompts" title="No active prompts" description="An audit asks AI providers your prompts. Add one first." action={<ButtonLink href={`/stores/${storeId}/prompts/new`} variant="primary" icon="plus">Create a prompt</ButtonLink>} />
-      </>
-    );
-  }
   return (
     <>
       {header}

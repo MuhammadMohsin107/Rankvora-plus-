@@ -30,7 +30,7 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
         <CardHeader
           title="AI visibility"
           subtitle={basis}
-          info="Computed from successful API answer samples. Failed requests are excluded from rates and counted in coverage."
+          info="From successful API answer samples. Failures are excluded and counted in coverage."
           actions={summary.provisional ? <Badge tone="warning" icon="alert-triangle">Provisional</Badge> : undefined}
         />
         {ai ? (
@@ -49,8 +49,8 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
           </>
         ) : (
           <CardBody>
-            <p className="text-[13px] font-medium text-fg">Not part of this audit</p>
-            <p className="mt-0.5 text-xs text-fg-subtle">This lane was not assessed, so there are no rates to show. It is not a score of zero.</p>
+            <p className="text-body-sm font-medium text-fg">Not part of this audit</p>
+            <p className="mt-0.5 text-helper text-fg-subtle">Not a score of zero.</p>
           </CardBody>
         )}
       </Card>
@@ -58,7 +58,7 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
       <Card as="section" className="flex flex-col">
         <CardHeader
           title="Website readiness"
-          info="Technical and content-quality pass rates are separate. Pass rate = passing ÷ determinate checks. Coverage = determinate ÷ applicable checks."
+          info="Technical and content-quality pass rates stay separate."
           actions={summary.provisional ? <Badge tone="warning" icon="alert-triangle">Provisional</Badge> : undefined}
         />
         {website ? (
@@ -85,8 +85,8 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
           </>
         ) : (
           <CardBody>
-            <p className="text-[13px] font-medium text-fg">Not part of this audit</p>
-            <p className="mt-0.5 text-xs text-fg-subtle">This lane was not assessed, so there are no rates to show. It is not a score of zero.</p>
+            <p className="text-body-sm font-medium text-fg">Not part of this audit</p>
+            <p className="mt-0.5 text-helper text-fg-subtle">Not a score of zero.</p>
           </CardBody>
         )}
       </Card>

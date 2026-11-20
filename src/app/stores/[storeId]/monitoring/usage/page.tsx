@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 
-import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PageFallback } from "@/components/shell/page-fallback";
 import { NoSchedules } from "@/features/monitoring/no-schedules";
 import { UsageView } from "@/features/monitoring/usage-view";
 import { getStore, storeIds } from "@/services/core";
-import { getUsage, listSchedules } from "@/services/monitoring";
+import { getUsage } from "@/services/monitoring";
 
 export const metadata: Metadata = { title: "Usage" };
 
@@ -19,8 +19,8 @@ async function UsagePageContent(props: PageProps<"/stores/[storeId]/monitoring/u
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
-  const [schedules, usage] = await Promise.all([listSchedules(storeId), getUsage(storeId)]);
-  if (schedules.length === 0 || !usage) return <NoSchedules storeId={storeId} canSchedule={store.channelIds.length > 0} />;
+  const usage = await getUsage(storeId);
+  if (!usage) return <NoSchedules />;
   return <UsageView usage={usage} />;
 }
 

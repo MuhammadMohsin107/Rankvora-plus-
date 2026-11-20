@@ -1,4 +1,4 @@
-import type { AuditLane, AuditType, CheckGroup, CheckKind, PageType } from "@/types/audit";
+import type { AuditLane, AuditStatus, AuditType, CheckGroup, CheckKind, PageType } from "@/types/audit";
 
 export const AUDIT_TYPE_LABEL: Record<AuditType, string> = {
   initial: "Initial",
@@ -30,15 +30,15 @@ export const CHECK_KIND_LABEL: Record<CheckKind, string> = { technical: "Technic
 
 export const PAGE_TYPE_LABEL: Record<PageType, string> = {
   home: "Home",
-  collection: "Collection",
-  product: "Product",
+  collection: "Category",
+  product: "Product or service",
   guide: "Guide",
   page: "Page",
   policy: "Policy",
 };
 
-/** Store settings, integrations tab (where AI platforms and connectors are connected). */
-export const integrationsHref = (storeId: string) => `/stores/${storeId}/settings?tab=integrations`;
+/** Website settings, integrations tab (where AI platforms and optional connectors are connected). */
+export const integrationsHref = () => "/integrations";
 
 export function formatMinutes(totalSeconds: number): string {
   const m = Math.max(1, Math.round(totalSeconds / 60));
@@ -54,3 +54,25 @@ export const FINDING_CATEGORY_LABEL = {
   ai_visibility: "AI visibility",
   product: "Product",
 } as const;
+
+export const AUDIT_TYPE_HINT: Record<AuditType, string> = {
+  initial: "First baseline for this website",
+  full: "All active prompts and the whole site",
+  focused: "A subset of prompts or sections",
+  verification: "Re-check after a fix",
+  triggered: "Started by an event",
+  scheduled: "Repeats on a schedule",
+};
+
+/** Criteria categories the website lane can evaluate, and the check groups each one covers. */
+export const CRITERIA_CATEGORIES: { id: string; label: string; groups: CheckGroup[] }[] = [
+  { id: "technical", label: "Technical", groups: ["reachability", "indexing", "canonical", "sitemaps", "linking", "rendering", "url_quality"] },
+  { id: "content", label: "Content and entity", groups: ["content_entity", "metadata"] },
+  { id: "structured_data", label: "Structured data", groups: ["structured_data"] },
+  { id: "crawler_access", label: "AI crawler access", groups: [] },
+  { id: "performance", label: "Performance and accessibility", groups: ["mobile_a11y"] },
+];
+
+export const STATUS_ORDER: AuditStatus[] = ["draft", "validating", "queued", "in_progress", "completed", "completed_with_warnings", "partially_completed", "blocked", "failed", "cancelled"];
+
+export const TRIGGER_LABEL = { fix_applied: "A fix was applied", brand_fact: "A brand fact changed", alert: "A monitoring alert", competitor_suggested: "A competitor was suggested", schedule: "Schedule" } as const;

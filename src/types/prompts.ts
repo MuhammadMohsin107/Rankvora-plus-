@@ -89,24 +89,13 @@ export type StoreContext = {
   market: string;
   marketName: string;
   language: string;
-  /** AI channels selected for the store. 0 means nothing is tracked yet and results are N/A. */
+  /** AI channels selected for the website. 0 means nothing is tracked yet and results are N/A. */
   channelCount: number;
+  /** False when the server does not know this website (created locally): the client fills the fields from demo-state. */
+  resolved?: boolean;
 };
 
-export type ExistingPrompt = { id: string; text: string; status: PromptStatus };
-
-export type PromptDetailData = {
-  store: StoreContext;
-  prompt: PromptRecord;
-  versions: PromptVersion[];
-  activity: PromptActivityItem[];
-  results: PromptResults;
-  channels: ChannelOption[];
-  groups: PromptGroup[];
-  products: ProductService[];
-  existing: ExistingPrompt[];
-  actor: string;
-};
+export type ExistingPrompt = { id: string; storeId: string; text: string; status: PromptStatus };
 
 export type PromptSuggestion = {
   id: string;
@@ -126,22 +115,79 @@ export type PromptTemplate = {
   topic: string;
 };
 
-export type TemplateProfile = { brand: string; category: string; market: string; city: string; competitor: string };
+/** `brands` is the phrase for "the brands in this category" ("running shoe brands", "nutrition websites and brands"). */
+export type TemplateProfile = { brand: string; category: string; brands: string; market: string; city: string; competitor: string; item: string; need: string };
 
-export type NewPromptData = {
+/** Another website of the organization, for "Copy to website". `texts` are its prompt texts (duplicate check). */
+export type WebsiteOption = { id: string; name: string; texts: string[] };
+
+/** Everything the library, detail and create screens need about one website. Never contains per-prompt results. */
+export type PromptContext = {
   store: StoreContext;
+  channels: ChannelOption[];
   groups: PromptGroup[];
+  /** Optional offerings (products, services, locations). */
   products: ProductService[];
   existing: ExistingPrompt[];
-  channels: ChannelOption[];
-  suggestionBatches: PromptSuggestion[][];
-  templates: PromptTemplate[];
+  actor: string;
+  otherWebsites: WebsiteOption[];
   profile: TemplateProfile;
+  templates: PromptTemplate[];
+  /** Competitor names confirmed for this website (for competitor-angle suggestions). */
+  competitors: string[];
+};
+
+export type CompetitorMention = { id: string; name: string; mentioned: Rate };
+
+/** Share of citation-returning responses that cite a domain. */
+export type CitationSummary = { domain: string; source: "owned" | "competitor" | "third_party"; cited: Rate };
+
+export type Observation = { runId: string; kind: "monitoring" | "audit"; at: string; channelLabel: string } | null;
+
+/** A monitoring schedule that includes the prompt. */
+export type PromptScheduleInfo = { id: string; name: string; frequency: string; status: string };
+
+export type PromptEvidence = {
+  lastObservation: Observation;
+  competitors: CompetitorMention[];
+  /** Citation-returning responses in scope (denominator for every citation row). */
+  citationResponses: number;
+  citations: CitationSummary[];
+  schedules: PromptScheduleInfo[];
+};
+
+export type PromptDetailData = {
+  storeId: string;
+  context: PromptContext;
+  /** null when the prompt is not in the static data (created in this browser). */
+  prompt: PromptRecord | null;
+  versions: PromptVersion[];
+  activity: PromptActivityItem[];
+  results: PromptResults;
+  evidence: PromptEvidence;
+};
+
+export type NewPromptData = {
+  storeId: string;
+  context: PromptContext;
 };
 
 export type LibraryData = {
-  store: StoreContext;
+  storeId: string;
+  context: PromptContext;
   prompts: LibraryPrompt[];
-  groups: PromptGroup[];
-  channels: ChannelOption[];
+  /** Prompts in the latest monitoring run (coverage label). 0 when nothing ran. */
+  inLatestRun: number;
 };
+
+/** Fields kept on a locally stored prompt row besides the PromptRecord ones. */
+export type LocalPromptExtras = {
+  /** Stamped by the demo state on rows created in this browser. */
+  origin?: "local-demo";
+  simulated?: true;
+  /** Versions created in this browser (newest first). Earlier ones come from the static data. */
+  localVersions?: PromptVersion[];
+  localActivity?: PromptActivityItem[];
+};
+
+export type StoredPrompt = PromptRecord & LocalPromptExtras;

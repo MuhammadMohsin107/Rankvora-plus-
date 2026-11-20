@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/shell/page-header";
-import { AddStoreWizard } from "@/features/stores/wizard/add-store-wizard";
-import { listChannels } from "@/services/core";
+import { AddWebsiteWizard } from "@/features/stores/wizard/add-website-wizard";
+import { listChannels, listStores } from "@/services/core";
 import { getStoreSetupSample } from "@/services/settings";
 
-export const metadata: Metadata = { title: "Add store" };
+export const metadata: Metadata = { title: "Add website" };
 
-export default async function NewStorePage() {
-  const [channels, sample] = await Promise.all([listChannels(), getStoreSetupSample()]);
+export default async function NewWebsitePage() {
+  const [channels, sample, stores] = await Promise.all([listChannels(), getStoreSetupSample(), listStores()]);
+  const existing = stores.map((w) => ({ name: w.name, domain: w.domain }));
   return (
     <>
-      <PageHeader title="Add store" />
-      <AddStoreWizard channels={channels} sample={sample} />
+      <PageHeader title="Add website" />
+      <AddWebsiteWizard channels={channels} sample={sample} existing={existing} />
     </>
   );
 }

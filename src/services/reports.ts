@@ -5,10 +5,11 @@
  */
 import { AUDIT_REPORT_LIMITATIONS, COMPARISON_LIMITATIONS, MONITORING_REPORT_LIMITATIONS } from "@/demo/comparison";
 import { matchSlots } from "@/features/comparison/engine";
+import { auditDocument, comparisonDocument, monitoringDocument } from "@/features/reports/documents";
 import { channelLabel } from "@/lib/labels";
-import { getSourceRows } from "@/services/comparison";
-import { listAlertHeadlines, listChannels, listPromptsBase, storeIds } from "@/services/core";
-import { listFindings, listRunResponses, registry } from "@/services/records";
+import { METHODOLOGY, getComparisonDetail, getPromptRows, getSourceRows } from "@/services/comparison";
+import { getStore, listAlertHeadlines, listChannels, listPromptsBase, storeIds } from "@/services/core";
+import { evidenceIdsForFinding, listFindings, listRunResponses, registry } from "@/services/records";
 import type {
   AuditReportData,
   ChannelRates,
@@ -19,7 +20,8 @@ import type {
   ReportRecord,
 } from "@/types/comparison";
 import type { Rate } from "@/types/core";
-import type { ResponseSample } from "@/types/shared-records";
+import { DEMO_NOW, formatDate, formatShortDate } from "@/lib/format";
+import type { EvidenceIds, ReportDocument, ReportRow, ResponseSample } from "@/types/shared-records";
 
 export { AUDIT_REPORT_LIMITATIONS, COMPARISON_LIMITATIONS, MONITORING_REPORT_LIMITATIONS };
 
@@ -34,6 +36,11 @@ function recordsFor(storeId: string): ReportRecord[] {
 
 export async function listReports(storeId: string): Promise<ReportRecord[]> {
   return recordsFor(storeId);
+}
+
+/** Reports of a website as list rows (the shape demo-state overlays), with the website id on each. */
+export async function listReportRows(storeId: string): Promise<ReportRow[]> {
+  return recordsFor(storeId).map((r) => ({ ...r, storeId }));
 }
 
 export async function getReport(storeId: string, reportId: string): Promise<ReportRecord | null> {
@@ -238,4 +245,71 @@ export async function getGeneratingProgress(storeId: string, report: ReportRecor
     jobs: { done: audit.succeededJobs + audit.failedJobs, total: audit.plannedJobs },
     pages: audit.pages ? { done: audit.pages.n, total: audit.pages.d } : null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Report documents: the model the page, the exports and the print view share
+// ---------------------------------------------------------------------------
+
+export const reportDocumentKey = (type: string, sourceId: string) => `${type}:${sourceId}`;
+
+/** The document for one report, built from the same data as the audit, run or comparison it reports on. */
+export async function getReportDocument(storeId: string, report: ReportRecord): Promise<ReportDocument | null> {
+  const store = await getStore(storeId);
+  if (!store) return null;
+  const websiteName = store.name;
+  if (report.type === "audit") {
+    const data = await getAuditReportData(storeId, report.sourceId);
+    if (!data) return null;
+    const findings = await listFindings(storeId);
+    const findingIds: Record<string, EvidenceIds> = {};
+    for (const f of findings.filter((x) => data.findings.some((d) => d.id === x.id))) findingIds[f.id] = evidenceIdsForFinding(f);
+    return auditDocument({ report, data, websiteName, limitations: AUDIT_REPORT_LIMITATIONS, findingIds, storeId });
+  }
+  if (report.type === "monitoring") {
+    const data = await getMonitoringReportData(storeId, report.sourceId);
+    if (!data) return null;
+    const answers = (await listRunResponses(storeId, report.sourceId)).filter((r) => r.status === "succeeded");
+    const gaps = answers.filter((r) => r.brandMentioned === "no");
+    return monitoringDocument({ report, data, websiteName, limitations: MONITORING_REPORT_LIMITATIONS, responses: [...gaps, ...answers.filter((r) => r.brandMentioned !== "no")], storeId });
+  }
+  const detail = await getComparisonDetail(storeId, report.sourceId);
+  if (!detail) return null;
+  const rows = detail.result.verdict === "not_comparable" ? [] : await getPromptRows(storeId, report.sourceId);
+  return comparisonDocument({
+    report,
+    detail,
+    websiteName,
+    limitations: COMPARISON_LIMITATIONS,
+    methodology: { version: METHODOLOGY.version, matching: METHODOLOGY.matching, aggregation: METHODOLOGY.aggregation[detail.result.aggregation], rules: METHODOLOGY.rules },
+    changedRows: rows.filter((r) => r.change !== "unchanged"),
+    storeId,
+  });
+}
+
+/** Documents for every report source of a website, keyed by `type:sourceId`. Used to render reports created in the browser. */
+export async function getReportDocuments(storeId: string): Promise<Record<string, ReportDocument>> {
+  const out: Record<string, ReportDocument> = {};
+  for (const source of await listReportSources(storeId)) {
+    const record: ReportRecord = { id: source.id, type: source.type, title: source.title, sourceId: source.id, period: source.period, createdAt: DEMO_NOW, version: source.version, status: "ready", sourceHref: source.href, sourceLabel: source.id };
+    const doc = await getReportDocument(storeId, record);
+    if (doc) out[reportDocumentKey(source.type, source.id)] = { ...doc, title: source.title };
+  }
+  return out;
+}
+
+export type ReportSource = { type: "audit" | "monitoring" | "comparison"; id: string; title: string; period: string; version: string; href: string; date: string; hasReport: boolean };
+
+/** Sources a report can be generated from: finished audits and runs, and every comparison. */
+export async function listReportSources(storeId: string): Promise<ReportSource[]> {
+  const reports = registry.reports(storeId);
+  const has = (id: string) => reports.some((r) => r.sourceId === id);
+  const audits = registry.audits(storeId)
+    .filter((a) => a.completedAt !== null)
+    .map((a): ReportSource => ({ type: "audit", id: a.id, title: a.title, period: formatDate(a.startedAt), version: "Criteria 2.1", href: `/stores/${storeId}/audits/${a.id}`, date: a.startedAt, hasReport: has(a.id) }));
+  const runs = registry.runs(storeId)
+    .filter((r) => r.status !== "running" && r.status !== "skipped" && r.status !== "failed")
+    .map((r): ReportSource => ({ type: "monitoring", id: r.id, title: `Weekly monitoring — ${formatShortDate(r.scheduledFor)}`, period: formatDate(r.scheduledFor), version: "Analysis 1.2", href: `/stores/${storeId}/monitoring/runs/${r.id}`, date: r.scheduledFor, hasReport: has(r.id) }));
+  const comparisons = registry.comparisons(storeId).map((c): ReportSource => ({ type: "comparison", id: c.id, title: c.title, period: formatDate(c.createdAt), version: `Methodology ${c.methodologyVersion}`, href: `/stores/${storeId}/comparisons/${c.id}`, date: c.createdAt, hasReport: has(c.id) }));
+  return [...audits, ...runs, ...comparisons].sort((a, b) => (a.date < b.date ? 1 : -1));
 }

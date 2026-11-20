@@ -86,3 +86,118 @@ export type ResponseSample = {
   completedAt: string | null;
   analysisVersion: string;
 };
+
+// ---------------------------------------------------------------------------
+// Evidence chain ids
+// ---------------------------------------------------------------------------
+
+export type EvidenceKind = "metric" | "prompt" | "response" | "citation" | "finding" | "fix" | "verification" | "observation" | "comparison";
+
+/** Ids that identify one evidence chain. Every field except `storeId` is optional: a chain shows what exists. */
+export type EvidenceIds = {
+  /** Website id (route segment `/stores/{storeId}`). */
+  storeId: string;
+  /** Metric the evidence supports, e.g. "mention-rate". */
+  metricId?: string;
+  /** Audit (aud-...) or monitoring run (run-...) that produced the metric and the response. */
+  sourceId?: string;
+  promptId?: string;
+  /** Response sample id: resp-{runId}-{n}. */
+  responseId?: string;
+  /** Cited domain or URL. */
+  citation?: string;
+  findingId?: string;
+  /** Fixes task id (task-...). */
+  taskId?: string;
+  /** Audit or run that verified the fix. */
+  verificationId?: string;
+  /** Monitoring run id, or "{promptId}|{channelId}" observation key. */
+  observationId?: string;
+  comparisonId?: string;
+  /** Replaces the default chip text per kind, for example a prompt's text or a finding's title. */
+  labels?: Partial<Record<EvidenceKind, string>>;
+};
+
+// ---------------------------------------------------------------------------
+// Reports: list rows and the document every export is generated from
+// ---------------------------------------------------------------------------
+
+export type ReportKind = "audit" | "monitoring" | "comparison";
+export type ReportState = "ready" | "generating" | "failed";
+
+/** One row of the reports list: seeded from the registry, or created in this browser (demo-state `reports`). */
+export type ReportRow = {
+  id: string;
+  storeId: string;
+  type: ReportKind;
+  title: string;
+  /** Audit, monitoring run or comparison id the report is built from. */
+  sourceId: string;
+  period: string;
+  createdAt: string;
+  version: string;
+  status: ReportState;
+  sourceHref: string;
+  sourceLabel: string;
+  /** Simulated generation window (created or retried locally): started and the time it becomes ready. */
+  startedAt?: string;
+  readyAt?: string;
+  archived?: boolean;
+};
+
+/** A table cell: text, a number, a rate with numerator and denominator, or null for "not available". */
+export type ReportCell = string | number | null | { n: number; d: number };
+
+export type ReportTable = {
+  id: string;
+  title: string;
+  columns: { id: string; label: string; kind: "text" | "number" | "rate"; align?: "left" | "right" }[];
+  rows: Record<string, ReportCell>[];
+};
+
+export type ReportMetric = {
+  id: string;
+  label: string;
+  /** Numerator and denominator are integers. null on both = not available (never zero). */
+  n: number | null;
+  d: number | null;
+  /** The same rate for the previous run or the baseline side. */
+  previous?: { n: number; d: number } | null;
+  unit?: string;
+  /** One short line: what the denominator counts. */
+  basis?: string;
+  naReason?: string;
+};
+
+export type ReportEvidenceItem = {
+  id: string;
+  title: string;
+  note?: string;
+  ids: EvidenceIds;
+  /** The original answer, for the response drawer. Not part of exports. */
+  response?: ResponseSample;
+};
+
+export type ReportDocument = {
+  type: ReportKind;
+  title: string;
+  websiteName: string;
+  period: string;
+  /** Generation time of the seeded report; local reports show their own creation time. */
+  generatedAt: string;
+  /** Criteria, analysis or methodology version. */
+  version: string;
+  source: { id: string; label: string; href: string; snapshotIds: string[] };
+  /** At most three short lines. */
+  summary: string[];
+  /** Comparison only: whether the two sides may be compared. */
+  verdict?: { label: string; tone: "success" | "warning" | "danger" | "neutral" };
+  metrics: ReportMetric[];
+  tables: ReportTable[];
+  /** What the numbers rest on: samples, failures, pages, prompts. */
+  coverage: { label: string; n: number; d: number }[];
+  scope: { label: string; value: string }[];
+  evidence: ReportEvidenceItem[];
+  limitations: string[];
+  methodology: string[];
+};

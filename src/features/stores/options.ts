@@ -1,4 +1,4 @@
-/** Static form options for store setup (UI constants, not demo data). */
+/** Static form options for website setup (UI constants, not demo data). */
 
 export const COUNTRIES: { code: string; name: string; timezone: string; language: string }[] = [
   { code: "PK", name: "Pakistan", timezone: "Asia/Karachi", language: "en" },
@@ -57,5 +57,4 @@ export const INDUSTRIES: string[] = [
   "Other",
 ];
 
-/** Platforms offered in the Add store form, in display order. */
-export const PLATFORM_ORDER = ["shopify", "woocommerce", "wordpress", "webflow", "custom", "manual"] as const;
+/** Site types offered when adding a website: use SITE_TYPE_ORDER and siteTypeLabel from "@/lib/labels". */

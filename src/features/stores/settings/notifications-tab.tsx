@@ -19,6 +19,7 @@ type Props = {
   readOnly: boolean;
 };
 
+/** This website follows the organization defaults or customises them. Saved under `org.notifications.overrides`. */
 export function NotificationsTab({ events, orgMatrix, webhookReady, saved, draft, onDraft, onSave, readOnly }: Props) {
   const dirty = saved.mode !== draft.mode || (draft.mode === "override" && JSON.stringify(saved.matrix) !== JSON.stringify(draft.matrix));
   const inherit = draft.mode === "inherit";
@@ -26,14 +27,14 @@ export function NotificationsTab({ events, orgMatrix, webhookReady, saved, draft
   return (
     <div className="flex flex-col gap-4">
       <Card>
-        <div className="flex justify-end px-4 pt-3.5">
+        <div className="flex justify-end px-card pt-card">
           <Segmented<StoreNotifState["mode"]>
             label="Notification source"
             value={draft.mode}
-            onChange={(mode) => onDraft({ ...draft, mode })}
+            onChange={(mode) => onDraft({ ...draft, mode, matrix: mode === "override" && saved.mode === "inherit" ? orgMatrix : draft.matrix })}
             options={[
               { value: "inherit", label: "Organization defaults" },
-              { value: "override", label: "Override" },
+              { value: "override", label: "Customise" },
             ]}
           />
         </div>
@@ -44,7 +45,7 @@ export function NotificationsTab({ events, orgMatrix, webhookReady, saved, draft
       <div className="flex items-center gap-2">
         <Button variant="primary" disabled={readOnly || !dirty} onClick={onSave}>Save notifications</Button>
         <Button variant="ghost" disabled={readOnly || !dirty} onClick={() => onDraft(saved)}>Reset</Button>
-        {!dirty ? <span className="text-xs text-fg-subtle">No changes</span> : null}
+        {!dirty ? <span className="text-helper text-fg-muted">No changes</span> : null}
       </div>
     </div>
   );

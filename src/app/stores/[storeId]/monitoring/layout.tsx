@@ -1,20 +1,23 @@
 import { Suspense } from "react";
 
-import { PageFallback } from "@/components/shell/page-fallback";
 import { notFound } from "next/navigation";
 
+import { PageFallback } from "@/components/shell/page-fallback";
 import { MonitoringHeader } from "@/features/monitoring/monitoring-header";
-import { getMonitoringHeader } from "@/services/monitoring";
+import { RunNowHost } from "@/features/monitoring/run-now-dialog";
+import { MonitoringProvider } from "@/features/monitoring/state";
+import { getMonitoringShell } from "@/services/monitoring";
 
 async function MonitoringLayoutContent({ children, params }: LayoutProps<"/stores/[storeId]/monitoring">) {
   const { storeId } = await params;
-  const header = await getMonitoringHeader(storeId);
-  if (!header) notFound();
+  const data = await getMonitoringShell(storeId);
+  if (!data) notFound();
   return (
-    <>
-      <MonitoringHeader data={header} />
+    <MonitoringProvider data={data}>
+      <MonitoringHeader />
+      <RunNowHost />
       {children}
-    </>
+    </MonitoringProvider>
   );
 }
 

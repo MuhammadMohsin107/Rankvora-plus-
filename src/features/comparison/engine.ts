@@ -60,8 +60,10 @@ export function applyFilters<T extends SlotCore>(rows: T[], filters: ComparisonF
   return rows.filter(
     (r) =>
       (!filters.groupId || r.groupId === filters.groupId) &&
+      (!filters.topic || r.topic === filters.topic) &&
       (!filters.promptId || r.promptId === filters.promptId) &&
       (!filters.channelId || r.channelId === filters.channelId) &&
+      (!filters.channelIds || filters.channelIds.length === 0 || filters.channelIds.includes(r.channelId)) &&
       (!filters.market || r.market === filters.market) &&
       (!filters.language || r.language === filters.language),
   );
@@ -178,7 +180,7 @@ export function assessComparability(baseline: SideInfo, current: SideInfo, baseR
   const storesB = new Set(baseRows.map((r) => r.storeId));
   const storesC = new Set(currentRows.map((r) => r.storeId));
   const sameStore = storesB.size <= 1 && storesC.size <= 1 && [...storesB].every((s) => storesC.has(s));
-  checks.push({ id: "same-store", kind: "hard", state: sameStore ? "pass" : "fail", label: "Same store", detail: sameStore ? "Both sides belong to this store." : "Sides come from different stores. Portfolio comparison lives on the Portfolio page." });
+  checks.push({ id: "same-store", kind: "hard", state: sameStore ? "pass" : "fail", label: "Same website", detail: sameStore ? "Both sides belong to this website." : "Sides come from different websites. Compare websites in Portfolio." });
 
   const sameBrand = baseline.brand === current.brand;
   checks.push({ id: "same-brand", kind: "hard", state: sameBrand ? "pass" : "fail", label: "Same brand", detail: sameBrand ? `Both sides track ${baseline.brand}.` : `${baseline.brand} vs ${current.brand}.` });
@@ -325,7 +327,6 @@ export function assessComparability(baseline: SideInfo, current: SideInfo, baseR
 // Metrics
 // ---------------------------------------------------------------------------
 
-const round2 = (v: number) => Math.round(v * 100) / 100;
 const okOf = (rows: SlotRow[]) => rows.filter((r) => r.ok);
 
 type SlotRate = (rows: SlotRow[]) => Rate | null;
@@ -424,6 +425,9 @@ function computeMetric(spec: MetricSpec, pairs: MatchedPair<SlotRow>[], aggregat
       current: null,
       pooledBaseline: null,
       pooledCurrent: null,
+      basis: mode === "pooled" ? "pooled" : "average",
+      baselineRate: null,
+      currentRate: null,
       cohort: 0,
       pointChange: null,
       relativeChange: null,
@@ -438,27 +442,38 @@ function computeMetric(spec: MetricSpec, pairs: MatchedPair<SlotRow>[], aggregat
   }
 
   const sum = (pick: (e: { b: Rate; c: Rate }) => Rate): Rate => eligible.reduce<Rate>((acc, e) => ({ n: acc.n + pick(e).n, d: acc.d + pick(e).d }), { n: 0, d: 0 });
-  const macro = (pick: (e: { b: Rate; c: Rate }) => Rate): Rate => ({ n: round2(eligible.reduce((acc, e) => acc + pick(e).n / pick(e).d, 0)), d: eligible.length });
+  /** Mean of per-slot rates. This is an average, never a count. */
+  const mean = (pick: (e: { b: Rate; c: Rate }) => Rate): number => eligible.reduce((acc, e) => acc + pick(e).n / pick(e).d, 0) / eligible.length;
 
-  const pooledBaseline = sum((e) => e.b);
-  const pooledCurrent = sum((e) => e.c);
-  const baseline = mode === "pooled" ? pooledBaseline : macro((e) => e.b);
-  const current = mode === "pooled" ? pooledCurrent : macro((e) => e.c);
+  // Integer counts: every successful response of the matched cohort counted once.
+  const baseline = sum((e) => e.b);
+  const current = sum((e) => e.c);
+  const average = mode === "matched_slot_macro";
+  const baselineRate = average ? mean((e) => e.b) : baseline.n / baseline.d;
+  const currentRate = average ? mean((e) => e.c) : current.n / current.d;
+
+  // A Wilson interval is only valid for one binomial count. Under the average basis it is shown
+  // only when every slot has the same denominator, because the average then equals n / d.
+  const uniform = (pick: (e: { b: Rate; c: Rate }) => Rate) => eligible.every((e) => pick(e).d === pick(eligible[0]).d);
+  const ciValid = !average || (uniform((e) => e.b) && uniform((e) => e.c));
 
   return {
     ...base,
     baseline,
     current,
-    pooledBaseline,
-    pooledCurrent,
+    pooledBaseline: baseline,
+    pooledCurrent: current,
+    basis: average ? "average" : "pooled",
+    baselineRate,
+    currentRate,
     cohort: eligible.length,
-    pointChange: pointChange(baseline, current),
-    relativeChange: relativeChange(baseline, current),
-    zeroBaseline: baseline.n === 0 && current.n > 0,
-    countChange: pooledCurrent.n - pooledBaseline.n,
-    denominatorChange: pooledCurrent.d - pooledBaseline.d,
-    baselineCi: wilsonInterval(baseline.n, baseline.d),
-    currentCi: wilsonInterval(current.n, current.d),
+    pointChange: (currentRate - baselineRate) * 100,
+    relativeChange: baselineRate === 0 ? null : ((currentRate - baselineRate) / baselineRate) * 100,
+    zeroBaseline: baselineRate === 0 && currentRate > 0,
+    countChange: current.n - baseline.n,
+    denominatorChange: current.d - baseline.d,
+    baselineCi: ciValid ? wilsonInterval(baseline.n, baseline.d) : null,
+    currentCi: ciValid ? wilsonInterval(current.n, current.d) : null,
     sample: sampleStatus(eligible.length),
   };
 }
@@ -478,10 +493,13 @@ export type EngineContext = {
 function summarise(rows: SlotRow[]): PairSummary {
   const ok = okOf(rows);
   const latest = [...ok].sort((a, b) => (a.requestedAt < b.requestedAt ? 1 : -1))[0];
+  const withCitations = ok.filter((r) => r.citationSupport === "returned");
   return {
     n: ok.filter((r) => r.mentioned).length,
     d: ok.length,
     recommended: ok.filter((r) => r.recommended).length,
+    cited: withCitations.filter((r) => r.ownedCited).length,
+    citationD: withCitations.length,
     failed: rows.length - ok.length,
     outcome: ok.length === 1 ? ok[0].outcome : null,
     latestResponseId: latest?.responseId ?? null,
@@ -597,6 +615,7 @@ export function compareSides(
       current: c,
       change: change(b.n / b.d, c.n / c.d),
       recommendationChange: change(b.recommended / b.d, c.recommended / c.d),
+      citationChange: b.citationD > 0 && c.citationD > 0 ? change(b.cited / b.citationD, c.cited / c.citationD) : "n/a",
     };
   });
 
@@ -692,6 +711,9 @@ export function compareSides(
       current: c,
       pooledBaseline: b,
       pooledCurrent: c,
+      basis: "pooled",
+      baselineRate: b.d > 0 ? b.n / b.d : null,
+      currentRate: c.d > 0 ? c.n / c.d : null,
       cohort: Math.min(b.d, c.d),
       pointChange: pointChange(b, c),
       relativeChange: relativeChange(b, c),
@@ -771,4 +793,5 @@ export const REASON_LABEL: Record<string, string> = {
   search_mode_changed: "Search mode changed",
   locale_differs: "Market or language differs",
   not_run: "Not run on one side",
+  no_history: "No samples yet",
 };

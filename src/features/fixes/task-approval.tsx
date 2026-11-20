@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
-import { Callout, Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
+import { Callout, Card, CardBody, KeyValue } from "@/components/ui/card";
 import { Field, Select, Textarea } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Mono } from "@/components/ui/misc";
@@ -17,7 +17,6 @@ import type { ApprovalRecord, ApprovalState, ExecutionMode, TaskStatus } from "@
 
 import { canApprove, MODE_LABEL } from "./fixes-shared";
 
-const ROLES: Role[] = ["owner", "admin", "editor", "auditor", "viewer"];
 const REJECT_REASONS = ["Wording not supported by facts", "Wrong resource", "Too risky for now", "Needs another review", "Other"];
 
 const STATE_BADGE: Record<ApprovalState, { label: string; tone: "neutral" | "warning" | "success" | "danger"; icon: Parameters<typeof Badge>[0]["icon"] }> = {
@@ -32,13 +31,6 @@ export function shortHash(hash: string | null): string {
   return hash ? `${hash.slice(0, 8)}…${hash.slice(-6)}` : "None";
 }
 
-const PERMISSIONS: { label: string; allowed: (role: Role) => boolean }[] = [
-  { label: "View task and diff", allowed: () => true },
-  { label: "Edit draft", allowed: (r) => r === "owner" || r === "admin" || r === "editor" },
-  { label: "Approve or reject", allowed: canApprove },
-  { label: "Run execution", allowed: (r) => r === "owner" || r === "admin" || r === "editor" },
-];
-
 type Props = {
   approval: ApprovalRecord;
   state: ApprovalState;
@@ -47,9 +39,7 @@ type Props = {
   decidedNote?: string;
   mode: ExecutionMode;
   status: TaskStatus;
-  actualRole: Role;
-  viewRole: Role;
-  onViewRole: (role: Role) => void;
+  role: Role;
   /** The draft was edited after the approved diff. */
   diffChanged: boolean;
   onRequest: () => void;
@@ -58,20 +48,20 @@ type Props = {
 };
 
 /** Approval is not editing: only owner or admin approves the exact diff hash. */
-export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decidedNote, mode, status, actualRole, viewRole, onViewRole, diffChanged, onRequest, onApprove, onReject }: Props) {
+export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decidedNote, mode, status, role, diffChanged, onRequest, onApprove, onReject }: Props) {
   const toast = useToast();
   const [confirm, setConfirm] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState(REJECT_REASONS[0]);
   const [note, setNote] = useState("");
 
-  const allowed = canApprove(viewRole);
+  const allowed = canApprove(role);
   const badge = STATE_BADGE[state];
   const canRequest = state === "not_requested" && (status === "draft_ready" || status === "in_progress");
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div>
         <Card>
           <CardBody className="flex flex-col gap-4">
             {state === "not_required" ? (
@@ -128,7 +118,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
 
                 {state === "pending" ? (
                   <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                    <Button variant="primary" icon="check" disabled={!allowed} onClick={() => setConfirm(true)}>
+                    <Button variant="secondary" icon="check" disabled={!allowed} onClick={() => setConfirm(true)}>
                       Approve
                     </Button>
                     <Button variant="danger-ghost" icon="x" disabled={!allowed} onClick={() => { setReason(REJECT_REASONS[0]); setNote(""); setRejecting(true); }}>
@@ -137,7 +127,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
                     {!allowed ? (
                       <span className="flex items-center gap-1.5 text-xs text-fg-muted">
                         <Icon name="lock" size={13} />
-                        Blocked for {ROLE_LABEL[viewRole]}.
+                        Blocked for {ROLE_LABEL[role]}.
                       </span>
                     ) : null}
                   </div>
@@ -145,7 +135,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
 
                 {canRequest ? (
                   <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                    <Button variant="primary" icon="clock" onClick={onRequest}>
+                    <Button variant="secondary" icon="clock" onClick={onRequest}>
                       Request approval
                     </Button>
                   </div>
@@ -155,36 +145,6 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader title="Roles" info="Approval is not editing. Editors can change the draft but cannot approve it." />
-          <CardBody className="flex flex-col gap-3">
-            <Field label="Preview as role" hint={viewRole === actualRole ? "Your role." : `Preview only. You are ${ROLE_LABEL[actualRole]}.`}>
-              {({ id, describedBy }) => (
-                <Select id={id} aria-describedby={describedBy} value={viewRole} onChange={(event) => onViewRole(event.target.value as Role)}>
-                  {ROLES.map((role) => (
-                    <option key={role} value={role}>
-                      {ROLE_LABEL[role]}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-            <ul className="divide-y divide-line rounded-control border border-line">
-              {PERMISSIONS.map((permission) => {
-                const ok = permission.allowed(viewRole);
-                return (
-                  <li key={permission.label} className="flex items-center justify-between gap-2 px-3 py-2 text-[13px]">
-                    <span className="text-fg">{permission.label}</span>
-                    <span className={ok ? "flex items-center gap-1 text-success" : "flex items-center gap-1 text-fg-subtle"}>
-                      <Icon name={ok ? "check-circle" : "lock"} size={14} />
-                      {ok ? "Allowed" : "Not allowed"}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </CardBody>
-        </Card>
       </div>
 
       <ConfirmDialog

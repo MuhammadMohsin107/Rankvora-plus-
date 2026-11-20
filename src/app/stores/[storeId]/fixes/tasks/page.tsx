@@ -9,7 +9,7 @@ import { FixesEmpty } from "@/features/fixes/fixes-empty";
 import { FixesTabs } from "@/features/fixes/fixes-tabs";
 import { TaskBoard } from "@/features/fixes/task-board";
 import { getStore, storeIds } from "@/services/core";
-import { getActor, getFixesSetup, listFindingRows, listTaskSummaries } from "@/services/fixes";
+import { getActor, getFixesSetup, listAssignees, listFindingRows, listTaskSummaries } from "@/services/fixes";
 
 export const metadata: Metadata = { title: "Fix tasks" };
 
@@ -22,14 +22,15 @@ async function FixTasksPageContent(props: PageProps<"/stores/[storeId]/fixes/tas
   const store = await getStore(storeId);
   if (!store) notFound();
 
-  const [tasks, findings, actor, setup] = await Promise.all([listTaskSummaries(storeId), listFindingRows(storeId), getActor(), getFixesSetup(storeId)]);
-  const tabs = <FixesTabs storeId={storeId} findings={findings.length} tasks={tasks.length} />;
+  const [tasks, findings, actor, setup, assignees] = await Promise.all([listTaskSummaries(storeId), listFindingRows(storeId), getActor(), getFixesSetup(storeId), listAssignees()]);
+  const tabs = <FixesTabs storeId={storeId} findings={findings.length} tasks={tasks} />;
 
-  if (tasks.length === 0) {
+  // Tasks created in this browser are not in the static list, so only an empty finding list shows the empty state.
+  if (tasks.length === 0 && findings.length === 0) {
     return (
       <>
         <PageHeader title="Fixes" tabs={tabs} />
-        <FixesEmpty storeId={storeId} storeName={store.name} kind="tasks" hasAiPlatform={setup.hasAiPlatform} hasFindings={findings.length > 0} />
+        <FixesEmpty storeId={storeId} kind="tasks" hasAiPlatform={setup.hasAiPlatform} hasFindings={false} />
       </>
     );
   }
@@ -37,7 +38,7 @@ async function FixTasksPageContent(props: PageProps<"/stores/[storeId]/fixes/tas
   return (
     <>
       <PageHeader title="Fixes" tabs={tabs} />
-      <TaskBoard storeId={storeId} tasks={tasks} role={actor.role} />
+      <TaskBoard storeId={storeId} tasks={tasks} findings={findings} role={actor.role} assignees={assignees} actorName={actor.name} />
     </>
   );
 }

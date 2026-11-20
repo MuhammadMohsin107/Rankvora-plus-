@@ -29,7 +29,7 @@ export function normalizeWebsite(input: string): HostResult {
 
   const host = url.hostname.replace(/\.$/, "").toLowerCase();
   if (!host) return { error: "Website is required." };
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith("[")) return { error: "An IP address is not a valid store domain." };
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith("[")) return { error: "An IP address is not a valid website domain." };
   const labels = host.split(".");
   if (labels.length < 2) return { error: "Include a top-level domain, e.g. example.com." };
   if (!labels.every((label) => LABEL_RE.test(label))) return { error: "That is not a valid domain." };

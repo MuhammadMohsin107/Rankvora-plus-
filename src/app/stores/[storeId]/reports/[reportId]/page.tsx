@@ -1,28 +1,12 @@
 import { Suspense } from "react";
 
-import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { PageHeader } from "@/components/shell/page-header";
-import { ErrorState } from "@/components/ui/feedback";
-import { aggregateCsv, toCsv } from "@/features/comparison/export";
-import { ExportActions, RetryReport } from "@/features/reports/export-actions";
-import { AuditReport } from "@/features/reports/audit-report";
-import { ComparisonReport } from "@/features/reports/comparison-report";
-import { GeneratingState } from "@/features/reports/generating-state";
-import { MonitoringReport } from "@/features/reports/monitoring-report";
-import { ReportTypeBadge } from "@/features/reports/report-parts";
-import { COMPARISON_LIMITATIONS, getComparisonDetail, getPromptRows, METHODOLOGY } from "@/services/comparison";
-import {
-  AUDIT_REPORT_LIMITATIONS,
-  MONITORING_REPORT_LIMITATIONS,
-  getGeneratingProgress,
-  getReport,
-  getReportData,
-  reportStaticParams,
-} from "@/services/reports";
-import type { AuditReportData, MonitoringReportData, ReportRecord } from "@/types/comparison";
+import { PageFallback } from "@/components/shell/page-fallback";
+import { ReportDetail } from "@/features/reports/report-detail";
+import { getStore } from "@/services/core";
+import { getGeneratingProgress, getReport, getReportDocument, getReportDocuments, reportDocumentKey, reportStaticParams } from "@/services/reports";
 
 export const metadata: Metadata = { title: "Report" };
 
@@ -30,121 +14,21 @@ export async function generateStaticParams() {
   return reportStaticParams();
 }
 
-const rate = (r: { n: number; d: number } | null) => (r ? [r.n, r.d] : ["N/A", "N/A"]);
-
-function auditFiles(data: AuditReportData) {
-  const rows = [
-    ["headline", "Brand mention rate", ...rate(data.audit.mention)],
-    ["headline", "Recommendation rate", ...rate(data.audit.recommendation)],
-    ["headline", "Pages assessed", ...rate(data.audit.pages)],
-    ["jobs", "Jobs succeeded", data.audit.succeededJobs, data.audit.plannedJobs],
-    ...data.channels.flatMap((c) => [
-      [c.label, "Mention rate", c.mention.n, c.mention.d],
-      [c.label, "Recommendation rate", c.recommendation.n, c.recommendation.d],
-      [c.label, "Owned citation rate", ...rate(c.citation)],
-    ]),
-  ];
-  return { csv: toCsv(["section", "metric", "numerator", "denominator"], rows), json: JSON.stringify(data, null, 2) };
-}
-
-function monitoringFiles(data: MonitoringReportData) {
-  const rows = [
-    ["Brand mention rate", data.mention.current.n, data.mention.current.d, ...rate(data.mention.previous)],
-    ["Recommendation rate", data.recommendation.current.n, data.recommendation.current.d, ...rate(data.recommendation.previous)],
-    ["Owned citation rate", ...rate(data.citation.current), ...rate(data.citation.previous)],
-    ...data.channels.map((c) => [`${c.label} mention rate`, c.mention.n, c.mention.d, ...rate(c.previousMention)]),
-  ];
-  return { csv: toCsv(["metric", "numerator", "denominator", "previous_numerator", "previous_denominator"], rows), json: JSON.stringify(data, null, 2) };
-}
-
 async function ReportPageContent(props: PageProps<"/stores/[storeId]/reports/[reportId]">) {
   const { storeId, reportId } = await props.params;
-  const report = await getReport(storeId, reportId);
-  if (!report) notFound();
+  const store = await getStore(storeId);
+  if (!store) notFound();
 
-  const header = (actions: React.ReactNode) => (
-    <PageHeader
-      title={report.title}
-      subtitle={`${report.period} · ${report.version}`}
-      breadcrumb={[{ label: "Reports", href: `/stores/${storeId}/reports` }, { label: report.id }]}
-      meta={<ReportTypeBadge type={report.type} />}
-      actions={actions}
-    />
-  );
-
-  if (report.status === "generating") {
-    const progress = await getGeneratingProgress(storeId, report);
-    return (
-      <>
-        {header(null)}
-        <GeneratingState report={report} progress={progress} />
-      </>
-    );
+  const record = await getReport(storeId, reportId);
+  if (!record) {
+    // Not in the static data: it may be a report generated in this browser. The client resolves it from every source's document.
+    return <ReportDetail storeId={storeId} reportId={reportId} seeded={null} documents={await getReportDocuments(storeId)} />;
   }
 
-  if (report.status === "failed") {
-    return (
-      <>
-        {header(null)}
-        <ErrorState title="The report could not be generated" detail="The source data is intact. Retry to build it again." action={<RetryReport title={report.title} />} />
-      </>
-    );
-  }
-
-  return <ReadyReport storeId={storeId} report={report} header={header} />;
-}
-
-async function ReadyReport({ storeId, report, header }: { storeId: string; report: ReportRecord; header: (actions: React.ReactNode) => React.ReactNode }) {
-  const data = await getReportData(storeId, report);
-  if (!data) notFound();
-
-  if (data.kind === "audit") {
-    const files = auditFiles(data);
-    return (
-      <>
-        {header(<ExportActions baseName={report.id} csv={files.csv} json={files.json} />)}
-        <AuditReport report={report} data={data} storeId={storeId} limitations={AUDIT_REPORT_LIMITATIONS} />
-      </>
-    );
-  }
-
-  if (data.kind === "monitoring") {
-    const files = monitoringFiles(data);
-    return (
-      <>
-        {header(<ExportActions baseName={report.id} csv={files.csv} json={files.json} />)}
-        <MonitoringReport report={report} data={data} storeId={storeId} limitations={MONITORING_REPORT_LIMITATIONS} />
-      </>
-    );
-  }
-
-  const detail = await getComparisonDetail(storeId, data.comparisonId);
-  if (!detail) notFound();
-  const notComparable = detail.result.verdict === "not_comparable";
-  const promptRows = notComparable ? [] : await getPromptRows(storeId, data.comparisonId);
-  const evidence = promptRows.filter((r) => r.change !== "unchanged").slice(0, 4);
-  // A comparison that failed a hard check exports its checks only: no rate or change is produced.
-  const json = JSON.stringify(
-    notComparable
-      ? { report: report.id, comparison: detail.record.id, verdict: detail.result.verdict, checks: detail.result.checks }
-      : { report: report.id, comparison: detail.record.id, verdict: detail.result.verdict, coverage: detail.result.coverage, metrics: detail.result.headline },
-    null,
-    2,
-  );
-  const csv = notComparable ? toCsv(["check", "state", "detail"], detail.result.checks.map((c) => [c.label, c.state, c.detail])) : aggregateCsv(detail.result);
-  return (
-    <>
-      {header(<ExportActions baseName={report.id} csv={csv} json={json} />)}
-      <ComparisonReport
-        report={report}
-        detail={detail}
-        storeId={storeId}
-        limitations={COMPARISON_LIMITATIONS}
-        methodology={{ version: METHODOLOGY.version, matching: METHODOLOGY.matching, aggregation: METHODOLOGY.aggregation[detail.result.aggregation], rules: METHODOLOGY.rules }}
-        evidence={evidence}
-      />
-    </>
-  );
+  const seeded = { ...record, storeId };
+  const doc = record.status === "generating" ? null : await getReportDocument(storeId, record);
+  const progress = record.status === "generating" ? await getGeneratingProgress(storeId, record) : null;
+  return <ReportDetail storeId={storeId} reportId={reportId} seeded={seeded} documents={doc ? { [reportDocumentKey(record.type, record.sourceId)]: doc } : {}} progress={progress} />;
 }
 
 export default function ReportPage(props: PageProps<"/stores/[storeId]/reports/[reportId]">) {

@@ -17,7 +17,11 @@ export const EVENT_LABEL: Record<EventType, string> = {
   provider_error_spike: "Provider error spike",
   run_incomplete: "Run incomplete",
   run_late: "Run late",
-  integration_attention: "Connection issue",
+  integration_attention: "Site connection",
+  brand_fact_error: "Brand fact error",
+  competitor_mention_change: "Competitor mentions",
+  sentiment_share_change: "Sentiment share",
+  coverage_change: "Coverage change",
 };
 
 export const EVENT_ICON: Record<EventType, IconName> = {
@@ -35,6 +39,10 @@ export const EVENT_ICON: Record<EventType, IconName> = {
   run_incomplete: "alert-triangle",
   run_late: "clock",
   integration_attention: "plug",
+  brand_fact_error: "alert-circle",
+  competitor_mention_change: "users",
+  sentiment_share_change: "sparkles",
+  coverage_change: "layers",
 };
 
 export const EVENT_TONE: Record<EventType, Tone> = {
@@ -52,6 +60,10 @@ export const EVENT_TONE: Record<EventType, Tone> = {
   run_incomplete: "warning",
   run_late: "warning",
   integration_attention: "warning",
+  brand_fact_error: "danger",
+  competitor_mention_change: "warning",
+  sentiment_share_change: "info",
+  coverage_change: "warning",
 };
 
 export const FAILURE_LABEL: Record<FailureClass, string> = {
@@ -115,3 +127,9 @@ export function eventMeta(event: { type: EventType; title: string; providerShort
   parts.push(event.runId);
   return parts.join(" · ");
 }
+
+/** Events that describe data quality (provider, run or connection health) rather than visibility. */
+export const DATA_QUALITY_TYPES: readonly EventType[] = ["provider_error_spike", "run_incomplete", "run_late", "integration_attention", "coverage_change"];
+
+/** Alert statuses that still need attention. Unread is a separate, narrower idea: status "new" only. */
+export const OPEN_ALERT_STATUSES = ["new", "read", "acknowledged"] as const;

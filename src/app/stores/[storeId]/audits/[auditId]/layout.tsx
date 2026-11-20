@@ -1,18 +1,10 @@
 import { Suspense } from "react";
 
 import { PageFallback } from "@/components/shell/page-fallback";
-import { notFound } from "next/navigation";
-
-import { PageHeader } from "@/components/shell/page-header";
-import { Badge, Status } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
-import { Mono } from "@/components/ui/misc";
-import { LinkTabs } from "@/components/ui/tabs";
-import { CancelAuditButton, ConfigDrawerButton } from "@/features/audit/audit-actions";
-import { AUDIT_TYPE_LABEL, formatMinutes } from "@/features/audit/labels";
-import { formatDateTime } from "@/lib/format";
+import { AuditHeader } from "@/features/audit/audit-header";
+import { LocalAuditShell } from "@/features/audit/local-audit-shell";
 import { channelLabel } from "@/lib/labels";
-import { auditParams, getAudit, getAuditFindings } from "@/services/audit";
+import { auditParams, getAudit, getAuditBasis, getAuditFindings, getExtraAuditRow, listAuditRows } from "@/services/audit";
 import { listStoreChannels } from "@/services/core";
 
 export async function generateStaticParams() {
@@ -21,65 +13,22 @@ export async function generateStaticParams() {
 
 async function AuditLayoutContent({ children, params }: LayoutProps<"/stores/[storeId]/audits/[auditId]">) {
   const { storeId, auditId } = await params;
-  const audit = await getAudit(storeId, auditId);
-  if (!audit) notFound();
+  const [audit, channels] = await Promise.all([getAudit(storeId, auditId), listStoreChannels(storeId)]);
+  const channelOptions = channels.map((c) => ({ id: c.id, label: channelLabel(c) }));
 
-  const [channels, findings] = await Promise.all([listStoreChannels(storeId), getAuditFindings(storeId, auditId)]);
-  const base = `/stores/${storeId}/audits/${auditId}`;
+  // Not a prerendered audit: an extra demonstration audit or one created in this browser. Rendered in the browser,
+  // so ids made locally do not need a prerendered page.
+  if (!audit) {
+    const [basis, extra, rows] = await Promise.all([getAuditBasis(storeId), getExtraAuditRow(storeId, auditId), listAuditRows(storeId)]);
+    const otherWithWebsite = rows.find((r) => !r.provisional && r.lanes.includes("website_readiness") && r.id !== auditId);
+    return <LocalAuditShell storeId={storeId} auditId={auditId} basis={basis} seed={extra} channels={channelOptions} otherWithWebsite={otherWithWebsite ? { id: otherWithWebsite.id, title: otherWithWebsite.title } : null} />;
+  }
 
-  // Times are UTC (stated once, on the first). Everything here is shown only in this header, never again on a tab.
-  const times = [
-    `Started ${formatDateTime(audit.startedAt)} UTC`,
-    audit.completedAt ? `Completed ${formatDateTime(audit.completedAt)}` : null,
-    `${formatMinutes(audit.durationSeconds)}${audit.provisional ? " so far" : ""}`,
-    audit.createdBy,
-  ].filter(Boolean);
-  // Audit titles usually name their type ("Full audit — November"); show the type badge only when the title does not.
-  const typeLabel = AUDIT_TYPE_LABEL[audit.type];
-  const titleNamesType = audit.title.toLowerCase().includes(typeLabel.toLowerCase());
-
+  const [findings, rows] = await Promise.all([getAuditFindings(storeId, auditId), listAuditRows(storeId)]);
+  const seed = rows.find((r) => r.id === auditId) ?? null;
   return (
     <>
-      <PageHeader
-        title={audit.title}
-        breadcrumb={[{ label: "Audits", href: `/stores/${storeId}/audits` }, { label: audit.id }]}
-        subtitle={times.join(" · ")}
-        meta={
-          <>
-            <Status kind="audit" value={audit.status} />
-            {titleNamesType ? null : <Badge>{typeLabel}</Badge>}
-            {audit.snapshotId ? (
-              <Badge tone="neutral" icon="lock" title="Immutable snapshot: it cannot change after completion">
-                <Mono>{audit.snapshotId}</Mono>
-              </Badge>
-            ) : (
-              <Badge tone="neutral" icon="clock" title="A snapshot is created when the audit completes">No snapshot yet</Badge>
-            )}
-          </>
-        }
-        actions={
-          <>
-            <ConfigDrawerButton config={audit.config} lanes={audit.lanes} channels={channels.map((c) => ({ id: c.id, label: channelLabel(c) }))} />
-            {audit.provisional ? (
-              <CancelAuditButton completedJobs={audit.succeededJobs + audit.failedJobs} assessedPages={audit.pages?.n ?? 0} />
-            ) : (
-              <ButtonLink href={`/stores/${storeId}/audits/new`} icon="refresh">Run again</ButtonLink>
-            )}
-          </>
-        }
-        tabs={
-          <LinkTabs
-            label="Audit sections"
-            items={[
-              { href: base, label: "Overview", exact: true },
-              { href: `${base}/ai-visibility`, label: "AI visibility" },
-              { href: `${base}/website`, label: "Website readiness" },
-              { href: `${base}/findings`, label: "Findings", count: audit.provisional ? undefined : findings.length },
-              { href: `${base}/report`, label: "Report" },
-            ]}
-          />
-        }
-      />
+      <AuditHeader storeId={storeId} auditId={auditId} seed={seed} config={audit.config} channels={channelOptions} findingsCount={audit.provisional ? null : findings.length} />
       {children}
     </>
   );

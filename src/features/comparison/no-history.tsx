@@ -8,8 +8,8 @@ const COPY = {
 } as const;
 
 /**
- * Empty state of Comparison and Reports. A store without an AI channel cannot run anything,
- * so its one next action is to connect a channel; otherwise it is to start an audit.
+ * Empty state of Comparison and Reports. A website without an AI platform cannot run anything,
+ * so its one next action is to connect a platform; otherwise it is to start an audit.
  */
 export function NoHistory({ storeId, kind, hasChannel }: { storeId: string; kind: keyof typeof COPY; hasChannel: boolean }) {
   const copy = COPY[kind];
@@ -17,9 +17,9 @@ export function NoHistory({ storeId, kind, hasChannel }: { storeId: string; kind
     return (
       <EmptyState
         icon={copy.icon}
-        title="Connect an AI channel first"
-        description={`${copy.description} This store has no AI channel connected yet, so it has no audits or runs.`}
-        action={<ButtonLink href={`/stores/${storeId}/settings`} variant="primary" icon="plug">Connect an AI channel</ButtonLink>}
+        title="Connect an AI platform first"
+        description={`${copy.description} This website has no AI platform connected yet, so it has no audits or runs.`}
+        action={<ButtonLink href={`/stores/${storeId}/settings`} variant="primary" icon="plug">Connect an AI platform</ButtonLink>}
       />
     );
   }

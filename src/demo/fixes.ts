@@ -1,17 +1,22 @@
 /**
  * DEMONSTRATION DATA — not real.
  * Fixes module detail around the shared findings and registry tasks of each store:
- * runpro-pk (fnd-001…011, task-001…008) and runpro-ae (fnd-ae-001…006, task-ae-001…006).
+ * runpro-pk (fnd-001…011, task-001…008), runpro-ae (fnd-ae-001…006, task-ae-001…006)
+ * and nutrition (fnd-nu-001…008, task-nu-001…008).
  * Fixed timestamps only. Read through src/services/fixes.ts.
  *
  * Wording rules honoured here: no causal claims, "Applied" is never "verified",
  * causes are classified confirmed / likely / hypothesis.
  */
 import type {
+  ExecutionMode,
   FindingExtras,
   Recommendation,
+  RiskLevel,
   TaskDetailData,
+  TaskStatus,
 } from "@/types/fixes";
+import type { Priority } from "@/types/shared-records";
 
 const RP_URL = "https://runpro.pk";
 
@@ -217,9 +222,9 @@ const PK_RECOMMENDATIONS: Recommendation[] = [
     id: "rec-fnd-002-a",
     findingId: "fnd-002",
     title: "Set the Glide 2 JSON-LD price to PKR 12,900",
-    problem: "Structured data says PKR 13,500; the visible price and the Shopify variant price are PKR 12,900.",
+    problem: "Structured data says PKR 13,500; the visible price and the catalogue price are PKR 12,900.",
     evidenceIds: ["e1"],
-    cause: { classification: "confirmed", basis: "Crawl and a read-only Shopify product lookup agree on 12,900; the stale 13,500 comes from the structured-data field." },
+    cause: { classification: "confirmed", basis: "Crawl and a read-only catalogue lookup agree on 12,900; the stale 13,500 comes from the structured-data field." },
     action: "Change offers.price from 13500 to 12900 in the JSON-LD of /products/glide-2.",
     why: "Conflicting prices can fail merchant-listing checks and confuse systems that read structured data. No ranking effect is claimed.",
     expectedOutcome: "JSON-LD price equals the visible price.",
@@ -471,9 +476,10 @@ const SPEC_FACTS = (source: string) => [
   { label: "Heel-to-toe drop", value: "8 mm", source },
 ];
 
-const SHOPIFY = (scopes: string[]) => ({
-  label: "Shopify",
-  store: "runpro.pk",
+/** Optional demo connector. Platform names are never shown in the Fixes UI. */
+const CONNECTOR = (scopes: string[]) => ({
+  label: "Website connector",
+  site: "runpro.pk",
   state: "connected" as const,
   scopesGranted: ["read_products", "write_products", "read_content", "write_content"],
   scopesRequired: scopes,
@@ -490,7 +496,7 @@ const PK_TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
   "task-008": { blockers: [] },
 };
 
-type TaskDetailSeed = Omit<TaskDetailData, "task">;
+type TaskDetailSeed = Omit<TaskDetailData, "task" | "findingStatus">;
 
 const EMPTY_ROLLBACK = { available: false, laterEdit: null, record: null };
 
@@ -520,9 +526,9 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       generatedAt: "2026-11-17T10:12:00Z",
       version: 1,
     },
-    approval: { state: "not_required", notRequiredReason: "AI draft only. Nothing is written to Shopify; a person applies the copy.", diffHash: demoDigest("task-001-copy"), writes: [] },
+    approval: { state: "not_required", notRequiredReason: "AI draft only. Nothing is written to the site; a person applies the copy.", diffHash: demoDigest("task-001-copy"), writes: [] },
     execution: {
-      connector: SHOPIFY(["read_products"]),
+      connector: CONNECTOR(["read_products"]),
       cmsState: "draft",
       remote: {
         resource: "Product glide-2 · description",
@@ -563,7 +569,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     createdAt: "2026-10-21T08:00:00Z",
     createdBy: "Sana Iqbal",
     successCriteria: ["JSON-LD offers.price equals the visible price", "Structured data validates without price warnings"],
-    dependencies: [{ label: "Owner or admin approval of the exact diff", met: false }, { label: "Shopify connection with write_products", met: true }],
+    dependencies: [{ label: "Owner or admin approval of the exact diff", met: false }, { label: "Connector with write access to products", met: true }],
     draft: {
       kind: "patch",
       resource: "Product glide-2 · metafield custom.structured_data",
@@ -572,7 +578,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       after: LD_AFTER,
       sourceFacts: [
         { label: "Visible price", value: "PKR 12,900", source: "Crawl 19 Nov, /products/glide-2" },
-        { label: "Variant price", value: "PKR 12,900", source: "Shopify read_products lookup, 19 Nov 08:56" },
+        { label: "Variant price", value: "PKR 12,900", source: "Catalogue lookup (read only), 19 Nov 08:56" },
       ],
       unsupportedClaims: [],
       modelLabel: "Drafting model demo-model-a",
@@ -582,12 +588,12 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     approval: {
       state: "pending",
       diffHash: demoDigest("task-002-patch"),
-      writes: ["Shopify product glide-2 · metafield custom.structured_data", "1 line changed: offers.price 13500 → 12900", "Live on the product page after save"],
+      writes: ["Product glide-2 · structured-data field", "1 line changed: offers.price 13500 → 12900", "Live on the product page after save"],
       requestedBy: "Omar Farooq",
       requestedAt: "2026-11-18T11:20:00Z",
     },
     execution: {
-      connector: SHOPIFY(["read_products", "write_products"]),
+      connector: CONNECTOR(["read_products", "write_products"]),
       cmsState: "draft",
       remote: {
         resource: "Product glide-2 · metafield custom.structured_data",
@@ -638,7 +644,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       ],
       sourceFacts: [
         { label: "Broken links", value: "2 internal links return 404", source: "Crawl 19 Nov" },
-        { label: "Replacement targets", value: "Live collection and product URLs", source: "Shopify read_products lookup" },
+        { label: "Replacement targets", value: "Live collection and product URLs", source: "Catalogue lookup (read only)" },
       ],
       unsupportedClaims: [],
       modelLabel: "Drafting model demo-model-a",
@@ -648,7 +654,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     approval: {
       state: "approved",
       diffHash: demoDigest("task-003-batch"),
-      writes: ["Shopify collection descriptions for 2 pages, staged as drafts", "2 links replaced, 1 resource excluded", "Not published until a second step"],
+      writes: ["Collection descriptions for 2 pages, staged as drafts", "2 links replaced, 1 resource excluded", "Not published until a second step"],
       requestedBy: "Hira Malik",
       requestedAt: "2026-11-17T09:00:00Z",
       decidedBy: "Omar Farooq",
@@ -656,7 +662,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       note: "Staged draft only. Publishing needs a separate action.",
     },
     execution: {
-      connector: SHOPIFY(["read_products", "write_products"]),
+      connector: CONNECTOR(["read_products", "write_products"]),
       cmsState: "draft",
       remote: {
         resource: "Collection sale · description",
@@ -666,9 +672,9 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
         hashNow: demoDigest("sale-desc-28"),
         checkedAt: "2026-11-19T08:45:00Z",
         changed: true,
-        changedBy: "Aisha Khan (store staff)",
+        changedBy: "Aisha Khan (site team)",
         changedAt: "2026-11-18T14:20:00Z",
-        note: "Description edited in Shopify admin after the draft was generated.",
+        note: "Description edited in the site admin after the draft was generated.",
       },
       fields: [
         { field: "/collections/road · description link", before: "/products/stride-trail-1", after: "/collections/trail", outcome: "pending" },
@@ -724,14 +730,14 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     approval: {
       state: "approved",
       diffHash: demoDigest("task-004-guide"),
-      writes: ["Shopify blog article created as a staged draft", "Published on approval of the publish step"],
+      writes: ["Blog article created as a staged draft", "Published on approval of the publish step"],
       requestedBy: "Hira Malik",
       requestedAt: "2026-11-12T08:00:00Z",
       decidedBy: "Sana Iqbal",
       decidedAt: "2026-11-13T09:10:00Z",
     },
     execution: {
-      connector: SHOPIFY(["read_content", "write_content"]),
+      connector: CONNECTOR(["read_content", "write_content"]),
       cmsState: "published",
       remote: {
         resource: "Blog article · how-to-choose-a-running-shoe",
@@ -741,7 +747,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
         hashNow: demoDigest("guide-3"),
         checkedAt: "2026-11-19T08:40:00Z",
         changed: true,
-        changedBy: "Hira Malik (Shopify admin)",
+        changedBy: "Hira Malik (site admin)",
         changedAt: "2026-11-17T10:12:00Z",
         note: "Intro paragraph edited after publishing.",
       },
@@ -755,7 +761,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       publishedAt: "2026-11-15T08:30:00Z",
       rollback: {
         available: true,
-        laterEdit: { by: "Hira Malik", at: "2026-11-17T10:12:00Z", note: "Intro paragraph edited in Shopify admin after publishing." },
+        laterEdit: { by: "Hira Malik", at: "2026-11-17T10:12:00Z", note: "Intro paragraph edited in the site admin after publishing." },
         record: null,
       },
     },
@@ -786,9 +792,9 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       { id: "h2", at: "2026-10-24T09:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved" },
       { id: "h3", at: "2026-11-09T10:00:00Z", actor: "Drafting model", kind: "draft", title: "Draft v2 generated", detail: "Revised after editor feedback" },
       { id: "h4", at: "2026-11-13T09:10:00Z", actor: "Sana Iqbal", kind: "approval", title: "Staged draft approved" },
-      { id: "h5", at: "2026-11-14T08:05:00Z", actor: "System", kind: "execution", title: "Staged in Shopify", detail: "Remote check passed" },
+      { id: "h5", at: "2026-11-14T08:05:00Z", actor: "System", kind: "execution", title: "Staged as a draft", detail: "Remote check passed" },
       { id: "h6", at: "2026-11-15T08:30:00Z", actor: "Hira Malik", kind: "execution", title: "Published" },
-      { id: "h7", at: "2026-11-17T10:12:00Z", actor: "Hira Malik", kind: "execution", title: "Page edited in Shopify admin", detail: "Intro paragraph changed after publishing" },
+      { id: "h7", at: "2026-11-17T10:12:00Z", actor: "Hira Malik", kind: "execution", title: "Page edited in the site admin", detail: "Intro paragraph changed after publishing" },
     ],
   },
 
@@ -805,7 +811,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       before: ORG_BEFORE,
       after: ORG_AFTER,
       sourceFacts: [
-        { label: "Profiles", value: "Instagram and Facebook, both official", source: "Store settings, brand profile" },
+        { label: "Profiles", value: "Instagram and Facebook, both official", source: "Website settings, brand profile" },
         { label: "Support email", value: "support@runpro.pk", source: "Contact page" },
       ],
       unsupportedClaims: [],
@@ -826,7 +832,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       stagedAt: null,
       appliedAt: "2026-11-04T09:30:00Z",
       publishedAt: null,
-      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Applied outside Rankvora Plus. Revert in the theme editor." },
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Applied outside Rankvora AI. Revert in the theme editor." },
     },
     verification: {
       plannedChecks: [
@@ -875,7 +881,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       ],
       sourceFacts: [{ label: "OAI-SearchBot", value: "Disallow /", source: "robots.txt, audit aud-002" }],
     },
-    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora Plus.", diffHash: null, writes: [] },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
     execution: {
       connector: null,
       cmsState: "guidance",
@@ -920,7 +926,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       ],
       sourceFacts: [{ label: "Samples", value: "2 Gemini samples, run-008", source: "Monitoring" }],
     },
-    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora Plus.", diffHash: null, writes: [] },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
     execution: {
       connector: null,
       cmsState: "guidance",
@@ -973,14 +979,14 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     approval: {
       state: "approved",
       diffHash: demoDigest("task-008-faq"),
-      writes: ["Shopify product marathon-elite · FAQ section added", "Live on the product page after save"],
+      writes: ["Product marathon-elite · FAQ section added", "Live on the product page after save"],
       requestedBy: "Hira Malik",
       requestedAt: "2026-11-04T11:00:00Z",
       decidedBy: "Sana Iqbal",
       decidedAt: "2026-11-05T09:30:00Z",
     },
     execution: {
-      connector: SHOPIFY(["read_products", "write_products"]),
+      connector: CONNECTOR(["read_products", "write_products"]),
       cmsState: "draft",
       remote: {
         resource: "Product marathon-elite · description",
@@ -990,7 +996,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
         hashNow: demoDigest("marathon-65"),
         checkedAt: "2026-11-09T14:05:00Z",
         changed: true,
-        changedBy: "Aisha Khan (store staff)",
+        changedBy: "Aisha Khan (site team)",
         changedAt: "2026-11-07T12:40:00Z",
         note: "Price banner edited after the FAQ was applied.",
       },
@@ -1037,7 +1043,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       { id: "h2", at: "2026-11-04T10:00:00Z", actor: "Drafting model", kind: "draft", title: "Draft v1 generated" },
       { id: "h3", at: "2026-11-05T09:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Approved exact diff" },
       { id: "h4", at: "2026-11-05T10:05:00Z", actor: "System", kind: "execution", title: "Applied and published", detail: "Remote check passed" },
-      { id: "h5", at: "2026-11-07T12:40:00Z", actor: "Aisha Khan", kind: "execution", title: "Price banner edited in Shopify admin" },
+      { id: "h5", at: "2026-11-07T12:40:00Z", actor: "Aisha Khan", kind: "execution", title: "Price banner edited in the site admin" },
       { id: "h6", at: "2026-11-09T13:30:00Z", actor: "System", kind: "verification", title: "Website check: layout shift on mobile", detail: "Lab CLS 0.24" },
       { id: "h7", at: "2026-11-09T14:10:00Z", actor: "Hira Malik", kind: "rollback", title: "Rolled back", detail: "FAQ block removed; later edit reconciled manually" },
     ],
@@ -1046,17 +1052,17 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
 
 
 // ===========================================================================
-// runpro-ae (RunPro UAE · WooCommerce · runpro.ae)
+// runpro-ae (RunPro UAE · runpro.ae)
 // ===========================================================================
 
 const AE_URL = "https://runpro.ae";
 
-/** WooCommerce connector as recorded today: write access was rejected on 18 Nov (store integration: needs attention). */
+/** Optional demo connector as recorded today: write access was rejected on 18 Nov (connector needs attention). */
 const WOO = (required: string[], note?: string) => ({
-  label: "WooCommerce",
-  store: "runpro.ae",
+  label: "Website connector",
+  site: "runpro.ae",
   state: "needs_attention" as const,
-  scopesGranted: ["read"],
+  scopesGranted: ["read_content"],
   scopesRequired: required,
   note,
 });
@@ -1086,7 +1092,7 @@ const AE_FINDING_EXTRAS: Record<string, FindingExtras> = {
   },
   "fnd-ae-002": {
     severityRationale: "Critical: structured data reports USD while the page shows AED. A wrong currency can fail merchant-listing validation and mislead systems that read structured data.",
-    priorityRationale: "P0: price data is customer-facing, the fix is two lines, and it must not wait behind other work. The apply attempt failed because the WooCommerce connection needs attention.",
+    priorityRationale: "P0: price data is customer-facing, the fix is two lines, and it must not wait behind other work. The apply attempt failed because the connector needs attention.",
     verificationCriteria: ["Offer priceCurrency is AED", "Offer price equals the visible price (AED 1,280)", "Structured data validates without price or currency warnings"],
     evidence: [{ id: "e1", kind: "page", url: `${AE_URL}/product/glide-2`, note: "Offer: priceCurrency USD, price 349. Visible price: AED 1,280", auditId: "aud-ae-001" }],
     observations: [
@@ -1164,17 +1170,17 @@ const AE_RECOMMENDATIONS: Recommendation[] = [
   rec({
     id: "rec-fnd-ae-001-a",
     findingId: "fnd-ae-001",
-    title: "Add Product and Offer JSON-LD to the WooCommerce product template",
+    title: "Add Product and Offer JSON-LD to the product template",
     problem: "Product pages expose breadcrumb markup only. Price, currency and availability are not machine-readable.",
     evidenceIds: ["e1", "e2", "e3"],
     cause: { classification: "confirmed", basis: "Markup read directly from 3 product pages in the 16 Sep and 5 Nov audits." },
-    action: "Add one Product block with a nested Offer (name, sku, price, priceCurrency AED, availability) to the single-product template, rendered from the WooCommerce product record.",
+    action: "Add one Product block with a nested Offer (name, sku, price, priceCurrency AED, availability) to the single-product template, rendered from the product record.",
     why: "Structured data states price, currency and availability in a form crawlers can read. It does not guarantee rich results, rankings or AI citations.",
     expectedOutcome: "Every product page renders valid Product and Offer markup that matches the visible price in AED.",
     effort: "medium",
     risk: "medium",
     suggestedMode: "cms_staged",
-    dependencies: ["WooCommerce write access", "Legacy Offer block on Glide 2 replaced first (task-ae-002), to avoid a duplicate Offer"],
+    dependencies: ["Connector write access", "Legacy Offer block on Glide 2 replaced first (task-ae-002), to avoid a duplicate Offer"],
     limitations: ["The template change affects every product page once published", "Rendering is previewed on one page; the other sampled pages are re-checked after publish"],
     verificationPlan: ["Re-crawl the 3 sampled product pages", "Validate Product and Offer markup", "Confirm price and currency equal the visible values"],
     status: "approved",
@@ -1188,14 +1194,14 @@ const AE_RECOMMENDATIONS: Recommendation[] = [
     title: "Set the Glide 2 Offer to AED 1,280",
     problem: "The Offer block says USD 349; the page shows AED 1,280.",
     evidenceIds: ["e1"],
-    cause: { classification: "confirmed", basis: "The legacy snippet in the product meta data carries USD 349. The WooCommerce store currency and the visible price are AED 1,280." },
+    cause: { classification: "confirmed", basis: "The legacy snippet in the product meta data carries USD 349. The catalogue currency and the visible price are AED 1,280." },
     action: "Change priceCurrency from USD to AED and price from 349 to 1280 in the legacy Offer block of /product/glide-2, in one write.",
     why: "A wrong currency in structured data can fail merchant-listing checks. Changing the currency alone would publish AED 349, so both values change together. No ranking effect is claimed.",
     expectedOutcome: "Offer currency and price equal the visible price.",
     effort: "small",
     risk: "high",
     suggestedMode: "approved_apply",
-    dependencies: ["Owner or admin approval of the exact diff", "WooCommerce write access"],
+    dependencies: ["Owner or admin approval of the exact diff", "Connector write access"],
     limitations: ["Writes to a live product page", "Cached copies may show the old values for a short time"],
     verificationPlan: ["Re-crawl the page", "Compare Offer currency and price to the visible price", "Run structured-data validation"],
     status: "approved",
@@ -1217,7 +1223,7 @@ const AE_RECOMMENDATIONS: Recommendation[] = [
     risk: "low",
     suggestedMode: "ai_draft",
     dependencies: ["Owner or admin confirms the policy wording"],
-    limitations: ["Facts come from the policy pages crawled on 5 Nov", "A person adds the section in WooCommerce; no write by Rankvora Plus"],
+    limitations: ["Facts come from the policy pages crawled on 5 Nov", "A person adds the section on the site; no write by Rankvora AI"],
     verificationPlan: ["Re-crawl the 2 affected product pages", "Check each stated fact against the policy pages"],
     status: "approved",
     decidedBy: "Sana Iqbal",
@@ -1268,7 +1274,7 @@ const AE_RECOMMENDATIONS: Recommendation[] = [
     problem: "9 sitemap URLs return 301 to runpro.pk.",
     evidenceIds: ["e1"],
     cause: { classification: "confirmed", basis: "Each URL returned 301 to runpro.pk in the initial audit sitemap check." },
-    action: "Set the 9 legacy products to 'exclude from sitemap' in WooCommerce. No page content changes.",
+    action: "Set the 9 legacy products to 'exclude from sitemap' on the site. No page content changes.",
     why: "A sitemap should list only URLs that return 200 on the same domain.",
     expectedOutcome: "The regenerated sitemap lists no redirecting URL.",
     effort: "small",
@@ -1366,8 +1372,8 @@ const DELIVERY_ALT =
 const SITEMAP_SLUGS = ["glide-1", "daily-trainer-1", "marathon-pro-2024", "kids-runner-2", "trail-grip-3", "road-lite-1", "sprint-spike-1", "recovery-slide-1", "stride-trail-1"];
 
 const AE_TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
-  "task-ae-001": { blockers: ["Publish needs approval and WooCommerce write access", "Waiting for task-ae-002 (legacy Offer on Glide 2)"] },
-  "task-ae-002": { blockers: ["WooCommerce write access was rejected. Reconnect before retrying."] },
+  "task-ae-001": { blockers: ["Publish needs approval and connector write access", "Waiting for task-ae-002 (legacy Offer on Glide 2)"] },
+  "task-ae-002": { blockers: ["Connector write access was rejected. Reconnect before retrying."] },
   "task-ae-003": { blockers: [] },
   "task-ae-004": { blockers: [] },
   "task-ae-005": { blockers: [] },
@@ -1375,7 +1381,7 @@ const AE_TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
 };
 
 const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
-  // Staged on WooCommerce, not published, awaiting publish approval.
+  // Staged as a draft, not published, awaiting publish approval.
   "task-ae-001": {
     recommendationId: "rec-fnd-ae-001-a",
     createdAt: "2026-11-06T09:00:00Z",
@@ -1384,7 +1390,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     dependencies: [
       { label: "Staging approved (12 Nov)", met: true },
       { label: "Publish approval of the staged template", met: false },
-      { label: "WooCommerce write access", met: false },
+      { label: "Connector write access", met: false },
       { label: "task-ae-002: legacy Offer on Glide 2 replaced, to avoid a duplicate Offer", met: false },
     ],
     draft: {
@@ -1394,9 +1400,9 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       before: TEMPLATE_BEFORE,
       after: TEMPLATE_AFTER,
       sourceFacts: [
-        { label: "Name and SKU", value: "RunPro Daily Trainer · RP-DTR", source: "WooCommerce product record, read 10 Nov" },
-        { label: "Price and currency", value: "AED 429.00", source: "WooCommerce product record and visible price, crawl 5 Nov" },
-        { label: "Availability", value: "In stock", source: "WooCommerce stock status, read 10 Nov" },
+        { label: "Name and SKU", value: "RunPro Daily Trainer · RP-DTR", source: "Product record, read 10 Nov" },
+        { label: "Price and currency", value: "AED 429.00", source: "Product record and visible price, crawl 5 Nov" },
+        { label: "Availability", value: "In stock", source: "Stock status, read 10 Nov" },
       ],
       unsupportedClaims: [],
       modelLabel: "Drafting model demo-model-a",
@@ -1407,7 +1413,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       state: "pending",
       diffHash: demoDigest("task-ae-001-template"),
       writes: [
-        "WooCommerce single-product JSON-LD template: the staged copy becomes live",
+        "Single-product JSON-LD template: the staged copy becomes live",
         "Applies to every product page once published",
         "Staging was approved on 12 Nov. This request covers publishing the staged template.",
       ],
@@ -1415,7 +1421,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       requestedAt: "2026-11-18T09:40:00Z",
     },
     execution: {
-      connector: WOO(["read", "write"], "Staged on 12 Nov, before write access was rejected on 18 Nov. Publishing needs write access."),
+      connector: WOO(["read_content", "write_content"], "Staged on 12 Nov, before write access was rejected on 18 Nov. Publishing needs write access."),
       cmsState: "staged",
       remote: {
         resource: "Template · single-product JSON-LD (staged copy)",
@@ -1454,13 +1460,13 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       { id: "h3", at: "2026-11-10T10:00:00Z", actor: "Drafting model", kind: "draft", title: "Template patch drafted", detail: "Preview rendered on daily-trainer" },
       { id: "h4", at: "2026-11-11T09:00:00Z", actor: "Hira Malik", kind: "approval", title: "Staging approval requested" },
       { id: "h5", at: "2026-11-12T09:30:00Z", actor: "Omar Farooq", kind: "approval", title: "Staging approved", detail: "Staged draft only. Publishing needs a separate approval." },
-      { id: "h6", at: "2026-11-12T10:20:00Z", actor: "System", kind: "execution", title: "Staged in WooCommerce", detail: "Remote check passed. Not live." },
+      { id: "h6", at: "2026-11-12T10:20:00Z", actor: "System", kind: "execution", title: "Staged as a draft", detail: "Remote check passed. Not live." },
       { id: "h7", at: "2026-11-18T09:40:00Z", actor: "Hira Malik", kind: "approval", title: "Publish approval requested", detail: "Owner or admin must approve publishing the staged template" },
       { id: "h8", at: "2026-11-19T08:30:00Z", actor: "System", kind: "execution", title: "Remote check: staged copy unchanged", detail: "Write access is still rejected, so publishing is blocked" },
     ],
   },
 
-  // Apply attempt failed because the WooCommerce connection needs attention. Nothing changed on the live site.
+  // Apply attempt failed because the connector needs attention. Nothing changed on the live site.
   "task-ae-002": {
     recommendationId: "rec-fnd-ae-002-a",
     createdAt: "2026-11-10T09:00:00Z",
@@ -1468,7 +1474,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     successCriteria: ["Offer priceCurrency is AED", "Offer price equals the visible price (AED 1,280)", "Structured data validates without price or currency warnings"],
     dependencies: [
       { label: "Owner or admin approval of the exact diff", met: true },
-      { label: "WooCommerce write access", met: false },
+      { label: "Connector write access", met: false },
       { label: "Live value unchanged since draft", met: true },
     ],
     draft: {
@@ -1479,8 +1485,8 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       after: OFFER_AFTER,
       sourceFacts: [
         { label: "Visible price", value: "AED 1,280", source: "Crawl 19 Nov, /product/glide-2" },
-        { label: "Store currency", value: "AED", source: "WooCommerce settings, read 10 Nov" },
-        { label: "Product price", value: "AED 1,280", source: "WooCommerce product record, read 10 Nov" },
+        { label: "Catalogue currency", value: "AED", source: "Site settings, read 10 Nov" },
+        { label: "Product price", value: "AED 1,280", source: "Product record, read 10 Nov" },
       ],
       unsupportedClaims: [],
       modelLabel: "Drafting model demo-model-a",
@@ -1491,7 +1497,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       state: "approved",
       diffHash: demoDigest("task-ae-002-patch"),
       writes: [
-        "WooCommerce product glide-2 · meta_data _legacy_offer_jsonld",
+        "Product glide-2 · legacy Offer metadata",
         "2 lines changed: priceCurrency USD → AED, price 349 → 1280, in one write",
         "Live on the product page after save",
       ],
@@ -1501,7 +1507,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       decidedAt: "2026-11-12T09:15:00Z",
     },
     execution: {
-      connector: WOO(["read", "write"], "Write access was rejected on 18 Nov. Reconnect in store settings to restore it."),
+      connector: WOO(["read_content", "write_content"], "Write access was rejected on 18 Nov. Reconnect in website settings to restore it."),
       cmsState: "draft",
       remote: {
         resource: "Product glide-2 · meta_data _legacy_offer_jsonld",
@@ -1532,9 +1538,9 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
           { at: "2026-11-18T05:25:40Z", result: "HTTP 401 woocommerce_rest_cannot_edit. Retries stopped: the error is not temporary." },
         ],
         retryable: true,
-        retryBlockedBy: "The WooCommerce connection needs attention. Write access must be restored first.",
+        retryBlockedBy: "The connector needs attention. Write access must be restored first.",
         nothingWritten: true,
-        nextStep: "Reconnect WooCommerce with a read and write API key, then retry. The approved diff and the unchanged remote copy are reused.",
+        nextStep: "Reconnect the connector with read and write access, then retry. The approved diff and the unchanged remote copy are reused.",
       },
       rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing was written, so there is nothing to roll back." },
     },
@@ -1557,7 +1563,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       { id: "h6", at: "2026-11-17T16:00:00Z", actor: "Omar Farooq", kind: "status", title: "Apply scheduled", detail: "Maintenance window 18 Nov 09:25 Dubai time" },
       { id: "h7", at: "2026-11-18T05:25:05Z", actor: "System", kind: "execution", title: "Remote check passed", detail: "rev 31, unchanged since draft" },
       { id: "h8", at: "2026-11-18T05:25:40Z", actor: "System", kind: "execution", title: "Apply failed", detail: "HTTP 401 woocommerce_rest_cannot_edit, 3 attempts. Nothing was written." },
-      { id: "h9", at: "2026-11-18T05:30:00Z", actor: "System", kind: "status", title: "Task marked failed; connection needs attention", detail: "WooCommerce write access rejected" },
+      { id: "h9", at: "2026-11-18T05:30:00Z", actor: "System", kind: "status", title: "Task marked failed; connection needs attention", detail: "Connector write access rejected" },
       { id: "h10", at: "2026-11-19T08:32:00Z", actor: "System", kind: "execution", title: "Re-read after failure", detail: "Live value unchanged (rev 31)" },
     ],
   },
@@ -1594,15 +1600,15 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       state: "pending",
       diffHash: demoDigest("task-ae-003-copy"),
       writes: [
-        "No write by Rankvora Plus",
+        "No write by Rankvora AI",
         "Approval confirms the delivery and returns wording and its source facts",
-        "Hira Malik then adds the section in WooCommerce and marks the task applied",
+        "Hira Malik then adds the section on the site and marks the task applied",
       ],
       requestedBy: "Hira Malik",
       requestedAt: "2026-11-18T08:30:00Z",
     },
     execution: {
-      connector: WOO(["read"], "Only read access is needed to compare the page. An AI draft makes no write."),
+      connector: WOO(["read_content"], "Only read access is needed to compare the page. An AI draft makes no write."),
       cmsState: "draft",
       remote: {
         resource: "Product glide-2 · description",
@@ -1651,7 +1657,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
       steps: [
         { title: "Open the cited responses", detail: "Read samples resp-aud-ae-002-07, -10 and -25 for p-ae-002 and p-ae-005, and the one sample that cites runpro.ae (-09)." },
         { title: "List the cited GulfRun pages", detail: "Note which GulfRun page each answer cites and which question it answers." },
-        { title: "Compare with runpro.ae", detail: "Find the runpro.ae page that could answer the same question and check what it states: store location, delivery and returns." },
+        { title: "Compare with runpro.ae", detail: "Find the runpro.ae page that could answer the same question and check what it states: shop location, delivery and returns." },
         { title: "Check local listings", detail: "Look at how RunPro appears for Dubai and Abu Dhabi in map and directory listings." },
         { title: "Write a note", detail: "Content gap, listing gap or neither. Do not change pages on the evidence of one audit." },
       ],
@@ -1661,7 +1667,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
         { label: "Weekly run", value: "gulfrun.example 9 of 12 · runpro.ae 1 of 12", source: "Monitoring run-ae-006" },
       ],
     },
-    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora Plus.", diffHash: null, writes: [] },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
     execution: {
       connector: null,
       cmsState: "guidance",
@@ -1697,7 +1703,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     successCriteria: ["No sitemap URL redirects to runpro.pk", "Every sitemap URL returns HTTP 200 on runpro.ae"],
     dependencies: [
       { label: "Owner or admin approval of the exact diff", met: true },
-      { label: "WooCommerce write access (at the time)", met: true },
+      { label: "Connector write access (at the time)", met: true },
     ],
     draft: {
       kind: "batch",
@@ -1722,14 +1728,14 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     approval: {
       state: "approved",
       diffHash: demoDigest("task-ae-005-sitemap"),
-      writes: ["WooCommerce · 9 legacy products set to 'exclude from sitemap'", "No page content changes", "Takes effect when the sitemap regenerates"],
+      writes: ["9 legacy products set to 'exclude from sitemap'", "No page content changes", "Takes effect when the sitemap regenerates"],
       requestedBy: "Omar Farooq",
       requestedAt: "2026-10-28T08:00:00Z",
       decidedBy: "Sana Iqbal",
       decidedAt: "2026-10-28T09:20:00Z",
     },
     execution: {
-      connector: WOO(["read", "write"], "This task wrote on 29 Oct, before write access was rejected on 18 Nov."),
+      connector: WOO(["read_content", "write_content"], "This task wrote on 29 Oct, before write access was rejected on 18 Nov."),
       cmsState: "published",
       remote: {
         resource: "Sitemap exclusions · 9 products",
@@ -1805,7 +1811,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
         { label: "Cited source", value: "gccfitness.example hot-weather running shoes", source: "Responses resp-aud-ae-002-13 to -18" },
       ],
     },
-    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora Plus.", diffHash: null, writes: [] },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
     execution: {
       connector: null,
       cmsState: "guidance",
@@ -1834,11 +1840,1157 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
   },
 };
 
+// ===========================================================================
+// nutrition (Nutrition · nutrition.example) — fictional informational website
+// fnd-nu-001…008 and task-nu-001…008. Task statuses agree with REGISTRY_NU_TASKS.
+// The connector is an optional WordPress example; no shop platform is involved.
+// ===========================================================================
+
+const NU_URL = "https://nutrition.example";
+
+/** Optional demo connector (WordPress example). Neutral scope names; connected. */
+const NU_CONNECTOR = (required: string[], note?: string) => ({
+  label: "Website connector (WordPress example)",
+  site: "nutrition.example",
+  state: "connected" as const,
+  scopesGranted: ["read_content", "write_content"],
+  scopesRequired: required,
+  note,
+});
+
+const NU_FINDING_EXTRAS: Record<string, FindingExtras> = {
+  "fnd-nu-001": {
+    severityRationale: "Medium: the guide shows six questions and answers that machines cannot read as FAQ data. Nothing visible to readers is broken.",
+    priorityRationale: "P2: one guide, a small and reviewable markup change; it is the page behind the tracked meal-planning prompt.",
+    verificationCriteria: [
+      "FAQPage JSON-LD present on /guides/meal-planning",
+      "The 6 marked-up questions and answers equal the visible text",
+      "Markup validates without errors",
+    ],
+    evidence: [
+      { id: "e1", kind: "page", url: `${NU_URL}/guides/meal-planning`, note: "6 visible questions and answers; Article markup only, no FAQPage", auditId: "aud-nu-001" },
+      { id: "e2", kind: "page", url: `${NU_URL}/guides/meal-planning`, note: "Still no FAQPage markup", auditId: "aud-nu-003" },
+      { id: "e3", kind: "prompt", promptId: "p-nu-002", note: "Meal-planning prompt this guide answers. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T02:30:00Z", source: "Initial audit", sourceHref: "audits/aud-nu-001", note: "FAQPage markup missing" },
+      { id: "o2", at: "2026-11-09T02:38:00Z", source: "Full audit — November", sourceHref: "audits/aud-nu-003", note: "Unchanged" },
+    ],
+  },
+  "fnd-nu-002": {
+    severityRationale: "High: health guidance without a named reviewer or credentials is a weak trust signal for readers and for systems that judge source quality. The page text itself is not wrong.",
+    priorityRationale: "P1: three of the most-read health articles are affected and the fix is editorial, so it needs an owner or admin to approve the exact wording.",
+    verificationCriteria: [
+      "Each of the 3 articles names its author with credentials",
+      "Each article names a qualified reviewer and a review date",
+      "Every stated credential matches the editorial roster",
+    ],
+    evidence: [
+      { id: "e1", kind: "page", url: `${NU_URL}/guides/protein-intake`, note: "Author named without credentials; no reviewer", auditId: "aud-nu-001" },
+      { id: "e2", kind: "page", url: `${NU_URL}/guides/macros`, note: "No reviewer shown", auditId: "aud-nu-001" },
+      { id: "e3", kind: "page", url: `${NU_URL}/blog/hydration`, note: "Author named without credentials; no reviewer", auditId: "aud-nu-001" },
+      { id: "e4", kind: "prompt", promptId: "p-nu-001", note: "Trusted-sources prompt. Context only." },
+      { id: "e5", kind: "prompt", promptId: "p-nu-007", note: "Daily-protein prompt. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T02:31:00Z", source: "Initial audit", sourceHref: "audits/aud-nu-001", note: "3 of 8 sampled health articles lack a reviewer" },
+      { id: "o2", at: "2026-11-09T02:39:00Z", source: "Full audit — November", sourceHref: "audits/aud-nu-003", note: "Unchanged on the same 3 articles" },
+    ],
+  },
+  "fnd-nu-003": {
+    severityRationale: "Critical: a noindex directive keeps the page out of search indexes, so the free course page cannot be found through search.",
+    priorityRationale: "P0: raised on 9 Nov when the third audit still found the tag. One setting, easy to reverse, and the page promotes the free course.",
+    verificationCriteria: [
+      "No noindex directive in the meta robots tag or the X-Robots-Tag header",
+      "Canonical points to the page itself",
+      "Verification audit re-assesses the page and finds it indexable",
+    ],
+    evidence: [
+      { id: "e1", kind: "page", url: `${NU_URL}/courses/nutrition-basics`, note: "meta robots: noindex, follow", auditId: "aud-nu-001" },
+      { id: "e2", kind: "page", url: `${NU_URL}/courses/nutrition-basics`, note: "meta robots: noindex, follow (third audit in a row)", auditId: "aud-nu-003" },
+      { id: "e3", kind: "page", url: `${NU_URL}/courses/nutrition-basics`, note: "meta robots: index, follow; self canonical", auditId: "aud-nu-004" },
+      { id: "e4", kind: "prompt", promptId: "p-nu-006", note: "Free-course prompt. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T02:29:00Z", source: "Initial audit", sourceHref: "audits/aud-nu-001", note: "noindex found" },
+      { id: "o2", at: "2026-10-22T01:33:00Z", source: "Scheduled audit — October", sourceHref: "audits/aud-nu-002", note: "Still present" },
+      { id: "o3", at: "2026-11-09T02:36:00Z", source: "Full audit — November", sourceHref: "audits/aud-nu-003", note: "Still present" },
+      { id: "o4", at: "2026-11-16T03:10:00Z", source: "Verification — course page indexing", sourceHref: "audits/aud-nu-004", note: "No noindex directive" },
+    ],
+  },
+  "fnd-nu-004": {
+    severityRationale: "Low: duplicated titles and descriptions make recipe pages harder to tell apart in listings. Nothing is broken on the pages.",
+    priorityRationale: "P2: six pages, a content-only change in a staged draft; two pages still need a second look.",
+    verificationCriteria: ["Each of the 6 recipe pages has a unique title", "Each page has a unique meta description", "No recipe page repeats the category page title"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${NU_URL}/recipes/meal-prep`, note: "Title “Recipes | Nutrition” shared with 5 other pages", auditId: "aud-nu-001" },
+      { id: "e2", kind: "page", url: `${NU_URL}/recipes/high-protein-breakfast`, note: "Same title and meta description as /recipes/meal-prep", auditId: "aud-nu-003" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T02:33:00Z", source: "Initial audit", sourceHref: "audits/aud-nu-001", note: "6 pages share one title" },
+      { id: "o2", at: "2026-11-09T02:37:00Z", source: "Full audit — November", sourceHref: "audits/aud-nu-003", note: "Unchanged" },
+      { id: "o3", at: "2026-11-16T03:10:00Z", source: "Targeted re-check of 6 recipe pages", note: "4 of 6 unique; 2 still repeat the category title" },
+    ],
+  },
+  "fnd-nu-005": {
+    severityRationale: "Low: the Organization markup is valid but does not link the brand to its official profiles. No visible impact.",
+    priorityRationale: "P3: one markup block on the home page; the change was made and awaits verification.",
+    verificationCriteria: ["Organization JSON-LD lists the official profiles in sameAs", "Every sameAs URL is an official profile", "Markup validates"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${NU_URL}/`, note: "Organization markup: name and logo; sameAs is empty", auditId: "aud-nu-002" },
+      { id: "e2", kind: "page", url: `${NU_URL}/`, note: "Unchanged: sameAs still empty", auditId: "aud-nu-003" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-22T01:30:00Z", source: "Scheduled audit — October", sourceHref: "audits/aud-nu-002", note: "sameAs empty" },
+      { id: "o2", at: "2026-11-09T02:40:00Z", source: "Full audit — November", sourceHref: "audits/aud-nu-003", note: "Unchanged" },
+      { id: "o3", at: "2026-11-17T02:30:00Z", source: "Publish check", note: "3 profiles in the live markup; not yet re-assessed by an audit" },
+    ],
+  },
+  "fnd-nu-006": {
+    severityRationale: "Medium: a competitor domain is cited more often than the owned domain on two beginner prompts. Citation-capable responses only; the cause is not established.",
+    priorityRationale: "P2: two beginner prompts, the same split in the November audit and the 16 Nov weekly run. Confidence is medium.",
+    verificationCriteria: [
+      "Owned-domain citations counted on p-nu-003 and p-nu-004 with n / d",
+      "Same channels, models and search modes as the baseline",
+      "Failed requests excluded and reported separately",
+    ],
+    evidence: [
+      { id: "e1", kind: "response", responseId: "resp-aud-nu-003-19", note: "OpenAI · p-nu-004 · sample 1 · cites nourishwell.example" },
+      { id: "e2", kind: "response", responseId: "resp-aud-nu-003-21", note: "Gemini · p-nu-004 · sample 1 · cites nourishwell.example" },
+      { id: "e3", kind: "response", responseId: "resp-aud-nu-003-23", note: "Perplexity · p-nu-004 · sample 1 · cites nourishwell.example" },
+      { id: "e4", kind: "response", responseId: "resp-aud-nu-003-13", note: "OpenAI · p-nu-003 · sample 1 · one of the 3 responses citing nutrition.example (all on p-nu-003)" },
+      { id: "e5", kind: "prompt", promptId: "p-nu-003", note: "Head-to-head prompt for beginners (version 2)" },
+      { id: "e6", kind: "prompt", promptId: "p-nu-004", note: "Macros prompt for beginners" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-11-09T02:30:00Z", source: "Full audit — November", sourceHref: "audits/aud-nu-003", note: "nourishwell.example 4 of 10, nutrition.example 3 of 10 (responses that returned citations); all 4 NourishWell citations are on p-nu-004" },
+      { id: "o2", at: "2026-11-16T01:44:00Z", source: "Weekly monitoring — 16 Nov", sourceHref: "monitoring/runs/run-nu-006", note: "nourishwell.example 4 of 10, nutrition.example 3 of 10" },
+    ],
+  },
+  "fnd-nu-007": {
+    severityRationale: "Medium: lab LCP is 3.4 s on mobile against a 2.5 s target. There is no field data, so real-reader impact is unknown.",
+    priorityRationale: "P2: one tool page that many guides link to; the fix is applied but not yet published, so it cannot be verified.",
+    verificationCriteria: ["Lab LCP on mobile is 2.5 s or lower", "Hero image is served under 200 KB", "Lab CLS stays at or below 0.1"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${NU_URL}/tools/calorie-calculator`, note: "Lab LCP 3.4 s on mobile; hero image 1.9 MB, loaded late", auditId: "aud-nu-003" },
+      { id: "e2", kind: "page", url: `${NU_URL}/tools/calorie-calculator`, note: "Lab LCP 3.4 s on mobile, re-measured before the change", auditId: "aud-nu-004" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-11-09T02:35:00Z", source: "Full audit — November", sourceHref: "audits/aud-nu-003", note: "Lab LCP 3.4 s" },
+      { id: "o2", at: "2026-11-16T03:09:00Z", source: "Verification — course page indexing", sourceHref: "audits/aud-nu-004", note: "Lab LCP 3.4 s, before the change" },
+    ],
+  },
+  "fnd-nu-008": {
+    severityRationale: "Informational: one neutral prompt, brand absent from all 4 successful samples. Answers vary between runs, so this is recorded for awareness.",
+    priorityRationale: "P3: single informational prompt with low confidence. Accepted by the owner on 18 Nov; revisit in January.",
+    verificationCriteria: ["Re-run p-nu-007 on the same channels with 3 samples each", "Report brand mentions with numerator and denominator", "Failed requests reported separately"],
+    evidence: [
+      { id: "e1", kind: "response", responseId: "resp-aud-nu-005-08", note: "OpenAI · sample 2 · brand absent; cites nourishwell.example" },
+      { id: "e2", kind: "response", responseId: "resp-aud-nu-005-09", note: "Gemini · sample 1 · brand absent; cites nourishwell.example" },
+      { id: "e3", kind: "response", responseId: "resp-aud-nu-005-12", note: "Perplexity · sample 2 · brand absent; cites nourishwell.example" },
+      { id: "e4", kind: "response", responseId: "resp-aud-nu-005-07", note: "OpenAI · sample 1 · request failed. Excluded, not counted as absent." },
+      { id: "e5", kind: "prompt", promptId: "p-nu-007", note: "Neutral daily-protein prompt" },
+    ],
+    observations: [{ id: "o1", at: "2026-11-18T05:08:00Z", source: "Triggered audit — new competitor suggested", sourceHref: "audits/aud-nu-005", note: "Absent in 4 of 4 successful responses; 2 failed requests excluded" }],
+  },
+};
+
+const NU_RECOMMENDATIONS: Recommendation[] = [
+  rec({
+    id: "rec-fnd-nu-001-a",
+    findingId: "fnd-nu-001",
+    title: "Add FAQPage markup for the six questions on the meal-planning guide",
+    problem: "The guide shows six questions and answers, but its markup describes the article only.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "confirmed", basis: "Markup read directly from the page in the 8 Oct and 9 Nov audits: Article only, no FAQPage." },
+    action: "Add one FAQPage block with the six visible questions and answers, word for word, to the JSON-LD of /guides/meal-planning.",
+    why: "Marked-up questions let systems read the answers as a list. This does not guarantee rich results, rankings or AI citations.",
+    expectedOutcome: "The page carries valid FAQPage markup that equals the visible text.",
+    effort: "small",
+    risk: "medium",
+    suggestedMode: "ai_draft",
+    dependencies: ["Editor review of the draft"],
+    limitations: ["Markup must equal the visible text; any later edit to the Q&A needs the markup updated", "A person adds the markup on the site; no write by Rankvora AI"],
+    verificationPlan: ["Re-crawl /guides/meal-planning", "Compare the marked-up text with the visible text", "Validate the markup"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T09:00:00Z",
+    taskId: "task-nu-001",
+  }),
+  rec({
+    id: "rec-fnd-nu-002-a",
+    findingId: "fnd-nu-002",
+    title: "Add reviewer, credentials and review date to three health articles",
+    problem: "Three articles show no named reviewer, and two show the author without credentials.",
+    evidenceIds: ["e1", "e2", "e3"],
+    cause: { classification: "confirmed", basis: "Bylines read from the three pages in the 8 Oct and 9 Nov audits." },
+    action: "Add a reviewer block under the byline of /guides/protein-intake, /guides/macros and /blog/hydration: author credentials, reviewer name and credential, review date, and a general-information note.",
+    why: "Named, qualified review is a trust signal for readers and for systems that judge source quality. It does not guarantee a mention or a ranking.",
+    expectedOutcome: "Each article states who wrote it, who reviewed it, their credentials and the review date.",
+    effort: "medium",
+    risk: "high",
+    suggestedMode: "approved_apply",
+    dependencies: ["Reviewer roster confirmed", "Owner or admin approval of the exact wording"],
+    limitations: ["Health content: only credentials on the editorial roster may be stated", "Writes to three live articles", "Reviewers must have actually reviewed each article"],
+    verificationPlan: ["Re-crawl the three articles", "Check each stated credential against the roster", "Confirm the review date is shown"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T09:10:00Z",
+    taskId: "task-nu-002",
+  }),
+  rec({
+    id: "rec-fnd-nu-003-a",
+    findingId: "fnd-nu-003",
+    title: "Remove the noindex tag from the Nutrition Basics course page",
+    problem: "The course page carries meta robots “noindex, follow”, so it is kept out of search indexes.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "confirmed", basis: "The tag is present in the page head on every audit from 8 Oct to 9 Nov; the page setting “hide from search engines” is on." },
+    action: "Set the meta robots value of /courses/nutrition-basics to “index, follow” (turn the hide-from-search setting off). No content changes.",
+    why: "A page with noindex cannot appear in search results. Removing it makes the page eligible; it does not guarantee indexing speed, rankings or AI citations.",
+    expectedOutcome: "The page is indexable, with a self-referencing canonical.",
+    effort: "small",
+    risk: "medium",
+    suggestedMode: "approved_apply",
+    dependencies: ["Owner or admin approval of the exact diff", "Connector with write access to pages"],
+    limitations: ["Writes to a live page", "Search engines index at their own pace"],
+    verificationPlan: ["Re-crawl the course page in a verification audit", "Check meta robots and the X-Robots-Tag header", "Check the canonical"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-09T07:30:00Z",
+    taskId: "task-nu-003",
+  }),
+  rec({
+    id: "rec-fnd-nu-004-a",
+    findingId: "fnd-nu-004",
+    title: "Give six recipe pages unique titles and meta descriptions",
+    problem: "Six recipe pages share the title “Recipes | Nutrition” and one meta description.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "likely", basis: "The recipe template falls back to the category title when the page title field is empty." },
+    action: "Write one distinct title and meta description per recipe page and stage them as drafts, then apply and publish in a separate step.",
+    why: "Distinct titles help readers and crawlers tell the pages apart in listings. No ranking effect is claimed.",
+    expectedOutcome: "Six unique titles and descriptions, none equal to the category page title.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "cms_staged",
+    dependencies: ["Staged-draft approval"],
+    limitations: ["Pages that use the category template may ignore the custom title field", "Cached copies may show the old title for a short time"],
+    verificationPlan: ["Re-check all 6 pages", "Confirm each title and description is unique", "Confirm none equals the category title"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-09T07:40:00Z",
+    taskId: "task-nu-004",
+  }),
+  rec({
+    id: "rec-fnd-nu-005-a",
+    findingId: "fnd-nu-005",
+    title: "List the three official profiles in Organization sameAs",
+    problem: "Organization markup has a name and logo but an empty sameAs list.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "confirmed", basis: "Markup read directly from the home page in the 22 Oct and 9 Nov audits." },
+    action: "Add the three official profile URLs to sameAs in the Organization JSON-LD of the home page.",
+    why: "Explicit identity links help systems tell which profiles belong to the brand. No mention or ranking is guaranteed.",
+    expectedOutcome: "sameAs lists three official profiles and the markup validates.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "ai_draft",
+    dependencies: ["Official profile URLs confirmed"],
+    limitations: ["Only profiles confirmed as official by the owner are listed", "A person edits the markup in the site editor"],
+    verificationPlan: ["Re-crawl the home page", "Validate the markup"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T09:20:00Z",
+    taskId: "task-nu-005",
+  }),
+  rec({
+    id: "rec-fnd-nu-006-a",
+    findingId: "fnd-nu-006",
+    title: "Review the beginner-prompt citations against NourishWell",
+    problem: "nourishwell.example is cited in 4 of 10 responses that returned citations; nutrition.example in 3 of 10. All 4 NourishWell citations are on the macros prompt p-nu-004, where nutrition.example is cited in 0 of 5.",
+    evidenceIds: ["e1", "e2", "e3", "e4"],
+    cause: { classification: "hypothesis", basis: "NourishWell may have a clearer beginner page for the same question. Not established; answers vary between runs." },
+    action: "Read the cited NourishWell pages and the nutrition.example pages that could answer the same questions, then write a note on whether the gap is content, structure or neither.",
+    why: "A consistent split on two prompts deserves a look before any content is changed. Two audits are not a trend.",
+    expectedOutcome: "A short note that names the gap or records normal variation.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "guidance",
+    limitations: ["p-nu-003 changed wording on 27 Oct; compare only slots of the same prompt version", "2 of 12 responses returned no citations and are not counted"],
+    verificationPlan: ["Re-run p-nu-003 and p-nu-004 on the same channels with 3 samples", "Report owned-domain citations as n / d"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-17T08:30:00Z",
+    taskId: "task-nu-006",
+  }),
+  rec({
+    id: "rec-fnd-nu-006-b",
+    findingId: "fnd-nu-006",
+    title: "Add a plain-language beginner section to the macros guide",
+    problem: "No page on nutrition.example opens with a short beginner explanation of macros.",
+    evidenceIds: ["e5", "e6"],
+    cause: { classification: "hypothesis", basis: "Untested. No evidence that a beginner section changes which sources are cited." },
+    action: "Draft a short beginner section for /guides/macros that defines protein, carbohydrate and fat in one sentence each, with a link to the free basics course.",
+    why: "An owned page that answers the beginner question gives channels something to cite. Citations are not guaranteed.",
+    expectedOutcome: "A section whose statements are supported by the guide itself.",
+    effort: "medium",
+    risk: "low",
+    suggestedMode: "ai_draft",
+    dependencies: ["Review of the task-nu-006 note first"],
+    limitations: ["Hypothesis only", "Indexing time is outside our control"],
+    verificationPlan: ["Check the section renders", "Re-run p-nu-004 as context only"],
+  }),
+  rec({
+    id: "rec-fnd-nu-007-a",
+    findingId: "fnd-nu-007",
+    title: "Shrink and preload the calculator hero image; defer the calculator script",
+    problem: "The page loads a 1.9 MB hero image late and a blocking script before it. Lab LCP is 3.4 s on mobile.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "likely", basis: "The lab trace shows the hero image as the LCP element, loaded after the blocking script." },
+    action: "Serve a 140 KB WebP hero with high fetch priority and load the calculator script with defer on /tools/calorie-calculator.",
+    why: "Faster loading of the largest element improves the lab LCP. Real-reader impact is unknown without field data.",
+    expectedOutcome: "Lab LCP of 2.5 s or lower on mobile, with no new layout shift.",
+    effort: "medium",
+    risk: "medium",
+    suggestedMode: "approved_apply",
+    dependencies: ["Owner or admin approval of the exact diff", "Connector with write access to pages"],
+    limitations: ["Lab measurement only", "Writes to a live page when published"],
+    verificationPlan: ["Re-measure lab LCP on mobile", "Check image size and CLS", "Run after the change is published"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T09:30:00Z",
+    taskId: "task-nu-007",
+  }),
+  rec({
+    id: "rec-fnd-nu-008-a",
+    findingId: "fnd-nu-008",
+    title: "Add a short protein-intake answer block to the homepage",
+    problem: "The brand is absent from all 4 successful answers to the daily-protein prompt.",
+    evidenceIds: ["e1", "e2", "e3", "e5"],
+    cause: { classification: "hypothesis", basis: "The homepage may not state a protein answer. One neutral prompt; 2 of 6 requests failed; answers vary between runs." },
+    action: "Propose a two-sentence general answer on the homepage that links to /guides/protein-intake, using only facts from that guide.",
+    why: "A page that states the answer gives readers and channels an owned source. No mention is guaranteed.",
+    expectedOutcome: "A short, factual answer block linking to the guide.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "guidance",
+    limitations: ["Hypothesis only", "Based on one prompt and 4 successful samples"],
+    verificationPlan: ["Re-run p-nu-007 on the same channels with 3 samples"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-18T06:30:00Z",
+    decisionNote: "Task cancelled on 18 Nov: accepted risk, revisit in January.",
+    taskId: "task-nu-008",
+  }),
+];
+
+// ---- Task details ----------------------------------------------------------
+
+const NU_QA: [string, string][] = [
+  ["How many meals should a weekly plan include?", "Most plans cover three main meals and one or two snacks a day. Adjust the number to your routine."],
+  ["How do I balance a plate?", "Aim for about half vegetables and fruit, a quarter protein foods and a quarter whole grains."],
+  ["Can I prepare meals ahead?", "Yes. Cooked grains, roasted vegetables and soups keep for three to four days in the fridge."],
+  ["How do I plan a vegetarian week?", "Rotate beans, lentils, tofu, eggs or dairy as protein sources and repeat the ones you like."],
+  ["How can I reduce food waste?", "Plan meals with overlapping ingredients and freeze leftovers in single portions."],
+  ["Is this plan medical advice?", "No. This guide is general information. Speak to a qualified professional about personal needs."],
+];
+
+const NU_ARTICLE = {
+  "@type": "Article",
+  headline: "How to build a balanced weekly meal plan",
+  author: { "@type": "Person", name: "Priya Nair" },
+  url: `${NU_URL}/guides/meal-planning`,
+};
+const NU_FAQ_BEFORE = JSON.stringify({ "@context": "https://schema.org", ...NU_ARTICLE }, null, 2);
+const NU_FAQ_AFTER = JSON.stringify(
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      NU_ARTICLE,
+      {
+        "@type": "FAQPage",
+        mainEntity: NU_QA.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+      },
+    ],
+  },
+  null,
+  2,
+);
+
+const NU_BYLINE_BEFORE = "By Priya Nair\nUpdated 3 Sep 2026";
+const NU_BYLINE_AFTER =
+  "By Priya Nair, BSc Nutrition (writer)\nReviewed by Jordan Ellery, RD (dietitian reviewer) · Reviewed 14 Nov 2026\nThis article is general information, not medical advice.\nJordan Ellery is registered with the national dietetics board. All guidance follows current national guidelines.";
+const NU_BYLINE_ALT =
+  "By Priya Nair, BSc Nutrition (writer)\nReviewed by Jordan Ellery, RD (dietitian reviewer) · Reviewed 14 Nov 2026\nThis article is general information, not medical advice.";
+
+const NU_ROBOTS_BEFORE = `<head>
+  <title>Nutrition Basics: a free beginner course | Nutrition</title>
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="${NU_URL}/courses/nutrition-basics">
+</head>`;
+const NU_ROBOTS_AFTER = NU_ROBOTS_BEFORE.replace("noindex, follow", "index, follow");
+
+const NU_RECIPES: { slug: string; title: string; ok: boolean; reason?: string }[] = [
+  { slug: "meal-prep", title: "Meal-prep recipes for the week | Nutrition", ok: false, reason: "Live title still “Recipes | Nutrition” at the re-check. This page uses the category template, which ignores the custom title field." },
+  { slug: "high-protein-breakfast", title: "High-protein breakfast ideas | Nutrition", ok: false, reason: "Live title unchanged at the re-check. A cached copy is the likely cause; re-check after the cache clears." },
+  { slug: "lentil-soup", title: "Easy lentil soup in 30 minutes | Nutrition", ok: true },
+  { slug: "overnight-oats", title: "Overnight oats: four base recipes | Nutrition", ok: true },
+  { slug: "chickpea-salad", title: "Chickpea salad with lemon dressing | Nutrition", ok: true },
+  { slug: "veggie-stir-fry", title: "Veggie stir-fry for beginners | Nutrition", ok: true },
+];
+const NU_CATEGORY_TITLE = "Recipes | Nutrition";
+
+const NU_ORG_BEFORE = `{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Nutrition",
+  "url": "${NU_URL}/",
+  "logo": "${NU_URL}/assets/logo.png",
+  "sameAs": []
+}`;
+const NU_ORG_AFTER = `{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Nutrition",
+  "url": "${NU_URL}/",
+  "logo": "${NU_URL}/assets/logo.png",
+  "sameAs": [
+    "https://www.linkedin.example/company/nutrition",
+    "https://www.instagram.example/nutrition",
+    "https://www.youtube.example/@nutrition"
+  ]
+}`;
+
+const NU_PERF_BEFORE = `hero_image: calculator-hero.png   # 1.9 MB
+hero_fetch_priority: auto
+hero_preload: off
+calculator_script: blocking      # loaded in the head`;
+const NU_PERF_AFTER = `hero_image: calculator-hero.webp  # 140 KB
+hero_fetch_priority: high
+hero_preload: on
+calculator_script: defer         # loaded after the page`;
+
+const NU_TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
+  "task-nu-001": { blockers: [] },
+  "task-nu-002": { blockers: [] },
+  "task-nu-003": { blockers: [] },
+  "task-nu-004": { blockers: [] },
+  "task-nu-005": { blockers: [] },
+  "task-nu-006": { blockers: [] },
+  "task-nu-007": { blockers: ["Applied on 17 Nov but not published yet. Verification cannot start until it is live."] },
+  "task-nu-008": { blockers: [] },
+};
+
+const NU_TASK_DETAILS: Record<string, TaskDetailSeed> = {
+  // AI draft of FAQPage markup, ready for an editor. Nothing applied.
+  "task-nu-001": {
+    recommendationId: "rec-fnd-nu-001-a",
+    createdAt: "2026-11-10T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["FAQPage JSON-LD present on /guides/meal-planning", "The 6 marked-up questions and answers equal the visible text", "Markup validates without errors"],
+    dependencies: [
+      { label: "Visible questions and answers captured (crawl 9 Nov)", met: true },
+      { label: "Editor review of the draft", met: false },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Guide page · /guides/meal-planning · JSON-LD",
+      language: "json-ld",
+      before: NU_FAQ_BEFORE,
+      after: NU_FAQ_AFTER,
+      sourceFacts: [
+        { label: "Questions and answers", value: "6 visible, copied word for word", source: "Crawl 9 Nov, /guides/meal-planning" },
+        { label: "Article", value: "Headline, author and URL already in the markup", source: "Audit aud-nu-003" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-17T04:30:00Z",
+      version: 1,
+    },
+    approval: { state: "not_required", notRequiredReason: "AI draft only. Nothing is written to the site; a person adds the markup.", diffHash: demoDigest("task-nu-001-faq"), writes: [] },
+    execution: {
+      connector: NU_CONNECTOR(["read_content"], "Only read access is needed to compare the page. An AI draft makes no write."),
+      cmsState: "draft",
+      remote: {
+        resource: "Page guides/meal-planning · JSON-LD",
+        versionAtDraft: "rev 18",
+        versionNow: "rev 18",
+        hashAtDraft: demoDigest("nu-mealplan-jsonld-18"),
+        hashNow: demoDigest("nu-mealplan-jsonld-18"),
+        checkedAt: "2026-11-19T08:48:00Z",
+        changed: false,
+      },
+      fields: [{ field: "FAQPage markup", before: "(none)", after: "6 questions", outcome: "pending", note: "Added by a person after review" }],
+      completedAt: "2026-11-18T07:20:00Z",
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing has been applied." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "FAQPage markup present", expect: "Present" },
+        { id: "c2", label: "Marked-up text equals visible text", expect: "6 of 6 equal" },
+        { id: "c3", label: "Markup validates", expect: "No errors" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T02:30:00Z", actor: "Audit aud-nu-001", kind: "created", title: "Finding fnd-nu-001 detected" },
+      { id: "h2", at: "2026-11-10T09:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-17T04:30:00Z", actor: "Drafting model", kind: "draft", title: "Draft v1 generated", detail: "6 questions marked up, 0 unsupported claims" },
+      { id: "h4", at: "2026-11-18T07:20:00Z", actor: "Hira Malik", kind: "status", title: "Marked draft ready" },
+    ],
+  },
+
+  // High-risk write to three health articles, waiting for owner or admin approval of the exact diff.
+  "task-nu-002": {
+    recommendationId: "rec-fnd-nu-002-a",
+    createdAt: "2026-11-10T09:10:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Each of the 3 articles names its author with credentials", "Each article names a qualified reviewer and a review date", "Every stated credential matches the editorial roster"],
+    dependencies: [
+      { label: "Reviewer roster confirmed (12 Nov)", met: true },
+      { label: "Owner or admin approval of the exact diff", met: false },
+      { label: "Connector with write access to pages", met: true },
+    ],
+    draft: {
+      kind: "text",
+      resource: "Health articles · reviewer block (/guides/protein-intake shown)",
+      field: "Byline and reviewer block",
+      before: NU_BYLINE_BEFORE,
+      after: NU_BYLINE_AFTER,
+      alternate: { after: NU_BYLINE_ALT, unsupportedClaims: [] },
+      sourceFacts: [
+        { label: "Author", value: "Priya Nair, BSc Nutrition", source: "Editorial roster (demo), 12 Nov" },
+        { label: "Reviewer", value: "Jordan Ellery, RD (fictional reviewer)", source: "Editorial roster (demo), 12 Nov" },
+        { label: "Review date", value: "14 Nov 2026", source: "Reviewer sign-off note, 14 Nov" },
+        { label: "Articles", value: "3: protein-intake, macros, hydration", source: "Audit aud-nu-001" },
+      ],
+      unsupportedClaims: [
+        { text: "Jordan Ellery is registered with the national dietetics board.", reason: "The roster states the credential RD only, not a registration body." },
+        { text: "All guidance follows current national guidelines.", reason: "No source fact names a guideline or checks the articles against one." },
+      ],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-14T05:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "pending",
+      diffHash: demoDigest("task-nu-002-byline"),
+      writes: [
+        "3 articles: reviewer block added under the byline",
+        "Author credentials, reviewer name and credential, review date",
+        "Live on each article after save",
+      ],
+      requestedBy: "Omar Farooq",
+      requestedAt: "2026-11-18T09:15:00Z",
+    },
+    execution: {
+      connector: NU_CONNECTOR(["read_content", "write_content"]),
+      cmsState: "draft",
+      remote: {
+        resource: "Page guides/protein-intake · byline block",
+        versionAtDraft: "rev 44",
+        versionNow: "rev 44",
+        hashAtDraft: demoDigest("nu-protein-byline-44"),
+        hashNow: demoDigest("nu-protein-byline-44"),
+        checkedAt: "2026-11-19T08:52:00Z",
+        changed: false,
+      },
+      fields: [
+        { field: "/guides/protein-intake · reviewer block", before: NU_BYLINE_BEFORE.replace("\n", " · "), after: "Author credentials and reviewer added", outcome: "pending" },
+        { field: "/guides/macros · reviewer block", before: "By Priya Nair · no reviewer", after: "Author credentials and reviewer added", outcome: "pending" },
+        { field: "/blog/hydration · reviewer block", before: "By Priya Nair · no reviewer", after: "Author credentials and reviewer added", outcome: "pending" },
+      ],
+      completedAt: "2026-11-14T05:30:00Z",
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing has been applied." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Author credentials shown on all 3 articles", expect: "3 of 3" },
+        { id: "c2", label: "Reviewer and review date shown on all 3 articles", expect: "3 of 3" },
+        { id: "c3", label: "Stated credentials match the roster", expect: "No mismatch" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T02:31:00Z", actor: "Audit aud-nu-001", kind: "created", title: "Finding fnd-nu-002 detected" },
+      { id: "h2", at: "2026-11-10T09:10:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Omar Farooq" },
+      { id: "h3", at: "2026-11-14T05:00:00Z", actor: "Drafting model", kind: "draft", title: "Draft v1 generated", detail: "2 unsupported claims flagged" },
+      { id: "h4", at: "2026-11-18T09:15:00Z", actor: "Omar Farooq", kind: "approval", title: "Approval requested", detail: "Owner or admin must approve the exact diff" },
+    ],
+  },
+
+  // Applied, published and verified by the verification audit.
+  "task-nu-003": {
+    recommendationId: "rec-fnd-nu-003-a",
+    createdAt: "2026-11-09T07:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["No noindex directive in the meta robots tag or the X-Robots-Tag header", "Canonical points to the page itself", "Verification audit finds the page indexable"],
+    dependencies: [
+      { label: "Owner or admin approval of the exact diff", met: true },
+      { label: "Connector with write access to pages (at the time)", met: true },
+      { label: "Live value unchanged since draft", met: true },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Page · /courses/nutrition-basics · robots meta",
+      language: "html",
+      before: NU_ROBOTS_BEFORE,
+      after: NU_ROBOTS_AFTER,
+      sourceFacts: [
+        { label: "Current value", value: "robots: noindex, follow", source: "Crawl 9 Nov, audit aud-nu-003" },
+        { label: "Page setting", value: "“Hide from search engines” is on", source: "Page settings, read 9 Nov" },
+        { label: "Canonical", value: "Self-referencing; unchanged", source: "Crawl 9 Nov" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-09T08:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-nu-003-robots"),
+      writes: ["Page /courses/nutrition-basics · robots meta", "1 line changed: noindex, follow → index, follow", "No content change; live after the publish step"],
+      requestedBy: "Omar Farooq",
+      requestedAt: "2026-11-10T02:00:00Z",
+      decidedBy: "Sana Iqbal",
+      decidedAt: "2026-11-10T06:45:00Z",
+    },
+    execution: {
+      connector: NU_CONNECTOR(["read_content", "write_content"]),
+      cmsState: "published",
+      remote: {
+        resource: "Page courses/nutrition-basics · robots meta",
+        versionAtDraft: "rev 9",
+        versionNow: "rev 9",
+        hashAtDraft: demoDigest("nu-course-robots-9"),
+        hashNow: demoDigest("nu-course-robots-9"),
+        checkedAt: "2026-11-11T02:09:00Z",
+        changed: false,
+        note: "Checked just before the write.",
+      },
+      fields: [{ field: "robots meta", before: "noindex, follow", after: "index, follow", outcome: "written", note: "Applied 11 Nov, published 12 Nov" }],
+      completedAt: "2026-11-09T08:30:00Z",
+      stagedAt: null,
+      appliedAt: "2026-11-11T02:10:00Z",
+      publishedAt: "2026-11-12T01:30:00Z",
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Verified on 16 Nov. Reverting the setting would be a new task." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "No noindex in the meta robots tag", expect: "Absent" },
+        { id: "c2", label: "No noindex in the X-Robots-Tag header", expect: "Absent" },
+        { id: "c3", label: "Canonical points to the page itself", expect: "Self" },
+        { id: "c4", label: "Page reached by the verification audit", expect: "Assessed" },
+      ],
+      outcome: {
+        result: "verified_success",
+        ranAt: "2026-11-16T03:10:00Z",
+        sourceLabel: "Verification — course page indexing",
+        sourceHref: "audits/aud-nu-004",
+        findingEffect: "Finding fnd-nu-003 set to Verified resolved.",
+        checks: [
+          { id: "c1", label: "No noindex in the meta robots tag", before: { status: "fail", detail: "noindex, follow (9 Nov)" }, after: { status: "pass", detail: "index, follow" } },
+          { id: "c2", label: "No noindex in the X-Robots-Tag header", before: { status: "pass", detail: "Header absent" }, after: { status: "pass", detail: "Header absent" } },
+          { id: "c3", label: "Canonical points to the page itself", before: { status: "pass", detail: "Self canonical" }, after: { status: "pass", detail: "Self canonical" } },
+          { id: "c4", label: "Page reached by the verification audit", before: { status: "pass", detail: "Assessed in aud-nu-003" }, after: { status: "pass", detail: "Assessed: 5 of 5 pages (aud-nu-004)" } },
+        ],
+      },
+      simulated: null,
+      context: { label: "Brand mention rate on the free-course prompt p-nu-006 (context only)", n: 1, d: 3, basis: "3 responses, 1 sample each, verification audit. Directional." },
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T02:29:00Z", actor: "Audit aud-nu-001", kind: "created", title: "Finding fnd-nu-003 detected" },
+      { id: "h2", at: "2026-11-09T02:36:00Z", actor: "Audit aud-nu-003", kind: "status", title: "Finding observed again", detail: "Third audit with the tag present; priority raised to P0" },
+      { id: "h3", at: "2026-11-09T07:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Omar Farooq" },
+      { id: "h4", at: "2026-11-09T08:00:00Z", actor: "Drafting model", kind: "draft", title: "Patch drafted", detail: "1 line changed" },
+      { id: "h5", at: "2026-11-10T02:00:00Z", actor: "Omar Farooq", kind: "approval", title: "Approval requested", detail: "Owner or admin must approve the exact diff" },
+      { id: "h6", at: "2026-11-10T06:45:00Z", actor: "Sana Iqbal", kind: "approval", title: "Approved exact diff" },
+      { id: "h7", at: "2026-11-11T02:10:00Z", actor: "System", kind: "execution", title: "Applied", detail: "Remote check passed; 1 of 1 written. Not live yet." },
+      { id: "h8", at: "2026-11-12T01:30:00Z", actor: "Omar Farooq", kind: "execution", title: "Published", detail: "Page revision live; cache cleared" },
+      { id: "h9", at: "2026-11-16T03:10:00Z", actor: "Audit aud-nu-004", kind: "verification", title: "Verified success", detail: "4 of 4 checks passed" },
+    ],
+  },
+
+  // Staged, applied and published; 4 of 6 pages verified.
+  "task-nu-004": {
+    recommendationId: "rec-fnd-nu-004-a",
+    createdAt: "2026-11-09T07:40:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Each of the 6 recipe pages has a unique title", "Each page has a unique meta description", "No recipe page repeats the category page title"],
+    dependencies: [
+      { label: "Staged-draft approval", met: true },
+      { label: "Connector with write access to pages (at the time)", met: true },
+      { label: "Re-check of the 2 pages that still repeat the title", met: false },
+    ],
+    draft: {
+      kind: "batch",
+      resource: "Recipe pages · title and meta description (6 resources)",
+      items: NU_RECIPES.map((r, i) => ({
+        id: `b${i + 1}`,
+        pageUrl: `${NU_URL}/recipes/${r.slug}`,
+        linkText: "Title and meta description",
+        from: NU_CATEGORY_TITLE,
+        to: r.title,
+        result: "applied" as const,
+        reason: r.ok ? undefined : r.reason,
+      })),
+      sourceFacts: [
+        { label: "Duplicated title", value: `“${NU_CATEGORY_TITLE}” on 6 recipe pages`, source: "Audit aud-nu-001, crawl 8 Oct" },
+        { label: "Duplicated description", value: "One meta description on 6 recipe pages", source: "Audit aud-nu-003, crawl 9 Nov" },
+        { label: "Rule", value: "Every indexable page has a unique title and description", source: "Website readiness criteria 2.3" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-10T04:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-nu-004-recipes"),
+      writes: ["6 recipe pages: title and meta description set as staged drafts", "Category page not changed", "Not live until the apply and publish steps"],
+      requestedBy: "Hira Malik",
+      requestedAt: "2026-11-11T08:00:00Z",
+      decidedBy: "Omar Farooq",
+      decidedAt: "2026-11-11T09:20:00Z",
+      note: "Staged draft only. Publishing needs a separate action.",
+    },
+    execution: {
+      connector: NU_CONNECTOR(["read_content", "write_content"]),
+      cmsState: "published",
+      remote: {
+        resource: "Recipe pages · 6 titles and descriptions",
+        versionAtDraft: "rev 31",
+        versionNow: "rev 31",
+        hashAtDraft: demoDigest("nu-recipes-31"),
+        hashNow: demoDigest("nu-recipes-31"),
+        checkedAt: "2026-11-12T02:19:00Z",
+        changed: false,
+        note: "Checked just before staging.",
+      },
+      fields: NU_RECIPES.map((r) => ({
+        field: `/recipes/${r.slug} · title and description`,
+        before: NU_CATEGORY_TITLE,
+        after: r.title,
+        outcome: "written" as const,
+        note: r.ok ? undefined : "Written; live title unchanged at the 16 Nov re-check",
+      })),
+      completedAt: "2026-11-10T04:30:00Z",
+      stagedAt: "2026-11-12T02:20:00Z",
+      appliedAt: "2026-11-13T02:05:00Z",
+      publishedAt: "2026-11-13T02:10:00Z",
+      rollback: { ...EMPTY_ROLLBACK, available: true },
+    },
+    verification: {
+      plannedChecks: NU_RECIPES.map((r, i) => ({ id: `c${i + 1}`, label: `Unique title and description on /recipes/${r.slug}`, expect: "Unique, not the category title" })),
+      outcome: {
+        result: "partially_verified",
+        ranAt: "2026-11-16T03:10:00Z",
+        sourceLabel: "Targeted re-check of 6 recipe pages",
+        findingEffect: "Finding fnd-nu-004 stays In remediation: 4 of 6 pages fixed, 2 still repeat the category title.",
+        checks: NU_RECIPES.map((r, i) => ({
+          id: `c${i + 1}`,
+          label: `Unique title and description on /recipes/${r.slug}`,
+          before: { status: "fail" as const, detail: `Title “${NU_CATEGORY_TITLE}” shared with the other recipe pages (9 Nov)` },
+          after: r.ok
+            ? { status: "pass" as const, detail: `Title “${r.title}”; description unique` }
+            : { status: "fail" as const, detail: r.reason ?? "Title unchanged" },
+        })),
+      },
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T02:33:00Z", actor: "Audit aud-nu-001", kind: "created", title: "Finding fnd-nu-004 detected" },
+      { id: "h2", at: "2026-11-09T07:40:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-10T04:00:00Z", actor: "Drafting model", kind: "draft", title: "Batch drafted", detail: "6 resources" },
+      { id: "h4", at: "2026-11-11T08:00:00Z", actor: "Hira Malik", kind: "approval", title: "Staging approval requested" },
+      { id: "h5", at: "2026-11-11T09:20:00Z", actor: "Omar Farooq", kind: "approval", title: "Staged draft approved", detail: "Staged draft only. Publishing needs a separate action." },
+      { id: "h6", at: "2026-11-12T02:20:00Z", actor: "System", kind: "execution", title: "Staged as a draft", detail: "Remote check passed; 6 of 6 staged. Not live." },
+      { id: "h7", at: "2026-11-13T02:05:00Z", actor: "Hira Malik", kind: "execution", title: "Applied", detail: "6 of 6 written as page revisions" },
+      { id: "h8", at: "2026-11-13T02:10:00Z", actor: "Hira Malik", kind: "execution", title: "Published", detail: "Cache cleared" },
+      { id: "h9", at: "2026-11-16T03:10:00Z", actor: "System", kind: "verification", title: "Partially verified", detail: "4 of 6 pages fixed; 2 still repeat the category title" },
+    ],
+  },
+
+  // Applied by hand and published; waiting for verification.
+  "task-nu-005": {
+    recommendationId: "rec-fnd-nu-005-a",
+    createdAt: "2026-11-10T09:20:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Organization JSON-LD lists the official profiles in sameAs", "Every sameAs URL is an official profile", "Markup validates"],
+    dependencies: [{ label: "Official profile URLs confirmed by the owner", met: true }],
+    draft: {
+      kind: "patch",
+      resource: "Home page · Organization JSON-LD",
+      language: "json-ld",
+      before: NU_ORG_BEFORE,
+      after: NU_ORG_AFTER,
+      sourceFacts: [
+        { label: "Official profiles", value: "LinkedIn, Instagram and YouTube", source: "Website settings, brand profile" },
+        { label: "Current markup", value: "Name and logo present; sameAs empty", source: "Audit aud-nu-003" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-12T03:00:00Z",
+      version: 1,
+    },
+    approval: { state: "not_required", notRequiredReason: "AI draft only. The snippet was applied by hand by Omar Farooq.", diffHash: demoDigest("task-nu-005-org"), writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "published",
+      remote: null,
+      fields: [{ field: "sameAs", before: "(empty)", after: "3 profiles", outcome: "written", note: "Applied by hand in the site editor; page cache cleared" }],
+      completedAt: "2026-11-12T08:00:00Z",
+      stagedAt: null,
+      appliedAt: "2026-11-17T02:20:00Z",
+      publishedAt: "2026-11-17T02:25:00Z",
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Applied outside Rankvora AI. Revert in the site editor." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "sameAs lists 3 official profiles", expect: "3 profiles" },
+        { id: "c2", label: "Every sameAs URL is an official profile", expect: "No unknown URL" },
+        { id: "c3", label: "Markup validates", expect: "No errors" },
+      ],
+      outcome: null,
+      simulated: {
+        result: "verified_success",
+        ranAt: "2026-11-19T09:00:00Z",
+        sourceLabel: "Verification audit (demo)",
+        findingEffect: "Finding fnd-nu-005 set to Verified resolved.",
+        checks: [
+          { id: "c1", label: "sameAs lists 3 official profiles", before: { status: "fail", detail: "sameAs empty (9 Nov)" }, after: { status: "pass", detail: "3 profiles" } },
+          { id: "c2", label: "Every sameAs URL is an official profile", before: { status: "not_applicable", detail: "No URLs" }, after: { status: "pass", detail: "3 of 3 match the brand profile" } },
+          { id: "c3", label: "Markup validates", before: { status: "pass", detail: "Valid" }, after: { status: "pass", detail: "Valid" } },
+        ],
+      },
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-22T01:30:00Z", actor: "Audit aud-nu-002", kind: "created", title: "Finding fnd-nu-005 detected" },
+      { id: "h2", at: "2026-11-10T09:20:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Omar Farooq" },
+      { id: "h3", at: "2026-11-12T03:00:00Z", actor: "Drafting model", kind: "draft", title: "Patch drafted" },
+      { id: "h4", at: "2026-11-12T08:00:00Z", actor: "Omar Farooq", kind: "status", title: "Marked draft ready" },
+      { id: "h5", at: "2026-11-17T02:20:00Z", actor: "Omar Farooq", kind: "execution", title: "Marked applied", detail: "Snippet edited in the site editor" },
+      { id: "h6", at: "2026-11-17T02:25:00Z", actor: "Omar Farooq", kind: "execution", title: "Marked published", detail: "Page cache cleared; 3 profiles in the live markup" },
+      { id: "h7", at: "2026-11-17T02:26:00Z", actor: "System", kind: "status", title: "Awaiting verification", detail: "Not yet re-assessed by an audit" },
+    ],
+  },
+
+  // Guidance only, unassigned.
+  "task-nu-006": {
+    recommendationId: "rec-fnd-nu-006-a",
+    createdAt: "2026-11-17T08:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["The cited NourishWell and nutrition.example pages are compared", "A short note records whether the gap is content, structure or neither"],
+    dependencies: [{ label: "Assignee chosen", met: false }],
+    draft: {
+      kind: "guidance",
+      owner: "Unassigned",
+      steps: [
+        { title: "Open the cited responses", detail: "Read samples resp-aud-nu-003-19, -21, -23 and -24, which cite nourishwell.example, and -13, -16 and -18, which cite nutrition.example." },
+        { title: "List the cited NourishWell pages", detail: "Note which page each answer cites and which beginner question it answers." },
+        { title: "Compare with nutrition.example", detail: "Find the page that could answer the same question, such as /guides/macros, and note what it opens with." },
+        { title: "Respect the prompt versions", detail: "p-nu-003 changed wording on 27 Oct. Compare only slots of the same prompt version." },
+        { title: "Write a note", detail: "Content gap, structure gap or neither. Do not change pages on the evidence of two audits." },
+      ],
+      sourceFacts: [
+        { label: "November audit", value: "nourishwell.example cited in 4 of 10 · nutrition.example in 3 of 10 (responses that returned citations)", source: "Audit aud-nu-003, prompts p-nu-003 and p-nu-004" },
+        { label: "Per prompt", value: "p-nu-004: nourishwell.example 4 of 5, nutrition.example 0 of 5 · p-nu-003: nutrition.example 3 of 5, nourishwell.example 0 of 5", source: "Audit aud-nu-003" },
+        { label: "Weekly run", value: "nourishwell.example 4 of 10 · nutrition.example 3 of 10", source: "Monitoring run-nu-006" },
+        { label: "Failed requests", value: "0 of 12 failed; 2 responses returned no citations and are not counted", source: "Audit aud-nu-003" },
+      ],
+    },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "guidance",
+      remote: null,
+      fields: [],
+      completedAt: null,
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Guidance only." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Re-run p-nu-003 and p-nu-004 with the same channels and 3 samples", expect: "Counts reported as n / d" },
+        { id: "c2", label: "Failed requests reported separately", expect: "Not counted as absent" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-09T02:30:00Z", actor: "Audit aud-nu-003", kind: "created", title: "Finding fnd-nu-006 detected" },
+      { id: "h2", at: "2026-11-16T01:44:00Z", actor: "Monitoring run-nu-006", kind: "status", title: "Finding observed again", detail: "Same split: 4 of 10 vs 3 of 10" },
+      { id: "h3", at: "2026-11-17T08:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved" },
+      { id: "h4", at: "2026-11-17T08:31:00Z", actor: "System", kind: "status", title: "Task suggested", detail: "No assignee yet" },
+    ],
+  },
+
+  // Applied as a saved revision; not published and not verified.
+  "task-nu-007": {
+    recommendationId: "rec-fnd-nu-007-a",
+    createdAt: "2026-11-10T09:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Lab LCP on mobile is 2.5 s or lower", "Hero image is served under 200 KB", "Lab CLS stays at or below 0.1"],
+    dependencies: [
+      { label: "Owner or admin approval of the exact diff", met: true },
+      { label: "Connector with write access to pages", met: true },
+      { label: "Mobile layout check before publishing", met: false },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Tool page · /tools/calorie-calculator · performance settings",
+      language: "yaml",
+      before: NU_PERF_BEFORE,
+      after: NU_PERF_AFTER,
+      sourceFacts: [
+        { label: "Lab LCP", value: "3.4 s on mobile; LCP element is the hero image", source: "Audit aud-nu-004, lab trace 16 Nov" },
+        { label: "Hero image", value: "1.9 MB PNG, loaded after a blocking script", source: "Audit aud-nu-003, crawl 9 Nov" },
+        { label: "Replacement", value: "140 KB WebP, same dimensions", source: "Media library, upload 12 Nov" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-12T06:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-nu-007-perf"),
+      writes: ["Tool page · 3 performance settings", "Saved as a page revision on apply", "Live only after the separate publish step"],
+      requestedBy: "Hira Malik",
+      requestedAt: "2026-11-14T08:00:00Z",
+      decidedBy: "Omar Farooq",
+      decidedAt: "2026-11-14T10:30:00Z",
+    },
+    execution: {
+      connector: NU_CONNECTOR(["read_content", "write_content"]),
+      cmsState: "applied",
+      remote: {
+        resource: "Page tools/calorie-calculator · performance settings",
+        versionAtDraft: "rev 57",
+        versionNow: "rev 57",
+        hashAtDraft: demoDigest("nu-calc-perf-57"),
+        hashNow: demoDigest("nu-calc-perf-57"),
+        checkedAt: "2026-11-19T08:45:00Z",
+        changed: false,
+        note: "The live copy is still rev 57 with the old settings. The applied revision 58 is saved but not published.",
+      },
+      fields: [
+        { field: "Hero image", before: "calculator-hero.png (1.9 MB)", after: "calculator-hero.webp (140 KB)", outcome: "written", note: "Saved as a revision. Not live until published." },
+        { field: "Hero fetch priority and preload", before: "auto, preload off", after: "high, preload on", outcome: "written", note: "Saved as a revision. Not live until published." },
+        { field: "Calculator script", before: "Blocking, in the head", after: "defer", outcome: "written", note: "Saved as a revision. Not live until published." },
+      ],
+      completedAt: "2026-11-12T06:30:00Z",
+      stagedAt: null,
+      appliedAt: "2026-11-17T03:15:00Z",
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, available: true },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Lab LCP on mobile", expect: "2.5 s or lower" },
+        { id: "c2", label: "Hero image transfer size", expect: "Under 200 KB" },
+        { id: "c3", label: "Lab CLS on mobile", expect: "0.1 or lower" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-09T02:35:00Z", actor: "Audit aud-nu-003", kind: "created", title: "Finding fnd-nu-007 detected" },
+      { id: "h2", at: "2026-11-10T09:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-12T06:00:00Z", actor: "Drafting model", kind: "draft", title: "Patch drafted", detail: "3 settings changed" },
+      { id: "h4", at: "2026-11-14T08:00:00Z", actor: "Hira Malik", kind: "approval", title: "Approval requested", detail: "Owner or admin must approve the exact diff" },
+      { id: "h5", at: "2026-11-14T10:30:00Z", actor: "Omar Farooq", kind: "approval", title: "Approved exact diff" },
+      { id: "h6", at: "2026-11-14T11:00:00Z", actor: "Hira Malik", kind: "status", title: "Apply scheduled", detail: "Maintenance window 17 Nov 11:00 Singapore time" },
+      { id: "h7", at: "2026-11-16T03:09:00Z", actor: "Audit aud-nu-004", kind: "status", title: "Baseline re-measured", detail: "Lab LCP 3.4 s on mobile, before the change" },
+      { id: "h8", at: "2026-11-17T03:14:00Z", actor: "System", kind: "execution", title: "Remote check passed", detail: "rev 57, unchanged since draft" },
+      { id: "h9", at: "2026-11-17T03:15:00Z", actor: "System", kind: "execution", title: "Applied", detail: "3 of 3 settings written as revision 58. Not published." },
+      { id: "h10", at: "2026-11-19T08:45:00Z", actor: "System", kind: "execution", title: "Remote check: revision unchanged", detail: "Not live. Publish to start verification." },
+    ],
+  },
+
+  // Cancelled before any work: finding accepted as a risk.
+  "task-nu-008": {
+    recommendationId: "rec-fnd-nu-008-a",
+    createdAt: "2026-11-18T06:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["The homepage states a short protein answer using supported facts only", "p-nu-007 re-run on the same channels with 3 samples"],
+    dependencies: [{ label: "Assignee chosen", met: true }],
+    cancellation: {
+      by: "Sana Iqbal",
+      at: "2026-11-18T11:00:00Z",
+      reason: "Not pursued now. One neutral prompt, 2 of 6 requests failed and only 4 samples are usable. Accepted as a risk; revisit in January if the brand is still absent.",
+    },
+    draft: {
+      kind: "guidance",
+      owner: "Hira Malik",
+      steps: [
+        { title: "Review the homepage", detail: "Note whether the homepage answers a basic protein question." },
+        { title: "List supported facts", detail: "Use only facts from /guides/protein-intake." },
+        { title: "Propose a short answer block", detail: "Two sentences at most, linking to the guide. Do not claim a result in answers." },
+      ],
+      sourceFacts: [
+        { label: "Prompt p-nu-007", value: "Brand absent in 4 of 4 successful responses; 2 of 6 requests failed", source: "Audit aud-nu-005" },
+        { label: "Cited source", value: "nourishwell.example in 4 of 4 successful responses", source: "Responses resp-aud-nu-005-08, -09, -10 and -12" },
+      ],
+    },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "guidance",
+      remote: null,
+      fields: [],
+      completedAt: null,
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Cancelled before any change." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Homepage states a short protein answer", expect: "Present" },
+        { id: "c2", label: "p-nu-007 re-run with 3 samples per channel", expect: "Counts reported as n / d" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-18T05:08:00Z", actor: "Audit aud-nu-005", kind: "created", title: "Finding fnd-nu-008 detected" },
+      { id: "h2", at: "2026-11-18T06:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-18T11:00:00Z", actor: "Sana Iqbal", kind: "status", title: "Task cancelled", detail: "Accepted risk; revisit in January. Finding set to Accepted risk." },
+    ],
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Merged exports (all stores). Ids never collide between stores.
 // ---------------------------------------------------------------------------
 
-export const FINDING_EXTRAS: Record<string, FindingExtras> = { ...PK_FINDING_EXTRAS, ...AE_FINDING_EXTRAS };
-export const RECOMMENDATIONS: Recommendation[] = [...PK_RECOMMENDATIONS, ...AE_RECOMMENDATIONS];
-export const TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = { ...PK_TASK_SUMMARY_EXTRAS, ...AE_TASK_SUMMARY_EXTRAS };
-export const TASK_DETAILS: Record<string, TaskDetailSeed> = { ...PK_TASK_DETAILS, ...AE_TASK_DETAILS };
+// ---------------------------------------------------------------------------
+// Closed tasks that make Cancelled and Superseded visible in the seeded data.
+// They are not in the shared registry, so open-task counts elsewhere are unchanged (both are closed states).
+// ---------------------------------------------------------------------------
+
+export type ExtraTask = {
+  storeId: string;
+  id: string;
+  title: string;
+  findingId: string;
+  status: TaskStatus;
+  assignee: string | null;
+  dueAt: string | null;
+  mode: ExecutionMode;
+  risk: RiskLevel;
+  priority: Priority;
+  cancelReason?: string;
+  supersededBy?: string;
+};
+
+export const EXTRA_TASKS: ExtraTask[] = [
+  {
+    storeId: "runpro-pk",
+    id: "task-009",
+    title: "Standardise the brand spelling in the About page and footer",
+    findingId: "fnd-005",
+    status: "cancelled",
+    assignee: "Hira Malik",
+    dueAt: null,
+    mode: "guidance",
+    risk: "low",
+    priority: "P2",
+    cancelReason: "Waiting for the brand guidelines. Reopen once the spelling is decided.",
+  },
+  {
+    storeId: "runpro-pk",
+    id: "task-010",
+    title: "Publish a separate comparison FAQ page",
+    findingId: "fnd-009",
+    status: "superseded",
+    assignee: "Hira Malik",
+    dueAt: null,
+    mode: "ai_draft",
+    risk: "medium",
+    priority: "P2",
+    supersededBy: "task-008",
+  },
+];
+
+const closedGuidance = (owner: string, summary: string): TaskDetailSeed["draft"] => ({
+  kind: "guidance",
+  owner,
+  steps: [{ title: "Review the finding", detail: summary }],
+  sourceFacts: [],
+});
+
+const EXTRA_RESULT = { available: false, laterEdit: null, record: null };
+
+const EXTRA_EXECUTION = (reason: string): TaskDetailSeed["execution"] => ({
+  connector: null,
+  cmsState: "guidance",
+  remote: null,
+  fields: [],
+  completedAt: null,
+  stagedAt: null,
+  appliedAt: null,
+  publishedAt: null,
+  rollback: { ...EXTRA_RESULT, unavailableReason: reason },
+});
+
+const EXTRA_TASK_DETAILS: Record<string, TaskDetailSeed> = {
+  "task-009": {
+    recommendationId: "rec-fnd-005-a",
+    createdAt: "2026-11-02T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["The brand is spelled one way on the About page and in the footer"],
+    dependencies: [{ label: "Brand guidelines confirm the spelling", met: false }],
+    draft: closedGuidance("Hira Malik", "The About page and footer write the brand as two words."),
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
+    execution: EXTRA_EXECUTION("Cancelled before any change."),
+    verification: { plannedChecks: [{ id: "c1", label: "Brand spelling on the About page and footer", expect: "One spelling" }], outcome: null, simulated: null, context: null },
+    cancellation: { by: "Sana Iqbal", at: "2026-11-12T10:00:00Z", reason: "Waiting for the brand guidelines. Reopen once the spelling is decided." },
+    history: [
+      { id: "h1", at: "2026-11-02T09:00:00Z", actor: "Sana Iqbal", kind: "created", title: "Task created from finding fnd-005" },
+      { id: "h2", at: "2026-11-12T10:00:00Z", actor: "Sana Iqbal", kind: "status", title: "Cancelled", detail: "Waiting for the brand guidelines" },
+    ],
+  },
+  "task-010": {
+    recommendationId: null,
+    createdAt: "2026-10-28T09:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["A comparison answer exists on the site for the two prompts"],
+    dependencies: [{ label: "Editor review of the draft", met: false }],
+    draft: closedGuidance("Hira Malik", "A separate FAQ page was proposed for the comparison prompts."),
+    approval: { state: "not_required", notRequiredReason: "AI draft only. Nothing is written to the site.", diffHash: null, writes: [] },
+    execution: EXTRA_EXECUTION("Replaced by task-008."),
+    verification: { plannedChecks: [{ id: "c1", label: "Comparison answer on the site", expect: "Present" }], outcome: null, simulated: null, context: null },
+    supersession: { by: "Sana Iqbal", at: "2026-11-03T09:00:00Z", successorId: "task-008", reason: "The FAQ block on the product page replaces a separate page." },
+    history: [
+      { id: "h1", at: "2026-10-28T09:00:00Z", actor: "Sana Iqbal", kind: "created", title: "Task created from finding fnd-009" },
+      { id: "h2", at: "2026-11-03T09:00:00Z", actor: "Sana Iqbal", kind: "status", title: "Superseded by task-008", detail: "The FAQ block on the product page replaces a separate page" },
+    ],
+  },
+};
+
+export const FINDING_EXTRAS: Record<string, FindingExtras> = { ...PK_FINDING_EXTRAS, ...AE_FINDING_EXTRAS, ...NU_FINDING_EXTRAS };
+export const RECOMMENDATIONS: Recommendation[] = [...PK_RECOMMENDATIONS, ...AE_RECOMMENDATIONS, ...NU_RECOMMENDATIONS];
+export const TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = { ...PK_TASK_SUMMARY_EXTRAS, ...AE_TASK_SUMMARY_EXTRAS, ...NU_TASK_SUMMARY_EXTRAS, "task-009": { blockers: [] }, "task-010": { blockers: [] } };
+export const TASK_DETAILS: Record<string, TaskDetailSeed> = { ...PK_TASK_DETAILS, ...AE_TASK_DETAILS, ...NU_TASK_DETAILS, ...EXTRA_TASK_DETAILS };
+
+/** Wording-only title fixes for registry tasks that name a platform (the registry itself is owned by Reports and records). */
+export const TASK_TITLE_OVERRIDES: Record<string, string> = {
+  "task-ae-001": "Add Product and Offer schema to the product template",
+};

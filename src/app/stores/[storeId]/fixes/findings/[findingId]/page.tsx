@@ -5,8 +5,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { FindingDetail } from "@/features/fixes/finding-detail";
+import { LocalFindingView } from "@/features/fixes/local-finding-view";
 import { getStore, storeIds } from "@/services/core";
-import { findingStaticParams, getActor, getFindingDetail, listAssignees } from "@/services/fixes";
+import { findingStaticParams, getActor, getFindingDetail, listAssignees, listFindingRows, listTaskSummaries } from "@/services/fixes";
 
 export const metadata: Metadata = { title: "Finding" };
 
@@ -19,11 +20,14 @@ async function FindingPageContent(props: PageProps<"/stores/[storeId]/fixes/find
   const store = await getStore(storeId);
   if (!store) notFound();
 
-  const data = await getFindingDetail(storeId, findingId);
-  if (!data) notFound();
+  const [data, rows, tasks, actor, assignees] = await Promise.all([getFindingDetail(storeId, findingId), listFindingRows(storeId), listTaskSummaries(storeId), getActor(), listAssignees()]);
 
-  const [actor, assignees] = await Promise.all([getActor(), listAssignees()]);
-  return <FindingDetail storeId={storeId} data={data} role={actor.role} assignees={assignees} />;
+  // Findings created in this browser (for example by a simulated audit) are looked up in the local demo state.
+  if (!data) return <LocalFindingView storeId={storeId} findingId={findingId} tasks={tasks} assignees={assignees} actorName={actor.name} />;
+
+  const row = rows.find((r) => r.id === findingId);
+  if (!row) notFound();
+  return <FindingDetail storeId={storeId} data={data} row={row} tasks={tasks} role={actor.role} assignees={assignees} actorName={actor.name} />;
 }
 
 export default function FindingPage(props: PageProps<"/stores/[storeId]/fixes/findings/[findingId]">) {

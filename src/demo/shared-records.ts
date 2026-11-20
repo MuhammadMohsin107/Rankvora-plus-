@@ -4,7 +4,7 @@
  * Generated deterministically from src/demo/registry.ts so headline numbers always agree.
  */
 import { ALL_PROMPTS, DEMO_CHANNELS, DEMO_COMPETITORS, DEMO_STORES } from "@/demo/shared";
-import { AE, REGISTRY_STORE_IDS, RP, registryFor } from "@/demo/registry";
+import { AE, NU, REGISTRY_STORE_IDS, RP, registryFor } from "@/demo/registry";
 import type { Finding, ResponseCitation, ResponseSample } from "@/types/shared-records";
 
 // ---------------------------------------------------------------------------
@@ -235,7 +235,7 @@ const fa = (x: Omit<Finding, "storeId" | "recurrenceCount" | "taskIds"> & { recu
 const AE_FINDINGS: Finding[] = [
   fa({
     id: "fnd-ae-001",
-    title: "Product and Offer schema missing on WooCommerce product pages",
+    title: "Product and Offer schema missing on product pages",
     category: "schema",
     severity: "high",
     priority: "P1",
@@ -248,7 +248,7 @@ const AE_FINDINGS: Finding[] = [
     affectedUrls: ["https://runpro.ae/product/glide-2", "https://runpro.ae/product/daily-trainer", "https://runpro.ae/product/marathon-elite"],
     affectedPromptIds: ["p-ae-002", "p-ae-005"],
     expected: "Every product page exposes Product and Offer structured data (name, price, currency, availability).",
-    actual: "Complete Product and Offer markup is missing on 3 of 3 sampled product pages. Daily Trainer and Marathon Elite have none; Glide 2 has only a stray Offer block with the wrong currency (fnd-ae-002). Only the WooCommerce breadcrumb markup is otherwise present.",
+    actual: "Complete Product and Offer markup is missing on 3 of 3 sampled product pages. Daily Trainer and Marathon Elite have none; Glide 2 has only a stray Offer block with the wrong currency (fnd-ae-002). Only breadcrumb markup is otherwise present.",
     recurrenceCount: 2,
     taskIds: ["task-ae-001"],
   }),
@@ -345,7 +345,173 @@ const AE_FINDINGS: Finding[] = [
   }),
 ];
 
-export const DEMO_FINDINGS: Finding[] = [...PK_FINDINGS, ...AE_FINDINGS];
+// ---------------------------------------------------------------------------
+// nutrition findings (8). Statuses match REGISTRY_NU_TASKS: 6 open, 2 closed.
+// Website URLs are fictional (nutrition.example). First detection follows REGISTRY_NU_AUDITS.findingsCreated:
+// aud-nu-001 → 001…004, aud-nu-002 → 005, aud-nu-003 → 006 and 007, aud-nu-005 → 008.
+// ---------------------------------------------------------------------------
+
+const fn = (x: Omit<Finding, "storeId" | "recurrenceCount" | "taskIds"> & { recurrenceCount?: number; taskIds?: string[] }): Finding => ({
+  storeId: NU,
+  recurrenceCount: 1,
+  taskIds: [],
+  ...x,
+});
+
+const NU_FINDINGS: Finding[] = [
+  fn({
+    id: "fnd-nu-001",
+    title: "Meal-planning guide has no FAQ structured data",
+    category: "schema",
+    severity: "medium",
+    priority: "P2",
+    confidence: "high",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T02:30:00Z",
+    lastObservedAt: "2026-11-09T02:38:00Z",
+    auditId: "aud-nu-001",
+    affectedUrls: ["https://nutrition.example/guides/meal-planning"],
+    affectedPromptIds: ["p-nu-002"],
+    expected: "Question-and-answer sections on guides are marked up as FAQPage structured data.",
+    actual: "The guide shows 6 visible questions and answers, but the page has no FAQPage markup.",
+    recurrenceCount: 2,
+    taskIds: ["task-nu-001"],
+  }),
+  fn({
+    id: "fnd-nu-002",
+    title: "Health articles show no named reviewer or credentials",
+    category: "entity",
+    severity: "high",
+    priority: "P1",
+    confidence: "high",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T02:31:00Z",
+    lastObservedAt: "2026-11-09T02:39:00Z",
+    auditId: "aud-nu-001",
+    affectedUrls: ["https://nutrition.example/guides/protein-intake", "https://nutrition.example/guides/macros", "https://nutrition.example/blog/hydration"],
+    affectedPromptIds: ["p-nu-001", "p-nu-007"],
+    expected: "Each health article names its author and a qualified reviewer, with credentials and a review date.",
+    actual: "3 of 8 sampled health articles show no reviewer; the author is named without credentials on 2 of them.",
+    recurrenceCount: 3,
+    taskIds: ["task-nu-002"],
+  }),
+  fn({
+    id: "fnd-nu-003",
+    title: "Nutrition Basics course page carries a noindex tag",
+    category: "technical",
+    severity: "critical",
+    priority: "P0",
+    confidence: "high",
+    status: "verified_resolved",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T02:29:00Z",
+    lastObservedAt: "2026-11-16T03:10:00Z",
+    auditId: "aud-nu-001",
+    affectedUrls: ["https://nutrition.example/courses/nutrition-basics"],
+    affectedPromptIds: ["p-nu-006"],
+    expected: "The course page can be indexed (no noindex directive).",
+    actual: "Resolved: the verification audit on 16 Nov found no noindex directive on the course page.",
+    recurrenceCount: 4,
+    taskIds: ["task-nu-003"],
+  }),
+  fn({
+    id: "fnd-nu-004",
+    title: "Six recipe pages share duplicated titles and meta descriptions",
+    category: "content",
+    severity: "low",
+    priority: "P2",
+    confidence: "high",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T02:33:00Z",
+    lastObservedAt: "2026-11-16T03:10:00Z",
+    auditId: "aud-nu-001",
+    affectedUrls: ["https://nutrition.example/recipes/meal-prep", "https://nutrition.example/recipes/high-protein-breakfast"],
+    affectedPromptIds: [],
+    expected: "Every indexable page has a unique title and meta description.",
+    actual: "After the change, 4 of 6 recipe pages are unique; 2 still repeat the title of the category page.",
+    recurrenceCount: 2,
+    taskIds: ["task-nu-004"],
+  }),
+  fn({
+    id: "fnd-nu-005",
+    title: "Organization schema has no sameAs profile links",
+    category: "schema",
+    severity: "low",
+    priority: "P3",
+    confidence: "high",
+    status: "awaiting_verification",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-22T01:30:00Z",
+    lastObservedAt: "2026-11-09T02:40:00Z",
+    auditId: "aud-nu-002",
+    affectedUrls: ["https://nutrition.example/"],
+    affectedPromptIds: [],
+    expected: "Organization structured data lists the brand's official profiles in sameAs.",
+    actual: "Organization markup has a name and logo but an empty sameAs list. A fix was published on 17 Nov and awaits verification.",
+    recurrenceCount: 2,
+    taskIds: ["task-nu-005"],
+  }),
+  fn({
+    id: "fnd-nu-006",
+    title: "NourishWell is cited more often than nutrition.example on beginner prompts",
+    category: "ai_visibility",
+    severity: "medium",
+    priority: "P2",
+    confidence: "medium",
+    status: "new",
+    lane: "ai_visibility",
+    firstDetectedAt: "2026-11-09T02:30:00Z",
+    lastObservedAt: "2026-11-16T01:44:00Z",
+    auditId: "aud-nu-003",
+    affectedUrls: ["https://nutrition.example/guides/macros"],
+    affectedPromptIds: ["p-nu-003", "p-nu-004"],
+    expected: "Owned pages are cited at least as often as a single competitor on beginner prompts.",
+    actual: "In the November audit, citation-capable responses to the two beginner prompts cite nourishwell.example in 4 of 10 and nutrition.example in 3 of 10; all 4 NourishWell citations are on the macros prompt p-nu-004, where nutrition.example is cited in 0 of 5. Failed requests are not counted.",
+    taskIds: ["task-nu-006"],
+  }),
+  fn({
+    id: "fnd-nu-007",
+    title: "Calorie calculator page loads slowly on mobile",
+    category: "technical",
+    severity: "medium",
+    priority: "P2",
+    confidence: "medium",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-11-09T02:35:00Z",
+    lastObservedAt: "2026-11-16T03:09:00Z",
+    auditId: "aud-nu-003",
+    affectedUrls: ["https://nutrition.example/tools/calorie-calculator"],
+    affectedPromptIds: [],
+    expected: "Lab LCP ≤ 2.5 s (lab measurement, no field data available).",
+    actual: "Lab LCP 3.4 s on mobile before the change. A fix was applied on 17 Nov; verification has not run yet.",
+    recurrenceCount: 2,
+    taskIds: ["task-nu-007"],
+  }),
+  fn({
+    id: "fnd-nu-008",
+    title: "Brand not named in answers about daily protein intake",
+    category: "ai_visibility",
+    severity: "informational",
+    priority: "P3",
+    confidence: "low",
+    status: "accepted_risk",
+    lane: "ai_visibility",
+    firstDetectedAt: "2026-11-18T05:08:00Z",
+    lastObservedAt: "2026-11-18T05:09:00Z",
+    auditId: "aud-nu-005",
+    affectedUrls: ["https://nutrition.example/guides/protein-intake"],
+    affectedPromptIds: ["p-nu-007"],
+    expected: "The brand appears for general nutrition questions.",
+    actual: "The brand is absent from the successful samples for the daily-protein prompt in the triggered audit. The prompt is a neutral informational question. Accepted by the owner for now.",
+    taskIds: ["task-nu-008"],
+  }),
+];
+
+export const DEMO_FINDINGS: Finding[] = [...PK_FINDINGS, ...AE_FINDINGS, ...NU_FINDINGS];
 
 // ---------------------------------------------------------------------------
 // AI response samples
@@ -370,7 +536,33 @@ type GenProfile = {
   /** Default samples per prompt × channel slot. */
   samples: number;
   channelBonus: Record<string, number>;
+  /** Brand word the answers use and the highlighter marks. Default "RunPro". */
+  brand?: string;
+  /** Wording of generated answers. Defaults describe running shoes. */
+  copy?: {
+    /** Why the brand is recommended, after "<product> — ". */
+    recommendBlurb: string;
+    /** Label for a non-brand option in a recommended list. */
+    optionBlurb: string;
+    /** Closing sentence of a recommended answer (evidence quote). Uses the product name. */
+    closing: (product: string) => string;
+    /** Second sentence of a "merely mentioned" answer, after the sold phrase. */
+    mentionCaveat: string;
+    /** Sentence after the caveat. */
+    mentionTail: string;
+    /** Last sentence of an answer that does not name the brand. */
+    absentTip: string;
+  };
 };
+
+const DEFAULT_COPY = {
+  recommendBlurb: "balanced cushioning and a wide fit that suits beginners",
+  optionBlurb: "a well-reviewed option in this category",
+  closing: (product: string) => `For a first pair, ${product} is a solid choice.`,
+  mentionCaveat: ", though reviews of its durability are mixed.",
+  mentionTail: " Check fit and return policy before buying.",
+  absentTip: " Look for cushioning that matches your weekly distance and try shoes on in the afternoon, when feet are slightly larger.",
+} as const;
 
 const PROFILES: Record<string, GenProfile> = {
   [RP]: {
@@ -423,6 +615,40 @@ const PROFILES: Record<string, GenProfile> = {
     samples: 3,
     channelBonus: { "ch-openai": 0.6, "ch-gemini": 0.2 },
   },
+  [NU]: {
+    storeId: NU,
+    market: "SG",
+    product: "Nutrition Weekly Meal Planning Guide",
+    ownedUrl: "https://nutrition.example/guides/meal-planning",
+    ownedDomain: "nutrition.example",
+    shipsPhrase: "Nutrition publishes free guides, a basics course and a weekly newsletter",
+    soldPhrase: "Nutrition is also an information site with guides and a free basics course",
+    optionSets: [
+      ["NourishWell Starter Guide", "BalancedBite Planner", "VitaPlate Basics"],
+      ["BalancedBite Planner", "NourishWell Starter Guide"],
+      ["VitaPlate Basics", "NourishWell Starter Guide", "BalancedBite Planner"],
+      ["NourishWell Starter Guide", "VitaPlate Basics"],
+      ["BalancedBite Planner", "VitaPlate Basics"],
+      ["NourishWell Starter Guide", "BalancedBite Planner"],
+    ],
+    competitorCitation: { url: "https://nourishwell.example/starter-guide", title: "NourishWell Starter Guide", domain: "nourishwell.example", source: "competitor" },
+    thirdParty: [
+      { url: "https://healthyeating.example/balanced-meal-plan", title: "How to build a balanced meal plan", domain: "healthyeating.example", source: "third_party" },
+      { url: "https://dietitianguide.example/macros-for-beginners", title: "Macros for beginners", domain: "dietitianguide.example", source: "third_party" },
+      { url: "https://sgwellness.example/free-nutrition-courses", title: "Free nutrition courses", domain: "sgwellness.example", source: "third_party" },
+    ],
+    samples: 2,
+    channelBonus: { "ch-openai": 0.5, "ch-gemini": 0.3, "ch-perplexity": 0.4 },
+    brand: "Nutrition",
+    copy: {
+      recommendBlurb: "plain-language guidance for beginners, with printable weekly plans",
+      optionBlurb: "a commonly cited resource on this topic",
+      closing: (product) => `For a first week, the ${product} is a practical place to start.`,
+      mentionCaveat: ", though some reviewers say the guides are light on advanced topics.",
+      mentionTail: " Compare it with at least one other source.",
+      absentTip: " Check that the advice is reviewed by a registered dietitian and compare more than one source before changing your diet.",
+    },
+  },
 };
 
 const profileForStore = (storeId: string): GenProfile => PROFILES[storeId] ?? PROFILES[RP];
@@ -435,6 +661,7 @@ export function promptVersionAt(promptId: string, isoDate: string): number {
   const t = Date.parse(isoDate);
   if (promptId === "p-001") return t < Date.parse("2026-10-02T09:00:00Z") ? 1 : 2;
   if (promptId === "p-003") return t < Date.parse("2026-09-05T00:00:00Z") ? 1 : t < Date.parse("2026-10-15T00:00:00Z") ? 2 : 3;
+  if (promptId === "p-nu-003") return t < Date.parse("2026-10-27T09:00:00Z") ? 1 : 2;
   return 1;
 }
 
@@ -466,6 +693,12 @@ function configFor(runId: string): RunConfig | null {
       if (audit.id === "aud-004") {
         return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 54, failed: 2, mention: 0, recommended: 0, completedSlots: 33 };
       }
+      if (audit.id === "aud-nu-004") {
+        return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 6, failed: 0, mention: audit.mention?.n ?? 0, recommended: audit.recommendation?.n ?? 0, promptIds: ["p-nu-002", "p-nu-006"], samples: 1 };
+      }
+      if (audit.id === "aud-nu-005") {
+        return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 12, failed: audit.failedJobs, mention: audit.mention?.n ?? 0, recommended: audit.recommendation?.n ?? 0, promptIds: ["p-nu-001", "p-nu-007"], samples };
+      }
       if (audit.id === "aud-ae-003") {
         return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 12, failed: audit.failedJobs, mention: audit.mention?.n ?? 0, recommended: audit.recommendation?.n ?? 0, promptIds: ["p-ae-002", "p-ae-005"], samples };
       }
@@ -486,19 +719,20 @@ function joinNames(names: string[]): string {
 function buildText(profile: GenProfile, outcome: Outcome, position: number, promptText: string, variant: number): string {
   const options = profile.optionSets[variant % profile.optionSets.length];
   const topic = promptText.replace(/\?$/, "");
+  const copy = profile.copy ?? DEFAULT_COPY;
   if (outcome === "recommended") {
     const list = [...options];
     list.splice(position - 1, 0, profile.product);
-    const lines = list.slice(0, 4).map((name, i) => `${i + 1}. ${name} — ${i === position - 1 ? `balanced cushioning and a wide fit that suits beginners; ${profile.shipsPhrase}` : "a well-reviewed option in this category"}.`);
-    return `For “${topic}”, these are commonly recommended:\n${lines.join("\n")}\nFor a first pair, ${profile.product} is a solid choice.`;
+    const lines = list.slice(0, 4).map((name, i) => `${i + 1}. ${name} — ${i === position - 1 ? `${copy.recommendBlurb}; ${profile.shipsPhrase}` : copy.optionBlurb}.`);
+    return `For “${topic}”, these are commonly recommended:\n${lines.join("\n")}\n${copy.closing(profile.product)}`;
   }
   if (outcome === "mentioned") {
-    return `For “${topic}”, popular options include ${joinNames(options.slice(0, 2))}. ${profile.soldPhrase}, though reviews of its durability are mixed. Check fit and return policy before buying.`;
+    return `For “${topic}”, popular options include ${joinNames(options.slice(0, 2))}. ${profile.soldPhrase}${copy.mentionCaveat}${copy.mentionTail}`;
   }
-  return `For “${topic}”, commonly recommended options are ${joinNames(options)}. Look for cushioning that matches your weekly distance and try shoes on in the afternoon, when feet are slightly larger.`;
+  return `For “${topic}”, commonly recommended options are ${joinNames(options)}.${copy.absentTip}`;
 }
 
-function spansFor(text: string, competitorNames: string[]): ResponseSample["brandSpans"] {
+function spansFor(text: string, competitorNames: string[], brand: string): ResponseSample["brandSpans"] {
   const spans: ResponseSample["brandSpans"] = [];
   const find = (needle: string, kind: "brand" | "competitor") => {
     let from = 0;
@@ -509,7 +743,7 @@ function spansFor(text: string, competitorNames: string[]): ResponseSample["bran
       from = at + needle.length;
     }
   };
-  find("RunPro", "brand");
+  find(brand, "brand");
   for (const name of competitorNames) find(name, "competitor");
   return spans.sort((a, b) => a.start - b.start);
 }
@@ -620,7 +854,7 @@ export function buildRunResponses(runId: string): ResponseSample[] {
     const outcome = outcomeAt.get(idx) ?? "absent";
     const position = outcome === "recommended" ? (idx % 3) + 1 : null;
     const answerText = buildText(profile, outcome, position ?? 2, prompt.text, idx);
-    const spans = spansFor(answerText, COMPETITOR_NAMES);
+    const spans = spansFor(answerText, COMPETITOR_NAMES, profile.brand ?? "RunPro");
     const brandMentioned = outcome === "absent" ? "no" : "yes";
     const owned = outcome !== "absent" && idx % 3 !== 1;
     const noCitations = channel.id === "ch-gemini" && idx % 7 === 0;
@@ -644,7 +878,7 @@ export function buildRunResponses(runId: string): ResponseSample[] {
       sentiment: outcome === "recommended" ? "positive" : outcome === "mentioned" ? "mixed" : "unknown",
       confidence: outcome === "mentioned" ? 0.84 : outcome === "recommended" ? 0.93 : 0.97,
       evidenceQuote:
-        outcome === "recommended" ? `For a first pair, ${profile.product} is a solid choice.` : outcome === "mentioned" ? `${profile.soldPhrase}, though reviews of its durability are mixed.` : null,
+        outcome === "recommended" ? (profile.copy ?? DEFAULT_COPY).closing(profile.product) : outcome === "mentioned" ? `${profile.soldPhrase}${(profile.copy ?? DEFAULT_COPY).mentionCaveat}` : null,
       position,
       competitors: COMPETITOR_NAMES.map((name, ci) => ({ id: `c-${ci}`, name, mentioned: answerText.includes(name) })),
       citations,

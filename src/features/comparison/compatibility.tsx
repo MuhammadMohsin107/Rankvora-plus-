@@ -9,6 +9,26 @@ import { STATUS } from "@/lib/status";
 const checkValue = { pass: "pass", warn: "warning", fail: "fail" } as const;
 
 /** Hard checks and soft warnings, each with state (icon + text), label and one line of detail. */
+/**
+ * Only the checks that need attention are listed. Passed checks stay one line, collapsed, so a clean
+ * comparison reads as clean and a problem is never buried among thirteen rows.
+ */
+export function CheckSummary({ checks }: { checks: Check[] }) {
+  const open = checks.filter((c) => c.state !== "pass");
+  const passed = checks.filter((c) => c.state === "pass");
+  return (
+    <div className="flex flex-col gap-3">
+      {open.length > 0 ? <CheckList checks={open} /> : <p className="text-body-sm text-fg-muted">Every check passed.</p>}
+      {passed.length > 0 && open.length > 0 ? (
+        <details className="text-helper text-fg-muted">
+          <summary className="inline-flex min-h-6 cursor-pointer items-center rounded px-1 hover:text-fg focus-visible:outline-2 focus-visible:outline-ring">{passed.length} checks passed</summary>
+          <div className="mt-2"><CheckList checks={passed} /></div>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
 export function CheckList({ checks }: { checks: Check[] }) {
   return (
     <ul className="divide-y divide-line">
@@ -18,7 +38,7 @@ export function CheckList({ checks }: { checks: Check[] }) {
             <Status kind="check" value={checkValue[check.state]} />
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-medium text-fg">{check.label}</p>
+            <p className="text-body-sm font-medium text-fg">{check.label}</p>
             <p className="text-xs text-fg-muted">{check.detail}</p>
           </div>
         </li>
@@ -68,11 +88,11 @@ export function VerdictBanner({
   return (
     <Callout
       tone={verdictTone[verdict]}
-      title={showVerdict ? STATUS.comparability[verdict].label : `${coverage.n} / ${coverage.d} slots matched`}
+      title={showVerdict ? STATUS.comparability[verdict].label : `${coverage.n} of ${coverage.d} slots matched`}
       actions={actions}
       className={className}
     >
-      <p className="tnum">{showVerdict ? `${coverage.n} / ${coverage.d} slots matched · ${counts}` : counts}</p>
+      <p className="tnum">{showVerdict ? `${coverage.n} of ${coverage.d} slots matched · ${counts}` : counts}</p>
       {issues.length > 0 ? (
         <ul className="mt-1 list-disc pl-4 text-xs">
           {issues.map((issue) => (
@@ -91,7 +111,7 @@ export function NotComputed({ checks, what }: { checks: Check[]; what: string })
     <EmptyState
       icon="x-circle"
       title={`${what} not computed`}
-      description={`This comparison is not comparable, so no numbers are produced. ${failed.map((c) => c.detail).join(" ")}`.trim()}
+      description={`Not comparable, so no numbers are produced. ${failed.map((c) => c.detail).join(" ")}`.trim()}
     />
   );
 }

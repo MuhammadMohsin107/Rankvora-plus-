@@ -12,12 +12,12 @@ import type { Tone } from "@/lib/status";
 import type { ActivityEntry, ActivityKind } from "@/types/settings";
 
 const KIND: Record<ActivityKind, { label: string; icon: IconName; tone: Tone }> = {
-  store: { label: "Store", icon: "store", tone: "accent" },
+  store: { label: "Website", icon: "globe", tone: "accent" },
   integration: { label: "Integrations", icon: "plug", tone: "info" },
   competitor: { label: "Competitors", icon: "users", tone: "neutral" },
   brand: { label: "Brand", icon: "file-text", tone: "accent" },
   domain: { label: "Domains", icon: "globe", tone: "neutral" },
-  product: { label: "Products", icon: "layers", tone: "neutral" },
+  product: { label: "Products and services", icon: "layers", tone: "neutral" },
   notification: { label: "Notifications", icon: "bell", tone: "neutral" },
 };
 
@@ -29,7 +29,7 @@ export function ActivityTab({ entries, timezone }: { entries: ActivityEntry[]; t
   return (
     <Card>
       <div className="flex items-center justify-between gap-3 px-4 pt-3.5">
-        <p className="text-xs text-fg-subtle">Times in {timezone}</p>
+        <p className="text-helper text-fg-muted">Times in {timezone}</p>
         <div className="w-44">
           <Select aria-label="Filter by type" value={kind} onChange={(e) => setKind(e.target.value as "" | ActivityKind)}>
             <option value="">Type: all</option>

@@ -10,7 +10,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function SkeletonCard({ lines = 3, className }: { lines?: number; className?: string }) {
   return (
-    <div className={cn("rounded-card border border-line bg-surface p-4 shadow-card", className)} aria-busy="true" aria-label="Loading">
+    <div className={cn("rounded-card border border-line bg-surface p-card shadow-card", className)} aria-busy="true" aria-label="Loading">
       <Skeleton className="mb-4 h-4 w-1/3" />
       <div className="flex flex-col gap-2.5">
         {Array.from({ length: lines }, (_, i) => (
@@ -24,13 +24,13 @@ export function SkeletonCard({ lines = 3, className }: { lines?: number; classNa
 export function SkeletonTable({ rows = 6, columns = 5 }: { rows?: number; columns?: number }) {
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-busy="true" aria-label="Loading table">
-      <div className="flex gap-4 border-b border-line bg-surface-2 px-4 py-3">
+      <div className="flex gap-4 border-b border-line bg-surface-2 px-card py-3">
         {Array.from({ length: columns }, (_, i) => (
           <Skeleton key={i} className="h-3 flex-1" />
         ))}
       </div>
       {Array.from({ length: rows }, (_, r) => (
-        <div key={r} className="flex gap-4 border-b border-line px-4 py-3.5 last:border-0">
+        <div key={r} className="flex gap-4 border-b border-line-soft px-card py-3.5 last:border-0">
           {Array.from({ length: columns }, (_, c) => (
             <Skeleton key={c} className="h-3.5 flex-1" />
           ))}
@@ -41,26 +41,55 @@ export function SkeletonTable({ rows = 6, columns = 5 }: { rows?: number; column
 }
 
 /** One clear next action. Never a blank screen. */
-export function EmptyState({ icon = "search", title, description, action, className }: { icon?: IconName; title: string; description?: string; action?: ReactNode; className?: string }) {
+/** `headingAs="h1"` for a state that is the whole page (not found, error), so the page still has a heading. */
+type StateHeading = "p" | "h1" | "h2";
+
+export function EmptyState({
+  icon = "search",
+  title,
+  description,
+  action,
+  className,
+  headingAs: Title = "p",
+}: {
+  icon?: IconName;
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  className?: string;
+  headingAs?: StateHeading;
+}) {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-surface px-6 py-12 text-center", className)}>
-      <span className="flex size-10 items-center justify-center rounded-full bg-surface-2 text-fg-subtle">
+      <span className="flex size-10 items-center justify-center rounded-full bg-surface-2 text-fg-faint">
         <Icon name={icon} size={20} />
       </span>
-      <p className="text-sm font-semibold text-fg">{title}</p>
-      {description ? <p className="max-w-sm text-[13px] text-fg-muted">{description}</p> : null}
+      <Title className="text-card-title font-semibold text-fg">{title}</Title>
+      {description ? <p className="max-w-sm text-body-sm text-fg-muted">{description}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
 }
 
 /** What happened + what to do. */
-export function ErrorState({ title = "Something went wrong", detail, action, className }: { title?: string; detail?: string; action?: ReactNode; className?: string }) {
+export function ErrorState({
+  title = "Something went wrong",
+  detail,
+  action,
+  className,
+  headingAs: Title = "p",
+}: {
+  title?: string;
+  detail?: string;
+  action?: ReactNode;
+  className?: string;
+  headingAs?: StateHeading;
+}) {
   return (
     <div role="alert" className={cn("flex flex-col items-center justify-center gap-2 rounded-card border border-danger/30 bg-danger-soft px-6 py-10 text-center", className)}>
-      <Icon name="alert-circle" size={22} className="text-danger" />
-      <p className="text-sm font-semibold text-fg">{title}</p>
-      {detail ? <p className="max-w-md text-[13px] text-fg-muted">{detail}</p> : null}
+      <Icon name="alert-circle" size={22} className="text-danger-icon" />
+      <Title className="text-card-title font-semibold text-fg">{title}</Title>
+      {detail ? <p className="max-w-md text-body-sm text-fg-muted">{detail}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
@@ -94,9 +123,9 @@ export function Progress({ value, max = 100, label, tone = "accent", showCount, 
         aria-valuenow={value}
         className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-3"
       >
-        <div className={cn("h-full rounded-full transition-[width] duration-[var(--dur)]", barTone[tone])} style={{ width: `${pct}%` }} />
+        <div className={cn("h-full rounded-full transition-[width] duration-[var(--dur)] motion-reduce:transition-none", barTone[tone])} style={{ width: `${pct}%` }} />
       </div>
-      {showCount ? <span className="tnum shrink-0 text-xs text-fg-muted">{value} / {max}</span> : null}
+      {showCount ? <span className="tnum shrink-0 text-helper text-fg-muted">{value} / {max}</span> : null}
     </div>
   );
 }
@@ -121,19 +150,19 @@ export function Stepper({ steps, current, className, onStepClick }: StepperProps
           <>
             <span
               className={cn(
-                "tnum flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                "tnum flex size-5 shrink-0 items-center justify-center rounded-full text-helper font-semibold",
                 done ? "bg-accent text-accent-fg" : active ? "border-2 border-accent text-accent-text" : "border border-line-strong text-fg-subtle",
               )}
             >
               {done ? <Icon name="check" size={12} strokeWidth={2.5} /> : index + 1}
             </span>
-            <span className={cn("whitespace-nowrap text-[13px]", active ? "font-semibold text-fg" : done ? "text-fg-muted" : "text-fg-subtle")}>{step.label}</span>
+            <span className={cn("whitespace-nowrap text-label", active ? "font-semibold text-fg" : done ? "text-fg-muted" : "text-fg-subtle")}>{step.label}</span>
           </>
         );
         return (
           <li key={step.id} aria-current={active ? "step" : undefined} className="flex items-center gap-1">
             {clickable ? (
-              <button type="button" onClick={() => onStepClick(index)} className="flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-surface-2">
+              <button type="button" onClick={() => onStepClick(index)} className="flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring">
                 {inner}
               </button>
             ) : (

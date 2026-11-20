@@ -1,0 +1,273 @@
+/**
+ * Pure helpers for the demonstration Billing screens: usage totals, near-limit detection,
+ * plan change effect, invoices and demo card validation. No React, no storage, no network.
+ * Nothing here talks to a payment provider.
+ */
+import { DEMO_NOW, formatNumber } from "@/lib/format";
+import type { BillingInvoice, BillingPlan, InvoiceStatus, PlanId, UsageMonth, WebsiteUsageSeed } from "@/types/settings";
+
+export const NEAR_LIMIT_RATIO = 0.85;
+
+export type MeterState = "ok" | "near" | "at_limit";
+
+/** ok below 85 percent, near from 85 percent, at_limit from 100 percent. A zero limit with any use is at_limit. */
+export function meterState(used: number, limit: number): MeterState {
+  if (limit <= 0) return used > 0 ? "at_limit" : "ok";
+  const ratio = used / limit;
+  if (ratio >= 1) return "at_limit";
+  if (ratio >= NEAR_LIMIT_RATIO) return "near";
+  return "ok";
+}
+
+export type ProviderKey = "openai" | "gemini" | "perplexity";
+export const PROVIDER_KEYS: ProviderKey[] = ["openai", "gemini", "perplexity"];
+
+/* ───────── Usage ───────── */
+
+export type WebsiteUsage = {
+  websiteId: string;
+  name: string;
+  requests: number;
+  /** One search call is made per request in the demonstration data. */
+  searchCalls: number;
+  /** Estimated provider cost in whole cents, so rows always add up to the total. */
+  costCents: number;
+  activePrompts: number;
+};
+
+export type UsageTotals = { requests: number; searchCalls: number; costCents: number; activePrompts: number };
+
+export function seedRequests(seed: Pick<WebsiteUsageSeed, "requests"> | undefined): number {
+  if (!seed) return 0;
+  return PROVIDER_KEYS.reduce((sum, key) => sum + (seed.requests[key] ?? 0), 0);
+}
+
+export function seedCostCents(seed: Pick<WebsiteUsageSeed, "requests"> | undefined, unitCostUsd: Record<ProviderKey, number>): number {
+  if (!seed) return 0;
+  return PROVIDER_KEYS.reduce((sum, key) => sum + Math.round((seed.requests[key] ?? 0) * unitCostUsd[key] * 100), 0);
+}
+
+/**
+ * One row per website (including websites created locally, which have no usage yet).
+ * The organization total is the sum of these rows, so the breakdown always adds up.
+ */
+export function websiteUsageRows(
+  websites: { id: string; name: string }[],
+  seeds: WebsiteUsageSeed[],
+  unitCostUsd: Record<ProviderKey, number>,
+  activePromptsByWebsite: Record<string, number>,
+): WebsiteUsage[] {
+  return websites.map((site) => {
+    const seed = seeds.find((s) => s.websiteId === site.id);
+    const requests = seedRequests(seed);
+    return {
+      websiteId: site.id,
+      name: site.name,
+      requests,
+      searchCalls: requests,
+      costCents: seedCostCents(seed, unitCostUsd),
+      activePrompts: activePromptsByWebsite[site.id] ?? 0,
+    };
+  });
+}
+
+export function sumUsage(rows: WebsiteUsage[]): UsageTotals {
+  return rows.reduce<UsageTotals>(
+    (total, row) => ({
+      requests: total.requests + row.requests,
+      searchCalls: total.searchCalls + row.searchCalls,
+      costCents: total.costCents + row.costCents,
+      activePrompts: total.activePrompts + row.activePrompts,
+    }),
+    { requests: 0, searchCalls: 0, costCents: 0, activePrompts: 0 },
+  );
+}
+
+export type MeterId = "requests" | "searchCalls" | "websites" | "prompts" | "seats" | "cost";
+
+export type Meter = {
+  id: MeterId;
+  label: string;
+  used: number;
+  limit: number;
+  unit: "count" | "usd";
+  state: MeterState;
+  /** Extra context, for example "+500 credits". */
+  note?: string;
+};
+
+export function buildMeters(input: { plan: BillingPlan; credits: number; usage: UsageTotals; websites: number; seats: number }): Meter[] {
+  const { plan, credits, usage, websites, seats } = input;
+  const costUsd = usage.costCents / 100;
+  const make = (id: MeterId, label: string, used: number, limit: number, unit: Meter["unit"] = "count", note?: string): Meter => ({
+    id,
+    label,
+    used,
+    limit,
+    unit,
+    state: meterState(used, limit),
+    note,
+  });
+  const creditNote = credits > 0 ? `Includes +${formatNumber(credits)} credits` : undefined;
+  return [
+    make("requests", "AI requests", usage.requests, plan.limits.requests + credits, "count", creditNote),
+    make("searchCalls", "Search calls", usage.searchCalls, plan.limits.searchCalls + credits, "count", creditNote),
+    make("websites", "Websites", websites, plan.limits.websites),
+    make("prompts", "Active prompts", usage.activePrompts, plan.limits.prompts),
+    make("seats", "Seats", seats, plan.limits.seats),
+    make("cost", "Estimated cost", costUsd, plan.limits.usageAllowanceUsd, "usd"),
+  ];
+}
+
+/** Meters that are near or at their limit. */
+export function meterWarnings(meters: Meter[]): Meter[] {
+  return meters.filter((m) => m.state !== "ok");
+}
+
+export function nextPlanUp(planId: PlanId, plans: BillingPlan[]): BillingPlan | null {
+  const index = plans.findIndex((p) => p.id === planId);
+  return index >= 0 && index < plans.length - 1 ? plans[index + 1] : null;
+}
+
+/** The upgrade nudge shows only when a limit is near or reached and a larger plan exists. */
+export function upgradeNudge(meters: Meter[], planId: PlanId, plans: BillingPlan[]): { meters: Meter[]; target: BillingPlan } | null {
+  const warnings = meterWarnings(meters);
+  const target = nextPlanUp(planId, plans);
+  return warnings.length > 0 && target ? { meters: warnings, target } : null;
+}
+
+/* ───────── Plan change ───────── */
+
+export type PlanChangeUsage = { websites: number; prompts: number; seats: number; requests: number; searchCalls: number };
+
+export type PlanChange = {
+  direction: "upgrade" | "downgrade" | "same";
+  priceDeltaUsd: number;
+  limitChanges: { id: string; label: string; from: number; to: number }[];
+  /** Reasons the change cannot happen now. Empty means allowed. */
+  blockers: string[];
+  /** Prorated charge for the rest of the period. Zero for downgrades. */
+  prorationUsd: number;
+};
+
+export function daysBetween(fromIso: string, toIso: string): number {
+  const ms = Date.parse(toIso) - Date.parse(fromIso);
+  return Math.max(0, Math.round(ms / 86_400_000));
+}
+
+/** Price difference for the days left in the period, rounded to cents. Only upgrades are charged. */
+export function prorate(priceDeltaUsd: number, daysLeft: number, daysInPeriod: number): number {
+  if (priceDeltaUsd <= 0 || daysInPeriod <= 0) return 0;
+  return Math.round(((priceDeltaUsd * Math.min(daysLeft, daysInPeriod)) / daysInPeriod) * 100) / 100;
+}
+
+export function planChangeEffect(from: BillingPlan, to: BillingPlan, usage: PlanChangeUsage, period: { renewsOn: string; start: string }, now: string = DEMO_NOW): PlanChange {
+  const priceDeltaUsd = to.priceUsd - from.priceUsd;
+  const direction = to.id === from.id ? "same" : priceDeltaUsd > 0 ? "upgrade" : "downgrade";
+  const rows: { id: keyof PlanChangeUsage; label: string; limit: (p: BillingPlan) => number }[] = [
+    { id: "websites", label: "Websites", limit: (p) => p.limits.websites },
+    { id: "prompts", label: "Active prompts", limit: (p) => p.limits.prompts },
+    { id: "requests", label: "AI requests", limit: (p) => p.limits.requests },
+    { id: "searchCalls", label: "Search calls", limit: (p) => p.limits.searchCalls },
+    { id: "seats", label: "Seats", limit: (p) => p.limits.seats },
+  ];
+  const limitChanges = rows.map((r) => ({ id: r.id, label: r.label, from: r.limit(from), to: r.limit(to) })).filter((r) => r.from !== r.to);
+  const blockers = rows
+    .filter((r) => usage[r.id] > r.limit(to))
+    .map((r) => `${r.label}: ${formatNumber(usage[r.id])} in use, ${to.name} includes ${formatNumber(r.limit(to))}`);
+  const daysInPeriod = daysBetween(period.start, period.renewsOn);
+  const daysLeft = daysBetween(now, period.renewsOn);
+  return { direction, priceDeltaUsd, limitChanges, blockers, prorationUsd: prorate(priceDeltaUsd, daysLeft, daysInPeriod) };
+}
+
+/* ───────── History chart ───────── */
+
+export type ChartPoint = { x: string; y: number | null; detail?: string };
+
+/** Six months of requests and plan limit. The last month is replaced with the live period values. */
+export function historyPoints(history: UsageMonth[], live: { requests: number; limit: number }): { requests: ChartPoint[]; limit: ChartPoint[] } {
+  const last = history.length - 1;
+  const rows = history.map((m, i) => (i === last ? { label: m.label, requests: live.requests, limit: live.limit } : m));
+  return {
+    requests: rows.map((m, i) => ({
+      x: m.label,
+      y: m.requests,
+      detail: m.requests === null ? undefined : `${formatNumber(m.requests)} of ${formatNumber(m.limit ?? 0)}${i === last ? ", to date" : ""}`,
+    })),
+    limit: rows.map((m) => ({ x: m.label, y: m.limit })),
+  };
+}
+
+/** "$149" for whole dollars, "$60.63" otherwise. */
+export function formatUsd(value: number): string {
+  return Number.isInteger(value) ? `$${formatNumber(value)}` : `$${value.toFixed(2)}`;
+}
+
+/* ───────── Invoices ───────── */
+
+export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = { paid: "Paid", open: "Open", failed: "Failed", refunded: "Refunded" };
+
+/** Newest first. Local overrides (for example "pay now") win over the seeded status. */
+export function mergeInvoices(base: BillingInvoice[], created: BillingInvoice[], statusOverrides: Record<string, InvoiceStatus>): BillingInvoice[] {
+  return [...created, ...base]
+    .map((inv) => (statusOverrides[inv.id] ? { ...inv, status: statusOverrides[inv.id], note: statusOverrides[inv.id] === "paid" ? undefined : inv.note } : inv))
+    .sort((a, b) => (a.issuedOn === b.issuedOn ? (a.id < b.id ? 1 : -1) : a.issuedOn < b.issuedOn ? 1 : -1));
+}
+
+export function nextInvoiceId(created: BillingInvoice[]): string {
+  return `INV-2026-D${String(created.length + 1).padStart(2, "0")}`;
+}
+
+/** Total of invoices that were collected: paid only. Open, failed and refunded invoices are not counted. */
+export function paidTotalUsd(invoices: BillingInvoice[]): number {
+  return invoices.filter((i) => i.status === "paid").reduce((sum, i) => sum + i.amountUsd, 0);
+}
+
+/* ───────── Demo card validation (nothing is stored except brand and last 4) ───────── */
+
+/** Published processor test numbers. Real card numbers are rejected on purpose. */
+export const DEMO_TEST_CARDS: { number: string; brand: "Visa" | "Mastercard" | "Amex" }[] = [
+  { number: "4242424242424242", brand: "Visa" },
+  { number: "4000056655665556", brand: "Visa" },
+  { number: "5555555555554444", brand: "Mastercard" },
+  { number: "378282246310005", brand: "Amex" },
+];
+
+export const digitsOnly = (value: string) => value.replace(/\D/g, "");
+
+export function demoCardBrand(input: string): "Visa" | "Mastercard" | "Amex" | null {
+  const digits = digitsOnly(input);
+  return DEMO_TEST_CARDS.find((c) => c.number === digits)?.brand ?? null;
+}
+
+export function validateDemoCard(input: string): string | null {
+  const digits = digitsOnly(input);
+  if (!digits) return "Card number is required.";
+  if (digits.length < 13) return "Enter the full demo card number.";
+  if (!demoCardBrand(digits)) return "Real card numbers are not accepted. Use the demo card 4242 4242 4242 4242.";
+  return null;
+}
+
+/** MM/YY, not earlier than the current demo month. */
+export function validateExpiry(input: string, now: string = DEMO_NOW): string | null {
+  const match = /^(\d{2})\s*\/\s*(\d{2})$/.exec(input.trim());
+  if (!match) return "Use the format MM/YY.";
+  const month = Number(match[1]);
+  const year = 2000 + Number(match[2]);
+  if (month < 1 || month > 12) return "Month must be between 01 and 12.";
+  const current = new Date(now);
+  if (year < current.getUTCFullYear() || (year === current.getUTCFullYear() && month < current.getUTCMonth() + 1)) return "This card has expired.";
+  return null;
+}
+
+export function validateCvc(input: string, brand: "Visa" | "Mastercard" | "Amex" | null): string | null {
+  const digits = digitsOnly(input);
+  const length = brand === "Amex" ? 4 : 3;
+  if (digits.length !== length || digits !== input.trim()) return `Enter the ${length}-digit security code.`;
+  return null;
+}
+
+export function parseExpiry(input: string): { month: number; year: number } {
+  const [mm, yy] = input.split("/").map((part) => Number(part.trim()));
+  return { month: mm, year: 2000 + yy };
+}

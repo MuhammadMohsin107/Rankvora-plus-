@@ -238,7 +238,7 @@ export async function insertPromptRow(
 }
 
 const DUPLICATE_MESSAGE =
-  "This prompt already exists for this store and market (ignoring case and punctuation).";
+  "This prompt already exists for this website and market (ignoring case and punctuation).";
 
 // ---------------------------------------------------------------------------
 // Create

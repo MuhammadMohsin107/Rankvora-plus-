@@ -21,12 +21,12 @@ export function LinkTabs({ items, label, className }: { items: LinkTab[]; label:
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-medium transition-colors duration-[var(--dur-fast)]",
+              "relative inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-body font-medium transition-colors duration-[var(--dur-fast)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring pointer-coarse:h-11",
               active ? "text-fg after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent" : "text-fg-muted hover:text-fg",
             )}
           >
             {item.label}
-            {item.count !== undefined ? <span className="tnum rounded-full bg-surface-2 px-1.5 text-[11px] text-fg-muted">{item.count}</span> : null}
+            {item.count !== undefined ? <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg-muted">{item.count}</span> : null}
           </Link>
         );
       })}
@@ -37,8 +37,30 @@ export function LinkTabs({ items, label, className }: { items: LinkTab[]; label:
 type Tab = { id: string; label: string; count?: number; content: ReactNode };
 
 /** In-page tabs with roving tabindex and arrow-key navigation. */
-export function Tabs({ tabs, label, defaultId, className, panelClassName }: { tabs: Tab[]; label: string; defaultId?: string; className?: string; panelClassName?: string }) {
-  const [active, setActive] = useState(defaultId ?? tabs[0]?.id);
+export function Tabs({
+  tabs,
+  label,
+  defaultId,
+  value,
+  onValueChange,
+  className,
+  panelClassName,
+}: {
+  tabs: Tab[];
+  label: string;
+  defaultId?: string;
+  /** Controlled mode: the open tab. Pair with onValueChange so other code can open a tab (for example an evidence link). */
+  value?: string;
+  onValueChange?: (id: string) => void;
+  className?: string;
+  panelClassName?: string;
+}) {
+  const [inner, setInner] = useState(defaultId ?? tabs[0]?.id);
+  const active = value ?? inner;
+  const setActive = (id: string) => {
+    setInner(id);
+    onValueChange?.(id);
+  };
   const base = useId();
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -74,12 +96,12 @@ export function Tabs({ tabs, label, defaultId, className, panelClassName }: { ta
               onClick={() => setActive(tab.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={cn(
-                "relative inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-medium transition-colors duration-[var(--dur-fast)]",
+                "relative inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap px-3 text-body font-medium transition-colors duration-[var(--dur-fast)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring pointer-coarse:h-11",
                 selected ? "text-fg after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent" : "text-fg-muted hover:text-fg",
               )}
             >
               {tab.label}
-              {tab.count !== undefined ? <span className="tnum rounded-full bg-surface-2 px-1.5 text-[11px] text-fg-muted">{tab.count}</span> : null}
+              {tab.count !== undefined ? <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg-muted">{tab.count}</span> : null}
             </button>
           );
         })}

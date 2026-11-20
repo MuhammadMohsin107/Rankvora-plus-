@@ -9,6 +9,7 @@ import { Field, Input, Select } from "@/components/ui/form";
 import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
 import { Mono } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
+import { simulatedToast } from "@/demo-state";
 import { DEMO_NOW, formatDate } from "@/lib/format";
 import type { DomainAlias, DomainRecord } from "@/types/settings";
 
@@ -17,7 +18,7 @@ import { normalizeWebsite } from "../validation";
 type Props = {
   record: DomainRecord;
   readOnly: boolean;
-  /** Date the current canonical domain became canonical (store creation when unknown). */
+  /** Date the current canonical domain became canonical (website creation when unknown). */
   since: string;
   onChange: (next: DomainRecord, logTitle: string, detail?: string) => void;
 };
@@ -40,13 +41,13 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
     if (taken(result.host)) return setHostError("This domain is already listed.");
     setHostError(null);
     onChange({ ...record, aliases: [...record.aliases, { host: result.host, kind }] }, `Domain ${kind} added: ${result.host}`, kind === "redirect" ? `Redirects to ${record.canonical}` : undefined);
-    toast.push({ title: `${result.host} added`, description: "Demo action: nothing was changed on a server." });
+    toast.push(simulatedToast(`Domain added: ${result.host}`));
     setHost("");
   };
 
   const removeAlias = (alias: DomainAlias) => {
     onChange({ ...record, aliases: record.aliases.filter((a) => a.host !== alias.host) }, `Domain ${alias.kind} removed: ${alias.host}`);
-    toast.push({ title: `${alias.host} removed`, description: "Demo action: nothing was changed on a server." });
+    toast.push(simulatedToast(`Domain removed: ${alias.host}`));
   };
 
   const closeChange = () => {
@@ -74,7 +75,7 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
       `Canonical domain changed to ${confirmCanonical}`,
       `${record.canonical} moved to former domains`,
     );
-    toast.push({ title: `Canonical domain is now ${confirmCanonical}`, description: "Demo action: nothing was changed on a server." });
+    toast.push(simulatedToast(`Canonical domain changed to ${confirmCanonical}`));
     setConfirmCanonical(null);
     setNewCanonical("");
   };
@@ -83,7 +84,7 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-5">
         <Card>
-          <CardHeader title="Canonical domain" info="The main address this store is measured on. Results link to it." />
+          <CardHeader title="Canonical domain" info="The main address this website is measured on. Results link to it." />
           <CardBody className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[15px] font-medium text-fg">{record.canonical}</p>
             <Button variant="secondary" disabled={readOnly} onClick={() => setChangeOpen(true)}>Change</Button>

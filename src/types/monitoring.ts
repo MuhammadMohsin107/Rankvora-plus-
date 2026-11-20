@@ -21,7 +21,11 @@ export type EventType =
   | "provider_error_spike"
   | "run_incomplete"
   | "run_late"
-  | "integration_attention";
+  | "integration_attention"
+  | "brand_fact_error"
+  | "competitor_mention_change"
+  | "sentiment_share_change"
+  | "coverage_change";
 
 export type EventCategory = "visibility" | "data_quality";
 
@@ -134,6 +138,11 @@ export type ScheduleRow = {
 export type RunSummary = {
   id: string;
   storeId: string;
+  /** Providers and prompts the run used (from the schedule version it ran with). */
+  channelIds?: string[];
+  promptIds?: string[];
+  /** Set on runs created locally by "Run now" or "Retry failed jobs". */
+  simulated?: boolean;
   scheduleId: string;
   scheduleName: string;
   scheduleVersion: number;
@@ -276,6 +285,27 @@ export type MonitoringEvent = {
   current: EvidenceSide;
   note: string | null;
   alert: AlertState | null;
+  /** Related records for handoffs. */
+  findingId: string | null;
+  taskId: string | null;
+};
+
+/** Event without its evidence payload: small enough to ship with the layout for badges and lists. */
+export type MonitoringEventLite = Omit<MonitoringEvent, "previous" | "current" | "alert" | "summary" | "note"> & {
+  alert: { id: string; severity: AlertSeverity; status: AlertStatus } | null;
+};
+
+/** Alert row stored in the shared demo-state "alerts" collection (same ids as the bell: al-001, ...). */
+export type AlertRow = {
+  id: string;
+  storeId: string;
+  severity: AlertSeverity;
+  title: string;
+  at: string;
+  read: boolean;
+  status: AlertStatus;
+  /** Which monitoring event raised it. */
+  eventId?: string;
 };
 
 export type ObservationSample = { sample: number; response: ResponseSample };
@@ -363,4 +393,87 @@ export type ScheduleFormContext = {
   defaultCap: { jobsPerMonth: number; costUsd: number };
   emails: string[];
   otherJobsPerMonth: number;
+  /** Brand name and owned domain are set (a check before a schedule can be activated). */
+  brandConfirmed: boolean;
 };
+
+// ---------------------------------------------------------------------------
+// Client state: schedules, simulated runs, shell data
+// ---------------------------------------------------------------------------
+
+/** A schedule as the client holds it: the list row plus what the detail and edit views need. Stored in demo-state "schedules". */
+export type ScheduleRec = ScheduleRow & {
+  storeId: string;
+  createdAt: string;
+  createdBy: string;
+  versions: ScheduleVersion[];
+  /** Set when the schedule was copied from another one. */
+  duplicateOf?: string;
+};
+
+export type RunPurpose = "manual" | "verification" | "retry";
+
+export type RunUsageByProvider = { channelId: string; label: string; numbers: UsageNumbers };
+
+/**
+ * What a simulated run was asked to do, kept on the run: the selected prompts at the versions the schedule pins
+ * and the selected providers. Labels jobs that have no demonstration answer, so they carry the real prompt and provider.
+ */
+export type RunCatalog = {
+  market: string;
+  language: string;
+  prompts: { id: string; text: string; version: number }[];
+  channels: ChannelInfo[];
+};
+
+/**
+ * A run created locally by "Run now" or "Retry failed jobs". Stored in demo-state "runs".
+ * Its answers replay sample responses of `basisRunId`: nothing was sent to a provider.
+ */
+export type RunRec = RunSummary & {
+  simulated: true;
+  basisRunId: string;
+  initiator: string;
+  reason: string;
+  purpose: RunPurpose;
+  taskId?: string;
+  findingId?: string;
+  /** Run this one retried the failed jobs of. */
+  retryOf?: string;
+  /** Jobs finished so far while queued or running. */
+  doneJobs: number;
+  /** Which basis jobs this run replays. */
+  select: { promptIds: string[]; channelIds: string[]; maxSample: number; /** "promptId|channelId" keys. */ onlyPairs?: string[]; /** Replay one answer per pair (retry of failed jobs). */ retry?: boolean; /** Selected prompts and providers; slots without a demonstration answer become failed jobs. */ catalog?: RunCatalog };
+  createdAt: string;
+  finishedAt?: string;
+  usage: { numbers: UsageNumbers; byProvider: RunUsageByProvider[] };
+  /** What the run reports once it finishes (shown only after completion). */
+  result: { succeeded: number; failed: number; mention: Rate; recommendation: Rate; requests: number; costUsd: number; durationSeconds: number };
+  hasJobDetail: true;
+};
+
+export type MonitoringTaskLite = { id: string; title: string; findingId: string; status: string };
+
+export type MonitoringShellData = {
+  storeId: string;
+  storeName: string;
+  timezone: string;
+  market: string;
+  canSchedule: boolean;
+  schedules: ScheduleRec[];
+  runs: RunSummary[];
+  /** Alert rows keyed by the shared headline ids. */
+  alerts: AlertRow[];
+  events: MonitoringEventLite[];
+  /** Prompt rows of this website (the shared "prompts" collection is overlaid on them in the browser). */
+  promptBase: import("@/types/core").PromptBase[];
+  groups: import("@/types/core").PromptGroup[];
+  ctx: ScheduleFormContext | null;
+  tasks: MonitoringTaskLite[];
+  caps: UsageCaps & { providerRequests: number };
+  /** Requests used this month against the website plan (all modules), when known. */
+  planRequests: { used: number; cap: number } | null;
+};
+
+/** One attempt of a job, derived from the response timing (estimated, not a provider log). */
+export type JobAttempt = { n: number; at: string; outcome: "failed" | "succeeded"; errorClass: FailureClass | null; latencySeconds: number | null };

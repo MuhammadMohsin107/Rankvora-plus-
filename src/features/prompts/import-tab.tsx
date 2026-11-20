@@ -14,19 +14,22 @@ import { useToast } from "@/components/ui/toast";
 import { INTENT_LABEL, SCOPE_LABEL } from "@/lib/labels";
 import { pluralize } from "@/lib/format";
 import type { PromptIntent, PromptScope } from "@/types/core";
-import type { NewPromptData } from "@/types/prompts";
+import { simulatedToast } from "@/demo-state";
+import type { PromptContext, StoredPrompt } from "@/types/prompts";
 
-import type { SessionPrompt } from "./create-types";
+import { planImport, type NewPromptInput } from "./prompt-ops";
+import { profileSuggestionBatches } from "./suggestions";
 import { CSV_COLUMNS, MAX_IMPORT_ROWS, previewImport, toCsvText, type ImportRow, type ImportRowResult } from "./import-parse";
 
 type Props = {
-  data: NewPromptData;
+  context: PromptContext;
   csv: string;
   setCsv: (next: string) => void;
   fileName: string | null;
   setFileName: (next: string | null) => void;
-  session: SessionPrompt[];
-  onImported: (texts: string[]) => void;
+  addMany: (inputs: NewPromptInput[]) => StoredPrompt[];
+  /** Adds groups by name that do not exist yet; returns lower-case name -> id. */
+  ensureGroups: (names: string[]) => Map<string, string>;
 };
 
 const RESULT_BADGE: Record<ImportRowResult, { tone: "success" | "warning" | "danger"; icon: "check-circle" | "copy" | "alert-circle"; label: string }> = {
@@ -35,16 +38,16 @@ const RESULT_BADGE: Record<ImportRowResult, { tone: "success" | "warning" | "dan
   invalid: { tone: "danger", icon: "alert-circle", label: "Invalid" },
 };
 
-export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, onImported }: Props) {
-  const { store, groups, existing, suggestionBatches } = data;
+export function ImportTab({ context, csv, setCsv, fileName, setFileName, addMany, ensureGroups }: Props) {
+  const { store, groups, existing, profile } = context;
   const router = useRouter();
   const toast = useToast();
   const [reading, setReading] = useState(false);
   const base = `/stores/${store.id}/prompts`;
 
   const preview = useMemo(
-    () => previewImport(csv, { language: store.language, market: store.market, groups, existing: [...existing, ...session] }),
-    [csv, store.language, store.market, groups, existing, session],
+    () => previewImport(csv, { language: store.language, market: store.market, groups, existing }),
+    [csv, store.language, store.market, groups, existing],
   );
 
   const tally = useMemo(() => {
@@ -81,7 +84,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
   };
 
   const loadExample = () => {
-    const extra = suggestionBatches[1] ?? [];
+    const extra = profileSuggestionBatches(profile)[1] ?? [];
     const rows: string[][] = [
       ...extra.slice(0, 2).map((s) => [s.text, s.intent, s.topic, groups[0]?.name ?? "", store.language, store.market, "draft", "both", "false"]),
     ];
@@ -92,14 +95,15 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
   };
 
   const confirm = () => {
-    const created = preview.rows.filter((r) => r.result === "create");
-    if (created.length === 0) return;
+    const plan = planImport(preview.rows, groups, { market: store.market, language: store.language });
+    if (plan.inputs.length === 0) return;
+    const ids = plan.newGroups.length > 0 ? ensureGroups(plan.newGroups) : new Map(groups.map((g) => [g.name.toLowerCase(), g.id]));
+    const rows = addMany(plan.inputs.map(({ groupName, ...input }) => ({ ...input, groupId: groupName ? (ids.get(groupName.toLowerCase()) ?? null) : null })));
     const skipped = tally.duplicate + tally.invalid;
     toast.push({
-      title: `${pluralize(created.length, "prompt")} imported`,
+      ...simulatedToast(`${pluralize(rows.length, "prompt")} imported`),
       description: skipped ? `${pluralize(skipped, "row")} skipped (${tally.duplicate} duplicate, ${tally.invalid} invalid).` : "Added with the status from the file.",
     });
-    onImported(created.map((r) => r.text));
     router.push(base);
   };
 
@@ -134,7 +138,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
       <Card as="section">
         <CardHeader
           title="Paste or upload"
-          subtitle={`Up to ${MAX_IMPORT_ROWS} rows. Nothing is created until you confirm.`}
+          subtitle={`Up to ${MAX_IMPORT_ROWS} rows. Nothing is added until you confirm.`}
           actions={
             <>
               <Button size="sm" icon="download" onClick={download}>Template</Button>
@@ -165,7 +169,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
               />
             )}
           </Field>
-          <Field label="Or choose a file" hint={fileName ? `Loaded ${fileName}` : "CSV, read in your browser. It is not uploaded."}>
+          <Field label="Or choose a file" hint={fileName ? `Loaded ${fileName}` : "Read in your browser. Not uploaded."}>
             {({ id, describedBy }) => (
               <input
                 id={id}
@@ -177,7 +181,7 @@ export function ImportTab({ data, csv, setCsv, fileName, setFileName, session, o
                   onFile(event.target.files?.[0]);
                   event.target.value = "";
                 }}
-                className="block w-full text-[13px] text-fg-muted file:mr-3 file:cursor-pointer file:rounded-control file:border file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-fg hover:file:bg-surface-2"
+                className="block w-full text-body-sm text-fg-muted file:mr-3 file:cursor-pointer file:rounded-control file:border file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-body-sm file:font-medium file:text-fg hover:file:bg-surface-2"
               />
             )}
           </Field>

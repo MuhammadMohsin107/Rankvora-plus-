@@ -18,7 +18,30 @@ export type TaskStatus =
   | "failed"
   | "rolled_back"
   | "rejected"
+  | "cancelled"
   | "superseded";
+
+/** All 18 task statuses in lifecycle order. */
+export const TASK_STATUSES: readonly TaskStatus[] = [
+  "suggested",
+  "pending_approval",
+  "approved",
+  "queued",
+  "in_progress",
+  "blocked",
+  "draft_ready",
+  "staged",
+  "applied",
+  "published",
+  "verification_pending",
+  "verified_success",
+  "partially_verified",
+  "failed",
+  "rolled_back",
+  "rejected",
+  "cancelled",
+  "superseded",
+];
 
 export type ExecutionMode = "guidance" | "ai_draft" | "cms_staged" | "approved_apply";
 export type RiskLevel = "low" | "medium" | "high" | "critical";
@@ -78,8 +101,20 @@ export type FindingExtras = {
   duplicate?: { ofId: string; reason: string };
 };
 
+/** Why a finding was closed by a person (false positive or accepted risk). */
+export type FindingReview = {
+  kind: "false_positive" | "accepted_risk";
+  reason: string;
+  /** Accepted risk only: ISO date after which the risk is reviewed again. */
+  expiresAt?: string;
+  by: string;
+  at: string;
+};
+
 export type FindingRow = {
   id: string;
+  /** Website id (route segment). Needed because local overlays are shared across websites. */
+  storeId: string;
   title: string;
   category: FindingCategory;
   severity: Severity;
@@ -93,6 +128,19 @@ export type FindingRow = {
   tasks: { id: string; title: string; status: TaskStatus }[];
   /** True when the finding is closed (resolved, false positive, accepted risk). */
   closed: boolean;
+  /** Set by a local review decision (false positive, accepted risk). */
+  review?: FindingReview | null;
+  /** What a new task needs, so a task can be created from the inbox row. */
+  context?: FindingTaskContext;
+};
+
+export type FindingTaskContext = {
+  expected: string;
+  actual: string;
+  affectedUrls: string[];
+  verificationCriteria: string[];
+  /** The first recommendation that is not rejected, if any. */
+  recommendation: Recommendation | null;
 };
 
 export type FindingDetailData = {
@@ -126,9 +174,17 @@ export type FindingDetailData = {
 
 export type TaskSummary = {
   id: string;
+  /** Website id (route segment). */
+  storeId: string;
   title: string;
   findingId: string;
   findingTitle: string;
+  category: FindingCategory;
+  /** Dependencies not yet met (0 when none). */
+  openDependencies: number;
+  /** Cancelled tasks: why. Superseded tasks: id of the replacing task. */
+  cancelReason?: string;
+  supersededBy?: string | null;
   status: TaskStatus;
   assignee: string | null;
   dueAt: string | null;
@@ -249,8 +305,10 @@ export type ExecutionFailure = {
 
 export type ExecutionRecord = {
   connector: {
+    /** Neutral name, for example "Website connector". Connectors are optional and shown as Demo. */
     label: string;
-    store: string;
+    /** Site the connector points at (domain). */
+    site: string;
     state: "connected" | "needs_attention" | "disconnected";
     scopesGranted: string[];
     scopesRequired: string[];
@@ -307,6 +365,8 @@ export type HistoryEvent = { id: string; at: string; actor: string; kind: Histor
 
 export type TaskDetailData = {
   task: TaskSummary;
+  /** Status of the related finding when the page was built. */
+  findingStatus: FindingStatus;
   recommendationId: string | null;
   createdAt: string;
   createdBy: string;
@@ -319,6 +379,51 @@ export type TaskDetailData = {
   history: HistoryEvent[];
   /** Why the task was rejected (status rejected only). */
   rejection?: { by: string; at: string; reason: string };
+  /** Why the task was cancelled (status cancelled only). */
+  cancellation?: { by: string; at: string; reason: string };
+  /** Replacing task (status superseded only). */
+  supersession?: { by: string; at: string; successorId: string; reason: string };
 };
+
+/** A task created in this browser: everything the detail view needs, copied from the finding and recommendation. */
+export type LocalTaskSeed = Omit<TaskDetailData, "task" | "findingStatus" | "history" | "approval" | "execution" | "verification"> & {
+  approvalNeeded: boolean;
+  plannedChecks: VerificationRecord["plannedChecks"];
+};
+
+/** Fields written onto a task row by local actions. Every field is optional: absent means "as seeded". */
+export type TaskLocal = {
+  approvalState?: ApprovalState;
+  decision?: { by?: string; at?: string; note?: string };
+  requestedAt?: string;
+  /** Saved draft text (text and patch drafts). */
+  draftText?: string;
+  draftVersion?: number;
+  draftClaims?: UnsupportedClaim[];
+  /** How many times the draft was regenerated (odd = alternate output). */
+  draftGen?: number;
+  /** The exact text that was approved. A later edit invalidates the approval. */
+  approvedText?: string;
+  batch?: Record<string, BatchItem["result"]>;
+  remoteResolved?: boolean;
+  remoteCheckedAt?: string;
+  completedAt?: string;
+  stagedAt?: string;
+  appliedAt?: string;
+  publishedAt?: string;
+  /** Number of apply attempts (batch tasks fail one item on the first attempt). */
+  applyAttempts?: number;
+  failure?: ExecutionFailure | null;
+  outcome?: VerificationOutcome | null;
+  rollbackRecord?: RollbackRecord | null;
+  rejection?: { by: string; at: string; reason: string };
+  cancellation?: { by: string; at: string; reason: string };
+  supersession?: { by: string; at: string; successorId: string; reason: string };
+  /** Task created in this browser. */
+  seed?: LocalTaskSeed;
+};
+
+/** A task row as stored in the local overlay: summary plus local changes. */
+export type TaskRow = TaskSummary & TaskLocal;
 
 export type AssigneeOption = { id: string; name: string; role: string };

@@ -62,7 +62,7 @@ export function normalizeHost(input: string): string {
 
   if (!host) throw new DomainError("Domain is required.");
   if (isIP(host) !== 0 || host.startsWith("[")) {
-    throw new DomainError("An IP address is not a valid store domain.");
+    throw new DomainError("An IP address is not a valid website domain.");
   }
   if (host.length > 253) throw new DomainError("Domain is too long.");
 

@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 
+import { SimulatedBadge } from "@/components/ui/demo";
 import { Status } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader, Metric } from "@/components/ui/card";
+import { Segmented } from "@/components/ui/form";
+import { Menu } from "@/components/ui/menu";
 import { formatDateTime } from "@/lib/format";
 import type { TaskStatus, VerificationOutcome, VerificationRecord } from "@/types/fixes";
+
+import { SIMULATED_LABEL, type SimulatedResult } from "./fixes-logic";
 
 type Props = {
   storeId: string;
@@ -13,6 +19,15 @@ type Props = {
   outcome: VerificationOutcome | null;
   status: TaskStatus;
   verifying: boolean;
+  simulated: SimulatedResult;
+  onSimulated: (value: SimulatedResult) => void;
+  onRun: () => void;
+  /** Latest completed Monitoring run, linked as the observation. */
+  latestRunId: string | null;
+  comparisons: { id: string; title: string }[];
+  /** Comparison ids this fix was already added to. */
+  annotated: string[];
+  onAnnotate: (comparisonId: string) => void;
 };
 
 function PlannedChecks({ checks }: { checks: VerificationRecord["plannedChecks"] }) {
@@ -29,7 +44,7 @@ function PlannedChecks({ checks }: { checks: VerificationRecord["plannedChecks"]
 }
 
 /** Checks re-run, before / after evidence, result and the effect on the finding. Applied is never verified. */
-export function TaskVerificationTab({ storeId, record, outcome, status, verifying }: Props) {
+export function TaskVerificationTab({ storeId, record, outcome, status, verifying, simulated, onSimulated, onRun, latestRunId, comparisons, annotated, onAnnotate }: Props) {
   const passed = outcome ? outcome.checks.filter((c) => c.after.status === "pass").length : 0;
 
   return (
@@ -53,6 +68,25 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
               <Callout tone={outcome.result === "verified_success" ? "success" : outcome.result === "failed" ? "danger" : "info"} title="Effect on the finding">
                 {outcome.findingEffect}
               </Callout>
+              <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                {latestRunId ? (
+                  <Link href={`/stores/${storeId}/monitoring/runs/${latestRunId}`} className="text-label font-medium text-accent-text hover:underline">
+                    Open latest Monitoring run
+                  </Link>
+                ) : null}
+                {comparisons.length > 0 ? (
+                  annotated.length > 0 ? (
+                    <Link href={`/stores/${storeId}/comparisons/${annotated[0]}`} className="text-label font-medium text-accent-text hover:underline">
+                      On the Comparison timeline
+                    </Link>
+                  ) : (
+                    <Menu
+                      trigger={<Button size="sm" icon="compare">Add to Comparison timeline</Button>}
+                      items={comparisons.map((c) => ({ label: c.title, onSelect: () => onAnnotate(c.id) }))}
+                    />
+                  )
+                ) : null}
+              </div>
             </CardBody>
           </Card>
 
@@ -97,6 +131,21 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
               {verifying ? undefined : "No check has re-run yet."}
             </Callout>
             <PlannedChecks checks={record.plannedChecks} />
+            <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3">
+              <span className="flex items-center gap-2 text-label text-fg-muted">
+                Simulated outcome <SimulatedBadge />
+              </span>
+              <Segmented
+                label="Simulated outcome"
+                size="sm"
+                value={simulated}
+                onChange={onSimulated}
+                options={(Object.keys(SIMULATED_LABEL) as SimulatedResult[]).map((value) => ({ value, label: SIMULATED_LABEL[value] }))}
+              />
+              <Button variant="secondary" icon="shield-check" loading={verifying} onClick={onRun}>
+                Run verification
+              </Button>
+            </div>
           </CardBody>
         </Card>
       ) : status === "rolled_back" ? (

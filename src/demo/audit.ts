@@ -1,19 +1,18 @@
 /**
  * DEMONSTRATION DATA — not real.
  * Audit detail around the registry audits (src/demo/registry.ts): configuration,
- * live progress of aud-004, and the website-readiness lane for runpro.pk and runpro.ae
+ * live progress of aud-004, and the website-readiness lane for runpro.pk, runpro.ae and nutrition.example
  * (crawled pages, checks, AI crawler access). Read it only through src/services/audit.ts.
  *
  * Headline numbers (jobs, mention/recommendation, page coverage) come from the registry
  * and the response generator; this file only adds detail that never contradicts them.
  */
-import type { AuditConfig, AuditStage, CheckGroup, CrawledPage, CrawlerAccess, PageType, WebsiteCheck } from "@/types/audit";
+import type { AuditConfig, AuditLane, AuditStage, AuditTrigger, AuditType, AuditVerifies, CheckGroup, CrawledPage, CrawlerAccess, PageType, SimScenario, WebsiteCheck } from "@/types/audit";
 
 export const SITE = "https://runpro.pk";
 
-/** Approximate provider cost per planned request (matches ≈ $3.2 per 54-job run). */
-export const APPROX_COST_PER_JOB_USD = 0.06;
-export const APPROX_COST_PER_PAGE_USD = 0.0004;
+/** Approximate provider cost per planned request (matches ≈ $3.2 per 54-job run). Defined with the lane builders. */
+export { APPROX_COST_PER_JOB_USD, APPROX_COST_PER_PAGE_USD } from "@/features/audit/lanes";
 
 // ---------------------------------------------------------------------------
 // Configuration per audit
@@ -86,6 +85,8 @@ type PageSeed = Partial<Omit<CrawledPage, "id" | "url" | "path" | "type">>;
 type PageProfile = {
   idPrefix: string;
   site: string;
+  /** Brand name used in generated meta descriptions. */
+  brand: string;
   /** Lab LCP before any per-page override. */
   lcp: (n: number) => number;
   deliveryText: string;
@@ -94,6 +95,7 @@ type PageProfile = {
 const PK_PAGE_PROFILE: PageProfile = {
   idPrefix: "pg",
   site: SITE,
+  brand: "RunPro",
   lcp: (n) => 1700 + ((n * 173) % 1300),
   deliveryText: "Free delivery across Pakistan.",
 };
@@ -119,7 +121,7 @@ function makePage(profile: PageProfile, n: number, path: string, type: PageType,
     canonical: url,
     canonicalSelf: true,
     title,
-    metaDescription: title ? `${title.split("|")[0].trim()} from RunPro. ${profile.deliveryText}` : null,
+    metaDescription: title ? `${title.split("|")[0].trim()} from ${profile.brand}. ${profile.deliveryText}` : null,
     h1: title ? [title.split(/[|—]/)[0].trim()] : [],
     h2: [],
     schemaTypes: ["BreadcrumbList"],
@@ -234,7 +236,7 @@ export const BASE_CHECKS: WebsiteCheck[] = [
   ck("chk-12", "rendering", "Core content is present in raw HTML", "pass", "Raw vs rendered", "Title, H1, price and description present before JavaScript runs", { affected: 0 }),
   ck("chk-13", "rendering", "Rendered and raw HTML match", "inconclusive", "Renderer", "Renderer timed out on 3 of 12 sampled product pages, so parity is not determinate."),
   ck("chk-14", "url_quality", "Clean URLs without session or tracking parameters", "pass", "Crawl result", "0 of 120 in-scope URLs contain session or tracking parameters", { affected: 0 }),
-  ck("chk-15", "url_quality", "Hreflang annotations", "not_applicable", "Scope", "Single-market site (PK). runpro.ae is audited as its own store."),
+  ck("chk-15", "url_quality", "Hreflang annotations", "not_applicable", "Scope", "Single-market site (PK). runpro.ae is audited as its own website."),
   ck("chk-16", "url_quality", "Faceted and parameter URLs are controlled", "not_assessed", "Scope", "Parameter URLs (/*?filter=) were outside the crawl scope."),
   ck("chk-17", "metadata", "Each indexable page has a unique title", "pass", "Crawl result", "Collection titles differ only by pagination suffix (reviewed: intended behaviour)", { affected: 0 }),
   ck("chk-18", "metadata", "Meta description present (up to 160 characters)", "warning", "Crawl result", "9 of 112 assessed pages have no meta description", {
@@ -272,6 +274,8 @@ export type WebsiteVariant = {
   /** Only these groups have been evaluated; the others are "not assessed" (audit still running). */
   evaluatedGroups?: CheckGroup[];
   crawlerOverrides: Record<string, Partial<CrawlerAccess>>;
+  /** Page facts that differ from the base crawl at the time of this audit, keyed by page id (e.g. a fix made between audits). */
+  pageOverrides?: Record<string, Partial<CrawledPage>>;
   notice: string | null;
 };
 
@@ -417,6 +421,7 @@ export const AE_AUDIT_CONFIGS: Record<string, AuditConfig> = {
 const AE_PAGE_PROFILE: PageProfile = {
   idPrefix: "pg-ae",
   site: AE_SITE,
+  brand: "RunPro",
   lcp: (n) => 1600 + ((n * 137) % 800),
   deliveryText: "Delivery across the UAE.",
 };
@@ -534,7 +539,7 @@ export const AE_BASE_CHECKS: WebsiteCheck[] = [
   }),
   ck("chk-ae-08", "linking", "Internal links resolve to final URLs (no 404 or redirect)", "pass", "Link extraction", "0 internal links return 404 or redirect on 58 assessed pages", { affected: 0 }),
   ck("chk-ae-09", "rendering", "Core content is present in raw HTML", "pass", "Raw vs rendered", "Title, H1, price and description present before JavaScript runs on 8 of 8 sampled product and category pages", { affected: 0 }),
-  ck("chk-ae-10", "url_quality", "Hreflang annotations", "not_applicable", "Scope", "No other language versions of runpro.ae exist. runpro.pk is audited as its own store."),
+  ck("chk-ae-10", "url_quality", "Hreflang annotations", "not_applicable", "Scope", "No other language versions of runpro.ae exist. runpro.pk is audited as its own website."),
   ck("chk-ae-11", "url_quality", "Clean URLs without session or tracking parameters", "pass", "Crawl result", "0 of 60 in-scope URLs contain session or tracking parameters", { affected: 0 }),
   ck("chk-ae-12", "metadata", "Each indexable page has a unique title", "pass", "Crawl result", "58 of 58 assessed titles are unique", { affected: 0 }),
   ck("chk-ae-13", "metadata", "Meta description present (up to 160 characters)", "warning", "Crawl result", "6 of 58 assessed pages have no meta description", { affected: 6, paths: AE_NO_META_PATHS }),
@@ -587,7 +592,7 @@ export const AE_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = {
         affected: 9,
         affectedPaths: AE_REDIRECT_PATHS,
         findingId: "fnd-ae-005",
-        snippet: `9 of 64 sitemap URLs answer 301 to the Pakistan store (runpro.pk):\n${AE_REDIRECT_LINES}\n… and 5 more`,
+        snippet: `9 of 64 sitemap URLs answer 301 to the Pakistan website (runpro.pk):\n${AE_REDIRECT_LINES}\n… and 5 more`,
       },
       "chk-ae-08": {
         status: "warning",
@@ -657,6 +662,408 @@ export const AE_BASE_CRAWLERS: CrawlerAccess[] = [
   },
 ];
 
+// ===========================================================================
+// nutrition (informational website, WordPress, https://nutrition.example)
+// Audits aud-nu-001 (initial, 8 Oct), aud-nu-002 (scheduled, 22 Oct), aud-nu-003 (full, 9 Nov),
+// aud-nu-004 (verification, 16 Nov, 5 pages, AI + website) and aud-nu-005 (triggered, 18 Nov, AI lane only).
+// Headline numbers agree with REGISTRY_NU_AUDITS and findings fnd-nu-001 … fnd-nu-008
+// (src/demo/shared-records.ts). Pages assessed: 24 / 27 / 29 / 5 of 30 in scope.
+// ===========================================================================
+
+export const NU_SITE = "https://nutrition.example";
+
+const NU_CHANNELS = ["ch-openai", "ch-gemini", "ch-perplexity"];
+
+const nuBaseConfig: AuditConfig = {
+  promptScope: "all_active",
+  promptIds: [],
+  channelIds: NU_CHANNELS,
+  samples: 2,
+  market: "SG",
+  language: "en",
+  startPoints: ["Homepage", "Sitemap"],
+  maxUrls: 100,
+  maxDepth: 4,
+  pageTypes: ["Home", "Categories", "Guides", "Courses and services", "Pages", "Policies"],
+  excludedPaths: ["/wp-admin", "/wp-login.php", "/wp-json", "/?s="],
+  criteriaVersion: "2.1",
+  analysisVersion: "1.2",
+  integrations: { searchConsole: true, pageSpeed: true, cms: true },
+  limits: { maxRequests: 120, concurrency: 3, budgetUsd: 5 },
+};
+
+export const NU_AUDIT_CONFIGS: Record<string, AuditConfig> = {
+  // Criteria 1.4, Search Console not connected yet.
+  "aud-nu-001": { ...nuBaseConfig, criteriaVersion: "1.4", integrations: { searchConsole: false, pageSpeed: true, cms: true } },
+  // Monthly scheduled full audit (22nd, 09:00 Singapore time = 01:00 UTC). Criteria 2.0.
+  "aud-nu-002": {
+    ...nuBaseConfig,
+    criteriaVersion: "2.0",
+    trigger: { source: "schedule", reason: "Monthly, 22nd at 09:00 Singapore time", cadence: "monthly", nextRunAt: "2026-11-22T01:00:00Z", dedupKey: "schedule:monthly:2026-10-22" },
+  },
+  "aud-nu-003": nuBaseConfig,
+  // Verification of the noindex fix: 2 prompts × 3 channels × 1 sample = 6 requests, 5 pages.
+  "aud-nu-004": {
+    ...nuBaseConfig,
+    promptScope: "ids",
+    promptIds: ["p-nu-002", "p-nu-006"],
+    samples: 1,
+    startPoints: ["URL list (5 URLs)"],
+    maxUrls: 5,
+    maxDepth: 1,
+    pageTypes: ["Guides", "Courses and services", "Pages"],
+    limits: { maxRequests: 20, concurrency: 2, budgetUsd: 1 },
+    verifies: { findingId: "fnd-nu-003", taskId: "task-nu-003" },
+  },
+  // Triggered, AI lane only: 2 prompts × 3 channels × 2 samples = 12 requests. No website settings apply.
+  "aud-nu-005": {
+    ...nuBaseConfig,
+    promptScope: "ids",
+    promptIds: ["p-nu-001", "p-nu-007"],
+    startPoints: [],
+    maxUrls: 0,
+    maxDepth: 0,
+    pageTypes: [],
+    excludedPaths: [],
+    integrations: { searchConsole: false, pageSpeed: false, cms: false },
+    limits: { maxRequests: 24, concurrency: 2, budgetUsd: 1.5 },
+    trigger: { source: "competitor_suggested", reason: "New competitor suggested: GreenFork Guide", dedupKey: "competitor_suggested:c-greenfork-nu:2026-11-18" },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Website lane: pages
+// ---------------------------------------------------------------------------
+
+const NU_PAGE_PROFILE: PageProfile = {
+  idPrefix: "pg-nu",
+  site: NU_SITE,
+  brand: "Nutrition",
+  lcp: (n) => 1500 + ((n * 131) % 700),
+  deliveryText: "Free to read, no sign-up needed.",
+};
+
+const pn = (n: number, path: string, type: PageType, title: string | null, seed: PageSeed = {}) => makePage(NU_PAGE_PROFILE, n, path, type, title, seed);
+
+const NU_NO_META: PageSeed = { metaDescription: null };
+const NU_REVIEWER_ISSUE = ["Article markup names an author without credentials and has no reviewedBy"];
+const NU_RECIPE_TITLE = "Recipes | Nutrition";
+const NU_RECIPE_META = "Easy recipes for everyday healthy eating.";
+const NU_RECIPE: PageSeed = { metaDescription: NU_RECIPE_META, schemaTypes: ["Recipe", "BreadcrumbList"], words: 420 };
+
+export const NU_BASE_PAGES: CrawledPage[] = [
+  pn(1, "/", "home", "Nutrition — Practical guides to everyday healthy eating", {
+    schemaTypes: ["Organization", "WebSite"],
+    schemaIssues: ["Organization sameAs is empty"],
+    h2: ["Start with a guide", "Free Nutrition Basics course", "Weekly Wellness newsletter"],
+    words: 580,
+    inlinks: 132,
+    outInternal: 38,
+  }),
+  pn(2, "/guides", "collection", "Nutrition guides | Nutrition", { schemaTypes: ["CollectionPage", "BreadcrumbList"], h2: ["Eating basics", "Planning", "Reading labels"] }),
+  pn(3, "/guides/meal-planning", "guide", "Weekly meal planning for beginners | Nutrition", {
+    schemaTypes: ["Article", "BreadcrumbList"],
+    schemaIssues: ["No FAQPage markup for the 6 visible questions and answers"],
+    h2: ["Plan around three anchors", "Build a shopping list", "Batch prep", "Common questions"],
+    words: 1640,
+    metaDescription: "A simple weekly meal-planning routine for beginners: anchors, a shopping list and batch prep.",
+  }),
+  pn(4, "/guides/macros", "guide", "Macros explained: protein, carbohydrate and fat | Nutrition", {
+    schemaTypes: ["Article", "BreadcrumbList"],
+    schemaIssues: NU_REVIEWER_ISSUE,
+    h2: ["What macros are", "Protein", "Carbohydrate", "Fat"],
+    words: 1480,
+  }),
+  pn(5, "/guides/protein-intake", "guide", "How much protein do you need each day? | Nutrition", {
+    schemaTypes: ["Article", "BreadcrumbList"],
+    schemaIssues: NU_REVIEWER_ISSUE,
+    h2: ["General ranges", "Protein across the day", "Plant and animal sources"],
+    words: 1320,
+  }),
+  pn(6, "/guides/reading-food-labels", "guide", "How to read a food label | Nutrition", { schemaTypes: ["Article", "BreadcrumbList"], h2: ["Serving size", "Per 100 g", "Ingredient order"], words: 960 }),
+  pn(7, "/guides/fibre-basics", "guide", "Fibre basics: where to find it and why it matters | Nutrition", { schemaTypes: ["Article", "BreadcrumbList"], words: 870 }),
+  pn(8, "/courses", "collection", "Free courses | Nutrition", { schemaTypes: ["CollectionPage", "BreadcrumbList"], h2: ["Nutrition Basics"] }),
+  pn(9, "/courses/nutrition-basics", "product", "Nutrition Basics: a free 5-day email course | Nutrition", {
+    // Carries a noindex tag in aud-nu-001 to aud-nu-003; removed before aud-nu-004 (see the variant page overrides).
+    indexable: false,
+    metaRobots: "noindex, follow",
+    schemaTypes: ["Course", "BreadcrumbList"],
+    h2: ["What you learn", "How the 5 days work", "Free, no card needed"],
+    words: 540,
+    metaDescription: "Nutrition Basics is a free 5-day email course. Learn portions, protein, fibre and label reading.",
+  }),
+  pn(10, "/newsletter", "product", "Weekly Wellness newsletter | Nutrition", { schemaTypes: ["WebPage", "BreadcrumbList"], words: 260 }),
+  pn(11, "/consultations", "product", "Nutrition information consultations | Nutrition", { schemaTypes: ["WebPage", "BreadcrumbList"], h2: ["What a session covers", "What it does not cover"], words: 430 }),
+  pn(12, "/about", "page", "About Nutrition", { schemaTypes: ["AboutPage", "BreadcrumbList"], words: 480 }),
+  pn(13, "/team", "page", "Our editorial team and reviewers | Nutrition", { schemaTypes: ["WebPage", "BreadcrumbList"], words: 350 }),
+  pn(14, "/recipes", "collection", "Recipes | Nutrition", { schemaTypes: ["CollectionPage", "BreadcrumbList"], h2: ["Breakfast", "Lunch", "Meal prep"], metaDescription: NU_RECIPE_META }),
+  // Six recipe pages repeat the category title and meta description until the November fix (fnd-nu-004).
+  pn(15, "/recipes/meal-prep", "guide", NU_RECIPE_TITLE, { ...NU_RECIPE, h1: ["Meal-prep recipes for the week"] }),
+  pn(16, "/recipes/high-protein-breakfast", "guide", NU_RECIPE_TITLE, { ...NU_RECIPE, h1: ["High-protein breakfast recipes"] }),
+  pn(17, "/recipes/lentil-soup", "guide", NU_RECIPE_TITLE, { ...NU_RECIPE, h1: ["Red lentil soup"] }),
+  pn(18, "/recipes/overnight-oats", "guide", NU_RECIPE_TITLE, { ...NU_RECIPE, h1: ["Overnight oats, three ways"] }),
+  pn(19, "/recipes/veggie-stir-fry", "guide", NU_RECIPE_TITLE, { ...NU_RECIPE, h1: ["Ten-minute veggie stir-fry"] }),
+  pn(20, "/recipes/chickpea-salad", "guide", NU_RECIPE_TITLE, { ...NU_RECIPE, h1: ["Chickpea and cucumber salad"] }),
+  pn(21, "/tools/calorie-calculator", "page", "Calorie calculator | Nutrition", {
+    schemaTypes: ["WebApplication", "BreadcrumbList"],
+    h2: ["Your details", "Your estimate", "How the estimate works"],
+    words: 390,
+    lab: { lcpMs: 3400, cls: 0.09, tbtMs: 310 },
+  }),
+  pn(22, "/blog", "collection", "Nutrition blog | Nutrition", { schemaTypes: ["Blog", "BreadcrumbList"], h2: ["Latest posts"], lab: { lcpMs: 2300, cls: 0.06, tbtMs: 200 } }),
+  pn(23, "/blog/hydration", "guide", "How much water do you really need? | Nutrition", {
+    schemaTypes: ["Article", "BreadcrumbList"],
+    schemaIssues: ["Article markup names no author and has no reviewedBy"],
+    h2: ["Thirst and habit", "Food counts too", "When to drink more"],
+    words: 780,
+  }),
+  pn(24, "/blog/sleep-and-appetite", "guide", "Sleep and appetite: what the research suggests | Nutrition", { schemaTypes: ["Article", "BreadcrumbList"], words: 910 }),
+  pn(25, "/blog/meal-prep-mistakes", "guide", "Five meal-prep mistakes to avoid | Nutrition", { schemaTypes: ["Article", "BreadcrumbList"], words: 840 }),
+  pn(26, "/faq", "page", "Frequently asked questions | Nutrition", { ...NU_NO_META, schemaTypes: ["FAQPage", "BreadcrumbList"] }),
+  pn(27, "/contact", "page", "Contact Nutrition", { schemaTypes: ["ContactPage", "BreadcrumbList"] }),
+  pn(28, "/privacy", "policy", "Privacy policy | Nutrition", { ...NU_NO_META }),
+  pn(29, "/terms", "policy", "Terms of use | Nutrition"),
+  pn(30, "/blog/plant-protein-sources", "guide", "Plant protein sources, compared | Nutrition", { schemaTypes: ["Article", "BreadcrumbList"], words: 1050 }),
+];
+
+const NU_PATH = (n: number) => NU_BASE_PAGES[n - 1].path;
+const NU_ALL_PAGE_IDS = NU_BASE_PAGES.map((p) => p.id);
+const nuPageId = (n: number) => NU_BASE_PAGES[n - 1].id;
+const nuAssessed = (leftOut: number[]) => NU_ALL_PAGE_IDS.filter((id) => !leftOut.map(nuPageId).includes(id));
+
+/** Pages assessed per audit. aud-nu-001: 24 of 30; aud-nu-002: 27 of 30; aud-nu-003: 29 of 30. */
+const NU_PAGES_001 = nuAssessed([30, 29, 25, 7, 11, 13]);
+const NU_PAGES_002 = nuAssessed([30, 29, 25]);
+const NU_PAGES_003 = nuAssessed([30]);
+/** aud-nu-004 re-assesses the 5 pages behind the verified findings: the course page, the calculator and 3 recipe pages. */
+const NU_PAGES_004 = [9, 21, 15, 16, 19].map(nuPageId);
+
+const NU_RECIPE_PATHS = [15, 16, 17, 18, 19, 20].map(NU_PATH);
+const NU_REVIEWER_PATHS = [5, 4, 23].map(NU_PATH);
+const NU_NO_META_PATHS = [26, 28].map(NU_PATH);
+const NU_NO_ALT_PATHS = [14, 22, 18].map(NU_PATH);
+
+/** Count-dependent evidence for a variant, derived from the pages it assessed. */
+function nuCounts(ids: string[]) {
+  const pages = NU_BASE_PAGES.filter((p) => ids.includes(p.id));
+  const n = pages.length;
+  const noindex = pages.filter((p) => p.id === nuPageId(9)).length;
+  const articles = pages.filter((p) => p.schemaTypes.includes("Article")).length;
+  const crumbs = pages.filter((p) => p.schemaTypes.includes("BreadcrumbList")).length;
+  const indexable = n - noindex;
+  return { n, noindex, articles, crumbs, indexable };
+}
+
+// ---------------------------------------------------------------------------
+// Website lane: checks (state as of aud-nu-003; earlier audits and the verification override)
+// ---------------------------------------------------------------------------
+
+const NU_ROBOTS = "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\nSitemap: https://nutrition.example/wp-sitemap.xml";
+const NU_C003 = nuCounts(NU_PAGES_003);
+
+const nuReviewerSnippet = (articles: number) =>
+  `${articles} sampled health articles:\n${NU_PATH(5)}  author named, no credentials, no reviewer\n${NU_PATH(4)}  author named, no credentials, no reviewer\n${NU_PATH(23)}  "Nutrition editorial team", no reviewer\n${articles - 3} other articles name a reviewer with credentials and a review date`;
+
+const nuRecipeLines = NU_RECIPE_PATHS.map((p) => `${p}  title "${NU_RECIPE_TITLE}"`).join("\n");
+
+export const NU_BASE_CHECKS: WebsiteCheck[] = [
+  ck("chk-nu-01", "reachability", "Homepage responds with 200", "pass", "Request", "GET https://nutrition.example/  →  200 OK · 446 ms"),
+  ck("chk-nu-02", "reachability", "No server errors (5xx) on assessed pages", "pass", "Crawl result", `0 of ${NU_C003.n} assessed pages returned a 5xx status`, { affected: 0 }),
+  ck("chk-nu-03", "indexing", "robots.txt is reachable and parseable", "pass", "Request", "GET https://nutrition.example/robots.txt  →  200 OK · text/plain · 4 lines"),
+  ck("chk-nu-04", "indexing", "AI crawler rules reviewed per user-agent", "pass", "robots.txt", "No group for OAI-SearchBot, GPTBot, ChatGPT-User, PerplexityBot or Google-Extended; the default group applies (allowed)."),
+  ck("chk-nu-05", "indexing", "No unintended noindex on key pages", "fail", "Crawl result", `<meta name="robots" content="noindex, follow">\nfound on ${NU_PATH(9)}`, {
+    affected: 1,
+    paths: [NU_PATH(9)],
+    findingId: "fnd-nu-003",
+  }),
+  ck("chk-nu-06", "indexing", "Search Console indexing coverage", "warning", "Search Console API", `Coverage report fetched for 30 URLs: 29 indexed, 1 excluded by noindex (${NU_PATH(9)})`, {
+    affected: 1,
+    paths: [NU_PATH(9)],
+    findingId: "fnd-nu-003",
+  }),
+  ck("chk-nu-07", "canonical", "Indexable pages declare a self-referencing canonical", "pass", "Crawl result", `${NU_C003.indexable} of ${NU_C003.indexable} assessed indexable pages carry rel=canonical to themselves`, { affected: 0 }),
+  ck("chk-nu-08", "canonical", "Canonical targets return 200", "pass", "Crawl result", "All canonical targets resolved with status 200", { affected: 0 }),
+  ck("chk-nu-09", "sitemaps", "Sitemap is declared in robots.txt", "pass", "robots.txt", "Sitemap: https://nutrition.example/wp-sitemap.xml"),
+  ck("chk-nu-10", "sitemaps", "Sitemap URLs return 200", "pass", "Sitemap audit", "0 of 30 sitemap URLs return a non-200 status", { affected: 0 }),
+  ck("chk-nu-11", "linking", "Internal links resolve (no 404 or redirect)", "pass", "Link extraction", `0 internal links return 404 or redirect on ${NU_C003.n} assessed pages`, { affected: 0 }),
+  ck("chk-nu-12", "rendering", "Core content is present in raw HTML", "pass", "Raw vs rendered", "Title, H1 and article text present before JavaScript runs on 6 of 6 sampled pages", { affected: 0 }),
+  ck("chk-nu-13", "url_quality", "Clean URLs without session or tracking parameters", "pass", "Crawl result", "0 of 30 in-scope URLs contain session or tracking parameters", { affected: 0 }),
+  ck("chk-nu-14", "url_quality", "Hreflang annotations", "not_applicable", "Scope", "Single-language site (English, Singapore market). No other language versions exist."),
+  ck("chk-nu-15", "metadata", "Each indexable page has a unique title and meta description", "fail", "Crawl result", `6 recipe pages share the title "${NU_RECIPE_TITLE}" and one meta description:\n${nuRecipeLines}`, {
+    affected: 6,
+    paths: NU_RECIPE_PATHS,
+    findingId: "fnd-nu-004",
+  }),
+  ck("chk-nu-16", "metadata", "Meta description present (up to 160 characters)", "warning", "Crawl result", `2 of ${NU_C003.n} assessed pages have no meta description`, { affected: 2, paths: NU_NO_META_PATHS }),
+  ck("chk-nu-17", "mobile_a11y", "Images have alternative text", "warning", "Crawl result", `3 of ${NU_C003.n} assessed pages contain <img> elements without alt text`, { affected: 3, paths: NU_NO_ALT_PATHS }),
+  ck("chk-nu-18", "mobile_a11y", "Largest Contentful Paint up to 2.5 s (lab, mobile)", "warning", "PageSpeed lab data", `Lab LCP above 2.5 s (simulated mobile) on 1 page:\n${NU_PATH(21)}  3.4 s`, {
+    affected: 1,
+    paths: [NU_PATH(21)],
+    findingId: "fnd-nu-007",
+  }),
+  ck("chk-nu-19", "mobile_a11y", "Field performance (CrUX)", "inconclusive", "CrUX", `No field data at origin or URL level (low traffic). ${NU_C003.n} of ${NU_C003.n} assessed URLs have lab data only.`),
+  ck("chk-nu-20", "structured_data", "Guides with question-and-answer sections have FAQPage markup", "fail", "JSON-LD vs page", `${NU_PATH(3)}: 6 visible questions and answers\nJSON-LD types found: Article, BreadcrumbList\n// FAQPage is missing`, {
+    affected: 1,
+    paths: [NU_PATH(3)],
+    findingId: "fnd-nu-001",
+  }),
+  ck("chk-nu-21", "structured_data", "Organization schema includes sameAs", "fail", "JSON-LD", '{ "@type": "Organization", "name": "Nutrition", "logo": "…", "sameAs": [] }\n// sameAs is empty', { affected: 1, paths: ["/"], findingId: "fnd-nu-005" }),
+  ck("chk-nu-22", "structured_data", "Article markup has headline, author and dates", "pass", "JSON-LD", `Article markup complete on ${NU_C003.articles} of ${NU_C003.articles} assessed guides and posts`, { affected: 0 }),
+  ck("chk-nu-23", "structured_data", "BreadcrumbList on guides, courses and recipes", "pass", "JSON-LD", `BreadcrumbList found on ${NU_C003.crumbs} of ${NU_C003.crumbs} assessed pages that carry breadcrumbs`, { affected: 0 }),
+  ck("chk-nu-24", "content_entity", "Health articles name an author and a qualified reviewer", "fail", "Page content", nuReviewerSnippet(NU_C003.articles), {
+    affected: 3,
+    paths: NU_REVIEWER_PATHS,
+    findingId: "fnd-nu-002",
+  }),
+  ck("chk-nu-25", "content_entity", "The course page states that the course is free", "pass", "Page content", `${NU_PATH(9)}: "Free · 5 daily emails" in the first screen; Course JSON-LD has isAccessibleForFree: true`, { affected: 0 }),
+  ck("chk-nu-26", "content_entity", "Brand name is spelled consistently", "pass", "Text scan", 'Official spelling "Nutrition" on all 6 core pages', { affected: 0 }),
+  ck("chk-nu-27", "content_entity", "Information-only disclaimer is on health pages", "pass", "Page content", "“General information, not personal medical advice” is in the footer of every assessed page", { affected: 0 }),
+];
+
+/** Evidence that depends on how many pages an audit assessed, for audits other than aud-nu-003. */
+function nuCountOverrides(ids: string[]): Record<string, CheckOverride> {
+  const c = nuCounts(ids);
+  return {
+    "chk-nu-02": { snippet: `0 of ${c.n} assessed pages returned a 5xx status` },
+    "chk-nu-07": { snippet: `${c.indexable} of ${c.indexable} assessed indexable pages carry rel=canonical to themselves` },
+    "chk-nu-11": { snippet: `0 internal links return 404 or redirect on ${c.n} assessed pages` },
+    "chk-nu-16": { snippet: `2 of ${c.n} assessed pages have no meta description` },
+    "chk-nu-17": { snippet: `3 of ${c.n} assessed pages contain <img> elements without alt text` },
+    "chk-nu-19": { snippet: `No field data at origin or URL level (low traffic). ${c.n} of ${c.n} assessed URLs have lab data only.` },
+    "chk-nu-22": { snippet: `Article markup complete on ${c.articles} of ${c.articles} assessed guides and posts` },
+    "chk-nu-23": { snippet: `BreadcrumbList found on ${c.crumbs} of ${c.crumbs} assessed pages that carry breadcrumbs` },
+    "chk-nu-24": { snippet: nuReviewerSnippet(c.articles) },
+  };
+}
+
+/** Before 9 Nov the calculator loaded in about 2.3 s; the heavier chart widget arrived in the first week of November. */
+const NU_CALCULATOR_FAST: Partial<CrawledPage> = { lab: { lcpMs: 2300, cls: 0.05, tbtMs: 180 } };
+const NU_LCP_PASS: CheckOverride = { status: "pass", affected: 0, affectedPaths: [], findingId: null, snippet: "0 assessed pages above 2.5 s (lab, simulated mobile). Slowest: /blog  2.3 s" };
+
+export const NU_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = {
+  "aud-nu-001": {
+    coverage: { inScope: 30, assessed: NU_PAGES_001.length, excluded: 5, blocked: 2, unvisited: 4 },
+    pageIds: NU_PAGES_001,
+    // Criteria 1.4 has no Organization sameAs check.
+    checkIds: NU_BASE_CHECKS.filter((c) => c.id !== "chk-nu-21").map((c) => c.id),
+    overrides: {
+      ...nuCountOverrides(NU_PAGES_001),
+      "chk-nu-06": { status: "not_assessed", affected: null, affectedPaths: [], findingId: null, label: "Scope", snippet: "Search Console was not connected at audit time. Indexing coverage was not assessed." },
+      "chk-nu-18": NU_LCP_PASS,
+      "chk-nu-20": { snippet: `${NU_PATH(3)}: 6 visible questions and answers\nJSON-LD types found: Article, BreadcrumbList\n// FAQPage is missing` },
+    },
+    pageOverrides: { [nuPageId(1)]: { schemaIssues: [] }, [nuPageId(21)]: NU_CALCULATOR_FAST },
+    crawlerOverrides: {},
+    notice: "Criteria 1.4: the Organization sameAs check did not exist yet. It first runs in the October scheduled audit.",
+  },
+  "aud-nu-002": {
+    coverage: { inScope: 30, assessed: NU_PAGES_002.length, excluded: 5, blocked: 1, unvisited: 2 },
+    pageIds: NU_PAGES_002,
+    checkIds: "all",
+    overrides: {
+      ...nuCountOverrides(NU_PAGES_002),
+      "chk-nu-18": NU_LCP_PASS,
+    },
+    pageOverrides: { [nuPageId(21)]: NU_CALCULATOR_FAST },
+    crawlerOverrides: {},
+    notice: null,
+  },
+  "aud-nu-003": {
+    coverage: { inScope: 30, assessed: NU_PAGES_003.length, excluded: 5, blocked: 0, unvisited: 1 },
+    pageIds: NU_PAGES_003,
+    checkIds: "all",
+    overrides: {},
+    pageOverrides: {},
+    crawlerOverrides: {},
+    notice: null,
+  },
+  "aud-nu-004": {
+    coverage: { inScope: 5, assessed: 5, excluded: 0, blocked: 0, unvisited: 0 },
+    pageIds: NU_PAGES_004,
+    checkIds: ["chk-nu-01", "chk-nu-05", "chk-nu-06", "chk-nu-07", "chk-nu-15", "chk-nu-18", "chk-nu-25"],
+    overrides: {
+      "chk-nu-05": {
+        status: "pass",
+        affected: 0,
+        affectedPaths: [],
+        findingId: null,
+        snippet: `${NU_PATH(9)}: meta robots is now "index, follow". No noindex directive on 5 of 5 assessed pages.`,
+      },
+      "chk-nu-06": { status: "pass", affected: 0, affectedPaths: [], findingId: null, snippet: `Coverage report fetched for 5 URLs: 5 indexed (${NU_PATH(9)} re-indexed after the tag was removed)` },
+      "chk-nu-07": { snippet: "5 of 5 assessed indexable pages carry rel=canonical to themselves" },
+      "chk-nu-15": {
+        status: "warning",
+        affected: 1,
+        affectedPaths: [NU_PATH(19)],
+        findingId: "fnd-nu-004",
+        snippet: `Re-crawled 3 of the 6 recipe pages that shared a title:\n${NU_PATH(15)}  unique title\n${NU_PATH(16)}  unique title\n${NU_PATH(19)}  still "${NU_RECIPE_TITLE}"\nThe CMS change log shows 4 of 6 pages updated. The other 3 pages were not re-crawled in this audit.`,
+      },
+      "chk-nu-18": { snippet: `Lab LCP above 2.5 s (simulated mobile) on 1 of 5 assessed pages:\n${NU_PATH(21)}  3.4 s` },
+    },
+    pageOverrides: {
+      [nuPageId(9)]: { indexable: true, metaRobots: "index, follow" },
+      [nuPageId(15)]: { title: "Meal-prep recipes for the week | Nutrition", metaDescription: "Batch-cook recipes that keep for the week, with storage times and portion notes." },
+      [nuPageId(16)]: { title: "High-protein breakfast recipes | Nutrition", metaDescription: "Quick breakfasts built around eggs, yoghurt and legumes, with the protein per serving." },
+    },
+    crawlerOverrides: {},
+    notice: `Scoped to 5 URLs and 7 of ${NU_BASE_CHECKS.length} checks. Not comparable with a full audit.`,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// AI crawler access (reported separately per crawler, never merged)
+// ---------------------------------------------------------------------------
+
+const NU_DEFAULT_RULE = `(no group for this crawler)\n${NU_ROBOTS}`;
+
+export const NU_BASE_CRAWLERS: CrawlerAccess[] = [
+  {
+    id: "oai-searchbot",
+    name: "OAI-SearchBot",
+    purpose: "ChatGPT search",
+    allowed: true,
+    rule: NU_DEFAULT_RULE.replace("this crawler", "OAI-SearchBot"),
+    consequence: "Covered by the default rule, except /wp-admin. Pages can be crawled for ChatGPT search.",
+    findingId: null,
+  },
+  {
+    id: "gptbot",
+    name: "GPTBot",
+    purpose: "Model training",
+    allowed: true,
+    rule: NU_DEFAULT_RULE.replace("this crawler", "GPTBot"),
+    consequence: "Covered by the default rule. Training access is separate from ChatGPT search.",
+    findingId: null,
+  },
+  {
+    id: "chatgpt-user",
+    name: "ChatGPT-User",
+    purpose: "User-requested visits",
+    allowed: true,
+    rule: NU_DEFAULT_RULE.replace("this crawler", "ChatGPT-User"),
+    consequence: "Covered by the default rule. A ChatGPT user can have a page fetched on request.",
+    findingId: null,
+  },
+  {
+    id: "perplexitybot",
+    name: "PerplexityBot",
+    purpose: "Perplexity search",
+    allowed: true,
+    rule: NU_DEFAULT_RULE.replace("this crawler", "PerplexityBot"),
+    consequence: "Covered by the default rule. Pages can be crawled for Perplexity answers.",
+    findingId: null,
+  },
+  {
+    id: "google-extended",
+    name: "Google-Extended",
+    purpose: "Gemini model training",
+    allowed: true,
+    rule: NU_DEFAULT_RULE.replace("this crawler", "Google-Extended"),
+    consequence: "Covered by the default rule. This control affects Gemini training only, not Google Search.",
+    findingId: null,
+  },
+];
+
 // ---------------------------------------------------------------------------
 // Per-store lookup used by src/services/audit.ts
 // ---------------------------------------------------------------------------
@@ -666,10 +1073,94 @@ export type WebsiteBase = { pages: CrawledPage[]; checks: WebsiteCheck[]; crawle
 export const WEBSITE_BASES: Record<string, WebsiteBase> = {
   "runpro-pk": { pages: BASE_PAGES, checks: BASE_CHECKS, crawlers: BASE_CRAWLERS },
   "runpro-ae": { pages: AE_BASE_PAGES, checks: AE_BASE_CHECKS, crawlers: AE_BASE_CRAWLERS },
+  nutrition: { pages: NU_BASE_PAGES, checks: NU_BASE_CHECKS, crawlers: NU_BASE_CRAWLERS },
 };
 
 /** Configuration of every audit of every store, keyed by audit id (ids never collide across stores). */
-export const ALL_AUDIT_CONFIGS: Record<string, AuditConfig> = { ...AUDIT_CONFIGS, ...AE_AUDIT_CONFIGS };
+export const ALL_AUDIT_CONFIGS: Record<string, AuditConfig> = { ...AUDIT_CONFIGS, ...AE_AUDIT_CONFIGS, ...NU_AUDIT_CONFIGS };
 
 /** Website-lane variant of every audit that has a website lane. */
-export const ALL_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = { ...WEBSITE_VARIANTS, ...AE_WEBSITE_VARIANTS };
+export const ALL_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = { ...WEBSITE_VARIANTS, ...AE_WEBSITE_VARIANTS, ...NU_WEBSITE_VARIANTS };
+
+// ---------------------------------------------------------------------------
+// Extra demonstration audits: the origin types and end states the registry audits do not cover.
+// They are built like simulated audits (same engine, frozen clock), so the history shows every type and status.
+// ---------------------------------------------------------------------------
+
+export type ExtraAuditSpec = {
+  id: string;
+  title: string;
+  type: AuditType;
+  lanes: AuditLane[];
+  startedAt: string;
+  createdBy: string;
+  scenario: SimScenario;
+  /** Cancelled audits stop at this share of the run. */
+  cancelAt?: number;
+  promptIds?: string[];
+  samples: number;
+  trigger?: AuditTrigger;
+  verifies?: AuditVerifies;
+};
+
+export const EXTRA_AUDIT_SPECS: Record<string, ExtraAuditSpec[]> = {
+  "runpro-pk": [
+    {
+      id: "aud-005",
+      title: "Triggered audit — fix applied",
+      type: "triggered",
+      lanes: ["ai_visibility", "website_readiness"],
+      startedAt: "2026-11-16T10:05:00Z",
+      createdBy: "System",
+      scenario: "normal",
+      samples: 2,
+      trigger: { source: "fix_applied", reason: "Fix task for the Glide 2 product schema was marked applied", dedupKey: "fix_applied:fnd-002:2026-11-16" },
+    },
+    {
+      id: "aud-006",
+      title: "Scheduled audit — weekly AI visibility",
+      type: "scheduled",
+      lanes: ["ai_visibility"],
+      startedAt: "2026-11-09T06:00:00Z",
+      createdBy: "Schedule",
+      scenario: "normal",
+      promptIds: ["p-001", "p-002", "p-003"],
+      samples: 2,
+      trigger: { source: "schedule", reason: "Weekly, Mondays 06:00 UTC", cadence: "weekly", nextRunAt: "2026-11-23T06:00:00Z", dedupKey: "schedule:weekly:2026-11-09" },
+    },
+    {
+      id: "aud-007",
+      title: "Focused audit — delivery questions",
+      type: "focused",
+      lanes: ["ai_visibility"],
+      startedAt: "2026-11-17T13:20:00Z",
+      createdBy: "Sana Iqbal",
+      scenario: "normal",
+      cancelAt: 0.55,
+      promptIds: ["p-002", "p-004"],
+      samples: 2,
+    },
+    {
+      id: "aud-008",
+      title: "Verification — Glide 2 price schema",
+      type: "verification",
+      lanes: ["ai_visibility"],
+      startedAt: "2026-11-18T08:00:00Z",
+      createdBy: "Sana Iqbal",
+      scenario: "provider_outage",
+      promptIds: ["p-005", "p-001"],
+      samples: 1,
+      verifies: { findingId: "fnd-002" },
+    },
+    {
+      id: "aud-009",
+      title: "Full audit — crawl blocked",
+      type: "full",
+      lanes: ["ai_visibility", "website_readiness"],
+      startedAt: "2026-11-18T15:30:00Z",
+      createdBy: "Hira Malik",
+      scenario: "crawl_blocked",
+      samples: 2,
+    },
+  ],
+};

@@ -1,10 +1,20 @@
 /** Audit module types. Backend-agnostic shapes so real services can return the same data. */
-import type { Rate, SearchMode } from "@/types/core";
-import type { Finding, ResponseSample } from "@/types/shared-records";
+import type { PromptBase, PromptGroup, Rate, SearchMode } from "@/types/core";
+import type { EvidenceIds, Finding, ResponseSample } from "@/types/shared-records";
 
 export type AuditLane = "ai_visibility" | "website_readiness";
 export type AuditType = "initial" | "full" | "focused" | "verification" | "triggered" | "scheduled";
-export type AuditStatus = "completed" | "completed_with_warnings" | "in_progress" | "partially_completed";
+export type AuditStatus =
+  | "draft"
+  | "validating"
+  | "queued"
+  | "in_progress"
+  | "completed"
+  | "completed_with_warnings"
+  | "partially_completed"
+  | "blocked"
+  | "failed"
+  | "cancelled";
 
 export type CheckStatus = "pass" | "fail" | "warning" | "not_applicable" | "not_assessed" | "inconclusive" | "blocked" | "error";
 export type CheckGroup =
@@ -22,6 +32,23 @@ export type CheckGroup =
 /** Technical and content-quality pass rates are always reported separately. */
 export type CheckKind = "technical" | "content";
 
+/** Why a triggered or scheduled audit started. Manual audits have none. */
+export type AuditTrigger = {
+  source: "fix_applied" | "brand_fact" | "alert" | "competitor_suggested" | "schedule";
+  reason: string;
+  /** Prevents the same event from starting two audits. */
+  dedupKey?: string;
+  /** Scheduled audits only. */
+  cadence?: "weekly" | "monthly";
+  nextRunAt?: string;
+};
+
+/** What a verification audit re-checks. */
+export type AuditVerifies = { findingId: string; taskId?: string };
+
+/** Simulation switch for the demo: lets every end state be reached from the wizard. */
+export type SimScenario = "normal" | "provider_outage" | "crawl_blocked";
+
 export type AuditConfig = {
   promptScope: "all_active" | "groups" | "ids";
   promptIds: string[];
@@ -38,6 +65,19 @@ export type AuditConfig = {
   analysisVersion: string;
   integrations: { searchConsole: boolean; pageSpeed: boolean; cms: boolean };
   limits: { maxRequests: number; concurrency: number; budgetUsd: number };
+  /** Website lane: criteria categories evaluated. Omitted on earlier audits = all. */
+  categories?: string[];
+  searchModes?: Record<string, string>;
+  /** Exact prompt versions run (frozen when the audit starts). */
+  prompts?: { id: string; text: string; version: number }[];
+  trigger?: AuditTrigger;
+  verifies?: AuditVerifies;
+  scenario?: SimScenario;
+  /** Selected prompts the demonstration data has no answers for. Their requests fail in a simulation. */
+  noAnswerPromptIds?: string[];
+  /** Advanced limits (not shown by default). */
+  retries?: number;
+  timeoutSeconds?: number;
 };
 
 export type StageState = "done" | "running" | "queued";
@@ -254,11 +294,13 @@ export type WebsiteLane = {
   notice: string | null;
 };
 
-export type PageIssue = { checkId: string; name: string; status: CheckStatus; snippet: string };
+export type PageIssue = { checkId: string; name: string; status: CheckStatus; snippet: string; findingId?: string | null };
 
 export type AuditFinding = Finding & {
   /** First detected by this audit. */
   isNew: boolean;
+  /** Shared ids for the evidence trace (metric, prompt, response, fix, ...). */
+  evidenceIds?: EvidenceIds;
 };
 
 export type AuditTaskLink = { id: string; title: string; findingId: string; status: string };
@@ -293,15 +335,87 @@ export type WizardChannel = {
 
 export type WizardData = {
   store: { id: string; name: string; domain: string; market: string; marketName: string; language: string };
-  prompts: WizardPrompt[];
-  groups: { id: string; name: string }[];
+  /** Static prompts. The wizard merges prompts created in this browser (usePrompts). */
+  promptsBase: PromptBase[];
+  groups: PromptGroup[];
+  /** Prompts the demonstration basis has answers for; others show as failed requests in a simulation. */
+  answeredPromptIds: string[];
   channels: WizardChannel[];
   integrations: { searchConsole: boolean; cms: boolean; cmsNeedsAttention: boolean };
   knownPages: number | null;
   costPerJobUsd: number;
   costPerPageUsd: number;
-  /** Starting values taken from the store's latest full audit. */
+  /** Starting values taken from the website's latest full audit. */
   defaults: { samples: number; maxUrls: number; maxDepth: number; maxRequests: number; concurrency: number; budgetUsd: number; excludedPaths: string[] };
-  /** Where the demo "Start audit" lands: the running audit, else the latest full one. */
-  landingAudit: { id: string; title: string } | null;
+  findings: { id: string; title: string; lane: AuditLane; affectedPromptIds: string[] }[];
+  /** Frozen configuration of earlier audits, for "Run again". */
+  reruns: { id: string; title: string; type: AuditType; lanes: AuditLane[]; config: AuditConfig }[];
+  /** Page-type ids present in the crawl basis (Home, Category, ...). */
+  pageTypes: PageType[];
+  /** Number of website checks a full evaluation runs. */
+  checkCount: number;
+  /** Audit the simulation takes its answers and crawl facts from; null when the website has none yet. */
+  basisAuditId: string | null;
+};
+
+// ---------------------------------------------------------------------------
+// Simulated runs (created in this browser)
+// ---------------------------------------------------------------------------
+
+/** Deterministic plan of a simulated run. Everything the clock needs; no randomness at run time. */
+export type RunPlan = {
+  jobs: number;
+  pages: number;
+  checks: number;
+  /** Requests allowed by the request limit and the budget cap; below `jobs` the audit stops there. */
+  jobCap: number;
+  failPercent: number;
+  seed: number;
+  /** Request indexes that have no demonstration answer. They always fail, on top of the random failures. */
+  noAnswerSlots?: number[];
+  scenario: SimScenario;
+  /** Milliseconds from start to the end of the run, and the status it ends in. */
+  endAtMs: number;
+  outcome: AuditStatus;
+  /** Warnings that appear once the run clock passes `atMs`. */
+  warnings: { atMs: number; text: string }[];
+  aiLane: boolean;
+  webLane: boolean;
+};
+
+/** Clock of a run. Elapsed time excludes pauses; `endedElapsedMs` freezes it when the run ends or is cancelled. */
+export type RunState = { startedAtMs: number; pausedAtMs: number | null; pausedMs: number; endedElapsedMs: number | null };
+
+/** One row of the audits collection: a seeded summary, or a simulated audit with its frozen setup. */
+export type AuditRow = AuditSummary & {
+  paused?: boolean;
+  config?: AuditConfig;
+  plan?: RunPlan;
+  run?: RunState | null;
+  basisAuditId?: string;
+  endedAt?: string | null;
+  note?: string;
+  createdAt?: string;
+  simulated?: boolean;
+};
+
+/** Everything the browser needs to build the results of a simulated audit from an existing one. */
+export type AuditBasis = {
+  storeId: string;
+  brandName: string;
+  domain: string;
+  market: string;
+  language: string;
+  basisAudit: { id: string; title: string };
+  basisConfig: AuditConfig;
+  responses: ResponseSample[];
+  channels: WizardChannel[];
+  prompts: { id: string; text: string; version: number; groupId: string | null; status: string }[];
+  groups: { id: string; name: string }[];
+  suggestedCompetitors: { id: string; name: string }[];
+  pages: CrawledPage[];
+  checks: WebsiteCheck[];
+  crawlers: CrawlerAccess[];
+  findings: (Finding & { evidenceIds: EvidenceIds })[];
+  tasks: AuditTaskLink[];
 };

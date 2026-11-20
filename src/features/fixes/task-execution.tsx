@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Badge, Status } from "@/components/ui/badge";
+import { DemoBadge } from "@/components/ui/demo";
 import { Button } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
 import { Stepper } from "@/components/ui/feedback";
@@ -11,7 +12,6 @@ import { Checkbox, Field, Textarea } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { DiffView, Mono } from "@/components/ui/misc";
 import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
-import { useToast } from "@/components/ui/toast";
 import { formatDateTime } from "@/lib/format";
 import type { Role } from "@/types/core";
 import type { ApprovalState, BatchItem, CmsState, ExecutionMode, ExecutionRecord, FieldOutcome, RemoteCheck, TaskDraft, TaskStatus } from "@/types/fixes";
@@ -43,10 +43,17 @@ export function cmsStateFor(status: TaskStatus, record: CmsState, mode: Executio
   return record;
 }
 
-function nextWrite(status: TaskStatus, mode: ExecutionMode, platform: string): { label: string; target: TaskStatus } | null {
+/** "read_content" becomes "Read content". Scope names stay neutral; no platform names. */
+const scopeLabel = (scope: string) => {
+  const text = scope.replace(/_/g, " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+function nextWrite(status: TaskStatus, mode: ExecutionMode): { label: string; target: TaskStatus } | null {
   if (mode === "guidance" || mode === "ai_draft") return null;
-  if (status === "approved" || status === "queued") return mode === "cms_staged" ? { label: "Stage draft", target: "staged" } : { label: `Apply to ${platform}`, target: "applied" };
-  if (status === "staged") return { label: `Apply to ${platform}`, target: "applied" };
+  if (status === "draft_ready" && mode === "cms_staged") return { label: "Stage draft", target: "staged" };
+  if (status === "approved" || status === "queued") return mode === "cms_staged" ? { label: "Stage draft", target: "staged" } : { label: "Apply change", target: "applied" };
+  if (status === "staged") return { label: "Apply change", target: "applied" };
   if (status === "applied") return { label: "Publish", target: "published" };
   return null;
 }
@@ -61,25 +68,32 @@ type Props = {
   mode: ExecutionMode;
   approvalState: ApprovalState;
   diffHash: string | null;
-  viewRole: Role;
+  role: Role;
   batch: Record<string, BatchItem["result"]>;
   onWrite: (target: TaskStatus, label: string) => void;
   onRollback: (reason: string) => void;
   onRedraft: () => void;
+  onRecheck: () => void;
 };
 
 function Scope({ name, ok }: { name: string; ok?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-line-strong bg-surface px-2 py-0.5 text-xs">
-      {ok === undefined ? null : <Icon name={ok ? "check-circle" : "x-circle"} size={12} className={ok ? "text-success" : "text-danger"} />}
+      {ok === undefined ? null : <Icon name={ok ? "check-circle" : "x-circle"} size={12} className={ok ? "text-success-icon" : "text-danger-icon"} />}
       <span className="font-mono">{name}</span>
     </span>
   );
 }
 
+/** One line of what the write changes, for the confirmation. */
+function changeSummary(draft: TaskDraft, fields: FieldOutcome[]): string {
+  if (draft.kind === "batch") return `${draft.items.filter((i) => i.result !== "excluded").length} items. Excluded items are not written.`;
+  if (fields[0]) return `${fields[0].field}: ${fields.length} ${fields.length === 1 ? "field" : "fields"} changed.`;
+  return "One change.";
+}
+
 /** Connector, scopes, remote version check, exact diff, per-field outcome, CMS state and rollback. */
-export function TaskExecutionTab({ storeId, execution, remote, draft, text, status, mode, approvalState, diffHash, viewRole, batch, onWrite, onRollback, onRedraft }: Props) {
-  const toast = useToast();
+export function TaskExecutionTab({ storeId, execution, remote, draft, text, status, mode, approvalState, diffHash, role, batch, onWrite, onRollback, onRedraft, onRecheck }: Props) {
   const [confirm, setConfirm] = useState<{ label: string; target: TaskStatus } | null>(null);
   const [rolling, setRolling] = useState(false);
   const [ack, setAck] = useState(false);
@@ -88,15 +102,14 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
   const { connector, rollback } = execution;
   const cms = cmsStateFor(status, execution.cmsState, mode);
   const stepIndex = Math.max(0, CMS_STEPS.indexOf(cms));
-  const platform = connector?.label ?? "the store";
-  const write = nextWrite(status, mode, platform);
-  const canExecute = viewRole === "owner" || viewRole === "admin" || viewRole === "editor";
+  const write = nextWrite(status, mode);
+  const canExecute = role === "owner" || role === "admin" || role === "editor";
   const changed = Boolean(remote?.changed);
   const failure = execution.failure ?? null;
-  const connectionBlock = connector && connector.state !== "connected" ? `${connector.label} connection needs attention. Reconnect it first.` : null;
+  const connectionBlock = connector && connector.state !== "connected" ? "The connector needs attention. Reconnect it first." : null;
   const stageWord = failure?.stage === "stage" ? "staging" : failure?.stage === "publish" ? "publish" : "apply";
   const retryTarget: TaskStatus = failure?.stage === "stage" ? "staged" : failure?.stage === "publish" ? "published" : "applied";
-  const retry = failure && status === "failed" && mode !== "guidance" && mode !== "ai_draft" ? { label: `Retry ${stageWord}`, target: retryTarget } : null;
+  const retry = failure && status === "failed" && mode !== "guidance" && mode !== "ai_draft" ? { label: draft.kind === "batch" ? "Retry failed items" : `Retry ${stageWord}`, target: retryTarget } : null;
 
   let writeBlock: string | null = null;
   if (write || retry) {
@@ -122,45 +135,45 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
     <div className="flex flex-col gap-4">
       <div className={cms === "guidance" ? "grid grid-cols-[minmax(0,1fr)] gap-4" : "grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2"}>
         <Card>
-          <CardHeader title="Connector" />
+          <CardHeader title="Connector" subtitle="Optional" actions={connector && connector.state !== "disconnected" ? <DemoBadge>Demo</DemoBadge> : <Badge tone="neutral" icon="plug">Not connected</Badge>} />
           <CardBody className="flex flex-col gap-3">
             {connector ? (
               <>
-              <KeyValue
-                columns={1}
-                items={[
-                  { label: "Connected to", value: `${connector.label} · ${connector.store}` },
-                  { label: "Connection", value: <Status kind="integration" value={connector.state} /> },
-                  {
-                    label: "Granted scopes",
-                    value: (
-                      <span className="flex flex-wrap gap-1.5">
-                        {connector.scopesGranted.map((scope) => (
-                          <Scope key={scope} name={scope} />
-                        ))}
-                      </span>
-                    ),
-                  },
-                  {
-                    label: "Scopes this task needs",
-                    value: (
-                      <span className="flex flex-wrap gap-1.5">
-                        {connector.scopesRequired.map((scope) => (
-                          <Scope key={scope} name={scope} ok={connector.scopesGranted.includes(scope)} />
-                        ))}
-                      </span>
-                    ),
-                  },
-                ]}
-              />
-              {connector.note ? <p className="text-xs text-fg-subtle">{connector.note}</p> : null}
-              {connector.state !== "connected" ? (
-                <Link href={`/stores/${storeId}/settings`} className="text-[13px] font-medium text-accent-text hover:underline">Open store settings to reconnect</Link>
-              ) : null}
+                <KeyValue
+                  columns={1}
+                  items={[
+                    { label: "Site", value: connector.site },
+                    { label: "Connection", value: <Status kind="integration" value={connector.state} /> },
+                    {
+                      label: "Granted access",
+                      value: (
+                        <span className="flex flex-wrap gap-1.5">
+                          {connector.scopesGranted.map((scope) => (
+                            <Scope key={scope} name={scopeLabel(scope)} />
+                          ))}
+                        </span>
+                      ),
+                    },
+                    {
+                      label: "This task needs",
+                      value: (
+                        <span className="flex flex-wrap gap-1.5">
+                          {connector.scopesRequired.map((scope) => (
+                            <Scope key={scope} name={scopeLabel(scope)} ok={connector.scopesGranted.includes(scope)} />
+                          ))}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+                {connector.note ? <p className="text-helper text-fg-subtle">{connector.note}</p> : null}
+                {connector.state !== "connected" ? (
+                  <Link href={`/stores/${storeId}/settings`} className="text-label font-medium text-accent-text hover:underline">Open website settings to reconnect</Link>
+                ) : null}
               </>
             ) : (
-              <Callout tone="neutral" title="No connector used">
-                {mode === "guidance" ? "A person makes any change." : "A person applied this change outside Rankvora Plus."}
+              <Callout tone="neutral" title="Not connected">
+                {mode === "guidance" ? "A person makes any change." : "Writes are simulated. A connector is optional."}
               </Callout>
             )}
           </CardBody>
@@ -168,7 +181,7 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
 
         {cms === "guidance" ? null : (
           <Card>
-            <CardHeader title="CMS state" info="Draft and staged are not live. Applied and published are not verified." />
+            <CardHeader title="Change state" info="Draft and staged are not live. Applied and published are not verified." />
             <CardBody className="flex flex-col gap-3">
               <Stepper
                 steps={CMS_STEPS.map((s) => ({ id: s, label: CMS_STATE_LABEL[s] }))}
@@ -217,7 +230,7 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
               <Button
                 size="sm"
                 icon="refresh"
-                onClick={() => toast.push({ title: changed ? "Still changed" : "Remote unchanged", description: changed ? "The resource still differs from the draft." : `Version ${remote.versionNow} matches the draft.`, tone: changed ? "warning" : "success" })}
+                onClick={onRecheck}
               >
                 Re-check
               </Button>
@@ -321,21 +334,25 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
                 { label: "Outcome", value: rollback.record.outcome === "restored" ? "Restored" : "Restored with manual merge" },
               ]}
             />
-            <Callout tone="warning" title="Later edit kept">
-              {rollback.record.note} Kept: {rollback.record.preservedEdits.join(", ")}.
-            </Callout>
+            {rollback.record.preservedEdits.length > 0 ? (
+              <Callout tone="warning" title="Later edit kept">
+                {rollback.record.note} Kept: {rollback.record.preservedEdits.join(", ")}.
+              </Callout>
+            ) : (
+              <p className="text-helper text-fg-subtle">{rollback.record.note}</p>
+            )}
           </CardBody>
         </Card>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
         {write ? (
-          <Button variant="primary" icon="bolt" disabled={Boolean(writeBlock) || changed} title={changed ? "Resource changed since draft" : undefined} onClick={() => setConfirm(write)}>
+          <Button variant="secondary" icon="bolt" disabled={Boolean(writeBlock) || changed} title={changed ? "Resource changed since draft" : undefined} onClick={() => setConfirm(write)}>
             {write.label}
           </Button>
         ) : null}
         {retry ? (
-          <Button variant="primary" icon="refresh" disabled={Boolean(writeBlock) || changed} title={changed ? "Resource changed since draft" : undefined} onClick={() => setConfirm(retry)}>
+          <Button variant="secondary" icon="refresh" disabled={Boolean(writeBlock) || changed} title={changed ? "Resource changed since draft" : undefined} onClick={() => setConfirm(retry)}>
             {retry.label}
           </Button>
         ) : null}
@@ -374,8 +391,9 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
         }}
       >
         <p>
-          This writes the exact diff to <span className="font-medium text-fg">{connector ? `${connector.label} · ${connector.store}` : "the connected store"}</span>. Approved diff <Mono>{shortHash(diffHash)}</Mono> is checked against the remote version first.
+          Simulated: records this write of the exact diff{connector ? <> to <span className="font-medium text-fg">{connector.site}</span></> : null}. Nothing is sent to a real site. Approved diff <Mono>{shortHash(diffHash)}</Mono> is checked against the remote version first.
         </p>
+        <p className="mt-2 text-fg-muted">{changeSummary(draft, fields)}</p>
       </ConfirmDialog>
 
       <Dialog

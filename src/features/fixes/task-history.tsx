@@ -1,11 +1,11 @@
 import { Card, CardBody } from "@/components/ui/card";
 import type { IconName } from "@/components/ui/icon";
 import { Timeline } from "@/components/ui/misc";
-import { DEMO_NOW, formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import type { Tone } from "@/lib/status";
 import type { HistoryEvent, HistoryKind } from "@/types/fixes";
 
-const KIND: Record<HistoryKind, { icon: IconName; tone: Tone }> = {
+export const HISTORY_VIEW: Record<HistoryKind, { icon: IconName; tone: Tone }> = {
   created: { icon: "circle-dot", tone: "accent" },
   draft: { icon: "file-text", tone: "info" },
   approval: { icon: "check-circle", tone: "success" },
@@ -24,10 +24,10 @@ export function TaskHistoryTab({ events }: { events: HistoryEvent[] }) {
         <Timeline
           items={ordered.map((event) => ({
             id: event.id,
-            icon: KIND[event.kind].icon,
-            tone: KIND[event.kind].tone,
+            icon: HISTORY_VIEW[event.kind].icon,
+            tone: HISTORY_VIEW[event.kind].tone,
             title: event.title,
-            time: event.at === DEMO_NOW ? "Just now (demo)" : formatDateTime(event.at),
+            time: formatDateTime(event.at),
             meta: (
               <>
                 {event.actor}

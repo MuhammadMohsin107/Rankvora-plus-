@@ -1,15 +1,20 @@
+"use client";
+
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { Icon } from "@/components/ui/icon";
-import { listPromptsBase } from "@/services/core";
+
+import { useMonitoring } from "./state";
 
 /**
- * Shown on every Monitoring tab of a store that has no schedule yet. A store with
- * no AI channel gets a three-step setup view with one next action: connect a channel.
+ * Shown on every Monitoring tab of a website that has no schedule yet. A website with no AI provider connected gets one
+ * card with the three setup steps and one next action: connect a provider.
  */
-export async function NoSchedules({ storeId, canSchedule }: { storeId: string; canSchedule: boolean }) {
-  if (canSchedule) {
+export function NoSchedules() {
+  const { data, prompts } = useMonitoring();
+  const storeId = data.storeId;
+  if (data.canSchedule) {
     return (
       <EmptyState
         icon="monitoring"
@@ -20,42 +25,34 @@ export async function NoSchedules({ storeId, canSchedule }: { storeId: string; c
     );
   }
 
-  const prompts = await listPromptsBase(storeId);
   const active = prompts.filter((p) => p.status === "active").length;
   const steps = [
-    {
-      id: "prompts",
-      done: prompts.length > 0,
-      label: prompts.length > 0 ? `${prompts.length} prompt${prompts.length === 1 ? "" : "s"} saved · ${active} active` : "No prompts saved yet",
-      detail: prompts.length > 0 ? "Draft and paused prompts are skipped when a run starts." : "Add prompts in the prompt library.",
-    },
-    { id: "channel", done: false, label: "No AI channel connected", detail: "Monitoring sends prompts through a provider API. Connect at least one." },
-    { id: "schedule", done: false, label: "No schedule yet", detail: "Available once a channel is connected." },
+    { id: "prompts", done: prompts.length > 0, label: prompts.length > 0 ? `${prompts.length} prompt${prompts.length === 1 ? "" : "s"} · ${active} active` : "No prompts yet" },
+    { id: "provider", done: false, label: "Connect an AI provider" },
+    { id: "schedule", done: false, label: "Create a schedule" },
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <EmptyState
-        icon="monitoring"
-        title="Connect an AI channel first"
-        description="Monitoring runs prompts through an AI channel. This store has none yet, so there are no runs, alerts or usage to show."
-        action={<ButtonLink href={`/stores/${storeId}/settings`} variant="primary" icon="plug">Connect an AI channel</ButtonLink>}
-      />
-      <Card>
-        <CardBody>
-          <ol className="flex flex-col gap-3" aria-label="Monitoring setup steps">
-            {steps.map((step, index) => (
-              <li key={step.id} className="flex items-start gap-3">
-                <Icon name={step.done ? "check-circle" : "circle"} size={18} className={step.done ? "mt-0.5 shrink-0 text-success" : "mt-0.5 shrink-0 text-fg-subtle"} />
-                <div className="min-w-0">
-                  <p className="tnum text-[13px] font-medium text-fg">{index + 1}. {step.label}<span className="sr-only">{step.done ? " (done)" : " (not done)"}</span></p>
-                  <p className="text-xs text-fg-subtle">{step.detail}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </CardBody>
-      </Card>
-    </div>
+    <Card>
+      <CardBody className="flex flex-col items-start gap-5">
+        <div>
+          <h2 className="text-section font-semibold text-fg">Connect an AI provider first</h2>
+          <p className="mt-1 text-body-sm text-fg-muted">Monitoring needs one provider before it can run.</p>
+        </div>
+        <ol className="flex flex-col gap-2.5" aria-label="Monitoring setup steps">
+          {steps.map((step, index) => (
+            <li key={step.id} className="flex items-center gap-2.5 text-body-sm">
+              <Icon name={step.done ? "check-circle" : "circle"} size={18} className={step.done ? "shrink-0 text-success-icon" : "shrink-0 text-fg-faint"} />
+              <span className={step.done ? "text-fg-muted" : "text-fg"}>
+                <span className="tnum">{index + 1}. </span>
+                {step.label}
+                <span className="sr-only">{step.done ? " (done)" : " (not done)"}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+        <ButtonLink href={`/stores/${storeId}/settings`} variant="primary" icon="plug">Connect a provider</ButtonLink>
+      </CardBody>
+    </Card>
   );
 }

@@ -149,6 +149,38 @@ export const DEMO_STORES: Store[] = [
     createdAt: "2026-11-10T14:00:00Z",
     summary: null,
   },
+  // Fictional informational website ("Nutrition"). Not a shop; the CMS connection is an optional WordPress example.
+  // 7 active prompts × 3 channels × 2 samples = 42 planned jobs per full run. Headline numbers are recomputed from the registry.
+  {
+    id: "nutrition",
+    name: "Nutrition",
+    brandName: "Nutrition",
+    domain: "nutrition.example",
+    platform: "wordpress",
+    market: "SG",
+    marketName: "Singapore (demo market)",
+    language: "en",
+    timezone: "Asia/Singapore",
+    status: "active",
+    industry: "Nutrition & Wellness",
+    integrations: { commerce: "connected", searchConsole: "connected" },
+    channelIds: ["ch-openai", "ch-gemini", "ch-perplexity"],
+    createdAt: "2026-10-06T08:00:00Z",
+    summary: {
+      mention: { n: 18, d: 42 },
+      mentionPrevious: { n: 16, d: 40 },
+      recommendation: { n: 8, d: 42 },
+      recommendationPrevious: { n: 7, d: 40 },
+      ownedCitation: { n: 0, d: 0 },
+      ownedCitationPrevious: { n: 0, d: 0 },
+      openFindings: 0,
+      pendingTasks: 0,
+      openAlerts: 0,
+      lastRunAt: "2026-11-16T01:00:00Z",
+      nextRunAt: "2026-11-23T01:00:00Z",
+      activePrompts: 7,
+    },
+  },
 ];
 
 export const DEMO_COMPETITORS: Competitor[] = [
@@ -163,6 +195,10 @@ export const DEMO_COMPETITORS: Competitor[] = [
   { id: "c-ironnest-uk", storeId: "homefit-uk", name: "IronNest", domains: ["ironnest.example"], aliases: ["Iron Nest"], status: "confirmed", market: "GB" },
   { id: "c-flexform-uk", storeId: "homefit-uk", name: "FlexForm", domains: ["flexform.example"], aliases: [], status: "confirmed", market: "GB" },
   { id: "c-liftloft-uk", storeId: "homefit-uk", name: "LiftLoft", domains: ["liftloft.example"], aliases: [], status: "suggested", market: "GB" },
+  { id: "c-nourishwell-nu", storeId: "nutrition", name: "NourishWell", domains: ["nourishwell.example"], aliases: ["Nourish Well"], status: "confirmed", market: "SG" },
+  { id: "c-balancedbite-nu", storeId: "nutrition", name: "BalancedBite", domains: ["balancedbite.example"], aliases: ["Balanced Bite"], status: "confirmed", market: "SG" },
+  { id: "c-vitaplate-nu", storeId: "nutrition", name: "VitaPlate", domains: ["vitaplate.example"], aliases: [], status: "confirmed", market: null },
+  { id: "c-greenfork-nu", storeId: "nutrition", name: "GreenFork Guide", domains: ["greenfork.example"], aliases: ["GreenFork"], status: "suggested", market: "SG" },
 ];
 
 export const DEMO_GROUPS: PromptGroup[] = [
@@ -229,32 +265,64 @@ export const DEMO_PRODUCTS: ProductService[] = [
   { id: "pr-uk-rack", storeId: "homefit-uk", title: "HomeFit Folding Squat Rack", category: "Racks and benches", url: "https://homefit.example/products/folding-squat-rack" },
   { id: "pr-uk-dumbbell", storeId: "homefit-uk", title: "HomeFit Adjustable Dumbbell Set 2-24 kg", category: "Free weights", url: "https://homefit.example/products/adjustable-dumbbells" },
   { id: "pr-uk-rower", storeId: "homefit-uk", title: "HomeFit Compact Rowing Machine", category: "Cardio", url: "https://homefit.example/products/compact-rower" },
+  { id: "pr-nu-mealplan", storeId: "nutrition", title: "Weekly Meal Planning Guide", category: "Guides", url: "https://nutrition.example/guides/meal-planning" },
+  { id: "pr-nu-basics", storeId: "nutrition", title: "Nutrition Basics course", category: "Courses", url: "https://nutrition.example/courses/nutrition-basics" },
+  { id: "pr-nu-newsletter", storeId: "nutrition", title: "Weekly Wellness newsletter", category: "Newsletter", url: "https://nutrition.example/newsletter" },
+  { id: "pr-nu-consult", storeId: "nutrition", title: "Nutrition information consultation", category: "Services", url: "https://nutrition.example/consultations" },
 ];
 
 export const DEMO_ALERTS: AlertHeadline[] = [
   { id: "al-001", storeId: "runpro-pk", severity: "medium", title: "New mention: “Best running shoe brands for beginners?” on OpenAI", at: "2026-11-17T04:41:00Z", read: false },
   { id: "al-002", storeId: "runpro-pk", severity: "high", title: "Lost mention candidate: “Affordable running shoes” on Gemini", at: "2026-11-17T04:44:00Z", read: false },
   { id: "al-003", storeId: "runpro-pk", severity: "low", title: "Owned citation gained on Perplexity", at: "2026-11-17T04:52:00Z", read: false },
-  { id: "al-004", storeId: "runpro-ae", severity: "medium", title: "Commerce connection needs attention", at: "2026-11-18T05:30:00Z", read: true },
+  { id: "al-004", storeId: "runpro-ae", severity: "medium", title: "Site connection needs attention", at: "2026-11-18T05:30:00Z", read: true },
   { id: "al-005", storeId: "runpro-pk", severity: "info", title: "Weekly monitoring run completed with warnings", at: "2026-11-17T05:12:00Z", read: true },
   // runpro-ae: unread = open (al-006…008); read = resolved or auto-closed.
-  { id: "al-006", storeId: "runpro-ae", severity: "high", title: "Commerce connection still needs attention: product sync failed 3 times", at: "2026-11-19T06:00:00Z", read: false },
+  { id: "al-006", storeId: "runpro-ae", severity: "high", title: "Site connection failed 3 syncs", at: "2026-11-19T06:00:00Z", read: false },
   { id: "al-007", storeId: "runpro-ae", severity: "medium", title: "New mention: “Where can I buy running shoes in Dubai?” on OpenAI", at: "2026-11-18T05:25:00Z", read: false },
   { id: "al-008", storeId: "runpro-ae", severity: "low", title: "Owned citation gained on OpenAI for the Dubai buying prompt", at: "2026-11-18T05:26:00Z", read: false },
   { id: "al-009", storeId: "runpro-ae", severity: "medium", title: "New recommendation: “RunPro vs Brand X running shoes in the UAE” on Gemini", at: "2026-11-11T05:24:00Z", read: true },
   { id: "al-010", storeId: "runpro-ae", severity: "medium", title: "New mention: “RunPro vs Brand X running shoes in the UAE” on Gemini", at: "2026-11-04T05:24:00Z", read: true },
   { id: "al-011", storeId: "runpro-ae", severity: "info", title: "Weekly monitoring run completed with warnings (2 of 30 jobs failed)", at: "2026-11-04T05:26:00Z", read: true },
+  // Brand fact errors (unread, open), then older alerts of Monitoring events so every alert has one shared id.
+  { id: "al-012", storeId: "runpro-pk", severity: "high", title: "Brand fact error: Perplexity states the Glide 2 price as PKR 13,500", at: "2026-11-17T04:49:00Z", read: false },
+  { id: "al-013", storeId: "runpro-ae", severity: "high", title: "Brand fact error: OpenAI quotes the Glide 2 price in USD", at: "2026-11-18T05:28:00Z", read: false },
+  { id: "al-014", storeId: "runpro-pk", severity: "high", title: "Gemini error spike: 9 jobs timed out in the 27 Oct run", at: "2026-10-27T04:50:00Z", read: true },
+  { id: "al-015", storeId: "runpro-pk", severity: "medium", title: "Lost mention candidate: “Where can I buy beginner running shoes in Lahore?” on Gemini", at: "2026-10-27T04:47:00Z", read: true },
+  { id: "al-016", storeId: "runpro-pk", severity: "low", title: "Owned citation lost: “Where can I buy beginner running shoes in Lahore?” on Gemini", at: "2026-10-27T04:47:00Z", read: true },
+  { id: "al-017", storeId: "runpro-pk", severity: "low", title: "Rank movement: average list position 1.8 → 2.1", at: "2026-10-27T04:55:00Z", read: true },
+  { id: "al-018", storeId: "runpro-pk", severity: "medium", title: "New recommendation: “Which RunPro shoe is suitable for long-distance running?” on Perplexity", at: "2026-10-20T04:46:00Z", read: true },
+  { id: "al-019", storeId: "runpro-pk", severity: "low", title: "Competitor increase: competitor-domain citations 56% → 60%", at: "2026-10-13T04:49:00Z", read: true },
+  { id: "al-020", storeId: "runpro-ae", severity: "low", title: "Owned citation gained: “RunPro vs Brand X running shoes in the UAE” on Gemini", at: "2026-11-04T05:24:00Z", read: true },
+  { id: "al-021", storeId: "runpro-ae", severity: "medium", title: "Gemini errors: 1 job hit a rate limit in the 4 Nov run", at: "2026-11-04T05:25:00Z", read: true },
+  { id: "al-022", storeId: "runpro-ae", severity: "medium", title: "New recommendation: “RunPro vs Brand X running shoes in the UAE” on OpenAI", at: "2026-10-21T05:24:00Z", read: true },
+  { id: "al-023", storeId: "runpro-ae", severity: "low", title: "Owned citation gained: “RunPro vs Brand X running shoes in the UAE” on OpenAI", at: "2026-10-21T05:24:00Z", read: true },
+  { id: "al-024", storeId: "runpro-ae", severity: "low", title: "Gemini errors: 1 job timed out in the 21 Oct run", at: "2026-10-21T05:25:00Z", read: true },
+  // nutrition: unread = open (al-025…027); read = resolved or auto-closed. Monitoring events (src/demo/monitoring.ts) reuse these ids.
+  // Titles were checked against the generated responses of run-nu-001…006 (slots, failure counts, competitor rates), see EVENT_SPECS.
+  { id: "al-025", storeId: "nutrition", severity: "high", title: "Brand fact error: Gemini describes the Nutrition Basics course as paid", at: "2026-11-16T01:49:00Z", read: false },
+  { id: "al-026", storeId: "nutrition", severity: "medium", title: "New mention: “How do I build a balanced weekly meal plan?” on OpenAI", at: "2026-11-16T01:31:00Z", read: false },
+  { id: "al-027", storeId: "nutrition", severity: "low", title: "Owned citation gained on OpenAI for the meal-plan prompt", at: "2026-11-16T01:36:00Z", read: false },
+  { id: "al-028", storeId: "nutrition", severity: "info", title: "Weekly monitoring run completed (42 of 42 jobs succeeded)", at: "2026-11-16T01:44:00Z", read: true },
+  { id: "al-029", storeId: "nutrition", severity: "medium", title: "New recommendation: “How do I build a balanced weekly meal plan?” on Gemini", at: "2026-11-09T01:30:00Z", read: true },
+  { id: "al-030", storeId: "nutrition", severity: "medium", title: "Sentiment change: positive share of answers 11% → 15%", at: "2026-11-02T01:33:00Z", read: true },
+  { id: "al-031", storeId: "nutrition", severity: "low", title: "Competitor increase: BalancedBite named in 78% → 83% of answers", at: "2026-11-02T01:45:00Z", read: true },
+  { id: "al-032", storeId: "nutrition", severity: "high", title: "Provider errors up: 5 of 42 jobs failed in the 26 Oct run (OpenAI 2, Perplexity 2, Gemini 1)", at: "2026-10-26T01:46:00Z", read: true },
+  { id: "al-033", storeId: "nutrition", severity: "info", title: "Weekly monitoring run completed with warnings (4 of 42 jobs failed)", at: "2026-10-12T01:41:00Z", read: true },
 ];
 
 export const DEMO_USAGE: OrgUsage = {
   periodLabel: "Nov 2026",
   requestCap: 2400,
-  requests: 1054,
+  requests: 1252,
   perStore: [
     { storeId: "runpro-pk", requests: 912, cap: 1500 },
     // 3 weekly runs (4, 11, 18 Nov) x 30 requests, the 5 Nov full audit (30) and the 14 Nov focused audit (12),
     // plus 10 retry requests for the 5 failed jobs in that period (2 jobs in run-ae-004, 3 in aud-ae-003).
     { storeId: "runpro-ae", requests: 142, cap: 700 },
     { storeId: "homefit-uk", requests: 0, cap: 200 },
+    // 3 weekly runs (2, 9, 16 Nov) x 42 requests, the 9 Nov full audit (42), the 16 Nov verification audit (6) and the 18 Nov
+    // triggered audit (12), plus 12 retry requests for the 6 failed jobs in that period (1 in run-nu-004, 2 in run-nu-005, 3 in aud-nu-005).
+    { storeId: "nutrition", requests: 198, cap: 450 },
   ],
 };

@@ -2,15 +2,11 @@
 import type { Rate, SearchMode } from "@/types/core";
 import type { ResponseOutcome, ResponseSample } from "@/types/shared-records";
 
-export type ComparisonType =
-  | "snapshot_vs_snapshot"
-  | "period_vs_period"
-  | "initial_vs_latest"
-  | "before_after_fixes"
-  | "prompt_topic"
-  | "platform"
-  | "brand_vs_competitors"
-  | "store_portfolio";
+/**
+ * The four comparison types offered by the wizard. "platform" is a legacy value some saved records
+ * carry; prompt, platform and competitor views are breakdown tabs and scope filters, not types.
+ */
+export type ComparisonType = "snapshot_vs_snapshot" | "period_vs_period" | "initial_vs_latest" | "before_after_fixes" | "platform";
 
 export type Comparability = "comparable" | "partially_comparable" | "comparable_with_warnings" | "not_comparable" | "insufficient_data";
 export type ComparisonStatusValue = "completed" | "completed_with_warnings" | "partially_comparable" | "not_comparable" | "insufficient_data";
@@ -25,6 +21,8 @@ export type SlotCore = {
   promptId: string;
   promptVersion: number;
   groupId: string | null;
+  /** Prompt topic, when the prompt has one. */
+  topic?: string | null;
   channelId: string;
   model: string;
   sample: number;
@@ -55,8 +53,12 @@ export type SlotRow = SlotCore & {
 
 export type ComparisonFilters = {
   groupId?: string;
+  topic?: string;
   promptId?: string;
+  /** One provider API + model + search mode. */
   channelId?: string;
+  /** Every channel of one provider (used when no single model is chosen). */
+  channelIds?: string[];
   market?: string;
   language?: string;
   competitorId?: string;
@@ -113,11 +115,20 @@ export type MetricResult = {
   label: string;
   unit: string;
   info?: string;
-  /** Primary aggregation. Under the macro policy n can be fractional (a sum of slot rates). */
+  /**
+   * Integer counts of the matched cohort (every successful response counted once). Never fractional.
+   * Under the "average" basis the headline rate is `baselineRate`, not n / d.
+   */
   baseline: Rate | null;
   current: Rate | null;
+  /** Same integer counts as baseline / current, kept for older readers. */
   pooledBaseline: Rate | null;
   pooledCurrent: Rate | null;
+  /** "average": headline rate is the mean of per-slot rates. "pooled": headline rate is n / d. */
+  basis: "average" | "pooled";
+  /** Headline rates as fractions 0 to 1 (null when not available). */
+  baselineRate: number | null;
+  currentRate: number | null;
   /** Matched slots that qualify for this metric. */
   cohort: number;
   pointChange: number | null;
@@ -133,7 +144,17 @@ export type MetricResult = {
   goodWhen: "up" | "down";
 };
 
-export type PairSummary = { n: number; d: number; recommended: number; failed: number; outcome: ResponseOutcome | null; latestResponseId: string | null };
+export type PairSummary = {
+  n: number;
+  d: number;
+  recommended: number;
+  /** Responses citing the owned domain, out of `citationD` responses that returned citation data. */
+  cited: number;
+  citationD: number;
+  failed: number;
+  outcome: ResponseOutcome | null;
+  latestResponseId: string | null;
+};
 
 export type PairRow = SlotLabel & {
   promptText: string;
@@ -143,6 +164,7 @@ export type PairRow = SlotLabel & {
   /** Mention change between the two sides. */
   change: "gained" | "lost" | "unchanged";
   recommendationChange: "gained" | "lost" | "unchanged";
+  citationChange: "gained" | "lost" | "unchanged" | "n/a";
 };
 
 export type PairRowWithResponses = PairRow & { baselineResponse: ResponseSample | null; currentResponse: ResponseSample | null };
@@ -213,12 +235,29 @@ export type ComparisonResult = {
   runs: { baseline: string[]; current: string[] };
 };
 
+/** What a created comparison is made of. It is encoded into the comparison id, so any id can be recomputed. */
+export type ComparisonDefinition = {
+  type: ComparisonType;
+  /** Snapshot id or a date window ("2026-10-01 – 2026-10-31"). */
+  baseline: string;
+  current: string;
+  filters: ComparisonFilters;
+  aggregation: AggregationPolicy;
+  /** Fix task for before-after comparisons. */
+  taskId?: string;
+};
+
 export type ComparisonRecord = {
   id: string;
+  /** Website the comparison belongs to (route segment). */
+  storeId: string;
   title: string;
   type: ComparisonType;
   baseline: string;
   current: string;
+  filters: ComparisonFilters;
+  aggregation: AggregationPolicy;
+  taskId?: string;
   status: ComparisonStatusValue;
   comparability: Comparability;
   createdAt: string;
@@ -226,6 +265,12 @@ export type ComparisonRecord = {
   methodologyVersion: string;
   /** Report generated from this comparison, when one exists. */
   reportId: string | null;
+  /** Archived comparisons stay readable and keep their history. */
+  archived: boolean;
+  /** Matched slots out of the larger side, shown in the list. */
+  matched: Rate | null;
+  /** True for comparisons created in this browser (demo-state). */
+  simulated?: boolean;
 };
 
 export type FixTimelineItem = {
@@ -233,7 +278,16 @@ export type FixTimelineItem = {
   title: string;
   status: string;
   priority: string;
+  findingId: string;
+  findingTitle: string;
   dueAt: string | null;
+  /** When the task was completed (applied, published or marked complete). Null when not completed. */
+  completedAt: string | null;
+  /** The date the item is placed by on the timeline: completion date, else the due date. */
+  placedAt: string;
+  placedBy: "completed" | "due";
+  /** Run or audit that verified the task, when it was verified. */
+  verificationId: string | null;
   /** Completed (applied / published / verification stage) vs not. */
   completed: boolean;
   before: { runId: string; date: string; rate: Rate } | null;
@@ -253,9 +307,8 @@ export type ComparisonDetail = {
 
 /** Static copy and presets for the wizard (from services, never imported from demo in client code). */
 export type WizardCatalog = {
-  types: { value: ComparisonType; label: string; short: string; landing: string; portfolio?: boolean }[];
+  types: { value: ComparisonType; label: string; short: string }[];
   presets: Record<ComparisonType, { baseline: string; current: string }>;
-  defaultTargets: Record<ComparisonType, string>;
   aggregation: Record<AggregationPolicy, string>;
   windows: { id: string; label: string; from: string; to: string }[];
   matching: string;
@@ -265,14 +318,18 @@ export type WizardCatalog = {
 export type WizardData = {
   snapshots: SnapshotRef[];
   cores: Record<string, SlotCore[]>;
-  prompts: { id: string; text: string; groupId: string | null }[];
+  prompts: { id: string; text: string; groupId: string | null; topic: string | null }[];
   groups: { id: string; name: string }[];
-  channels: { id: string; label: string }[];
+  topics: string[];
+  channels: { id: string; label: string; provider: string; providerLabel: string; model: string }[];
+  /** Fix tasks that were completed, for before-after comparisons. */
+  tasks: { id: string; title: string; completedAt: string }[];
   competitors: { id: string; name: string }[];
   domains: string[];
   markets: string[];
   languages: string[];
-  registry: { id: string; type: ComparisonType; baseline: string; current: string }[];
+  /** Existing comparisons, so the wizard can say "this comparison already exists". */
+  registry: { id: string; baseline: string; current: string }[];
   brand: string;
 };
 
@@ -282,6 +339,8 @@ export type ReportType = "audit" | "monitoring" | "comparison";
 
 export type ReportRecord = {
   id: string;
+  /** Set on reports created in this browser, so they appear under the right website. */
+  storeId?: string;
   type: ReportType;
   title: string;
   sourceId: string;

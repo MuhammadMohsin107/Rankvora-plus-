@@ -39,6 +39,16 @@ export function formatPoints(value: number | null, digits = 1): string {
   return `${sign}${Math.abs(value).toFixed(digits)} pp`;
 }
 
+/** "Based on 36 samples": trust label for any rate or trend. */
+export function formatBasedOn(count: number, unit = "samples"): string {
+  return `Based on ${formatNumber(count)} ${count === 1 ? unit.replace(/s$/, "") : unit}`;
+}
+
+/** "12 of 15 prompts": coverage label. */
+export function formatOf(numerator: number, denominator: number, unit: string): string {
+  return `${formatNumber(numerator)} of ${formatNumber(denominator)} ${unit}`;
+}
+
 export function formatSignedInt(value: number): string {
   const sign = value > 0 ? "+" : value < 0 ? "−" : "";
   return `${sign}${Math.abs(value)}`;

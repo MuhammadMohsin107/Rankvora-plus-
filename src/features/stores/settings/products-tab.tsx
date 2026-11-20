@@ -9,6 +9,7 @@ import { Menu } from "@/components/ui/menu";
 import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
 import { DataTable, type Column } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { simulatedToast } from "@/demo-state";
 import type { ProductService } from "@/types/core";
 
 import { validateOptionalUrl, validateRequired } from "../validation";
@@ -50,10 +51,10 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
     const values = { title: title.trim(), category: category.trim(), url: url.trim() };
     if (editing.mode === "add") {
       onChange([...products, { id: nextId("local-prod", products.map((p) => p.id)), storeId, ...values }], `Product added: ${values.title}`);
-      toast.push({ title: `${values.title} added`, description: "Demo action: nothing was changed on a server." });
+      toast.push(simulatedToast(`Offering added: ${values.title}`));
     } else {
       onChange(products.map((p) => (p.id === editing.product.id ? { ...p, ...values } : p)), `Product edited: ${values.title}`);
-      toast.push({ title: `${values.title} updated`, description: "Demo action: nothing was changed on a server." });
+      toast.push(simulatedToast(`Offering updated: ${values.title}`));
     }
     close();
   };
@@ -84,8 +85,8 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
             trigger={<IconButton icon="more" label={`Actions for ${p.title}`} size="sm" />}
             width={180}
             items={[
-              { label: "Edit", icon: "pencil", disabled: readOnly, disabledReason: "Store is archived", onSelect: () => open({ mode: "edit", product: p }) },
-              { label: "Remove", icon: "trash", tone: "danger", disabled: readOnly, disabledReason: "Store is archived", onSelect: () => setRemoving(p) },
+              { label: "Edit", icon: "pencil", disabled: readOnly, disabledReason: "Website is archived", onSelect: () => open({ mode: "edit", product: p }) },
+              { label: "Remove", icon: "trash", tone: "danger", disabled: readOnly, disabledReason: "Website is archived", onSelect: () => setRemoving(p) },
             ]}
           />
         </div>
@@ -93,19 +94,19 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
     },
   ];
 
-  const addButton = <Button variant="primary" icon="plus" disabled={readOnly} onClick={() => open({ mode: "add" })}>Add product</Button>;
+  const addButton = <Button variant="primary" icon="plus" disabled={readOnly} onClick={() => open({ mode: "add" })}>Add offering</Button>;
 
   return (
     <>
       <DataTable<ProductService>
-        label="Products and services"
+        label="Products and services (optional)"
         data={products}
         columns={columns}
         rowKey={(p) => p.id}
-        searchable={{ placeholder: "Search products", text: (p) => `${p.title} ${p.category}` }}
+        searchable={{ placeholder: "Search products and services", text: (p) => `${p.title} ${p.category}` }}
         defaultSort={{ column: "title", dir: "asc" }}
         toolbarExtra={addButton}
-        empty={<EmptyState icon="store" title="No products yet" />}
+        empty={<EmptyState icon="layers" title="No products or services yet" description="Optional. Add them if prompts should name specific offerings." />}
       />
 
       <Dialog
@@ -132,7 +133,7 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => setTouched(true)} />}
           </Field>
           <Field label="Category">
-            {({ id }) => <Input id={id} value={category} placeholder="Road running" onChange={(e) => setCategory(e.target.value)} />}
+            {({ id }) => <Input id={id} value={category} placeholder="Category" onChange={(e) => setCategory(e.target.value)} />}
           </Field>
           <Field label="Page address" error={touched ? (urlError ?? undefined) : undefined}>
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} inputMode="url" value={url} placeholder="https://" onChange={(e) => setUrl(e.target.value)} onBlur={() => setTouched(true)} />}
@@ -146,7 +147,7 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
         onConfirm={() => {
           if (removing) {
             onChange(products.filter((p) => p.id !== removing.id), `Product removed: ${removing.title}`);
-            toast.push({ title: `${removing.title} removed`, description: "Demo action: nothing was changed on a server." });
+            toast.push(simulatedToast(`Offering removed: ${removing.title}`));
           }
           setRemoving(null);
         }}

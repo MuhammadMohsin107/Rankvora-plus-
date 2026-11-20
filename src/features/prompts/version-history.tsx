@@ -26,7 +26,7 @@ export function VersionHistory({ versions }: { versions: PromptVersion[] }) {
   return (
     <div className="flex flex-col gap-5">
       <Card as="section">
-        <CardHeader title="History" info="Editing the wording creates a new version. Earlier runs keep pointing to the version they used." />
+        <CardHeader title="History" info="Editing the wording creates a new version. Earlier runs keep the version they used." />
         <CardBody>
           <Timeline
             items={versions.map((v) => ({
@@ -37,7 +37,7 @@ export function VersionHistory({ versions }: { versions: PromptVersion[] }) {
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="tnum">v{v.version}</span>
                   {v.version === latest.version ? <Badge tone="accent">Current</Badge> : null}
-                  <span className="tnum text-xs font-normal text-fg-subtle" title="Monitoring runs and audits that used this version">
+                  <span className="tnum text-helper font-normal text-fg-muted" title="Monitoring runs and audits that used this version">
                     {v.runs === 0 ? "Not used yet" : `Used by ${pluralize(v.runs, "run")}`}
                   </span>
                 </span>
@@ -46,7 +46,7 @@ export function VersionHistory({ versions }: { versions: PromptVersion[] }) {
               meta: (
                 <>
                   <p className="text-fg-muted [overflow-wrap:anywhere]">{v.text}</p>
-                  <p className="mt-0.5 text-fg-subtle">{v.changedBy}{v.note ? ` · ${v.note}` : ""}</p>
+                  <p className="mt-0.5 text-fg-muted">{v.changedBy}{v.note ? ` · ${v.note}` : ""}</p>
                 </>
               ),
             }))}

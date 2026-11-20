@@ -5,16 +5,18 @@
  * Pure engine functions live there so the browser can run the same preview.
  */
 import { COMPARISON_LIMITATIONS, COMPARISON_TYPES, COMPLETED_TASK_STATES, comparisonConfigFor, METHODOLOGY, TYPE_LABEL } from "@/demo/comparison";
+import { buildTitle, decodeDefinition, isLocalComparisonId, statusForVerdict } from "@/features/comparison/definition";
 import { compareSides, type EngineContext } from "@/features/comparison/engine";
 import { resolveSide } from "@/features/comparison/sides";
+import { DEMO_NOW } from "@/lib/format";
 import { channelLabel } from "@/lib/labels";
 import { listChannels, listCompetitors, listPromptGroups, listPromptsBase, getStore, storeIds } from "@/services/core";
+import { getTaskDetail } from "@/services/fixes";
 import { listRunResponses, registry, getResponse } from "@/services/records";
 import type {
+  ComparisonDefinition,
   ComparisonDetail,
-  ComparisonFilters,
   ComparisonRecord,
-  ComparisonType,
   FixTimelineItem,
   PairRowWithResponses,
   SlotCore,
@@ -32,7 +34,6 @@ export function wizardCatalog(storeId: string): WizardCatalog {
   return {
     types: COMPARISON_TYPES,
     presets: config.presets,
-    defaultTargets: config.defaultTargets,
     aggregation: METHODOLOGY.aggregation,
     windows: config.windows,
     matching: METHODOLOGY.matching,
@@ -47,14 +48,26 @@ function recordsFor(storeId: string): ComparisonRecord[] {
   const reports = registry.reports(storeId);
   return registry.comparisons(storeId).map((c) => ({
     ...c,
+    storeId,
+    filters: {},
+    aggregation: "matched_slot_macro" as const,
     reportId: reports.find((r) => r.type === "comparison" && r.sourceId === c.id)?.id ?? null,
+    archived: false,
+    matched: null,
   }));
 }
 
+/** Seeded comparisons with their matched coverage (computed by the engine). */
 export async function listComparisons(storeId: string): Promise<ComparisonRecord[]> {
-  return recordsFor(storeId);
+  return Promise.all(
+    recordsFor(storeId).map(async (record) => {
+      const detail = await getComparisonDetail(storeId, record.id);
+      return detail ? { ...record, matched: detail.result.coverage } : record;
+    }),
+  );
 }
 
+/** A seeded record, or null. Comparisons created in the wizard are rebuilt from their id by getComparisonDetail. */
 export async function getComparisonRecord(storeId: string, comparisonId: string): Promise<ComparisonRecord | null> {
   return recordsFor(storeId).find((c) => c.id === comparisonId) ?? null;
 }
@@ -70,7 +83,7 @@ export async function comparisonStaticParams(): Promise<{ storeId: string; compa
 
 const rowCache = new Map<string, SlotRow[]>();
 
-function toRow(r: ResponseSample, groupId: string | null): SlotRow {
+function toRow(r: ResponseSample, groupId: string | null, topic: string | null): SlotRow {
   const mentioned = r.status === "succeeded" && r.brandMentioned === "yes";
   return {
     storeId: r.storeId,
@@ -78,6 +91,7 @@ function toRow(r: ResponseSample, groupId: string | null): SlotRow {
     promptId: r.promptId,
     promptVersion: r.promptVersion,
     groupId,
+    topic,
     channelId: r.channelId,
     model: r.model,
     sample: r.sample,
@@ -107,8 +121,8 @@ async function sourceRows(storeId: string, sourceId: string): Promise<SlotRow[]>
   const cached = rowCache.get(cacheKey);
   if (cached) return cached;
   const [responses, prompts] = await Promise.all([listRunResponses(storeId, sourceId), listPromptsBase(storeId)]);
-  const group = new Map(prompts.map((p) => [p.id, p.groupId]));
-  const rows = responses.map((r) => toRow(r, group.get(r.promptId) ?? null));
+  const meta = new Map(prompts.map((p) => [p.id, p]));
+  const rows = responses.map((r) => toRow(r, meta.get(r.promptId)?.groupId ?? null, meta.get(r.promptId)?.topic ?? null));
   rowCache.set(cacheKey, rows);
   return rows;
 }
@@ -124,6 +138,7 @@ export function toCore(row: SlotRow): SlotCore {
     promptId: row.promptId,
     promptVersion: row.promptVersion,
     groupId: row.groupId,
+    topic: row.topic,
     channelId: row.channelId,
     model: row.model,
     sample: row.sample,
@@ -177,26 +192,43 @@ export async function engineContext(storeId: string): Promise<EngineContext> {
 // Fixes timeline context
 // ---------------------------------------------------------------------------
 
-function fixesBetween(storeId: string, from: string, to: string): FixTimelineItem[] {
+const sourceIdIn = (href: string | undefined) => href?.match(/(aud-[\w-]+|run-[\w-]+)/)?.[1] ?? null;
+
+/**
+ * Tasks placed on the timeline by when they were completed (applied, published or marked complete).
+ * A task that is not completed is placed by its due date and says so. Context only, never a cause.
+ */
+async function fixesBetween(storeId: string, from: string, to: string): Promise<FixTimelineItem[]> {
   const runs = registry.runs(storeId);
-  return registry
-    .tasks(storeId)
-    .filter((t) => t.dueAt && t.dueAt >= from && t.dueAt <= to)
-    .sort((a, b) => (a.dueAt! < b.dueAt! ? -1 : 1))
-    .map((t) => {
-      const before = [...runs].filter((r) => r.scheduledFor <= t.dueAt!).pop();
-      const after = runs.find((r) => r.scheduledFor > t.dueAt!);
+  const items = await Promise.all(
+    registry.tasks(storeId).map(async (t): Promise<FixTimelineItem | null> => {
+      const detail = await getTaskDetail(storeId, t.id);
+      const exec = detail?.execution;
+      const completed = COMPLETED_TASK_STATES.includes(t.status);
+      const completedAt = completed ? (exec?.completedAt ?? exec?.publishedAt ?? exec?.appliedAt ?? null) : null;
+      const placedAt = completedAt ?? t.dueAt;
+      if (!placedAt || placedAt < from || placedAt > to) return null;
+      const before = [...runs].filter((r) => r.scheduledFor <= placedAt).pop();
+      const after = runs.find((r) => r.scheduledFor > placedAt);
       return {
         taskId: t.id,
         title: t.title,
         status: t.status,
         priority: t.priority,
+        findingId: t.findingId,
+        findingTitle: detail?.task.findingTitle ?? t.findingId,
         dueAt: t.dueAt,
-        completed: COMPLETED_TASK_STATES.includes(t.status),
+        completedAt,
+        placedAt,
+        placedBy: completedAt ? "completed" : "due",
+        verificationId: sourceIdIn(detail?.verification.outcome?.sourceHref),
+        completed,
         before: before ? { runId: before.id, date: before.scheduledFor, rate: before.mention } : null,
         after: after ? { runId: after.id, date: after.scheduledFor, rate: after.mention } : null,
       };
-    });
+    }),
+  );
+  return items.filter((i): i is FixTimelineItem => i !== null).sort((a, b) => (a.placedAt < b.placedAt ? -1 : a.placedAt > b.placedAt ? 1 : 0));
 }
 
 // ---------------------------------------------------------------------------
@@ -205,29 +237,62 @@ function fixesBetween(storeId: string, from: string, to: string): FixTimelineIte
 
 const detailCache = new Map<string, ComparisonDetail>();
 
+/** Record for an id that is not seeded: rebuilt from the definition inside the id. Local data (title, author, time, archive) overlays it in the browser. */
+function recordFromDefinition(storeId: string, id: string, def: ComparisonDefinition, snapshots: SnapshotRef[]): ComparisonRecord {
+  return {
+    id,
+    storeId,
+    title: buildTitle(def, snapshots),
+    type: def.type,
+    baseline: def.baseline,
+    current: def.current,
+    filters: def.filters,
+    aggregation: def.aggregation,
+    ...(def.taskId ? { taskId: def.taskId } : {}),
+    status: "completed",
+    comparability: "insufficient_data",
+    createdAt: DEMO_NOW,
+    createdBy: "You",
+    methodologyVersion: METHODOLOGY.version,
+    reportId: null,
+    archived: false,
+    matched: null,
+    simulated: true,
+  };
+}
+
 export async function getComparisonDetail(storeId: string, comparisonId: string): Promise<ComparisonDetail | null> {
   const cacheKey = `${storeId}|${comparisonId}`;
   const cached = detailCache.get(cacheKey);
   if (cached) return cached;
 
-  const [record, store] = await Promise.all([getComparisonRecord(storeId, comparisonId), getStore(storeId)]);
-  if (!record || !store) return null;
+  const store = await getStore(storeId);
+  if (!store) return null;
   const snapshots = await listSnapshots(storeId);
+  let record = await getComparisonRecord(storeId, comparisonId);
+  if (!record && isLocalComparisonId(comparisonId)) {
+    const def = decodeDefinition(comparisonId);
+    if (def) record = recordFromDefinition(storeId, comparisonId, def, snapshots);
+  }
+  if (!record) return null;
+
   const [baseline, current, ctx] = await Promise.all([loadSide(storeId, record.baseline, store.brandName, snapshots), loadSide(storeId, record.current, store.brandName, snapshots), engineContext(storeId)]);
   if (!baseline || !current) return null;
 
-  const filters: ComparisonFilters = {};
-  const result = compareSides(baseline.info, current.info, baseline.rows, current.rows, filters, "matched_slot_macro", ctx);
+  const result = compareSides(baseline.info, current.info, baseline.rows, current.rows, record.filters, record.aggregation, ctx);
   const rangeFrom = baseline.info.from < current.info.from ? baseline.info.from : current.info.from;
   const rangeTo = baseline.info.to > current.info.to ? baseline.info.to : current.info.to;
+  const finished: ComparisonRecord = record.simulated
+    ? { ...record, comparability: result.verdict, status: statusForVerdict(result.verdict), matched: result.coverage }
+    : { ...record, matched: result.coverage };
 
   const detail: ComparisonDetail = {
-    record,
+    record: finished,
     baseline: baseline.info,
     current: current.info,
-    filters,
+    filters: record.filters,
     result,
-    fixes: fixesBetween(storeId, rangeFrom, rangeTo),
+    fixes: await fixesBetween(storeId, rangeFrom, rangeTo),
     rangeFrom,
     rangeTo,
   };
@@ -266,18 +331,29 @@ export async function getWizardData(storeId: string): Promise<WizardData | null>
   }
   const usedPrompts = new Set(Object.values(cores).flat().map((r) => r.promptId));
   const all = Object.values(cores).flat();
+  const usedPromptRows = prompts.filter((p) => usedPrompts.has(p.id));
+  const tasks: WizardData["tasks"] = [];
+  for (const t of registry.tasks(storeId)) {
+    if (!COMPLETED_TASK_STATES.includes(t.status)) continue;
+    const exec = (await getTaskDetail(storeId, t.id))?.execution;
+    const completedAt = exec?.completedAt ?? exec?.publishedAt ?? exec?.appliedAt ?? null;
+    if (completedAt) tasks.push({ id: t.id, title: t.title, completedAt });
+  }
   return {
     snapshots,
     cores,
-    prompts: prompts.filter((p) => usedPrompts.has(p.id)).map((p) => ({ id: p.id, text: p.text, groupId: p.groupId })),
+    prompts: usedPromptRows.map((p) => ({ id: p.id, text: p.text, groupId: p.groupId, topic: p.topic ?? null })),
     groups: groups.map((g) => ({ id: g.id, name: g.name })),
-    channels: channels.filter((c) => all.some((r) => r.channelId === c.id)).map((c) => ({ id: c.id, label: channelLabel(c) })),
+    topics: [...new Set(usedPromptRows.map((p) => p.topic).filter((t): t is string => Boolean(t)))].sort(),
+    channels: channels
+      .filter((c) => all.some((r) => r.channelId === c.id))
+      .map((c) => ({ id: c.id, label: channelLabel(c), provider: c.provider, providerLabel: c.providerLabel, model: c.model })),
+    tasks: tasks.sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1)),
     competitors: competitors.filter((c) => c.status === "confirmed").map((c) => ({ id: c.id, name: c.name })),
     domains: [...domains].sort(),
     markets: [...new Set(all.map((r) => r.market))].sort(),
     languages: [...new Set(all.map((r) => r.language))].sort(),
-    registry: recordsFor(storeId).map((c) => ({ id: c.id, type: c.type as ComparisonType, baseline: c.baseline, current: c.current })),
+    registry: recordsFor(storeId).map((c) => ({ id: c.id, baseline: c.baseline, current: c.current })),
     brand: store.brandName,
   };
 }
-

@@ -1,86 +1,64 @@
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
-import { formatDateTime } from "@/lib/format";
+import { formatShortDate } from "@/lib/format";
 import type { ExecutionMode, ExecutionRecord, TaskStatus } from "@/types/fixes";
 
-type StepState = "done" | "pending" | "na" | "failed" | "partial" | "reverted";
+import { lifecycleOf } from "./fixes-logic";
 
-const STATE_VIEW: Record<StepState, { text: string; icon: IconName; tone: string; ring: string }> = {
-  done: { text: "Done", icon: "check-circle", tone: "text-success", ring: "border-success/30 bg-success-soft/50" },
-  pending: { text: "Not yet", icon: "circle", tone: "text-fg-subtle", ring: "border-line bg-surface" },
-  na: { text: "Not applicable", icon: "minus-circle", tone: "text-fg-subtle", ring: "border-line bg-surface-2/50" },
-  failed: { text: "Failed", icon: "x-circle", tone: "text-danger", ring: "border-danger/30 bg-danger-soft/50" },
-  partial: { text: "Partly verified", icon: "alert-triangle", tone: "text-warning", ring: "border-warning/30 bg-warning-soft/50" },
-  reverted: { text: "Rolled back", icon: "undo", tone: "text-fg-muted", ring: "border-line-strong bg-surface-2/60" },
+type StepState = "done" | "pending" | "na" | "failed" | "partial" | "reverted" | "waiting";
+
+const VIEW: Record<StepState, { text: string; icon: IconName; tone: string }> = {
+  done: { text: "Done", icon: "check-circle", tone: "text-success-icon" },
+  pending: { text: "Not yet", icon: "circle", tone: "text-fg-faint" },
+  waiting: { text: "Pending", icon: "clock", tone: "text-warning-icon" },
+  na: { text: "Not applicable", icon: "minus-circle", tone: "text-fg-faint" },
+  failed: { text: "Failed", icon: "x-circle", tone: "text-danger-icon" },
+  partial: { text: "Partly", icon: "alert-triangle", tone: "text-warning-icon" },
+  reverted: { text: "Rolled back", icon: "undo", tone: "text-fg-subtle" },
 };
 
-const WORK_DONE: ReadonlySet<TaskStatus> = new Set(["draft_ready", "staged", "applied", "published", "verification_pending", "verified_success", "partially_verified", "failed", "rolled_back"]);
-const APPLIED: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "verified_success", "partially_verified"]);
+type Step = { id: string; label: string; state: StepState; at: string | null };
 
-type Step = { id: string; label: string; hint: string; state: StepState; at: string | null };
-
-/** The four separate states of a fix: completed, applied, published, verified. Applied is never verified. */
+/**
+ * The four separate states of a fix: completed, applied, published, verified. Applied is never verified.
+ * A single compact row of four steps.
+ */
 export function LifecycleTracker({ status, mode, execution }: { status: TaskStatus; mode: ExecutionMode; execution: ExecutionRecord }) {
+  const life = lifecycleOf(status);
   const rolledBack = status === "rolled_back";
-  const appliedDone = Boolean(execution.appliedAt) || APPLIED.has(status);
-  const publishedDone = Boolean(execution.publishedAt) || status === "published" || status === "verification_pending" || status === "verified_success";
-  const noPublishStep = mode === "guidance" || mode === "ai_draft";
-  /** A failed write attempt: nothing is applied and nothing can be verified yet. */
   const writeFailed = status === "failed" && Boolean(execution.failure);
+  const noPublishStep = mode === "guidance" || mode === "ai_draft";
+  const appliedDone = Boolean(execution.appliedAt) || life.applied;
 
   const steps: Step[] = [
-    {
-      id: "completed",
-      label: "Completed",
-      hint: "Work or draft finished",
-      state: execution.completedAt || WORK_DONE.has(status) ? "done" : "pending",
-      at: execution.completedAt,
-    },
-    {
-      id: "applied",
-      label: "Applied",
-      hint: "Change written or done",
-      state: writeFailed ? "failed" : rolledBack && execution.appliedAt ? "reverted" : appliedDone ? "done" : "pending",
-      at: writeFailed ? (execution.failure?.at ?? null) : execution.appliedAt,
-    },
-    {
-      id: "published",
-      label: "Published",
-      hint: "Live to visitors",
-      state: noPublishStep ? "na" : writeFailed ? "pending" : rolledBack && execution.publishedAt ? "reverted" : publishedDone ? "done" : "pending",
-      at: execution.publishedAt,
-    },
+    { id: "completed", label: "Completed", state: execution.completedAt || life.completed ? "done" : "pending", at: execution.completedAt },
+    { id: "applied", label: "Applied", state: writeFailed ? "failed" : rolledBack && execution.appliedAt ? "reverted" : appliedDone ? "done" : "pending", at: writeFailed ? (execution.failure?.at ?? null) : execution.appliedAt },
+    { id: "published", label: "Published", state: noPublishStep ? "na" : writeFailed ? "pending" : rolledBack && execution.publishedAt ? "reverted" : execution.publishedAt || life.published ? "done" : "pending", at: execution.publishedAt },
     {
       id: "verified",
       label: "Verified",
-      hint: "Re-check passed",
-      state: status === "verified_success" ? "done" : status === "partially_verified" ? "partial" : status === "failed" && !writeFailed ? "failed" : rolledBack ? "na" : "pending",
+      state: status === "verified_success" ? "done" : status === "partially_verified" ? "partial" : status === "verification_pending" ? "waiting" : status === "failed" && !writeFailed ? "failed" : rolledBack ? "na" : "pending",
       at: null,
     },
   ];
 
   return (
-    <Card>
-      <CardHeader title="Lifecycle" info="Four separate states. Applied or published does not mean verified." />
-      <CardBody className="pt-3">
-        <ol className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step) => {
-            const view = STATE_VIEW[step.state];
-            const verifiedPending = step.id === "verified" && status === "verification_pending";
-            return (
-              <li key={step.id} title={step.hint} className={cn("flex items-start gap-2.5 rounded-control border px-3 py-2.5", view.ring)}>
-                <Icon name={verifiedPending ? "clock" : view.icon} size={18} className={cn("mt-0.5 shrink-0", verifiedPending ? "text-warning" : view.tone)} />
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-fg">{step.label}</p>
-                  <p className="text-xs text-fg-muted">{verifiedPending ? "Pending" : step.id === "applied" && writeFailed ? (execution.failure?.nothingWritten ? "Failed, nothing written" : "Failed") : view.text}</p>
-                  {step.at && step.state !== "na" ? <p className="tnum mt-0.5 text-xs text-fg-subtle">{formatDateTime(step.at)}</p> : null}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </CardBody>
-    </Card>
+    <ol aria-label="Lifecycle: completed, applied, published, verified" className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-card border border-line bg-surface px-4 py-3 shadow-card sm:grid-cols-4">
+      {steps.map((step) => {
+        const view = VIEW[step.state];
+        return (
+          <li key={step.id} className="flex min-w-0 items-center gap-2">
+            <Icon name={view.icon} size={18} className={cn("shrink-0", view.tone)} />
+            <div className="min-w-0">
+              <p className="text-label font-medium text-fg">{step.label}</p>
+              <p className="tnum truncate text-helper text-fg-muted">
+                {view.text}
+                {step.at && step.state !== "na" ? ` · ${formatShortDate(step.at)}` : ""}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

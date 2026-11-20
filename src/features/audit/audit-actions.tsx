@@ -5,8 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KeyValue } from "@/components/ui/card";
-import { ConfirmDialog, Drawer } from "@/components/ui/overlay";
-import { useToast } from "@/components/ui/toast";
+import { Drawer } from "@/components/ui/overlay";
 import type { AuditConfig, AuditLane } from "@/types/audit";
 
 const PROMPT_SCOPE = { all_active: "All active prompts", groups: "Selected groups", ids: "Specific prompts" } as const;
@@ -32,14 +31,14 @@ export function ConfigDrawerButton({ config, channels, lanes }: { config: AuditC
   return (
     <>
       <Button icon="settings" onClick={() => setOpen(true)}>Configuration</Button>
-      <Drawer open={open} onClose={() => setOpen(false)} title="Configuration" description="Fixed when the audit started" size="md">
+      <Drawer open={open} onClose={() => setOpen(false)} title="Configuration" description="Frozen when the audit started" size="md">
         <div className="flex flex-col gap-6">
           <Group title="AI visibility">
             <KeyValue
               columns={1}
               items={[
                 { label: "Prompts", value: `${PROMPT_SCOPE[config.promptScope]} · ${config.promptIds.length}` },
-                { label: "Prompt ids", value: <span className="tnum">{config.promptIds.join(", ")}</span> },
+                { label: "Prompt versions", value: <span className="tnum">{(config.prompts?.map((p) => `${p.id} v${p.version}`) ?? config.promptIds).join(", ")}</span> },
                 {
                   label: "Channels",
                   value: (
@@ -50,7 +49,7 @@ export function ConfigDrawerButton({ config, channels, lanes }: { config: AuditC
                     </ul>
                   ),
                 },
-                { label: "Samples per prompt and channel", value: <span className="tnum">{config.samples}</span> },
+                { label: "Samples per prompt and provider", value: <span className="tnum">{config.samples}</span> },
                 { label: "Market · language", value: `${config.market} · ${config.language.toUpperCase()}` },
               ]}
             />
@@ -80,7 +79,7 @@ export function ConfigDrawerButton({ config, channels, lanes }: { config: AuditC
                   ? [
                       { label: "Search Console", value: onOff(config.integrations.searchConsole) },
                       { label: "PageSpeed (lab)", value: onOff(config.integrations.pageSpeed) },
-                      { label: "CMS connector", value: onOff(config.integrations.cms) },
+                      { label: "Website connector", value: onOff(config.integrations.cms) },
                     ]
                   : []),
               ]}
@@ -98,34 +97,6 @@ export function ConfigDrawerButton({ config, channels, lanes }: { config: AuditC
           </Group>
         </div>
       </Drawer>
-    </>
-  );
-}
-
-/** Cancel an in-progress audit. Completed work is kept and marked partial. */
-export function CancelAuditButton({ completedJobs, assessedPages }: { completedJobs: number; assessedPages: number }) {
-  const [open, setOpen] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
-  const toast = useToast();
-  return (
-    <>
-      <Button variant="danger-ghost" icon="x-circle" disabled={cancelling} onClick={() => setOpen(true)}>
-        {cancelling ? "Cancelling…" : "Cancel audit"}
-      </Button>
-      <ConfirmDialog
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Cancel this audit?"
-        confirmLabel="Cancel audit"
-        cancelLabel="Keep running"
-        onConfirm={() => {
-          setOpen(false);
-          setCancelling(true);
-          toast.push({ title: "Cancel requested", description: "Demo action: no requests were stopped.", tone: "info" });
-        }}
-      >
-        No further requests will be sent. The {completedJobs} completed responses and {assessedPages} crawled pages are kept, and the audit is marked partially completed. No snapshot is created.
-      </ConfirmDialog>
     </>
   );
 }

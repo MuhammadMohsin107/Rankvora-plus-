@@ -2,21 +2,27 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 
 import { Badge, Status } from "@/components/ui/badge";
+import { SimulatedBadge } from "@/components/ui/demo";
 import { EmptyState } from "@/components/ui/feedback";
 import { DataTable, type Column } from "@/components/ui/table";
-import { Mono } from "@/components/ui/misc";
 import { formatDateTime } from "@/lib/format";
-import type { AuditSummary } from "@/types/audit";
+import { STATUS } from "@/lib/status";
+import type { AuditRow } from "@/types/audit";
 
-import { AUDIT_TYPE_LABEL, LANE_LABEL, LANE_SHORT, formatMinutes } from "./labels";
+import { AUDIT_TYPE_LABEL, LANE_LABEL, LANE_SHORT, STATUS_ORDER } from "./labels";
+import { useAudits } from "./use-audits";
 
-export function AuditHistoryTable({ audits, storeId }: { audits: AuditSummary[]; storeId: string }) {
+/** Audit history: seeded audits and audits created here, with live status. Filters: type, status, lane. */
+export function AuditHistoryTable({ seeded, storeId }: { seeded: AuditRow[]; storeId: string }) {
   const router = useRouter();
-  const href = (a: AuditSummary) => `/stores/${storeId}/audits/${a.id}`;
+  const { live } = useAudits(storeId, seeded);
+  const href = (a: AuditRow) => `/stores/${storeId}/audits/${a.id}`;
+  const statuses = useMemo(() => STATUS_ORDER.filter((s) => live.some((a) => a.status === s)), [live]);
 
-  const columns: Column<AuditSummary>[] = [
+  const columns: Column<AuditRow>[] = [
     {
       id: "title",
       header: "Audit",
@@ -24,7 +30,7 @@ export function AuditHistoryTable({ audits, storeId }: { audits: AuditSummary[];
       cell: (a) => (
         <div className="min-w-0">
           <Link href={href(a)} className="font-medium text-fg hover:underline">{a.title}</Link>
-          <p className="text-xs text-fg-subtle">{a.id} · {a.createdBy}</p>
+          <p className="flex items-center gap-1.5 text-helper text-fg-subtle">{a.id} · {a.createdBy}{a.simulated ? <SimulatedBadge /> : null}</p>
         </div>
       ),
     },
@@ -41,62 +47,49 @@ export function AuditHistoryTable({ audits, storeId }: { audits: AuditSummary[];
         </div>
       ),
     },
-    { id: "status", header: "Status", sort: (a) => a.status, cell: (a) => <Status kind="audit" value={a.status} /> },
-    { id: "started", header: "Started", sort: (a) => a.startedAt, cell: (a) => <span className="tnum whitespace-nowrap">{formatDateTime(a.startedAt)}</span>, hideBelow: "sm" },
     {
-      id: "duration",
-      header: "Duration",
-      sort: (a) => a.durationSeconds,
-      cell: (a) => <span className="tnum whitespace-nowrap">{formatMinutes(a.durationSeconds)}{a.provisional ? " so far" : ""}</span>,
-      hideBelow: "lg",
+      id: "status",
+      header: "Status",
+      sort: (a) => STATUS_ORDER.indexOf(a.status),
+      cell: (a) => (
+        <span className="flex flex-wrap items-center gap-1.5">
+          <Status kind="audit" value={a.status} />
+          {a.paused && !a.snapshotId ? <Badge tone="warning" icon="pause">Paused</Badge> : null}
+        </span>
+      ),
     },
+    { id: "started", header: "Started", sort: (a) => a.startedAt, cell: (a) => <span className="tnum whitespace-nowrap">{formatDateTime(a.startedAt)}</span>, hideBelow: "sm" },
     {
       id: "coverage",
       header: "Coverage",
       hideBelow: "lg",
       cell: (a) => (
-        <div className="tnum whitespace-nowrap text-xs leading-relaxed text-fg-muted">
-          <p>{a.provisional ? `${a.succeededJobs + a.failedJobs} / ${a.plannedJobs} attempted` : `${a.succeededJobs} / ${a.plannedJobs} succeeded`}</p>
-          {a.pages ? <p>{a.pages.n} / {a.pages.d} pages</p> : null}
-        </div>
+        <span className="tnum whitespace-nowrap text-helper text-fg-muted" title={a.snapshotId ?? "No snapshot"}>
+          {a.status === "draft" ? "Not started" : `${a.succeededJobs + (a.provisional ? a.failedJobs : 0)}/${a.plannedJobs} ${a.provisional ? "attempted" : "returned"}`}
+          {a.pages ? ` · ${a.pages.n}/${a.pages.d} pages` : ""}
+        </span>
       ),
     },
-    {
-      id: "findings",
-      header: "Findings",
-      align: "right",
-      sort: (a) => a.findingsCreated,
-      cell: (a) => <span className="tnum">{a.provisional ? "—" : a.findingsCreated}</span>,
-      hideBelow: "md",
-    },
-    { id: "snapshot", header: "Snapshot", cell: (a) => (a.snapshotId ? <span className="whitespace-nowrap"><Mono>{a.snapshotId}</Mono></span> : <span className="text-fg-subtle">Pending</span>), hideBelow: "xl" },
+    { id: "findings", header: "Findings", align: "right", sort: (a) => a.findingsCreated, cell: (a) => <span className="tnum">{a.provisional || !a.snapshotId ? "—" : a.findingsCreated}</span>, hideBelow: "md" },
   ];
 
   return (
     <DataTable
       label="Audit history"
-      data={audits}
+      data={live}
       columns={columns}
       rowKey={(a) => a.id}
       defaultSort={{ column: "started", dir: "desc" }}
+      mobileCards
+      rowLabel={(a) => a.title}
       searchable={{ placeholder: "Search audits", text: (a) => `${a.title} ${a.id} ${a.createdBy} ${a.snapshotId ?? ""}` }}
       filters={[
-        { id: "type", label: "Type", options: [...new Set(audits.map((a) => a.type))].map((t) => ({ value: t, label: AUDIT_TYPE_LABEL[t] })), value: (a) => a.type },
-        {
-          id: "status",
-          label: "Status",
-          options: [
-            { value: "in_progress", label: "In progress" },
-            { value: "completed", label: "Completed" },
-            { value: "completed_with_warnings", label: "Completed with warnings" },
-            { value: "partially_completed", label: "Partially completed" },
-          ],
-          value: (a) => a.status,
-        },
+        { id: "type", label: "Type", options: [...new Set(live.map((a) => a.type))].map((t) => ({ value: t, label: AUDIT_TYPE_LABEL[t] })), value: (a) => a.type },
+        { id: "status", label: "Status", options: statuses.map((s) => ({ value: s, label: STATUS.audit[s].label })), value: (a) => a.status },
+        { id: "lane", label: "Lane", options: [{ value: "ai_visibility", label: LANE_LABEL.ai_visibility }, { value: "website_readiness", label: LANE_LABEL.website_readiness }], value: (a) => a.lanes },
       ]}
       onRowClick={(a) => router.push(href(a))}
-      // The page header owns "Start audit"; this state only appears when a search or filter matches nothing.
-      empty={<EmptyState icon="audit" title="No matching audits" />}
+      empty={<EmptyState icon="audit" title="No audits match" />}
     />
   );
 }

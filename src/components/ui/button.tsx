@@ -6,22 +6,27 @@ import { cn } from "@/lib/cn";
 import { Icon, type IconName } from "./icon";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-ghost";
-export type ButtonSize = "sm" | "md";
+export type ButtonSize = "sm" | "md" | "lg";
 
+/**
+ * Heights come from tokens: sm 32, md 36, lg 40; all 44 on coarse pointers.
+ * Press feedback is a 0.98 scale on transform only; reduced motion removes it.
+ */
 const base =
-  "inline-flex shrink-0 select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-control font-medium transition-colors duration-[var(--dur-fast)] disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45 cursor-pointer";
+  "inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition-[color,background-color,border-color,transform,opacity] duration-[var(--dur-fast)] ease-[var(--ease)] active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-fg hover:bg-accent-hover",
-  secondary: "border border-line-strong bg-surface text-fg hover:bg-surface-2",
+  secondary: "border border-line-strong bg-surface text-fg hover:border-fg-faint hover:bg-surface-2",
   ghost: "text-fg-muted hover:bg-surface-2 hover:text-fg",
-  danger: "bg-danger text-white hover:brightness-95",
-  "danger-ghost": "text-danger hover:bg-danger-soft",
+  danger: "bg-danger-solid text-danger-fg hover:bg-danger-solid-hover",
+  "danger-ghost": "text-danger-text hover:bg-danger-soft",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-8 px-2.5 text-[13px] pointer-coarse:min-h-11",
-  md: "h-9 px-3.5 text-sm pointer-coarse:min-h-11",
+  sm: "h-btn-sm px-3 text-label",
+  md: "h-btn px-4 text-body",
+  lg: "h-btn-lg px-5 text-body",
 };
 
 export function buttonStyles(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className?: string) {
@@ -85,9 +90,18 @@ type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** Required: icon-only controls need an accessible name. */
   label: string;
   size?: ButtonSize;
-  variant?: "ghost" | "secondary";
+  variant?: "ghost" | "secondary" | "primary" | "danger-ghost";
   badge?: ReactNode;
 };
+
+const iconVariants = {
+  ghost: variants.ghost,
+  secondary: variants.secondary,
+  primary: variants.primary,
+  "danger-ghost": variants["danger-ghost"],
+} as const;
+
+const iconSizes: Record<ButtonSize, string> = { sm: "size-btn-sm", md: "size-btn", lg: "size-btn-lg" };
 
 export function IconButton({ icon, label, size = "md", variant = "ghost", className, badge, type = "button", ...rest }: IconButtonProps) {
   return (
@@ -95,13 +109,7 @@ export function IconButton({ icon, label, size = "md", variant = "ghost", classN
       type={type}
       aria-label={label}
       title={label}
-      className={cn(
-        base,
-        variant === "ghost" ? "text-fg-muted hover:bg-surface-2 hover:text-fg" : "border border-line-strong bg-surface text-fg hover:bg-surface-2",
-        size === "sm" ? "size-8" : "size-9",
-        "relative pointer-coarse:size-11",
-        className,
-      )}
+      className={cn(base, iconVariants[variant], iconSizes[size], "relative", className)}
       {...rest}
     >
       <Icon name={icon} size={size === "sm" ? 16 : 18} />

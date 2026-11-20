@@ -12,37 +12,26 @@ import { Icon } from "@/components/ui/icon";
 import { Mono } from "@/components/ui/misc";
 import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
+import { simulatedToast } from "@/demo-state";
 import { DEMO_NOW, formatRelative } from "@/lib/format";
-import { PLATFORM_LABEL } from "@/lib/labels";
+import { siteTypeLabel } from "@/lib/labels";
 import type { StorePlatform } from "@/types/core";
-import type { IntegrationDetail, IntegrationScope } from "@/types/settings";
+import type { IntegrationDetail } from "@/types/settings";
 
-/** Simulated result of authorizing each connector. Real scopes come from the connector at run time. */
-const SIMULATED_SCOPES: Partial<Record<StorePlatform, IntegrationScope[]>> = {
-  shopify: [
-    { scope: "read_products", purpose: "Read the product catalogue", granted: true },
-    { scope: "read_content", purpose: "Read pages and articles", granted: true },
-    { scope: "write_content", purpose: "Stage and publish approved page changes", granted: false },
-  ],
-  woocommerce: [
-    { scope: "read", purpose: "Read products and pages", granted: true },
-    { scope: "write", purpose: "Stage and publish approved changes", granted: true },
-  ],
-};
+import { CONNECTOR_NOTE, CONNECTOR_OPTIONS, simulatedAccount, simulatedScopes, type ConnectorChoice } from "../connectors";
 
 type Props = {
   detail: IntegrationDetail;
   host: string;
-  storePlatform: StorePlatform;
   readOnly: boolean;
   onChange: (next: IntegrationDetail, logTitle: string, detail?: string) => void;
 };
 
-export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChange }: Props) {
+export function IntegrationsTab({ detail, host, readOnly, onChange }: Props) {
   const toast = useToast();
   const { commerce, searchConsole } = detail;
   const [connectOpen, setConnectOpen] = useState(false);
-  const [method, setMethod] = useState<StorePlatform>("shopify");
+  const [method, setMethod] = useState<ConnectorChoice>("wordpress");
   const [authorizing, setAuthorizing] = useState(false);
   const [disconnect, setDisconnect] = useState<"commerce" | "console" | null>(null);
   const [consoleOpen, setConsoleOpen] = useState(false);
@@ -58,8 +47,8 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
   const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms));
 
   const reconnecting = commerce.state === "needs_attention" || commerce.state === "disconnected";
-  const connectPlatform: StorePlatform = reconnecting && commerce.platform !== "manual" ? commerce.platform : method;
-  const platformName = PLATFORM_LABEL[connectPlatform];
+  const connectPlatform: StorePlatform = reconnecting && commerce.platform !== "manual" && commerce.platform !== "custom" ? commerce.platform : method;
+  const platformName = siteTypeLabel(connectPlatform);
 
   const closeConnect = () => {
     setConnectOpen(false);
@@ -69,13 +58,13 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
   const authorize = () => {
     setAuthorizing(true);
     later(() => {
-      const scopes = SIMULATED_SCOPES[connectPlatform] ?? [];
+      const scopes = simulatedScopes(connectPlatform);
       onChange(
-        { ...detail, commerce: { platform: connectPlatform, state: "connected", account: connectPlatform === "shopify" ? `${host.split(".")[0]}.myshopify.com` : host, scopes, lastVerifiedAt: DEMO_NOW, note: null } },
+        { ...detail, commerce: { platform: connectPlatform, state: "connected", account: simulatedAccount(connectPlatform, host), scopes, lastVerifiedAt: DEMO_NOW, note: null } },
         `${platformName} ${reconnecting ? "reconnected" : "connected"}`,
         `Scopes: ${scopes.filter((s) => s.granted).map((s) => s.scope).join(", ")}`,
       );
-      toast.push({ title: `${platformName} ${reconnecting ? "reconnected" : "connected"}`, description: "Simulated. No real connection was made." });
+      toast.push({ ...simulatedToast(`${platformName} ${reconnecting ? "reconnected" : "connected"}`), description: "No real connection was made." });
       closeConnect();
     }, 1200);
   };
@@ -84,19 +73,19 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
     setVerifying(true);
     later(() => {
       setVerifying(false);
-      onChange({ ...detail, commerce: { ...commerce, lastVerifiedAt: DEMO_NOW } }, `${PLATFORM_LABEL[commerce.platform]} connection verified`);
-      toast.push({ title: "Connection verified", description: "Simulated check." });
+      onChange({ ...detail, commerce: { ...commerce, lastVerifiedAt: DEMO_NOW } }, `${siteTypeLabel(commerce.platform)} connection verified`);
+      toast.push(simulatedToast("Connection checked"));
     }, 1000);
   };
 
   const confirmDisconnect = () => {
     if (disconnect === "commerce") {
-      onChange({ ...detail, commerce: { ...commerce, state: "disconnected", scopes: commerce.scopes.map((s) => ({ ...s, granted: false })), note: "Disconnected. Fixes are guidance only until you reconnect." } }, `${PLATFORM_LABEL[commerce.platform]} disconnected`);
-      toast.push({ title: `${PLATFORM_LABEL[commerce.platform]} disconnected`, description: "Demo action: nothing was changed on a server." });
+      onChange({ ...detail, commerce: { ...commerce, state: "disconnected", scopes: commerce.scopes.map((s) => ({ ...s, granted: false })), note: "Disconnected. Fixes are guidance only until you reconnect." } }, `${siteTypeLabel(commerce.platform)} disconnected`);
+      toast.push(simulatedToast(`${siteTypeLabel(commerce.platform)} disconnected`));
     }
     if (disconnect === "console") {
       onChange({ ...detail, searchConsole: { state: "not_connected", property: null, lastVerifiedAt: null, note: null } }, "Search Console disconnected");
-      toast.push({ title: "Search Console disconnected", description: "Demo action: nothing was changed on a server." });
+      toast.push(simulatedToast("Search Console disconnected"));
     }
     setDisconnect(null);
   };
@@ -105,22 +94,22 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
     setAuthorizing(true);
     later(() => {
       onChange({ ...detail, searchConsole: { state: "connected", property, lastVerifiedAt: DEMO_NOW, note: null } }, "Search Console connected", `Property ${property}`);
-      toast.push({ title: "Search Console connected", description: "Simulated. No real connection was made." });
+      toast.push({ ...simulatedToast("Search Console connected"), description: "No real connection was made." });
       setConsoleOpen(false);
       setAuthorizing(false);
     }, 1200);
   };
 
   const commerceConnected = commerce.state === "connected" || commerce.state === "needs_attention";
-  const shopifyInfo = commerce.platform === "shopify" || (commerce.platform === "manual" && storePlatform === "shopify");
+  const hasConnector = commerceConnected || reconnecting;
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-2">
       <Card className="min-w-0 self-start">
         <CardHeader
-          title="Commerce platform"
-          subtitle={PLATFORM_LABEL[commerce.platform]}
-          info={shopifyInfo ? "Shopify access is a per-store token. Each store connects and is disconnected separately." : "Each store keeps its own connection and access token."}
+          title="Publishing connector"
+          subtitle={hasConnector ? siteTypeLabel(commerce.platform) : "Optional"}
+          info="Lets approved fixes be published to the site. Each website keeps its own connection. Without one, fixes are guidance only."
           actions={<Status kind="integration" value={commerce.state} />}
         />
         <CardBody className="flex flex-col gap-4">
@@ -154,7 +143,7 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
           <div className="flex flex-wrap items-center gap-2">
             {commerce.state === "connected" ? <Button variant="secondary" icon="refresh" loading={verifying} disabled={readOnly} onClick={verify}>Verify now</Button> : null}
             {reconnecting ? <Button variant="primary" icon="plug" disabled={readOnly} onClick={() => setConnectOpen(true)}>Reconnect</Button> : null}
-            {!commerceConnected && !reconnecting ? <Button variant="primary" icon="plug" disabled={readOnly} onClick={() => setConnectOpen(true)}>Connect platform</Button> : null}
+            {!hasConnector ? <Button variant="secondary" icon="plug" disabled={readOnly} onClick={() => setConnectOpen(true)}>Connect a connector</Button> : null}
             {commerceConnected ? <Button variant="danger-ghost" disabled={readOnly} onClick={() => setDisconnect("commerce")}>Disconnect</Button> : null}
           </div>
         </CardBody>
@@ -184,7 +173,7 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
       <Dialog
         open={connectOpen}
         onClose={closeConnect}
-        title={reconnecting ? `Reconnect ${platformName}` : "Connect a platform"}
+        title={reconnecting ? `Reconnect ${platformName}` : "Connect a connector"}
         description="Authorization is simulated in this demo."
         footer={
           <>
@@ -194,22 +183,17 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
         }
       >
         {reconnecting ? (
-          <p className="text-[13px] text-fg-muted">You will be asked to grant access again. Existing findings and tasks are kept.</p>
+          <p className="text-[13px] text-fg-muted">You would be asked to grant access again. Existing findings and tasks are kept.</p>
         ) : (
-          <RadioCards<StorePlatform>
-            label="Platform"
+          <RadioCards<ConnectorChoice>
+            label="Connector"
             value={method}
             onChange={setMethod}
             columns={2}
-            options={[
-              { value: "shopify", label: "Shopify", description: "Per-store authorization. Read access first." },
-              { value: "woocommerce", label: "WooCommerce", disabled: true, badge: <Badge>Later</Badge> },
-              { value: "wordpress", label: "WordPress", disabled: true, badge: <Badge>Later</Badge> },
-              { value: "webflow", label: "Webflow", disabled: true, badge: <Badge>Later</Badge> },
-            ]}
+            options={CONNECTOR_OPTIONS.map((value) => ({ value, label: siteTypeLabel(value), description: CONNECTOR_NOTE[value] }))}
           />
         )}
-        {authorizing ? <p className="mt-3 flex items-center gap-2 text-[13px] text-fg-muted" role="status"><Spinner className="text-accent-text" />Waiting for confirmation</p> : null}
+        {authorizing ? <p className="mt-3 flex items-center gap-2 text-[13px] text-fg-muted" role="status"><Spinner className="text-accent-text" />Waiting for confirmation (simulated)</p> : null}
       </Dialog>
 
       <Dialog
@@ -242,14 +226,14 @@ export function IntegrationsTab({ detail, host, storePlatform, readOnly, onChang
         open={disconnect !== null}
         onClose={() => setDisconnect(null)}
         onConfirm={confirmDisconnect}
-        title={disconnect === "console" ? "Disconnect Search Console?" : `Disconnect ${PLATFORM_LABEL[commerce.platform]}?`}
+        title={disconnect === "console" ? "Disconnect Search Console?" : `Disconnect ${siteTypeLabel(commerce.platform)}?`}
         confirmLabel="Disconnect"
       >
         {disconnect === "console" ? (
           <p>Search data stops syncing. Data already imported stays in past audits.</p>
         ) : (
           <>
-            <p>The stored access token for this store is removed. Findings, tasks and history stay.</p>
+            <p>The simulated access for this website is removed. Findings, tasks and history stay.</p>
             <p className="mt-2 flex items-start gap-1.5"><Icon name="info" size={14} className="mt-0.5 shrink-0" />Fix tasks that need the connection become guidance only.</p>
           </>
         )}

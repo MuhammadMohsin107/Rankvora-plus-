@@ -12,34 +12,32 @@ import {
   APPROX_COST_PER_JOB_USD,
   APPROX_COST_PER_PAGE_USD,
   AUD_004_CURRENT_URL,
+  EXTRA_AUDIT_SPECS,
+  type ExtraAuditSpec,
   AUD_004_STAGES,
   AUD_004_WARNINGS,
   WEBSITE_BASES,
 } from "@/demo/audit";
 import type { RegistryAudit } from "@/demo/registry";
 import { DEMO_NOW } from "@/lib/format";
-import { INTENT_LABEL, SCOPE_LABEL, channelLabel } from "@/lib/labels";
-import { STATUS } from "@/lib/status";
+import { buildAiLane, buildLimitations, buildUsage, checkRates } from "@/features/audit/lanes";
+import { buildAuditRow, liveRow, planFor } from "@/features/audit/rows";
+import { hasSnapshot } from "@/features/audit/simulation";
 import { getStore, listCompetitors, listPromptGroups, listPromptsBase, listStoreChannels, storeIds } from "@/services/core";
-import { listFindings, listRunResponses, registry } from "@/services/records";
-import type { Rate } from "@/types/core";
+import { evidenceIdsForFinding, listFindings, listRunResponses, registry } from "@/services/records";
 import type { ResponseSample } from "@/types/shared-records";
 import type {
   AiLane,
+  AuditBasis,
   AuditConfig,
   AuditCoverage,
   AuditDetail,
   AuditFinding,
   AuditProgress,
+  AuditRow,
   AuditSummary,
   AuditTaskLink,
-  AuditUsage,
-  BreakdownRow,
-  CheckStatus,
-  CitationDomainRow,
-  CompetitorRow,
   LaneSummary,
-  MetricKey,
   PageIssue,
   WebsiteCheck,
   WebsiteLane,
@@ -48,7 +46,10 @@ import type {
 
 /** Ids for generateStaticParams: every {storeId, auditId} pair of every store that has audits. */
 export function auditParams(): { storeId: string; auditId: string }[] {
-  return storeIds().flatMap(({ storeId }) => registry.audits(storeId).map((audit) => ({ storeId, auditId: audit.id })));
+  return storeIds().flatMap(({ storeId }) => [
+    ...registry.audits(storeId).map((audit) => ({ storeId, auditId: audit.id })),
+    ...(EXTRA_AUDIT_SPECS[storeId] ?? []).map((spec) => ({ storeId, auditId: spec.id })),
+  ]);
 }
 
 const comparableType = (type: RegistryAudit["type"]) => type === "initial" || type === "full";
@@ -91,36 +92,82 @@ function baselineOf(storeId: string, a: RegistryAudit): RegistryAudit | null {
   );
 }
 
+/** Registry audits plus the extra demonstration audits, newest first. Rows of extra audits carry their frozen run. */
+export async function listAuditRows(storeId: string): Promise<AuditRow[]> {
+  const extras = await Promise.all((EXTRA_AUDIT_SPECS[storeId] ?? []).map((spec) => buildExtraRow(storeId, spec)));
+  const rows: AuditRow[] = [...registry.audits(storeId).map((a) => toSummary(storeId, a)), ...extras];
+  return rows.sort((x, y) => Date.parse(y.startedAt) - Date.parse(x.startedAt));
+}
+
 export async function listAudits(storeId: string): Promise<AuditSummary[]> {
-  return [...registry.audits(storeId)].sort((x, y) => Date.parse(y.startedAt) - Date.parse(x.startedAt)).map((a) => toSummary(storeId, a));
+  return listAuditRows(storeId);
+}
+
+export async function getExtraAuditRow(storeId: string, auditId: string): Promise<AuditRow | null> {
+  const spec = (EXTRA_AUDIT_SPECS[storeId] ?? []).find((s) => s.id === auditId);
+  return spec ? buildExtraRow(storeId, spec) : null;
+}
+
+async function buildExtraRow(storeId: string, spec: ExtraAuditSpec): Promise<AuditRow> {
+  const [prompts, channels] = await Promise.all([listPromptsBase(storeId), listStoreChannels(storeId)]);
+  const basis = pickBasisAudit(storeId);
+  const baseConfig = (basis && ALL_AUDIT_CONFIGS[basis.id]) || Object.values(ALL_AUDIT_CONFIGS)[0];
+  const active = prompts.filter((p) => p.status === "active");
+  const picked = spec.promptIds ? active.filter((p) => spec.promptIds?.includes(p.id)) : active;
+  const channelIds = baseConfig.channelIds.filter((id) => channels.some((c) => c.id === id));
+  const config: AuditConfig = {
+    ...baseConfig,
+    promptScope: spec.promptIds ? "ids" : "all_active",
+    promptIds: picked.map((p) => p.id),
+    prompts: picked.map((p) => ({ id: p.id, text: p.text, version: p.version })),
+    channelIds,
+    samples: spec.samples,
+    pageTypes: ["home", "collection", "product", "guide", "page", "policy"],
+    categories: ["technical", "content", "structured_data", "crawler_access", "performance"],
+    trigger: spec.trigger,
+    verifies: spec.verifies,
+    scenario: spec.scenario,
+  };
+  const knownPages = registry.audits(storeId).find((a) => a.pages)?.pages?.d ?? config.maxUrls;
+  const counts = {
+    jobs: picked.length * channelIds.length * spec.samples,
+    pages: spec.lanes.includes("website_readiness") ? Math.min(config.maxUrls, knownPages) : 0,
+    checks: WEBSITE_BASES[storeId]?.checks.length ?? 0,
+  };
+  const startedMs = Date.parse(spec.startedAt);
+  const draft = buildAuditRow({ storeId, type: spec.type, lanes: spec.lanes, config, counts, createdBy: spec.createdBy, basisAuditId: basis?.id ?? "", nowMs: startedMs, stamp: "" });
+  const plan = planFor({ lanes: spec.lanes, config, counts }, `${storeId}|${spec.id}`);
+  const cancelled = spec.cancelAt !== undefined;
+  const status = cancelled ? "cancelled" : plan.outcome;
+  const ended = cancelled ? Math.round(plan.endAtMs * (spec.cancelAt ?? 1)) : plan.endAtMs;
+  const endedAt = new Date(startedMs + ended).toISOString();
+  const row: AuditRow = {
+    ...draft,
+    id: spec.id,
+    title: spec.title,
+    status,
+    plan,
+    run: { startedAtMs: startedMs, pausedAtMs: null, pausedMs: 0, endedElapsedMs: ended },
+    endedAt,
+    completedAt: status === "cancelled" || status === "failed" || status === "blocked" ? null : endedAt,
+    snapshotId: hasSnapshot(status) ? `snap-${spec.id}` : null,
+    simulated: false,
+    provisional: false,
+  };
+  return liveRow(row, startedMs + ended);
+}
+
+const isCompletedComparable = (a: RegistryAudit) => comparableType(a.type) && a.status !== "in_progress";
+
+/** The completed full or initial audit that simulated audits take their answers and crawl facts from. */
+function pickBasisAudit(storeId: string): RegistryAudit | null {
+  const done = registry.audits(storeId).filter(isCompletedComparable).sort((x, y) => Date.parse(y.startedAt) - Date.parse(x.startedAt));
+  return done.find((a) => a.lanes.length === 2) ?? done[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------
 // Rates
 // ---------------------------------------------------------------------------
-
-const isDeterminate = (status: CheckStatus) => status === "pass" || status === "fail" || status === "warning";
-
-function aiRates(responses: ResponseSample[]): Record<MetricKey, Rate> {
-  const ok = responses.filter((r) => r.status === "succeeded");
-  const capable = ok.filter((r) => r.citationSupport !== "not_supported");
-  return {
-    mention: { n: ok.filter((r) => r.brandMentioned === "yes").length, d: ok.length },
-    recommendation: { n: ok.filter((r) => r.recommendation === "recommended").length, d: ok.length },
-    citation: { n: capable.filter((r) => r.citations.some((c) => c.source === "owned")).length, d: capable.length },
-  };
-}
-
-function checkRates(checks: WebsiteCheck[]) {
-  const applicable = checks.filter((c) => c.status !== "not_applicable");
-  const technical = applicable.filter((c) => c.kind === "technical" && isDeterminate(c.status));
-  const content = applicable.filter((c) => c.kind === "content" && isDeterminate(c.status));
-  return {
-    technical: { n: technical.filter((c) => c.status === "pass").length, d: technical.length },
-    content: { n: content.filter((c) => c.status === "pass").length, d: content.length },
-    checkCoverage: { n: applicable.filter((c) => isDeterminate(c.status)).length, d: applicable.length },
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Website lane
@@ -177,14 +224,14 @@ export async function getWebsiteLane(storeId: string, auditId: string): Promise<
 
   const pages = base.pages.filter((p) => variant.pageIds === "all" || variant.pageIds.includes(p.id))
     .filter((p) => !p.publishedAt || Date.parse(p.publishedAt) <= started)
-    .map((p, index) => ({ ...p, crawledAt: new Date(started + (index + 1) * 20_000).toISOString() }));
+    .map((p, index) => ({ ...p, ...(variant.pageOverrides?.[p.id] ?? {}), crawledAt: new Date(started + (index + 1) * 20_000).toISOString() }));
 
   const pageIssues: Record<string, PageIssue[]> = {};
   for (const page of pages) {
     const issues: PageIssue[] = [];
     for (const check of checks) {
       if ((check.status === "fail" || check.status === "warning") && check.affectedPaths.includes(page.path)) {
-        issues.push({ checkId: check.id, name: check.name, status: check.status, snippet: check.evidence.snippet });
+        issues.push({ checkId: check.id, name: check.name, status: check.status, snippet: check.evidence.snippet, findingId: check.findingId });
       }
     }
     pageIssues[page.id] = issues;
@@ -224,95 +271,17 @@ export async function getAiLane(storeId: string, auditId: string): Promise<AiLan
     listCompetitors(storeId),
   ]);
   const baselineAudit = baselineOf(storeId, audit);
-  const baselineResponses = baselineAudit ? await listRunResponses(storeId, baselineAudit.id) : [];
-
-  const succeeded = responses.filter((r) => r.status === "succeeded");
-  const failed = responses.length - succeeded.length;
-  const current = aiRates(responses);
-  const previous = baselineAudit ? aiRates(baselineResponses) : null;
-
-  const row = (id: string, label: string, sub: string, rs: ResponseSample[], baseline: ResponseSample[]): BreakdownRow => {
-    const cur = aiRates(rs);
-    const base = baselineAudit ? aiRates(baseline) : null;
-    return {
-      id,
-      label,
-      sub,
-      current: cur,
-      baseline: base ? base : { mention: null, recommendation: null, citation: null },
-      failed: rs.filter((r) => r.status === "failed").length,
-    };
-  };
-
-  const byProvider = channels.map((ch) =>
-    row(ch.id, ch.providerLabel, channelLabel(ch), responses.filter((r) => r.channelId === ch.id), baselineResponses.filter((r) => r.channelId === ch.id)),
-  );
-
-  const groupOf = (promptId: string) => prompts.find((p) => p.id === promptId)?.groupId ?? null;
-  const byGroup = [...groups, { id: "__none", storeId, name: "Ungrouped" }]
-    .map((g) => {
-      const inGroup = (r: ResponseSample) => (groupOf(r.promptId) ?? "__none") === g.id;
-      const rs = responses.filter(inGroup);
-      const promptCount = new Set(rs.map((r) => r.promptId)).size;
-      return { g, rs, promptCount };
-    })
-    .filter((x) => x.rs.length > 0)
-    .map(({ g, rs, promptCount }) =>
-      row(g.id, g.name, `${promptCount} ${promptCount === 1 ? "prompt" : "prompts"}`, rs, baselineResponses.filter((r) => (groupOf(r.promptId) ?? "__none") === g.id)),
-    );
-
-  const competitorNames = new Map<string, string>();
-  for (const r of succeeded) for (const c of r.competitors) competitorNames.set(c.id, c.name);
-  const competitors: CompetitorRow[] = [
-    { id: "brand", name: store?.brandName ?? "Brand", mentioned: current.mention, isBrand: true },
-    ...[...competitorNames.entries()].map(([id, name]) => ({
-      id,
-      name,
-      mentioned: { n: succeeded.filter((r) => r.competitors.some((c) => c.id === id && c.mentioned)).length, d: succeeded.length },
-      isBrand: false,
-    })),
-    // Suggested (unconfirmed) competitors are listed only when they actually appear in the answers.
-    ...storeCompetitors
-      .filter((c) => c.status === "suggested")
-      .map((c) => ({ id: c.id, name: c.name, mentioned: { n: succeeded.filter((r) => r.answerText.includes(c.name)).length, d: succeeded.length }, isBrand: false, suggested: true }))
-      .filter((row) => row.mentioned.n > 0),
-  ];
-
-  const citationsBySource = { owned: 0, competitor: 0, third_party: 0 };
-  const domains = new Map<string, CitationDomainRow>();
-  for (const r of succeeded) {
-    for (const c of r.citations) {
-      citationsBySource[c.source] += 1;
-      const key = `${c.domain}|${c.source}`;
-      const existing = domains.get(key);
-      if (existing) existing.count += 1;
-      else domains.set(key, { domain: c.domain, source: c.source, count: 1 });
-    }
-  }
-  const topDomains = [...domains.values()].sort((a, b) => b.count - a.count || a.domain.localeCompare(b.domain)).slice(0, 6);
-
-  const promptSeen = new Map<string, { id: string; text: string; version: number }>();
-  for (const r of responses) if (!promptSeen.has(r.promptId)) promptSeen.set(r.promptId, { id: r.promptId, text: r.promptText, version: r.promptVersion });
-
-  return {
+  const baselineResponses = baselineAudit ? await listRunResponses(storeId, baselineAudit.id) : null;
+  return buildAiLane({
     responses,
-    succeeded: succeeded.length,
-    failed,
     planned: audit.plannedJobs,
-    mention: current.mention,
-    recommendation: current.recommendation,
-    ownedCitation: current.citation,
-    baselinePrevious: previous ? { mention: previous.mention, recommendation: previous.recommendation, ownedCitation: previous.citation } : null,
-    byProvider,
-    byGroup,
-    competitors,
-    citationsBySource,
-    noCitationReturned: succeeded.filter((r) => r.citationSupport === "none_returned").length,
-    citationNotSupported: succeeded.filter((r) => r.citationSupport === "not_supported").length,
-    topDomains,
-    prompts: [...promptSeen.values()],
-    providers: channels.map((c) => ({ id: c.id, label: c.providerLabel })),
-  };
+    channels,
+    prompts,
+    groups,
+    brandName: store?.brandName ?? "Brand",
+    suggestedCompetitors: storeCompetitors.filter((c) => c.status === "suggested").map((c) => ({ id: c.id, name: c.name })),
+    baselineResponses,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -370,64 +339,22 @@ export async function getAudit(storeId: string, auditId: string): Promise<AuditD
     ...web,
   };
 
-  const limitations: AuditDetail["limitations"] = [];
   const running = audit.status === "in_progress";
-  if (running) limitations.push({ id: "provisional", tone: "warning", text: "Results are provisional until the audit completes." });
-  if (audit.status === "partially_completed") {
-    limitations.push({ id: "partial", tone: "warning", text: "Partially completed: the audit ended before every planned request returned a usable answer. Read the rates as directional." });
-  }
-  if (audit.failedJobs > 0) {
-    limitations.push({
-      id: "failed",
-      tone: "warning",
-      text: `${audit.failedJobs} of ${running ? responses.length : audit.plannedJobs} requests failed after retries. They are excluded from rates and counted in coverage, never as "not mentioned".`,
-    });
-  }
-  if (hasWebsite && !running && (web.pagesDetail.blocked > 0 || web.pagesDetail.unvisited > 0)) {
-    limitations.push({
-      id: "pages",
-      tone: "warning",
-      text: `${web.pages.d - web.pages.n} of ${web.pages.d} in-scope pages were not assessed (${web.pagesDetail.blocked} blocked, ${web.pagesDetail.unvisited} not visited).`,
-    });
-  }
-  for (const c of checks.filter((x) => x.status === "blocked" || x.status === "error")) {
-    limitations.push({ id: `chk-${c.id}`, tone: "warning", text: `${c.name}: ${STATUS.check[c.status as "blocked" | "error"].label.toLowerCase()}. ${c.evidence.snippet}` });
-  }
-  const open = checks.filter((c) => c.status === "inconclusive" || c.status === "not_assessed");
-  if (!running && open.length > 0) {
-    limitations.push({ id: "open", tone: "info", text: `${open.length} ${open.length === 1 ? "check was" : "checks were"} inconclusive or not assessed, so they count against check coverage.` });
-  }
-  const noCite = ok.filter((r) => r.citationSupport === "none_returned").length;
-  if (noCite > 0) limitations.push({ id: "nocite", tone: "info", text: `${noCite} successful ${noCite === 1 ? "response" : "responses"} returned no citation. They stay in the owned-citation denominator.` });
-  if (baselineAudit) {
-    const versions = new Map(baselineResponses.map((r) => [r.promptId, r.promptVersion]));
-    const changed = [...new Set(ok.filter((r) => versions.has(r.promptId) && versions.get(r.promptId) !== r.promptVersion).map((r) => r.promptId))];
-    if (changed.length > 0) {
-      limitations.push({ id: "versions", tone: "info", text: `Prompt version changed since ${baselineAudit.title} (${changed.join(", ")}). Treat the comparison as partial.` });
-    }
-  }
-  if (audit.type === "verification") limitations.push({ id: "scope", tone: "info", text: "Verification scope: 2 prompts, 1 sample each. Rates are directional and not comparable with a full audit." });
-  if (audit.type === "focused") {
-    limitations.push({
-      id: "scope",
-      tone: "info",
-      text: `Focused scope: ${config.promptIds.length} of ${activeIds.length} active prompts${hasWebsite ? "" : ", AI visibility only"}. Rates are directional and not comparable with a full audit.`,
-    });
-  }
-  limitations.push({ id: "api", tone: "neutral", text: "AI results are API answer samples. They can differ from what a consumer app shows." });
-  if (hasWebsite) limitations.push({ id: "lab", tone: "neutral", text: "Performance numbers are lab measurements. Field data is available for one URL only." });
-
-  const attempted = responses.length;
-  const pagesCrawled = hasWebsite ? (audit.pages?.n ?? 0) : 0;
-  const usage: AuditUsage = {
-    requests: { attempted, succeeded: ok.length, failed: attempted - ok.length },
-    searchCalls: responses.reduce((sum, r) => sum + r.usage.searchCalls, 0),
-    inputTokens: responses.reduce((sum, r) => sum + r.usage.inputTokens, 0),
-    outputTokens: responses.reduce((sum, r) => sum + r.usage.outputTokens, 0),
-    pagesCrawled,
-    estimatedCostUsd: Math.round((attempted * APPROX_COST_PER_JOB_USD + pagesCrawled * APPROX_COST_PER_PAGE_USD) * 100) / 100,
-    budgetUsd: config.limits.budgetUsd,
-  };
+  const limitations = buildLimitations({
+    status: audit.status,
+    type: audit.type,
+    failedJobs: audit.failedJobs,
+    plannedJobs: audit.plannedJobs,
+    attempted: responses.length,
+    hasWebsite,
+    config,
+    activePromptCount: activeIds.length,
+    responses,
+    checks,
+    web,
+    baseline: baselineAudit ? { title: baselineAudit.title, responses: baselineResponses } : null,
+  });
+  const usage = buildUsage(responses, hasWebsite ? (audit.pages?.n ?? 0) : 0, config.limits.budgetUsd);
 
   return {
     ...toSummary(storeId, audit),
@@ -469,7 +396,7 @@ export async function getAuditFindings(storeId: string, auditId: string): Promis
   const findings = await listFindings(storeId);
   return findings
     .filter((f) => Date.parse(f.firstDetectedAt) <= cutoff)
-    .map((f) => ({ ...f, isNew: f.auditId === auditId }));
+    .map((f) => ({ ...f, isNew: f.auditId === auditId, evidenceIds: evidenceIdsForFinding(f) }));
 }
 
 export async function listAuditTasks(storeId: string, auditId: string): Promise<AuditTaskLink[]> {
@@ -485,34 +412,27 @@ export async function listAuditTasks(storeId: string, auditId: string): Promise<
 // Wizard
 // ---------------------------------------------------------------------------
 
-/** Used when a store has no earlier full audit to take defaults from. */
+/** Used when a website has no earlier full audit to take defaults from. */
 const FALLBACK_DEFAULTS: WizardData["defaults"] = { samples: 2, maxUrls: 150, maxDepth: 4, maxRequests: 200, concurrency: 4, budgetUsd: 8, excludedPaths: ["/cart", "/checkout", "/account"] };
 
 export async function getWizardData(storeId: string): Promise<WizardData | null> {
   const store = await getStore(storeId);
   if (!store) return null;
-  const [prompts, groups, channels] = await Promise.all([listPromptsBase(storeId), listPromptGroups(storeId), listStoreChannels(storeId)]);
+  const [prompts, groups, channels, findings] = await Promise.all([listPromptsBase(storeId), listPromptGroups(storeId), listStoreChannels(storeId), listFindings(storeId)]);
 
   const audits = [...registry.audits(storeId)].sort((x, y) => Date.parse(y.startedAt) - Date.parse(x.startedAt));
   const knownPages = audits.find((a) => a.pages)?.pages?.d ?? null;
   const latestFull = audits.find((a) => comparableType(a.type));
   const base = latestFull ? ALL_AUDIT_CONFIGS[latestFull.id] : undefined;
-  const landing = audits.find((a) => a.status === "in_progress") ?? latestFull ?? audits[0] ?? null;
+  const basis = pickBasisAudit(storeId);
+  const answered = basis ? [...new Set((await listRunResponses(storeId, basis.id)).filter((r) => r.status === "succeeded").map((r) => r.promptId))] : [];
+  const activeIds = prompts.filter((p) => p.status === "active").map((p) => p.id);
 
   return {
     store: { id: store.id, name: store.name, domain: store.domain, market: store.market, marketName: store.marketName, language: store.language },
-    prompts: prompts.map((p) => ({
-      id: p.id,
-      text: p.text,
-      version: p.version,
-      status: p.status,
-      groupId: p.groupId,
-      groupName: groups.find((g) => g.id === p.groupId)?.name ?? "Ungrouped",
-      intentLabel: INTENT_LABEL[p.intent],
-      isCore: p.isCore,
-      scopeLabel: SCOPE_LABEL[p.scope],
-    })),
-    groups: groups.map((g) => ({ id: g.id, name: g.name })),
+    promptsBase: prompts,
+    groups,
+    answeredPromptIds: answered,
     channels: channels.map((c) => ({ id: c.id, providerLabel: c.providerLabel, apiLabel: c.apiLabel, model: c.model, searchMode: c.searchMode, supportsCitations: c.supportsCitations })),
     integrations: {
       searchConsole: store.integrations.searchConsole === "connected",
@@ -533,6 +453,55 @@ export async function getWizardData(storeId: string): Promise<WizardData | null>
           excludedPaths: base.excludedPaths,
         }
       : FALLBACK_DEFAULTS,
-    landingAudit: landing ? { id: landing.id, title: landing.title } : null,
+    findings: findings.map((f) => ({ id: f.id, title: f.title, lane: f.lane, affectedPromptIds: f.affectedPromptIds })),
+    reruns: audits
+      .filter((a) => ALL_AUDIT_CONFIGS[a.id])
+      .map((a) => {
+        const config = { ...ALL_AUDIT_CONFIGS[a.id] };
+        if (config.promptScope === "all_active") config.promptIds = activeIds;
+        return { id: a.id, title: a.title, type: a.type, lanes: a.lanes, config };
+      }),
+    pageTypes: [...new Set((WEBSITE_BASES[storeId]?.pages ?? []).map((p) => p.type))],
+    checkCount: WEBSITE_BASES[storeId]?.checks.length ?? 0,
+    basisAuditId: basis?.id ?? null,
+  };
+}
+
+/**
+ * What the browser needs to build a simulated audit from an existing one: the answers, crawled pages, checks
+ * and findings of the basis audit (the latest completed full audit). Null when the website has no such audit.
+ */
+export async function getAuditBasis(storeId: string): Promise<AuditBasis | null> {
+  const audit = pickBasisAudit(storeId);
+  const store = await getStore(storeId);
+  if (!audit || !store) return null;
+  const [responses, prompts, groups, channels, competitors, findings, web] = await Promise.all([
+    listRunResponses(storeId, audit.id),
+    listPromptsBase(storeId),
+    listPromptGroups(storeId),
+    listStoreChannels(storeId),
+    listCompetitors(storeId),
+    listFindings(storeId),
+    getWebsiteLane(storeId, audit.id),
+  ]);
+  const base = ALL_AUDIT_CONFIGS[audit.id];
+  return {
+    storeId,
+    brandName: store.brandName,
+    domain: store.domain,
+    market: store.market,
+    language: store.language,
+    basisAudit: { id: audit.id, title: audit.title },
+    basisConfig: base,
+    responses,
+    channels: channels.map((c) => ({ id: c.id, providerLabel: c.providerLabel, apiLabel: c.apiLabel, model: c.model, searchMode: c.searchMode, supportsCitations: c.supportsCitations })),
+    prompts: prompts.map((p) => ({ id: p.id, text: p.text, version: p.version, groupId: p.groupId, status: p.status })),
+    groups: groups.map((g) => ({ id: g.id, name: g.name })),
+    suggestedCompetitors: competitors.filter((c) => c.status === "suggested").map((c) => ({ id: c.id, name: c.name })),
+    pages: web?.pages ?? [],
+    checks: web?.checks ?? [],
+    crawlers: web?.crawlers ?? [],
+    findings: findings.map((f) => ({ ...f, evidenceIds: evidenceIdsForFinding(f) })),
+    tasks: registry.tasks(storeId).map((t) => ({ id: t.id, title: t.title, findingId: t.findingId, status: t.status })),
   };
 }

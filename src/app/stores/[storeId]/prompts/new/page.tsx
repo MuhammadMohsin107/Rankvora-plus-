@@ -2,7 +2,6 @@ import { Suspense } from "react";
 
 import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { CreatePrompt } from "@/features/prompts/create-prompt";
@@ -18,11 +17,9 @@ export async function generateStaticParams() {
 async function NewPromptPageContent(props: PageProps<"/stores/[storeId]/prompts/new">) {
   const { storeId } = await props.params;
   const data = await getNewPromptData(storeId);
-  if (!data) notFound();
-
   return (
     <>
-      <PageHeader title="New prompt" breadcrumb={[{ label: "Prompts", href: `/stores/${storeId}/prompts` }]} />
+      <PageHeader title="New prompt" />
       <CreatePrompt data={data} />
     </>
   );

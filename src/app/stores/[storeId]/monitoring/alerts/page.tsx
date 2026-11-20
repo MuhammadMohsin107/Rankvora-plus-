@@ -1,13 +1,12 @@
 import { Suspense } from "react";
 
-import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PageFallback } from "@/components/shell/page-fallback";
 import { AlertsInbox } from "@/features/monitoring/alerts-inbox";
-import { NoSchedules } from "@/features/monitoring/no-schedules";
 import { getStore, storeIds } from "@/services/core";
-import { listEvents, listSchedules } from "@/services/monitoring";
+import { listEvents } from "@/services/monitoring";
 
 export const metadata: Metadata = { title: "Alerts" };
 
@@ -19,8 +18,7 @@ async function AlertsPageContent(props: PageProps<"/stores/[storeId]/monitoring/
   const { storeId } = await props.params;
   const store = await getStore(storeId);
   if (!store) notFound();
-  const [schedules, events] = await Promise.all([listSchedules(storeId), listEvents(storeId)]);
-  if (schedules.length === 0) return <NoSchedules storeId={storeId} canSchedule={store.channelIds.length > 0} />;
+  const events = await listEvents(storeId);
   return <AlertsInbox events={events} storeTimezone={store.timezone} />;
 }
 

@@ -16,6 +16,7 @@ import {
   type EventSpec,
   type SlotRef,
 } from "@/demo/monitoring";
+import { frequencyLabelOf } from "@/features/monitoring/schedule-logic";
 import { formatShortDate } from "@/lib/format";
 import { channelLabel, SEARCH_MODE_LABEL, shortChannelLabel } from "@/lib/labels";
 import {
@@ -28,8 +29,9 @@ import {
   listStoreChannels,
 } from "@/services/core";
 import { listRunResponses, registry } from "@/services/records";
-import type { AiChannel, Rate } from "@/types/core";
+import type { AiChannel, AlertHeadline, Rate } from "@/types/core";
 import type {
+  AlertRow,
   AlertState,
   ChannelInfo,
   EvidenceSide,
@@ -37,8 +39,10 @@ import type {
   EventType,
   FailureClass,
   MonitoringEvent,
-  MonitoringHeaderData,
+  MonitoringEventLite,
   MonitoringSchedule,
+  MonitoringShellData,
+  ScheduleRec,
   ObservationRow,
   ProviderHealth,
   ProviderSplit,
@@ -71,23 +75,7 @@ const toInfo = (c: AiChannel): ChannelInfo => ({
   tone: c.tone,
 });
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function frequencyLabel(config: ScheduleConfig): string {
-  const f = config.frequency;
-  switch (f.kind) {
-    case "daily":
-      return `Daily · ${config.localTime}`;
-    case "every_n_days":
-      return `Every ${f.everyDays ?? 2} days · ${config.localTime}`;
-    case "weekly":
-      return `Weekly · ${WEEKDAYS[f.weekday ?? 1]} ${config.localTime}`;
-    case "monthly":
-      return `Monthly · ${f.dayOfMonth ?? 1}${f.dayOfMonth === 1 ? "st" : "th"} ${config.localTime}`;
-    default:
-      return `Custom · ${f.cron ?? "cron"}`;
-  }
-}
+const frequencyLabel = (config: ScheduleConfig) => frequencyLabelOf(config);
 
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 const round = (value: number, digits = 2) => Math.round(value * 10 ** digits) / 10 ** digits;
@@ -244,18 +232,27 @@ export function scheduleParams(): { storeId: string; scheduleId: string }[] {
 // ---------------------------------------------------------------------------
 
 export async function listRuns(storeId: string): Promise<RunSummary[]> {
-  const scheduleName = (id: string) => allSchedules().find((s) => s.id === id)?.name ?? id;
+  const all = allSchedules();
+  const scheduleName = (id: string) => all.find((s) => s.id === id)?.name ?? id;
+  const configAt = (scheduleId: string, version: number) => {
+    const versions = all.find((s) => s.id === scheduleId)?.versions ?? [];
+    return (versions.find((v) => v.version === version) ?? versions[versions.length - 1])?.config;
+  };
   const registryRuns = registry.runs(storeId);
   const responses = await loadRunResponses(storeId, registryRuns.map((r) => r.id));
   return registryRuns
     .map<RunSummary>((r) => {
       const list = responses.get(r.id) ?? [];
+      const version = scheduleVersionAt(r.scheduleId, r.scheduledFor);
+      const config = configAt(r.scheduleId, version);
       return {
         id: r.id,
         storeId,
         scheduleId: r.scheduleId,
         scheduleName: scheduleName(r.scheduleId),
-        scheduleVersion: scheduleVersionAt(r.scheduleId, r.scheduledFor),
+        scheduleVersion: version,
+        channelIds: config?.channelIds ?? [],
+        promptIds: config?.promptIds ?? [],
         trigger: "schedule",
         scheduledFor: r.scheduledFor,
         durationSeconds: runTiming(list, r.scheduledFor),
@@ -429,15 +426,13 @@ export type MonitoringOverview = {
   providerSeries: { channelId: string; label: string; tone: 1 | 2 | 3 | 4 | 5 }[];
   markers: { x: string; label: string }[];
   health: ProviderHealth[];
-  openAlerts: MonitoringEvent[];
-  recentEvents: MonitoringEvent[];
   runCount: number;
 };
 
 export async function getMonitoringOverview(storeId: string): Promise<MonitoringOverview | null> {
   const store = await getStore(storeId);
   if (!store) return null;
-  const [schedules, runs, channels, events] = await Promise.all([listSchedules(storeId), listRuns(storeId), listStoreChannels(storeId), listEvents(storeId)]);
+  const [schedules, runs, channels] = await Promise.all([listSchedules(storeId), listRuns(storeId), listStoreChannels(storeId)]);
   const chronological = [...runs].sort((a, b) => a.scheduledFor.localeCompare(b.scheduledFor));
   const responses = await loadRunResponses(storeId, chronological.filter((r) => r.hasJobDetail).map((r) => r.id));
 
@@ -514,39 +509,76 @@ export async function getMonitoringOverview(storeId: string): Promise<Monitoring
       return x ? [{ x, label: m.label }] : [];
     }),
     health,
-    openAlerts: events.filter((e) => e.alert && !["resolved", "muted"].includes(e.alert.status)),
-    // Open alerts have their own list; keep each event in one place.
-    recentEvents: events.filter((e) => !(e.alert && !["resolved", "muted"].includes(e.alert.status))).slice(0, 6),
     runCount: runs.length,
   };
 }
 
-export async function getMonitoringHeader(storeId: string): Promise<MonitoringHeaderData | null> {
+/** Everything the Monitoring client state starts from: schedules, runs, alert rows, light events, form context. */
+export async function getMonitoringShell(storeId: string): Promise<MonitoringShellData | null> {
   const store = await getStore(storeId);
   if (!store) return null;
-  const [schedules, events] = await Promise.all([listSchedules(storeId), listEvents(storeId)]);
+  const [schedules, runs, events, ctx, prompts, groups, headlines, org] = await Promise.all([
+    listSchedules(storeId),
+    listRuns(storeId),
+    listEvents(storeId),
+    getScheduleFormContext(storeId),
+    listPromptsBase(storeId),
+    listPromptGroups(storeId),
+    listAlertHeadlines(),
+    getOrgUsage(),
+  ]);
+  const caps = USAGE_CAPS[storeId] ?? FALLBACK_CAPS;
+  const detail = Object.fromEntries(allSchedules().filter((s) => s.storeId === storeId).map((s) => [s.id, s]));
+  const recs = schedules.map<ScheduleRec>((row) => ({
+    ...row,
+    storeId,
+    createdAt: detail[row.id]?.createdAt ?? "",
+    createdBy: detail[row.id]?.createdBy ?? "",
+    versions: detail[row.id]?.versions ?? [],
+  }));
+  const storeUsage = org.perStore.find((s) => s.storeId === storeId);
   return {
     storeId,
+    storeName: store.name,
+    timezone: store.timezone,
+    market: store.market,
     canSchedule: store.channelIds.length > 0,
-    openAlerts: events.filter((e) => e.alert && !["resolved", "muted"].includes(e.alert.status)).length,
-    schedules: schedules
-      .filter((s) => s.status !== "cancelled")
-      .map((s) => ({
-        id: s.id,
-        name: s.name,
-        jobsPerRun: s.jobsPerRun,
-        windowMinutes: s.config.windowMinutes,
-        maxConcurrency: s.config.maxConcurrency,
-        usageCap: `${s.config.usageCap.jobsPerMonth} jobs / month · $${s.config.usageCap.costUsd} estimate`,
-      })),
+    schedules: recs,
+    runs,
+    alerts: alertRows(storeId, events, headlines),
+    events: events.map(toLite),
+    promptBase: prompts,
+    groups,
+    ctx,
+    tasks: registry.tasks(storeId).map((t) => ({ id: t.id, title: t.title, findingId: t.findingId, status: t.status })),
+    caps,
+    planRequests: storeUsage ? { used: storeUsage.requests, cap: storeUsage.cap } : null,
   };
+}
+
+function toLite(event: MonitoringEvent): MonitoringEventLite {
+  const { previous: _previous, current: _current, summary: _summary, note: _note, alert, ...rest } = event;
+  void _previous;
+  void _current;
+  void _summary;
+  void _note;
+  return { ...rest, alert: alert ? { id: alert.id, severity: alert.severity, status: alert.status } : null };
+}
+
+/** Alert rows keyed by the shared headline ids. Same ids the bell uses (src/demo/shared.ts DEMO_ALERTS). */
+function alertRows(storeId: string, events: MonitoringEvent[], headlines: AlertHeadline[]): AlertRow[] {
+  return events.flatMap<AlertRow>((e) => {
+    if (!e.alert) return [];
+    const headline = headlines.find((h) => h.id === e.alert?.id);
+    return [{ id: e.alert.id, storeId, severity: e.alert.severity, title: e.title, at: e.at, read: headline ? headline.read : e.alert.status !== "new", status: e.alert.status, eventId: e.id }];
+  });
 }
 
 // ---------------------------------------------------------------------------
 // Events and alerts
 // ---------------------------------------------------------------------------
 
-const DATA_QUALITY: EventType[] = ["provider_error_spike", "run_incomplete", "run_late", "integration_attention"];
+const DATA_QUALITY: EventType[] = ["provider_error_spike", "run_incomplete", "run_late", "integration_attention", "coverage_change"];
 
 function describe(r: ResponseSample): Pick<EvidenceSide, "summary" | "tone" | "excerpt"> {
   if (r.status === "failed") {
@@ -582,12 +614,36 @@ function competitorCitations(list: ResponseSample[]) {
   return { n: ok.filter((r) => r.citations.some((c) => c.source === "competitor")).length, d: ok.length };
 }
 
+/** Pairs of prompt x provider where every planned sample was analysed (failed samples leave a pair incomplete). */
+function fullPairs(list: ResponseSample[]) {
+  const pairs = new Map<string, { ok: number; total: number }>();
+  for (const r of list) {
+    const key = `${r.promptId}|${r.channelId}`;
+    const entry = pairs.get(key) ?? { ok: 0, total: 0 };
+    entry.total += 1;
+    if (r.status === "succeeded") entry.ok += 1;
+    pairs.set(key, entry);
+  }
+  const all = [...pairs.values()];
+  return { n: all.filter((e) => e.ok === e.total).length, d: all.length };
+}
+
+function namedCompetitor(list: ResponseSample[], name: string) {
+  const ok = list.filter((r) => r.status === "succeeded");
+  return { n: ok.filter((r) => r.competitors.some((c) => c.name === name && c.mentioned)).length, d: ok.length };
+}
+
+function positiveShare(list: ResponseSample[]) {
+  const ok = list.filter((r) => r.status === "succeeded");
+  return { n: ok.filter((r) => r.sentiment === "positive").length, d: ok.length };
+}
+
 function aggregateSides(
   spec: EventSpec,
   map: Map<string, ResponseSample[]>,
   runs: RunSummary[],
   channelName: (id: string) => string,
-): { previous: EvidenceSide | null; current: EvidenceSide } {
+): { previous: EvidenceSide | null; current: EvidenceSide; title?: string } {
   const cur = map.get(spec.runId) ?? [];
   const prevId = spec.compare?.previousRunId ?? null;
   const prev = prevId ? (map.get(prevId) ?? []) : null;
@@ -638,8 +694,38 @@ function aggregateSides(
         current: mk("Current", spec.runId, fallbackAt, text(c), spec.currentTone ?? "warning"),
       };
     }
+    case "competitor_named":
+    case "positive_sentiment":
+    case "coverage": {
+      const calc =
+        spec.metric === "competitor_named"
+          ? (l: ResponseSample[]) => namedCompetitor(l, spec.competitor ?? "")
+          : spec.metric === "positive_sentiment"
+            ? positiveShare
+            : fullPairs;
+      const noun =
+        spec.metric === "competitor_named" ? `answers name ${spec.competitor}` : spec.metric === "positive_sentiment" ? "answers read positive about the brand" : "prompt and provider pairs have every sample analysed";
+      const text = (x: { n: number; d: number }) => `${x.n} / ${x.d} ${noun} (${pct(x.n, x.d)})`;
+      const c = calc(cur);
+      const p = prev ? calc(prev) : null;
+      const head =
+        spec.metric === "competitor_named" ? `Competitor mentions: ${spec.competitor}` : spec.metric === "positive_sentiment" ? "Sentiment: positive share of answers" : "Coverage: pairs fully analysed";
+      const title = p ? `${head} ${p.n} / ${p.d} → ${c.n} / ${c.d}` : `${head} ${c.n} / ${c.d}`;
+      return {
+        title,
+        previous: p && prevId ? mk("Previous", prevId, prevRun?.scheduledFor ?? fallbackAt, text(p), "neutral") : null,
+        current: mk("Current", spec.runId, fallbackAt, text(c), spec.currentTone ?? "warning"),
+      };
+    }
+    case "brand_fact": {
+      const f = spec.fact;
+      return {
+        previous: { label: `Verified fact · ${f?.source ?? "page"}`, runId: spec.runId, at: spec.at, summary: f?.verified ?? "Verified fact", tone: "success", excerpt: null, response: null },
+        current: { label: `AI answer · ${spec.runId}`, runId: spec.runId, at: spec.at, summary: f?.claim ?? "States a different fact", tone: spec.currentTone ?? "danger", excerpt: f?.quote ?? null, response: null },
+      };
+    }
     default:
-      return { previous: null, current: mk("Current", spec.runId, spec.at, spec.evidenceSummary ?? "Commerce connection: needs attention", spec.currentTone ?? "warning") };
+      return { previous: null, current: mk("Current", spec.runId, spec.at, spec.evidenceSummary ?? "Site connection: needs attention", spec.currentTone ?? "warning") };
   }
 }
 
@@ -665,6 +751,7 @@ export async function listEvents(storeId: string): Promise<MonitoringEvent[]> {
     const current = slotCur ?? agg?.current;
     if (!current) throw new Error(`Event ${spec.id} has no evidence`);
     const slot = spec.current;
+    const aggTitle = agg?.title;
     const alert: AlertState | null = spec.alert
       ? {
           id: headline?.id ?? `al-${spec.id}`,
@@ -676,7 +763,8 @@ export async function listEvents(storeId: string): Promise<MonitoringEvent[]> {
           handledBy: spec.alert.handledBy,
         }
       : null;
-    const channelId = slot?.channelId ?? spec.compare?.channelId ?? null;
+    const channelId = slot?.channelId ?? spec.channelId ?? spec.compare?.channelId ?? null;
+    const promptId = slot?.promptId ?? spec.promptId ?? null;
     const category: EventCategory = DATA_QUALITY.includes(spec.type) ? "data_quality" : "visibility";
     return {
       id: spec.id,
@@ -685,16 +773,18 @@ export async function listEvents(storeId: string): Promise<MonitoringEvent[]> {
       category,
       runId: spec.runId,
       at: headline?.at ?? spec.at,
-      promptId: slot?.promptId ?? null,
-      promptText: slot ? (prompts.find((p) => p.id === slot.promptId)?.text ?? null) : null,
+      promptId,
+      promptText: promptId ? (prompts.find((p) => p.id === promptId)?.text ?? null) : null,
       channelId,
       providerShort: channelId ? channelName(channelId) : null,
-      title: headline?.title ?? spec.title ?? spec.summary,
+      title: headline?.title ?? aggTitle ?? spec.title ?? spec.summary,
       summary: spec.summary,
       previous: slotPrev ?? agg?.previous ?? null,
       current,
       note: spec.note ?? null,
       alert,
+      findingId: spec.findingId ?? null,
+      taskId: spec.taskId ?? null,
     };
   });
   return events.sort((a, b) => b.at.localeCompare(a.at));
@@ -903,6 +993,7 @@ export async function getScheduleFormContext(storeId: string): Promise<ScheduleF
     defaultCap: { jobsPerMonth: caps.requests, costUsd: caps.costUsd },
     emails: members.filter((m) => m.role !== "viewer").map((m) => m.email),
     otherJobsPerMonth: sum(schedules.filter((s) => s.status === "active").map((s) => s.jobsPerMonth)),
+    brandConfirmed: Boolean(store.brandName && store.domain),
   };
 }
 

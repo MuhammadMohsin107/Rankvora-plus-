@@ -12,5 +12,5 @@ export function nextId(prefix: string, ids: string[]): string {
 
 export type LogFn = (title: string, kind: ActivityKind, detail?: string) => void;
 
-export const TAB_IDS = ["profile", "brand", "domains", "competitors", "products", "integrations", "notifications", "activity", "danger"] as const;
+export const TAB_IDS = ["profile", "brand", "competitors", "products", "integrations", "notifications", "activity", "danger"] as const;
 export type TabId = (typeof TAB_IDS)[number];

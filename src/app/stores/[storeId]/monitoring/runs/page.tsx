@@ -1,33 +1,21 @@
 import { Suspense } from "react";
 
-import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 
-import { NoSchedules } from "@/features/monitoring/no-schedules";
+import { PageFallback } from "@/components/shell/page-fallback";
 import { RunsTable } from "@/features/monitoring/runs-table";
-import { getStore, storeIds } from "@/services/core";
-import { listRuns, listSchedules } from "@/services/monitoring";
+import { storeIds } from "@/services/core";
 
-export const metadata: Metadata = { title: "Runs" };
+export const metadata: Metadata = { title: "History" };
 
 export async function generateStaticParams() {
   return storeIds();
 }
 
-async function RunsPageContent(props: PageProps<"/stores/[storeId]/monitoring/runs">) {
-  const { storeId } = await props.params;
-  const store = await getStore(storeId);
-  if (!store) notFound();
-  const [schedules, runs] = await Promise.all([listSchedules(storeId), listRuns(storeId)]);
-  if (schedules.length === 0) return <NoSchedules storeId={storeId} canSchedule={store.channelIds.length > 0} />;
-  return <RunsTable storeId={storeId} runs={runs} storeTimezone={store.timezone} />;
-}
-
-export default function RunsPage(props: PageProps<"/stores/[storeId]/monitoring/runs">) {
+export default function RunsPage() {
   return (
     <Suspense fallback={<PageFallback />}>
-      <RunsPageContent {...props} />
+      <RunsTable />
     </Suspense>
   );
 }

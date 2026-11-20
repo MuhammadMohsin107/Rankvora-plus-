@@ -4,9 +4,11 @@ import { PageFallback } from "@/components/shell/page-fallback";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { StoreSettings, type StoreSettingsData } from "@/features/stores/settings/store-settings";
+import { WebsiteSettings, type WebsiteSettingsData } from "@/features/stores/settings/website-settings";
+import { isLocalWebsiteId } from "@/features/stores/website-model";
 import { getStore, listChannels, listPromptsBase, listProducts, storeIds } from "@/services/core";
 import {
+  getBrandKnowledgeBase,
   getDomainRecord,
   getIntegrationDetail,
   getOrgNotificationPrefs,
@@ -17,23 +19,25 @@ import {
   listStoreCompetitors,
 } from "@/services/settings";
 
-export const metadata: Metadata = { title: "Store settings" };
+export const metadata: Metadata = { title: "Website settings" };
 
 export async function generateStaticParams() {
   return storeIds();
 }
 
-async function StoreSettingsPageContent(props: PageProps<"/stores/[storeId]/settings">) {
+async function WebsiteSettingsPageContent(props: PageProps<"/stores/[storeId]/settings">) {
   const { storeId } = await props.params;
   const store = await getStore(storeId);
-  if (!store) notFound();
+  // Websites created in this browser are drawn by the layout's client gate.
+  if (!store) return isLocalWebsiteId(storeId) ? null : notFound();
 
-  const [channels, competitors, products, prompts, brandVersions, domainRecord, integrationDetail, activity, events, orgPrefs, override] = await Promise.all([
+  const [channels, competitors, products, prompts, brandVersions, knowledge, domainRecord, integrationDetail, activity, events, orgPrefs, override] = await Promise.all([
     listChannels(),
     listStoreCompetitors(storeId),
     listProducts(storeId),
     listPromptsBase(storeId),
     listBrandVersions(storeId),
+    getBrandKnowledgeBase(storeId),
     getDomainRecord(storeId),
     getIntegrationDetail(storeId),
     listStoreActivity(storeId),
@@ -42,12 +46,15 @@ async function StoreSettingsPageContent(props: PageProps<"/stores/[storeId]/sett
     getStoreNotificationOverride(storeId),
   ]);
 
-  const data: StoreSettingsData = {
+  const data: WebsiteSettingsData = {
     store,
+    seeded: true,
     channels,
     competitors,
     products,
+    prompts,
     brandVersions,
+    knowledge,
     domains: domainRecord ?? { storeId, canonical: store.domain, aliases: [], former: [] },
     integrations: integrationDetail ?? {
       storeId,
@@ -56,19 +63,17 @@ async function StoreSettingsPageContent(props: PageProps<"/stores/[storeId]/sett
     },
     activity,
     events,
-    orgMatrix: orgPrefs.matrix,
-    orgWebhookReady: orgPrefs.webhookUrl.trim() !== "",
-    notifications: { mode: override.mode, matrix: override.matrix },
-    promptCount: prompts.filter((p) => p.status === "active").length,
+    orgPrefs,
+    notifications: override,
   };
 
-  return <StoreSettings data={data} />;
+  return <WebsiteSettings data={data} />;
 }
 
-export default function StoreSettingsPage(props: PageProps<"/stores/[storeId]/settings">) {
+export default function WebsiteSettingsPage(props: PageProps<"/stores/[storeId]/settings">) {
   return (
     <Suspense fallback={<PageFallback />}>
-      <StoreSettingsPageContent {...props} />
+      <WebsiteSettingsPageContent {...props} />
     </Suspense>
   );
 }
