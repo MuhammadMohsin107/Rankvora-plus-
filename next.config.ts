@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 /**
  * Cloudflare Workers (OpenNext) cannot yet run Cache Components reliably: the
@@ -24,4 +25,19 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Only `next dev` loads the Cloudflare bindings (D1 `DB`) so local development
+ * can use a SQLite file under .wrangler/state. Builds never touch wrangler.
+ * If the binding cannot start, the app keeps working on localStorage alone.
+ */
+export default async function config(phase: string): Promise<NextConfig> {
+  if (phase === PHASE_DEVELOPMENT_SERVER) {
+    try {
+      const { initOpenNextCloudflareForDev } = await import("@opennextjs/cloudflare");
+      await initOpenNextCloudflareForDev();
+    } catch (error) {
+      console.warn("[d1] Local D1 binding unavailable, demo state stays in localStorage:", error instanceof Error ? error.message : error);
+    }
+  }
+  return nextConfig;
+}

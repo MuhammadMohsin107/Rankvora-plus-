@@ -65,6 +65,9 @@ Next.js (App Router) + TypeScript + Tailwind CSS 4 + PostgreSQL + Drizzle ORM.
 | `npm run db:migrate`  | Apply migrations                             |
 | `npm run db:push`     | Push the schema directly (dev only)          |
 | `npm run db:studio`   | Open Drizzle Studio                          |
+| `npm run db:d1:migrate:local` | Create the local D1 tables (see docs/d1-setup.md) |
+| `npm run db:d1:generate` | Generate a D1 migration from `src/db-d1/schema.ts` |
+| `npm run test:d1`     | SQL tests against an in-memory local D1      |
 | `npm run preview`     | Build for Cloudflare and run it locally      |
 | `npm run deploy`      | Build for Cloudflare and deploy the Worker   |
 | `npm run upload`      | Upload a new Worker version without deploying |
@@ -95,6 +98,12 @@ Cloudflare build. If the build image cannot provide the Node version in
 `.nvmrc`, set the build variable `NODE_VERSION` to `24`.
 
 **From your machine:** run `npx wrangler login` once, then `npm run deploy`.
+
+**Database (Cloudflare D1):** demo state is saved to a D1 database bound as `DB`
+in `wrangler.jsonc`. Before the first Cloudflare deploy create the database and
+put its id into `wrangler.jsonc` (the committed value is a placeholder, so the
+Git-connected build fails until you do). Local setup, remote steps, backup and
+data policy: [docs/d1-setup.md](docs/d1-setup.md).
 
 ## Tests
 
