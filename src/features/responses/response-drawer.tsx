@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { Badge, Status } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { HighlightedText, Mono } from "@/components/ui/misc";
 import { Drawer } from "@/components/ui/overlay";
 import { Tabs } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
-import { useDemoSettings, simulatedToast } from "@/demo-state";
+import { demoNow, useDemoSettings, simulatedToast } from "@/demo-state";
 import type { EvidenceIds } from "@/features/evidence/chain";
 import { EvidenceTrace } from "@/features/evidence/evidence-trace";
 import { formatDateTime } from "@/lib/format";
@@ -98,7 +98,12 @@ function AnswerTab({ response }: { response: ResponseSample }) {
   );
 }
 
+const noSubscribe = () => () => {};
+const citedParam = () => new URLSearchParams(window.location.search).get("citation");
+
 function CitationList({ response }: { response: ResponseSample }) {
+  // A link with ?citation=<url> (from the evidence chain) marks that citation in the list.
+  const cited = useSyncExternalStore(noSubscribe, citedParam, () => null);
   if (response.citationSupport === "not_supported") return <p className="text-body-sm text-fg-muted">Not supported by this provider (N/A).</p>;
   if (response.citations.length === 0) return <p className="text-body-sm text-fg-muted">No citation returned in this response.</p>;
   return (
@@ -112,7 +117,7 @@ function CitationList({ response }: { response: ResponseSample }) {
             </div>
             <ul className="divide-y divide-line rounded-control border border-line">
               {items.map((c) => (
-                <li key={c.url} className="min-w-0 px-3 py-2">
+                <li key={c.url} aria-current={c.url === cited ? "true" : undefined} className={c.url === cited ? "min-w-0 bg-accent-soft px-3 py-2" : "min-w-0 px-3 py-2"}>
                   <a href={c.url} target="_blank" rel="noreferrer noopener" className="inline-flex max-w-full items-center gap-1 text-body-sm font-medium text-accent-text hover:underline">
                     <span className="truncate">{c.title}</span>
                     <Icon name="external" size={12} className="shrink-0" />
@@ -185,7 +190,7 @@ function ReviewControl({ response }: { response: ResponseSample }) {
       className="flex flex-col gap-3 rounded-control border border-line p-3"
       onSubmit={(event) => {
         event.preventDefault();
-        save({ requested: true, field, reason: reason.trim(), at: new Date().toISOString() }, { kind: "settings.saved", label: "Response review requested", refs: { websiteId: response.storeId } });
+        save({ requested: true, field, reason: reason.trim(), at: demoNow() }, { kind: "settings.saved", label: "Response review requested", refs: { websiteId: response.storeId } });
         toast.push(simulatedToast("Review requested"));
         setOpen(false);
       }}

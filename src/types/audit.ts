@@ -75,9 +75,6 @@ export type AuditConfig = {
   scenario?: SimScenario;
   /** Selected prompts the demonstration data has no answers for. Their requests fail in a simulation. */
   noAnswerPromptIds?: string[];
-  /** Advanced limits (not shown by default). */
-  retries?: number;
-  timeoutSeconds?: number;
 };
 
 export type StageState = "done" | "running" | "queued";

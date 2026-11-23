@@ -128,8 +128,5 @@ export function eventMeta(event: { type: EventType; title: string; providerShort
   return parts.join(" · ");
 }
 
-/** Events that describe data quality (provider, run or connection health) rather than visibility. */
-export const DATA_QUALITY_TYPES: readonly EventType[] = ["provider_error_spike", "run_incomplete", "run_late", "integration_attention", "coverage_change"];
-
 /** Alert statuses that still need attention. Unread is a separate, narrower idea: status "new" only. */
 export const OPEN_ALERT_STATUSES = ["new", "read", "acknowledged"] as const;

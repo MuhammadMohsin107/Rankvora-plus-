@@ -168,7 +168,7 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
 
       {record.context ? (
         <Card>
-          <CardHeader title="Visibility context" info="Visibility changed after this task was completed. This is context, not proof that the task caused it." />
+          <CardHeader title="Visibility context" info="Mention rate before and after this task was completed. This is context, not proof that the task caused it." />
           <CardBody>
             <Metric label={record.context.label} numerator={record.context.n} denominator={record.context.d} basis={record.context.basis} sampleStatus="directional" />
           </CardBody>

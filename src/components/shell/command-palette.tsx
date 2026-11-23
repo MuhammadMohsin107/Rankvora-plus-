@@ -42,9 +42,8 @@ const ORG_PAGES: { label: string; href: string }[] = [
   { label: "Add website", href: "/stores/new" },
   { label: "Team", href: "/settings/members" },
   { label: "Organization settings", href: "/settings" },
-  { label: "Notification preferences", href: "/settings/notifications" },
+  { label: "Notifications", href: "/settings/notifications" },
   { label: "Integrations", href: "/integrations" },
-  { label: "AI platforms", href: "/settings/ai-platforms" },
   { label: "Billing", href: "/settings/billing" },
   { label: "Help & Support", href: "/help" },
 ];

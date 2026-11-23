@@ -95,8 +95,8 @@ export function AiTab({ context, state, source, onSource, onRegenerate, onAccept
             title="Search Console is not connected"
             description="Connect it to see questions people search for."
             action={
-              <ButtonLink href="/integrations" variant="secondary">
-                Open Integrations
+              <ButtonLink href={`/stores/${store.id}/settings`} variant="secondary">
+                Open Website settings
               </ButtonLink>
             }
           />

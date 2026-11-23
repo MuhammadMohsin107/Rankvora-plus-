@@ -82,24 +82,6 @@ export function SimulatedBadge({ className }: { className?: string }) {
   return <Status kind="demo" value="simulated" className={className} />;
 }
 
-/** Small dot + text, for dense lists where a pill is too heavy. The dot always sits beside a label. */
-export function StatusDot({ tone, children }: { tone: Tone; children: ReactNode }) {
-  const dot: Record<Tone, string> = {
-    neutral: "bg-fg-faint",
-    accent: "bg-accent",
-    success: "bg-success",
-    warning: "bg-warning",
-    danger: "bg-danger",
-    info: "bg-info",
-  };
-  return (
-    <span className="inline-flex items-center gap-1.5 text-body-sm text-fg">
-      <span aria-hidden="true" className={cn("size-1.5 rounded-full", dot[tone])} />
-      {children}
-    </span>
-  );
-}
-
 /** Filter chip / removable value. */
 export function Chip({ children, onRemove, removeLabel = "Remove", className }: { children: ReactNode; onRemove?: () => void; removeLabel?: string; className?: string }) {
   return (

@@ -9,10 +9,10 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { useToast } from "@/components/ui/toast";
 import { WizardFrame } from "@/components/ui/wizard";
-import { demoNow, demoStore, simulatedToast, useDemoCollection } from "@/demo-state";
+import { demoNow, demoStore, simulatedToast, useDemoCollection, useDemoSettings } from "@/demo-state";
 import { cn } from "@/lib/cn";
 import type { AiChannel, Store } from "@/types/core";
-import type { StoreSetupSample } from "@/types/settings";
+import type { OrgGeneral, StoreSetupSample } from "@/types/settings";
 
 import { settingKey } from "../settings/keys";
 import { BasicsStep, BrandStep, ConnectionsStep, ReviewStep, type StepProps } from "./steps";
@@ -34,13 +34,15 @@ const FIELD_LABEL: Record<string, string> = {
 };
 
 /** Four steps that really create a website in demo-state: it then shows in the selector, list and search. */
-export function AddWebsiteWizard({ channels, sample, existing }: { channels: AiChannel[]; sample: StoreSetupSample; existing: ExistingWebsite[] }) {
+export function AddWebsiteWizard({ channels, sample, existing, orgDefaults }: { channels: AiChannel[]; sample: StoreSetupSample; existing: ExistingWebsite[]; orgDefaults: OrgGeneral }) {
   const router = useRouter();
   const toast = useToast();
   const { rows: localWebsites, create } = useDemoCollection<Store>("websites", NO_WEBSITES);
   // Seeded websites plus the ones made in this browser: a second website on the same domain is refused.
   const taken = useMemo(() => [...existing, ...localWebsites.map((w) => ({ name: w.name, domain: w.domain }))], [existing, localWebsites]);
-  const [form, setForm] = useState<WizardForm>(initialForm);
+  // Market, language and time zone start from the organization defaults (Organization settings).
+  const { value: orgSaved } = useDemoSettings<OrgGeneral>("org.general", orgDefaults);
+  const [form, setForm] = useState<WizardForm>(() => ({ ...initialForm(), country: orgSaved.market, language: orgSaved.language, timezone: orgSaved.timezone }));
   const [step, setStep] = useState(0);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [attempted, setAttempted] = useState<Record<number, boolean>>({});

@@ -13,7 +13,7 @@ Read first: `docs/ui-screen-inventory.md` (what to build, vocabulary, spec rules
 5. **Honest channel labels.** Show provider API · model · search mode · market · language (use `channelLabel()` / `ResponseInspector`). Say "API answer sample". Never "exact ChatGPT result".
 6. **No causal claims.** Fixes ↔ visibility: "visibility changed after this task was completed".
 7. **Status = icon + text + tone** via `<Status kind value />` (vocabulary in `src/lib/status.ts`). Never colour alone. Charts also use line styles / markers / direct labels.
-8. **Org vs website** (internally `store`). Org pages show no store nav; store pages live under `/stores/[storeId]/…` and the shell already shows the store context. There is no organization-wide roll-up page (the Portfolio page was removed).
+8. **Org vs website** (internally `store`). Organization pages sit under the Organization sidebar group (the Website group shows the website last used); website pages live under `/stores/[storeId]/…` and the shell already shows the store context. There is no organization-wide roll-up page (the Portfolio page was removed).
 9. **Demo data** only via `src/services/*` reading `src/demo/*`. Fixed timestamps only (`DEMO_NOW = 2026-11-19T09:00:00Z`). **Never** call `new Date()` (no args), `Date.now()`, `Math.random()`, `crypto.randomUUID()` during render — Next 16 Cache Components fails the build. Use `formatRelative(iso)` / `formatDateTime(iso, tz)` from `src/lib/format.ts`.
 10. **Registry is law.** `src/demo/registry.ts` fixes ids, titles, dates, statuses and headline numbers for audits, runs, schedules, comparisons, tasks, reports; `src/demo/shared-records.ts` has findings and the response generator. Use them. Add detail around them; never contradict them.
 11. **Tailwind CSS 4 only.** No UI libraries, no icon libraries, no chart libraries, no extra npm packages. Use semantic tokens (`bg-surface`, `text-fg-muted`, `border-line`, `bg-accent`, `text-danger`…). **No raw hex, no arbitrary colours.**
@@ -49,9 +49,9 @@ Motion: 120-180ms on colour, transform and opacity only; buttons press at `scale
 |---|---|
 | Page title + one primary action | `PageHeader` (`@/components/shell/page-header`): `title`, `subtitle?`, `breadcrumb?`, `meta?`, `actions?`, `tabs?` |
 | Route tabs / in-page tabs | `LinkTabs` (deep-linkable, active from URL) · `Tabs` (state; panels as `content`) |
-| Cards | `Card` (`variant`: content, metric, chart, action, alert), `CardHeader({title, subtitle, info, actions})`, `CardBody`, `Section`, `KeyValue`, `Callout`; ready-made `MetricCard`, `ChartCard`, `ActionCard` |
+| Cards | `Card` (`variant`: content, metric, chart, action, alert), `CardHeader({title, subtitle, info, actions})`, `CardBody`, `Section`, `KeyValue`, `Callout`; ready-made `ChartCard` |
 | Metrics | `Metric`, `MetricGrid` + `MetricCell` |
-| Status | `Status kind value` (adds kind `demo`: `Demo`, `Simulated`), `Badge`, `DemoBadge`, `SimulatedBadge`, `StatusDot`, `Chip`. Always icon + label |
+| Status | `Status kind value` (adds kind `demo`: `Demo`, `Simulated`), `Badge`, `DemoBadge`, `SimulatedBadge`, `Chip`. Always icon + label |
 | Buttons | `Button` (variants `primary|secondary|ghost|danger|danger-ghost`, sizes `sm|md|lg`, `icon`, `loading`), `ButtonLink`, `IconButton` (needs `label`) |
 | Forms | `Field` (render-prop gives `id`, `describedBy`, `invalid`), `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Segmented`, `RadioCards`, `SearchField` |
 | Tables | `DataTable` (search, filters, sort, selection, pagination, empty state). Columns: `{id, header, cell, sort?, align?, width?, hideBelow?}` |
@@ -65,7 +65,7 @@ Motion: 120-180ms on colour, transform and opacity only; buttons press at `scale
 
 Chart rules: series colours only from `series-*`; every series also gets its own dash and marker shape; text never takes the series colour; rates show numerator/denominator and sample size; changes in rates are "pp", never "%"; failed or missing data is "No data", never 0.
 
-User-facing wording lives in `src/lib/labels.ts` (`TERM`, `PLATFORM_LABEL`, `SITE_TYPE_ORDER`, `siteTypeLabel`): "Website" / "Websites & Brands", site type is one option among many. Status vocabulary lives in `src/lib/status.ts`.
+User-facing wording lives in `src/lib/labels.ts` (`PLATFORM_LABEL`, `SITE_TYPE_ORDER`, `siteTypeLabel`): "Website" / "Websites & Brands", site type is one option among many. Status vocabulary lives in `src/lib/status.ts`.
 
 Row actions: `Menu` with an `IconButton icon="more" label="Row actions"` trigger. Destructive: `ConfirmDialog` stating exactly what happens.
 

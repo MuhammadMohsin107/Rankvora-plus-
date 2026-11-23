@@ -27,7 +27,6 @@ import type { ResponseSample } from "@/types/shared-records";
 const round = (value: number, digits = 3) => Math.round(value * 10 ** digits) / 10 ** digits;
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 
-export const ACTIVE_RUN_STATUSES: readonly RunStatus[] = ["queued", "running"];
 export const isActiveRun = (status: RunStatus) => status === "queued" || status === "running";
 /** Statuses of finished runs that carry results. */
 export const FINISHED_RUN_STATUSES: readonly RunStatus[] = ["completed", "completed_with_warnings", "partially_completed"];

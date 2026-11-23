@@ -3,7 +3,7 @@
  * simulated verification. No React, no demo data, so it runs in the browser, on the server and in tests.
  */
 import { OPEN_TASK_STATUSES } from "@/lib/record-status";
-import { TASK_STATUSES, type BatchItem, type CheckStatus, type ExecutionMode, type TaskStatus, type VerificationCheck, type VerificationOutcome, type VerificationRecord } from "@/types/fixes";
+import { type BatchItem, type CheckStatus, type ExecutionMode, type TaskStatus, type VerificationCheck, type VerificationOutcome, type VerificationRecord } from "@/types/fixes";
 import type { FindingCategory, FindingStatus } from "@/types/shared-records";
 
 // ---------------------------------------------------------------------------
@@ -128,11 +128,6 @@ export const FINDING_CLOSED: ReadonlySet<FindingStatus> = new Set(["verified_res
 /** A task can be created while the finding is open. */
 export function canCreateTask(status: FindingStatus): boolean {
   return !FINDING_CLOSED.has(status);
-}
-
-/** Open tasks (not finished) among the given statuses. */
-export function openTaskCount(statuses: readonly TaskStatus[]): number {
-  return statuses.filter(isTaskOpen).length;
 }
 
 type SyncInput = {
@@ -272,5 +267,3 @@ export function deriveVerification(input: {
   };
 }
 
-/** Every task status, for filters and tests. */
-export const ALL_TASK_STATUSES = TASK_STATUSES;

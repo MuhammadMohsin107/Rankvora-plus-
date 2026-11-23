@@ -368,13 +368,6 @@ export type UsageSummary = {
   costPerJobUsd: number;
 };
 
-export type MonitoringHeaderData = {
-  storeId: string;
-  canSchedule: boolean;
-  openAlerts: number;
-  schedules: { id: string; name: string; jobsPerRun: number; windowMinutes: number; maxConcurrency: number; usageCap: string }[];
-};
-
 export type FormPrompt = { id: string; text: string; group: string; status: "draft" | "active" | "paused" | "archived"; version: number; isCore: boolean };
 
 export type ScheduleFormContext = {

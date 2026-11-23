@@ -59,17 +59,3 @@ export function validateRequired(value: string, label: string, min = 1, max = 12
   return null;
 }
 
-export function validateEmail(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return "Email is required.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) return "Enter a valid email address.";
-  return null;
-}
-
-/** Adds a value to a list ignoring blanks and case-insensitive duplicates. */
-export function addUnique(list: string[], value: string): string[] {
-  const clean = value.trim().replace(/\s+/g, " ");
-  if (!clean) return list;
-  if (list.some((item) => item.toLowerCase() === clean.toLowerCase())) return list;
-  return [...list, clean];
-}

@@ -9,7 +9,6 @@ import type {
   Recommendation,
   TaskDetailData,
   TaskRow,
-  TaskStatus,
   UnsupportedClaim,
 } from "@/types/fixes";
 import type { FindingCategory, FindingStatus, Priority } from "@/types/shared-records";
@@ -170,5 +169,3 @@ export function detailFromRow(row: TaskRow, findingStatus: FindingStatus): TaskD
   };
 }
 
-/** Initial status for a task created in this browser. */
-export const NEW_TASK_STATUS: TaskStatus = "suggested";

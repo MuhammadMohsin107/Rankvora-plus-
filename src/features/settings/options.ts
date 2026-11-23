@@ -1,40 +1,9 @@
-/** Short option lists for organization forms. */
+import { COUNTRIES as SITE_COUNTRIES, LANGUAGES as SITE_LANGUAGES, TIMEZONES as SITE_TIMEZONES } from "@/features/stores/options";
 
-export const TIMEZONES: string[] = [
-  "UTC",
-  "Asia/Karachi",
-  "Asia/Dubai",
-  "Asia/Riyadh",
-  "Asia/Kolkata",
-  "Asia/Singapore",
-  "Australia/Sydney",
-  "Europe/London",
-  "Europe/Berlin",
-  "America/New_York",
-  "America/Chicago",
-  "America/Los_Angeles",
-];
-
-export const COUNTRIES: { value: string; label: string }[] = [
-  { value: "PK", label: "Pakistan" },
-  { value: "AE", label: "United Arab Emirates" },
-  { value: "SA", label: "Saudi Arabia" },
-  { value: "IN", label: "India" },
-  { value: "GB", label: "United Kingdom" },
-  { value: "DE", label: "Germany" },
-  { value: "US", label: "United States" },
-  { value: "AU", label: "Australia" },
-  { value: "SG", label: "Singapore" },
-];
-
-export const LANGUAGES: { value: string; label: string }[] = [
-  { value: "en", label: "English" },
-  { value: "ar", label: "Arabic" },
-  { value: "ur", label: "Urdu" },
-  { value: "de", label: "German" },
-  { value: "fr", label: "French" },
-  { value: "es", label: "Spanish" },
-];
+/** Option lists for organization forms. One source: the website setup lists in `@/features/stores/options`. */
+export const TIMEZONES: string[] = SITE_TIMEZONES;
+export const COUNTRIES: { value: string; label: string }[] = SITE_COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
+export const LANGUAGES: { value: string; label: string }[] = SITE_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
 export function withCurrent<T extends string>(list: string[], current: T): string[] {
   return list.includes(current) ? list : [current, ...list];

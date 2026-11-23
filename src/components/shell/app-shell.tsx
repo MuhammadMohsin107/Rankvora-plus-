@@ -7,7 +7,7 @@ import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Menu } from "@/components/ui/menu";
 import { Tooltip } from "@/components/ui/tooltip";
-import { SyncIndicator, useDemoCollection, useDemoEvents, useDemoUi, useUnreadAlertCount } from "@/demo-state";
+import { SyncIndicator, useDemoCollection, useDemoEvents, useDemoSettings, useDemoUi, useUnreadAlertCount } from "@/demo-state";
 import { cn } from "@/lib/cn";
 import { OPEN_TASK_STATUSES } from "@/lib/record-status";
 import type { AlertHeadline, Member, Organization, Store } from "@/types/core";
@@ -68,6 +68,9 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
   const pathname = normalizeRoute(usePathname());
   const { ui, toggleSidebar, setLastWebsite } = useDemoUi();
   const { rows: allWebsites } = useDemoCollection<Store>("websites", stores);
+  // The organization name can be renamed in Organization settings (saved as `org.general`).
+  const orgBase = useMemo<{ name?: string }>(() => ({ name: org.name }), [org.name]);
+  const orgName = useDemoSettings<{ name?: string }>("org.general", orgBase).value.name?.trim() || org.name;
   const { rows: tasks } = useDemoCollection<SearchTask>("tasks", searchIndex.tasks);
   const events = useDemoEvents();
 
@@ -167,7 +170,7 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur supports-[backdrop-filter]:bg-canvas/80">
         <div className="flex h-header items-center gap-2 px-page">
           <IconButton icon="menu" label="Open navigation" className="-ml-1 shrink-0 lg:hidden" onClick={() => setOpenFor(pathname)} />
-          <div className="hidden lg:block"><OrgSelector org={org} /></div>
+          <div className="hidden lg:block"><OrgSelector org={{ ...org, name: orgName }} /></div>
           <div className="flex min-w-0 shrink items-center">
             <WebsiteSelector websites={websites} active={contextWebsite} pathname={pathname} />
           </div>

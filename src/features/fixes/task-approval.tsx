@@ -57,7 +57,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
 
   const allowed = canApprove(role);
   const badge = STATE_BADGE[state];
-  const canRequest = state === "not_requested" && (status === "draft_ready" || status === "in_progress");
+  const canRequest = (state === "not_requested" || state === "rejected") && (status === "draft_ready" || status === "in_progress");
 
   return (
     <div className="flex flex-col gap-4">

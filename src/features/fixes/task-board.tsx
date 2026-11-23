@@ -35,6 +35,8 @@ const BOARD_COLUMNS: BoardColumn[] = [
 const PRIORITY_ORDER = Object.keys(STATUS.priority);
 const RISK_ORDER = Object.keys(STATUS.risk);
 const WEEK = 7 * 24 * 3600 * 1000;
+/** Steps that write to the website. Only the Execution tab records them for connector-backed tasks. */
+const EXTERNAL_WRITE_STEPS: ReadonlySet<TaskStatus> = new Set(["staged", "applied", "published"]);
 
 const options = (map: Record<string, { label: string }>) => Object.entries(map).map(([value, m]) => ({ value, label: m.label }));
 
@@ -121,7 +123,8 @@ export function TaskBoard({ storeId, tasks: baseTasks, findings, role, actorName
   };
 
   const menuItems = (task: TaskRow): MenuItem[] => {
-    const moves = allowedMoves(task.status, task.mode);
+    // Writes to the website (stage, apply, publish) are recorded in the task's Execution tab, which checks approval and the connector.
+    const moves = allowedMoves(task.status, task.mode).filter((target) => !EXTERNAL_WRITE_STEPS.has(target) || task.mode === "guidance" || task.mode === "ai_draft");
     const items: MenuItem[] = [{ label: "Open task", icon: "arrow-up-right", href: `${base}/tasks/${task.id}` }];
     if (moves.length > 0) {
       items.push({ type: "separator" }, { type: "label", label: "Move to" });

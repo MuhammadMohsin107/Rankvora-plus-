@@ -220,29 +220,6 @@ export type ProviderLocalState = {
   notify: boolean;
 };
 
-/* ───────── Integrations hub ───────── */
-
-export type ConnectorId = "wordpress" | "webflow" | "woocommerce" | "shopify" | "search_console" | "pagespeed";
-
-export type ConnectorBase = {
-  id: ConnectorId;
-  label: string;
-  group: "cms" | "search";
-  /** One short line. */
-  summary: string;
-  /** What Fixes or Audit use it for. */
-  usedFor: string;
-  /** What the simulated "Test connection" returns. */
-  testOutcome: { ok: true } | { ok: false; message: string };
-};
-
-/** Saved per connector under `org.connections`. */
-export type ConnectionState = {
-  status: IntegrationState;
-  websiteIds: string[];
-  lastVerifiedAt: string | null;
-};
-
 /* ───────── Store settings ───────── */
 
 export type ActivityKind = "store" | "integration" | "competitor" | "brand" | "domain" | "product" | "notification";

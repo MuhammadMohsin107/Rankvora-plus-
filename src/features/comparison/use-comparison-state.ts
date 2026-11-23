@@ -32,7 +32,14 @@ export function useComparisonState(storeId: string, baseRows: ComparisonRecord[]
   const { create: createReport } = reports;
   const push = toast.push;
 
-  const rows = useMemo(() => comparisons.rows.filter((r) => r.storeId === storeId), [comparisons.rows, storeId]);
+  // A comparison's report may have been generated in Reports, so look it up there too (one report, one link, no duplicates).
+  const rows = useMemo(
+    () =>
+      comparisons.rows
+        .filter((r) => r.storeId === storeId)
+        .map((r) => (r.reportId ? r : { ...r, reportId: reports.rows.find((x) => x.type === "comparison" && x.sourceId === r.id && x.storeId === storeId)?.id ?? null })),
+    [comparisons.rows, reports.rows, storeId],
+  );
 
   /** Saves a finished comparison. Returns the id; the same definition always gives the same id. */
   const create = useCallback(

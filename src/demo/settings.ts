@@ -13,8 +13,6 @@ import type {
   BillingState,
   BrandKnowledgeBase,
   BrandVersion,
-  ConnectionState,
-  ConnectorBase,
   CreditPack,
   DomainRecord,
   IntegrationDetail,
@@ -316,35 +314,6 @@ export const DEMO_BILLING: BillingBase = {
   usageSeeds: DEMO_USAGE_SEEDS,
   history: DEMO_USAGE_HISTORY,
   events: DEMO_BILLING_EVENTS,
-};
-
-/* ───────── Integrations hub ───────── */
-
-/** Optional connectors. Shopify is one of four CMS and commerce options and is never listed first. Nothing here is a real connection. */
-export const DEMO_CONNECTORS: ConnectorBase[] = [
-  { id: "wordpress", label: "WordPress", group: "cms", summary: "Stage and publish approved page changes.", usedFor: "Fixes", testOutcome: { ok: true } },
-  { id: "webflow", label: "Webflow", group: "cms", summary: "Update pages and collections after approval.", usedFor: "Fixes", testOutcome: { ok: true } },
-  {
-    id: "woocommerce",
-    label: "WooCommerce",
-    group: "cms",
-    summary: "Read products and publish approved changes.",
-    usedFor: "Fixes",
-    testOutcome: { ok: false, message: "The key was rejected for write requests (401). Read access still works." },
-  },
-  { id: "shopify", label: "Shopify", group: "cms", summary: "Read products and publish approved changes.", usedFor: "Fixes", testOutcome: { ok: true } },
-  { id: "search_console", label: "Google Search Console", group: "search", summary: "Search queries and indexing for prompt ideas.", usedFor: "Prompt Library", testOutcome: { ok: true } },
-  { id: "pagespeed", label: "PageSpeed Insights", group: "search", summary: "Page speed and Core Web Vitals checks.", usedFor: "Audit", testOutcome: { ok: true } },
-];
-
-/** Starting connection state, consistent with the per-website integrations below. */
-export const DEMO_CONNECTIONS: Record<string, ConnectionState> = {
-  wordpress: { status: "connected", websiteIds: ["nutrition"], lastVerifiedAt: "2026-11-17T04:00:00Z" },
-  webflow: { status: "not_connected", websiteIds: [], lastVerifiedAt: null },
-  woocommerce: { status: "needs_attention", websiteIds: ["runpro-ae"], lastVerifiedAt: "2026-11-18T05:30:00Z" },
-  shopify: { status: "connected", websiteIds: ["runpro-pk"], lastVerifiedAt: "2026-11-19T06:00:00Z" },
-  search_console: { status: "connected", websiteIds: ["runpro-pk", "nutrition"], lastVerifiedAt: "2026-11-19T06:00:00Z" },
-  pagespeed: { status: "not_connected", websiteIds: [], lastVerifiedAt: null },
 };
 
 /* ───────── Store settings ───────── */

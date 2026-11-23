@@ -413,7 +413,7 @@ export async function listAuditTasks(storeId: string, auditId: string): Promise<
 // ---------------------------------------------------------------------------
 
 /** Used when a website has no earlier full audit to take defaults from. */
-const FALLBACK_DEFAULTS: WizardData["defaults"] = { samples: 2, maxUrls: 150, maxDepth: 4, maxRequests: 200, concurrency: 4, budgetUsd: 8, excludedPaths: ["/cart", "/checkout", "/account"] };
+const FALLBACK_DEFAULTS: WizardData["defaults"] = { samples: 2, maxUrls: 150, maxDepth: 4, maxRequests: 200, concurrency: 4, budgetUsd: 8, excludedPaths: ["/account", "/login", "/admin"] };
 
 export async function getWizardData(storeId: string): Promise<WizardData | null> {
   const store = await getStore(storeId);

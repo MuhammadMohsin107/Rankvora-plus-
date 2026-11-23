@@ -5,7 +5,6 @@ import { defineConfig } from "drizzle-kit";
  * ./migrations, the folder wrangler reads (`migrations_dir` in wrangler.jsonc).
  * They are applied with `wrangler d1 migrations apply`, not drizzle-kit migrate,
  * so no credentials are needed here.
- * The Postgres setup (drizzle.config.ts, src/db, drizzle/) is separate and frozen.
  */
 export default defineConfig({
   dialect: "sqlite",

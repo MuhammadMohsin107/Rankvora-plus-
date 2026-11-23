@@ -6,16 +6,8 @@
 const LOCALE = "en-GB";
 
 const nf = new Intl.NumberFormat(LOCALE);
-const nf1 = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 
 export const formatNumber = (value: number) => nf.format(value);
-
-export function formatCompact(value: number): string {
-  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(value) >= 10_000) return `${Math.round(value / 1000)}k`;
-  if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1)}k`;
-  return String(value);
-}
 
 /** numerator/denominator as a percentage with one decimal; null when d = 0. */
 export function ratePercent(numerator: number, denominator: number): number | null {
@@ -37,25 +29,6 @@ export function formatPoints(value: number | null, digits = 1): string {
   if (value === null) return "N/A";
   const sign = value > 0 ? "+" : value < 0 ? "−" : "";
   return `${sign}${Math.abs(value).toFixed(digits)} pp`;
-}
-
-/** "Based on 36 samples": trust label for any rate or trend. */
-export function formatBasedOn(count: number, unit = "samples"): string {
-  return `Based on ${formatNumber(count)} ${count === 1 ? unit.replace(/s$/, "") : unit}`;
-}
-
-/** "12 of 15 prompts": coverage label. */
-export function formatOf(numerator: number, denominator: number, unit: string): string {
-  return `${formatNumber(numerator)} of ${formatNumber(denominator)} ${unit}`;
-}
-
-export function formatSignedInt(value: number): string {
-  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
-  return `${sign}${Math.abs(value)}`;
-}
-
-export function formatDecimal(value: number): string {
-  return nf1.format(value);
 }
 
 export function formatCurrency(value: number, currency = "USD"): string {

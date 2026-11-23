@@ -1,56 +1,22 @@
 # Rankvora Plus
 
-Next.js (App Router) + TypeScript + Tailwind CSS 4 + PostgreSQL + Drizzle ORM.
+Next.js (App Router) + React + TypeScript + Tailwind CSS 4, deployed to Cloudflare Workers with OpenNext.
+The app is a frontend-only demo: demo data, simulated actions, optional saving of demo state to Cloudflare D1.
 
 ## Requirements
 
 - Node.js 24+ (Node 26 LTS recommended, see `.nvmrc`)
 - npm
-- A locally installed PostgreSQL server (no Docker needed)
 
 ## Run locally
 
-1. **Install dependencies**
+```bash
+npm install
+npm run dev
+```
 
-   ```bash
-   npm install
-   ```
-
-2. **Create your env file**
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Open `.env.local` and set `DATABASE_URL` to your local PostgreSQL:
-
-   ```
-   DATABASE_URL=postgresql://<user>:<password>@localhost:5432/rankvora_plus
-   ```
-
-3. **Create the database** (once). With PostgreSQL running locally, use psql or pgAdmin:
-
-   ```bash
-   psql -U postgres -c "CREATE DATABASE rankvora_plus;"
-   ```
-
-4. **Run migrations**
-
-   ```bash
-   npm run db:migrate
-   ```
-
-5. **Start the dev server**
-
-   ```bash
-   npm run dev
-   ```
-
-6. **Test the health route** at <http://localhost:3000/api/health>. It should return:
-
-   ```json
-   { "status": "ok", "db": "connected" }
-   ```
+Open <http://localhost:3000>. The optional D1 health check is at <http://localhost:3000/api/health>
+(it reports `binding_missing` until the local D1 tables exist, see [docs/d1-setup.md](docs/d1-setup.md)). The app works without it.
 
 ## Scripts
 
@@ -61,10 +27,6 @@ Next.js (App Router) + TypeScript + Tailwind CSS 4 + PostgreSQL + Drizzle ORM.
 | `npm start`           | Run the production build                     |
 | `npm run lint`        | Lint with ESLint                             |
 | `npm run format`      | Format with Prettier                         |
-| `npm run db:generate` | Generate a migration from `src/db/schema.ts` |
-| `npm run db:migrate`  | Apply migrations                             |
-| `npm run db:push`     | Push the schema directly (dev only)          |
-| `npm run db:studio`   | Open Drizzle Studio                          |
 | `npm run db:d1:migrate:local` | Create the local D1 tables (see docs/d1-setup.md) |
 | `npm run db:d1:generate` | Generate a D1 migration from `src/db-d1/schema.ts` |
 | `npm run test:d1`     | SQL tests against an in-memory local D1      |
@@ -109,21 +71,25 @@ data policy: [docs/d1-setup.md](docs/d1-setup.md).
 
 ```bash
 npm run test:unit   # pure logic, no database needed
-npm run test:db     # tenant-isolation and service tests against your local PostgreSQL
+npm run test:d1     # SQL tests against an in-memory local D1
 npm test            # everything
 ```
-
-Database tests run every case inside a transaction that is always rolled back,
-so they never leave data behind. Run `npm run db:migrate` first.
 
 ## Project structure
 
 ```
 src/
-  app/         routes and pages
-  components/  reusable UI components
-  lib/         helpers
-  db/          database client and schema
-  types/       shared TypeScript types
-drizzle/       generated SQL migrations (committed)
+  app/         routes and pages (website routes live under /stores/[storeId], shown to people as "Website")
+  components/  shell, shared UI and charts
+  features/    one folder per module: audit, fixes, monitoring, comparison, prompts, reports, settings, stores
+  services/    read demo data for the pages (the seam a future backend replaces)
+  demo/        demo records (consistent ids across modules)
+  demo-state/  browser-side state for simulated actions
+  lib/ types/  helpers and shared types
+  db-d1/       optional Cloudflare D1 saving of demo state (the UI works without it)
+migrations/    D1 migrations (committed)
+docs/          design-system.md, ui-screen-inventory.md, feature-ownership.md, d1-setup.md
 ```
+
+The UI is frontend only: demo data, simulated actions, no real AI provider, CMS or scheduler calls. See
+[docs/feature-ownership.md](docs/feature-ownership.md) for which screen owns which feature.

@@ -13,12 +13,11 @@ import { SEARCH_MODE_LABEL } from "@/lib/labels";
 import type { SearchMode } from "@/types/core";
 import type { WizardData, WizardPrompt } from "@/types/audit";
 
-import { CRITERIA_CATEGORIES, formatMinutes, integrationsHref } from "./labels";
+import { CRITERIA_CATEGORIES, formatMinutes, websiteConnectionsHref } from "./labels";
 import {
   KIND_OPTIONS,
   LANGUAGES,
   PAGE_TYPE_OPTIONS,
-  TRIGGER_SOURCES,
   applyFinding,
   includedPrompts,
   limitations,
@@ -77,30 +76,6 @@ export function StepType({ data, state, set, prompts }: StepProps) {
             </Select>
           )}
         </Field>
-      ) : null}
-
-      {state.kind === "triggered" ? (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
-          <Field label="Triggered by">
-            {({ id, describedBy }) => (
-              <Select id={id} aria-describedby={describedBy} value={state.triggerSource} onChange={(e) => set({ triggerSource: e.target.value as WizardState["triggerSource"] })}>
-                {TRIGGER_SOURCES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Reason" required>
-            {({ id, describedBy }) => <Input id={id} aria-describedby={describedBy} maxLength={120} placeholder="What started this audit" value={state.triggerReason} onChange={(e) => set({ triggerReason: e.target.value })} />}
-          </Field>
-        </div>
-      ) : null}
-
-      {state.kind === "scheduled" ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Segmented label="Repeats" value={state.cadence} onChange={(cadence) => set({ cadence })} options={[{ value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }]} />
-          <p className="text-helper text-fg-muted">The first run starts now. Recurring schedules are managed in Monitoring.</p>
-        </div>
       ) : null}
     </div>
   );
@@ -279,7 +254,7 @@ export function StepWebsite({ data, state, set }: StepProps) {
           ) : null}
           <Checkbox
             label="Website connector"
-            description={data.integrations.cms ? "Page URLs from the connected website" : data.integrations.cmsNeedsAttention ? "The connector needs attention" : "Optional. Connect one in integrations"}
+            description={data.integrations.cms ? "Page URLs from the connected website" : data.integrations.cmsNeedsAttention ? "The connector needs attention" : "Optional. Connect one in Website settings"}
             checked={state.startCms}
             disabled={!data.integrations.cms}
             onChange={(e) => set({ startCms: e.target.checked })}
@@ -354,7 +329,7 @@ export function StepCriteria({ data, state, set }: StepProps) {
             checked={state.searchConsole}
             disabled={!data.integrations.searchConsole}
             onChange={(searchConsole) => set({ searchConsole })}
-            extra={data.integrations.searchConsole ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={integrationsHref()} className="text-helper font-medium text-accent-text hover:underline">Connect</Link>}
+            extra={data.integrations.searchConsole ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={websiteConnectionsHref(data.store.id)} className="text-helper font-medium text-accent-text hover:underline">Connect</Link>}
           />
           <ToggleRow title="PageSpeed Insights" description="Lab performance. Field data only where it exists." checked={state.pageSpeed} onChange={(pageSpeed) => set({ pageSpeed })} />
           <ToggleRow
@@ -363,7 +338,7 @@ export function StepCriteria({ data, state, set }: StepProps) {
             checked={state.cms}
             disabled={!data.integrations.cms}
             onChange={(cms) => set({ cms })}
-            extra={data.integrations.cms ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={integrationsHref()} className="text-helper font-medium text-accent-text hover:underline">{data.integrations.cmsNeedsAttention ? "Fix" : "Connect"}</Link>}
+            extra={data.integrations.cms ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={websiteConnectionsHref(data.store.id)} className="text-helper font-medium text-accent-text hover:underline">{data.integrations.cmsNeedsAttention ? "Fix" : "Connect"}</Link>}
           />
         </div>
       </Block>
@@ -406,30 +381,12 @@ export function StepLimits({ state, set }: StepProps) {
       <p className="text-helper text-fg-muted">The audit stops at a limit and is marked partially completed.</p>
 
       <Advanced>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:max-w-xs">
           <Field label="Concurrency">
             {({ id, describedBy }) => (
               <Select id={id} aria-describedby={describedBy} value={String(state.concurrency)} onChange={(e) => set({ concurrency: Number(e.target.value) })}>
                 {[1, 2, 4, 8].map((n) => (
                   <option key={n} value={n}>{n} at a time</option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Retries">
-            {({ id, describedBy }) => (
-              <Select id={id} aria-describedby={describedBy} value={String(state.retries)} onChange={(e) => set({ retries: Number(e.target.value) })}>
-                {[0, 1, 2, 3].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Timeout (seconds)">
-            {({ id, describedBy }) => (
-              <Select id={id} aria-describedby={describedBy} value={String(state.timeoutSeconds)} onChange={(e) => set({ timeoutSeconds: Number(e.target.value) })}>
-                {[30, 60, 120].map((n) => (
-                  <option key={n} value={n}>{n}</option>
                 ))}
               </Select>
             )}

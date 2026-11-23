@@ -1,3 +1,4 @@
+import { SimulatedBadge } from "@/components/ui/demo";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
 import { formatShortDate } from "@/lib/format";
@@ -42,8 +43,11 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
     },
   ];
 
+  const anyDone = steps.some((step) => step.state !== "pending" && step.state !== "na");
+
   return (
-    <ol aria-label="Lifecycle: completed, applied, published, verified" className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-card border border-line bg-surface px-4 py-3 shadow-card sm:grid-cols-4">
+    <div className="flex flex-col gap-2 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
+    <ol aria-label="Lifecycle: completed, applied, published, verified" className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
       {steps.map((step) => {
         const view = VIEW[step.state];
         return (
@@ -60,5 +64,7 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
         );
       })}
     </ol>
+    {anyDone ? <SimulatedBadge className="self-start" /> : null}
+    </div>
   );
 }

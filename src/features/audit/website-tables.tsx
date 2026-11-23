@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { Badge, Status } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,8 +117,14 @@ export function ChecksTable({ checks, storeId }: { checks: WebsiteCheck[]; store
 
 const statusClass = (code: number) => (code >= 500 ? "5xx" : code >= 400 ? "4xx" : code >= 300 ? "3xx" : "2xx");
 
+const noSubscribe = () => () => {};
+const pageParam = () => new URLSearchParams(window.location.search).get("page");
+
 export function PagesTable({ pages, issues, storeId }: { pages: CrawledPage[]; issues: Record<string, PageIssue[]>; storeId: string }) {
-  const [open, setOpen] = useState<CrawledPage | null>(null);
+  // A link with ?page=<url or path> (from a finding's evidence) opens that page's inspector. Once a person opens or closes one, their choice wins.
+  const linked = useSyncExternalStore(noSubscribe, pageParam, () => null);
+  const [picked, setOpen] = useState<CrawledPage | null | undefined>(undefined);
+  const open = picked !== undefined ? picked : linked ? (pages.find((p) => p.url === linked || p.finalUrl === linked || p.path === linked) ?? null) : null;
 
   const columns: Column<CrawledPage>[] = [
     {

@@ -4,7 +4,7 @@
  * Pure functions over data the services already load: no React, no demo imports.
  */
 import { responseEvidenceIds } from "@/features/responses/response-model";
-import { formatDate, formatRate } from "@/lib/format";
+import { formatRate } from "@/lib/format";
 import { humanize, statusMeta } from "@/lib/status";
 import type { AuditReportData, ComparisonDetail, MetricResult, MonitoringReportData, PairRowWithResponses, ReportRecord } from "@/types/comparison";
 import type { Rate } from "@/types/core";
@@ -274,7 +274,7 @@ export function comparisonDocument(args: {
       .map((f) => ({
         id: f.taskId,
         title: f.title,
-        note: f.before && f.after ? `Visibility changed after this task was completed: ${f.before.rate.n} / ${f.before.rate.d} to ${f.after.rate.n} / ${f.after.rate.d}. Context, not proof of cause.` : "No monitoring run on both sides of this task.",
+        note: f.before && f.after ? `Mention rate before and after this task was completed: ${f.before.rate.n} / ${f.before.rate.d} to ${f.after.rate.n} / ${f.after.rate.d}. Context, not proof of cause.` : "No monitoring run on both sides of this task.",
         ids: { storeId, taskId: f.taskId, comparisonId: record.id },
       })),
   ];
@@ -304,7 +304,3 @@ export function comparisonDocument(args: {
   };
 }
 
-/** One-line description of a document for the list and for a generated report's period. */
-export function documentPeriod(from: string, to?: string): string {
-  return to && to !== from ? `${formatDate(from)} – ${formatDate(to)}` : formatDate(from);
-}

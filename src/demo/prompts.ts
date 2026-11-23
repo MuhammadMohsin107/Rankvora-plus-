@@ -172,7 +172,7 @@ const nu = make("nutrition", /Nutrition (vs|or|Basics|course)/, "2026-10-06T09:3
 export const DEMO_EXTRA_PROMPTS: PromptBase[] = [
   // runpro-ae: five active prompts. They are the only prompts in the generated runs and audits.
   ae("p-ae-001", "What are the best running shoe brands in the UAE?", "discovery", "g-ae-discovery", { isCore: true, topic: "Category" }),
-  ae("p-ae-002", "Where can I buy running shoes in Dubai?", "local_market", "g-ae-local", { isCore: true, topic: "Buying locally" }),
+  ae("p-ae-002", "Where can I buy running shoes in Dubai?", "local_market", "g-ae-local", { isCore: true, topic: "Local" }),
   ae("p-ae-003", "Which running shoes are best for hot weather?", "recommendation", "g-ae-discovery", { topic: "Climate", source: "ai_generated" }),
   ae("p-ae-004", "RunPro vs Brand X running shoes in the UAE", "comparison", "g-ae-comparison", { topic: "Comparison", updatedAt: "2026-09-15T07:35:00Z" }),
   ae("p-ae-005", "Best marathon running shoes available in Abu Dhabi?", "local_market", "g-ae-local", { topic: "Long distance", updatedAt: "2026-09-15T07:35:00Z" }),
@@ -221,16 +221,16 @@ export const STORE_PROFILES: Record<string, WebsiteProfile> = {
   nutrition: { category: "nutrition websites", brands: "nutrition websites and brands", item: "nutrition information", city: "Singapore", need: "meal planning" },
 };
 
-const FALLBACK_PROFILE: WebsiteProfile = { category: "products", item: "product", city: "your city", need: "everyday use" };
+const FALLBACK_PROFILE: WebsiteProfile = { category: "offerings", item: "offering", city: "your city", need: "everyday use" };
 
 export const profileFor = (storeId: string): WebsiteProfile => STORE_PROFILES[storeId] ?? FALLBACK_PROFILE;
 
 /** Organization-level templates. Placeholders are filled from the website profile. */
 export const DEMO_TEMPLATES: PromptTemplate[] = [
   { id: "t-brands", title: "Best brands in a market", text: "What are the best {brands} in {market}?", intent: "discovery", topic: "Category" },
-  { id: "t-recommend", title: "Affordable recommendation", text: "Which affordable {category} would you recommend?", intent: "recommendation", topic: "Everyday use" },
+  { id: "t-recommend", title: "Recommendation", text: "Which {category} would you recommend?", intent: "recommendation", topic: "Everyday use" },
   { id: "t-versus", title: "Brand versus competitor", text: "{brand} versus {competitor}: which is better for everyday use?", intent: "comparison", topic: "Comparison" },
   { id: "t-alternative", title: "Alternatives to a competitor", text: "What are good alternatives to {competitor}?", intent: "alternative", topic: "Alternatives" },
   { id: "t-local", title: "Find locally", text: "Where can I find {category} in {city}?", intent: "local_market", topic: "Buying locally" },
-  { id: "t-guide", title: "How to choose", text: "How do I choose the right {category}?", intent: "informational", topic: "Buying guide" },
+  { id: "t-guide", title: "How to choose", text: "How do I choose the right {category}?", intent: "informational", topic: "Selection guide" },
 ];

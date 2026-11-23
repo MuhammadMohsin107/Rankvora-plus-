@@ -21,20 +21,7 @@ export const SOURCE_LABEL: Record<PromptSource, string> = {
 };
 
 /**
- * User-facing wording. Internal ids and routes keep their old names (`store`, `/stores/...`);
- * only what a person reads says "Website".
- */
-export const TERM = {
-  website: "Website",
-  websites: "Websites & Brands",
-  websiteProfile: "Website profile",
-  websiteSettings: "Website settings",
-  selectWebsite: "Select website",
-  addWebsite: "Add website",
-  siteType: "Site type",
-} as const;
-
-/**
+ * User-facing wording says "Website"; internal ids and routes keep the old name (`store`, `/stores/...`).
  * Site type labels (display only; enum ids are unchanged). Shopify is one option among many.
  * Keyed by the StorePlatform enum.
  */

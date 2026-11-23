@@ -221,6 +221,12 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
       <span className="max-sm:hidden">Compare with previous</span>
       <span aria-hidden="true" className="sm:hidden">Compare</span>
     </ButtonLink>
+  ) : simRec ? (
+    <Tooltip content="Runs simulated in this browser are not saved snapshots, so they cannot be compared.">
+      <span tabIndex={0} className="inline-flex">
+        <Button variant="secondary" icon="compare" disabled>Compare with previous</Button>
+      </span>
+    </Tooltip>
   ) : detail.reportId ? (
     <ButtonLink href={`/stores/${data.storeId}/reports/${detail.reportId}`} variant="primary" icon="reports">Open report</ButtonLink>
   ) : null;

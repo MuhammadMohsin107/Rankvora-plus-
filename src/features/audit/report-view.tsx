@@ -8,7 +8,7 @@ import { Callout, Card, CardBody, CardHeader } from "@/components/ui/card";
 import { SimulatedBadge } from "@/components/ui/demo";
 import { EmptyState } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
-import { useDemoSettings } from "@/demo-state";
+import { demoNow, useDemoSettings } from "@/demo-state";
 import { ExportActions } from "@/features/reports/export-actions";
 import { formatDateTime } from "@/lib/format";
 
@@ -43,7 +43,7 @@ export function ReportView({ data, storeId }: { data: AuditReportData; storeId: 
   const regenerate = () => {
     setGenerating(true);
     window.setTimeout(() => {
-      regenerated.save({ at: new Date().toISOString() }, { kind: "report.generated", label: "Audit report regenerated", refs: { auditId: audit.id, websiteId: storeId } });
+      regenerated.save({ at: demoNow() }, { kind: "report.generated", label: "Audit report regenerated", refs: { auditId: audit.id, websiteId: storeId } });
       setGenerating(false);
       toast.push({ title: "Report regenerated (simulated)", description: `Snapshot ${audit.snapshotId} is unchanged.`, tone: "success" });
     }, 1800);

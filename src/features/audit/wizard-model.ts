@@ -1,6 +1,6 @@
 import { INTENT_LABEL, SCOPE_LABEL, SEARCH_MODE_LABEL } from "@/lib/labels";
 import type { PromptBase, PromptGroup, SearchMode } from "@/types/core";
-import type { AuditConfig, AuditLane, AuditTrigger, AuditType, PageType, SimScenario, WizardData, WizardPrompt } from "@/types/audit";
+import type { AuditConfig, AuditLane, AuditType, PageType, SimScenario, WizardData, WizardPrompt } from "@/types/audit";
 
 import { AUDIT_TYPE_HINT, AUDIT_TYPE_LABEL, CRITERIA_CATEGORIES } from "./labels";
 import { planFor } from "./rows";
@@ -37,14 +37,9 @@ export type WizardState = {
   maxRequests: number;
   concurrency: number;
   budgetUsd: number;
-  retries: number;
-  timeoutSeconds: number;
   scenario: SimScenario;
   findingId: string;
   taskId: string;
-  triggerSource: AuditTrigger["source"];
-  triggerReason: string;
-  cadence: "weekly" | "monthly";
 };
 
 /** Page types are generic: a website does not have to sell products. Values are the ids used by the crawl data. */
@@ -57,7 +52,7 @@ export const PAGE_TYPE_OPTIONS: { value: PageType; label: string }[] = [
   { value: "policy", label: "Policies" },
 ];
 
-export const KIND_OPTIONS: { value: WizardKind; label: string; description: string }[] = (["initial", "full", "focused", "verification", "triggered", "scheduled"] as const).map((value) => ({
+export const KIND_OPTIONS: { value: WizardKind; label: string; description: string }[] = (["initial", "full", "focused", "verification"] as const).map((value) => ({
   value,
   label: AUDIT_TYPE_LABEL[value],
   description: AUDIT_TYPE_HINT[value],
@@ -80,13 +75,6 @@ export function marketOptions(data: WizardData) {
   const own = { value: data.store.market, label: `${data.store.market} · ${data.store.marketName}` };
   return [own, ...MARKET_LIST.filter((m) => m.value !== own.value)];
 }
-
-export const TRIGGER_SOURCES: { value: AuditTrigger["source"]; label: string }[] = [
-  { value: "fix_applied", label: "A fix was applied" },
-  { value: "brand_fact", label: "A brand fact changed" },
-  { value: "alert", label: "A monitoring alert" },
-  { value: "competitor_suggested", label: "A competitor was suggested" },
-];
 
 export function toWizardPrompts(prompts: readonly PromptBase[], groups: readonly PromptGroup[]): WizardPrompt[] {
   return prompts.map((p) => ({
@@ -132,14 +120,9 @@ export function initialState(data: WizardData): WizardState {
     maxRequests: data.defaults.maxRequests,
     concurrency: data.defaults.concurrency,
     budgetUsd: data.defaults.budgetUsd,
-    retries: 3,
-    timeoutSeconds: 60,
     scenario: "normal",
     findingId: "",
     taskId: "",
-    triggerSource: "fix_applied",
-    triggerReason: "",
-    cadence: "weekly",
   };
 }
 
@@ -177,8 +160,6 @@ export function stateFromConfig(data: WizardData, config: AuditConfig, kind: Aud
     maxRequests: config.limits.maxRequests,
     concurrency: config.limits.concurrency,
     budgetUsd: config.limits.budgetUsd,
-    retries: config.retries ?? 3,
-    timeoutSeconds: config.timeoutSeconds ?? 60,
   };
 }
 
@@ -199,7 +180,7 @@ export function applyFinding(state: WizardState, data: WizardData, prompts: Wiza
   const active = new Set(prompts.filter((p) => p.status === "active").map((p) => p.id));
   const ids = finding.affectedPromptIds.filter((id) => active.has(id));
   const ai = finding.lane === "ai_visibility";
-  return { ...state, findingId, ai: ai || state.ai, web: !ai || state.web, promptMode: "ids", promptIds: ids, samples: 1 };
+  return { ...state, findingId, ai, web: !ai, promptMode: "ids", promptIds: ids, samples: 1 };
 }
 
 export type Usage = {
@@ -284,12 +265,6 @@ export const searchModeOptions = (Object.keys(SEARCH_MODE_LABEL) as SearchMode[]
 export function buildConfig(data: WizardData, state: WizardState, prompts: WizardPrompt[]): { config: AuditConfig; lanes: AuditLane[] } {
   const included = includedPrompts(prompts, state);
   const startPoints = [state.startHomepage && "Homepage", state.startSitemap && "Sitemap", state.startUrlList && `URL list (${urlLines(state.urlList).length} URLs)`, state.startCms && "Website connector"].filter(Boolean) as string[];
-  const trigger: AuditTrigger | undefined =
-    state.kind === "triggered"
-      ? { source: state.triggerSource, reason: state.triggerReason.trim(), dedupKey: `${state.triggerSource}:${state.findingId || "manual"}` }
-      : state.kind === "scheduled"
-        ? { source: "schedule", reason: `${state.cadence === "weekly" ? "Weekly" : "Monthly"}, first run now`, cadence: state.cadence }
-        : undefined;
   const answered = new Set(data.answeredPromptIds);
   const noAnswerPromptIds = state.ai ? included.filter((p) => !answered.has(p.id)).map((p) => p.id) : [];
   const config: AuditConfig = {
@@ -312,11 +287,8 @@ export function buildConfig(data: WizardData, state: WizardState, prompts: Wizar
     integrations: { searchConsole: state.web && state.searchConsole, pageSpeed: state.web && state.pageSpeed, cms: state.web && state.cms },
     limits: { maxRequests: state.maxRequests, concurrency: state.concurrency, budgetUsd: state.budgetUsd },
     categories: state.web ? state.categories : [],
-    trigger,
     verifies: state.kind === "verification" && state.findingId ? { findingId: state.findingId, taskId: state.taskId || undefined } : undefined,
     scenario: state.scenario,
-    retries: state.retries,
-    timeoutSeconds: state.timeoutSeconds,
   };
   return { config, lanes: [...(state.ai ? (["ai_visibility"] as const) : []), ...(state.web ? (["website_readiness"] as const) : [])] };
 }

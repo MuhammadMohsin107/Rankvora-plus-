@@ -89,7 +89,7 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
 
       {isCurrent && projectedOver.length > 0 ? (
         <Callout tone="warning" title="Projected to pass a cap this month">
-          {projectedOver.map((k) => `${USAGE_LABEL[k]} ${show(k, projected[k])} / ${show(k, usage.caps[k])}`).join(" · ")}. Runs stop at the cap and finish as partial.
+          {projectedOver.map((k) => `${USAGE_LABEL[k]} ${show(k, projected[k])} / ${show(k, usage.caps[k])}`).join(" · ")}. A run that would pass a cap is not started.
         </Callout>
       ) : null}
 

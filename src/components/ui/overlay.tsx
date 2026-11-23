@@ -70,54 +70,6 @@ function useDialog(open: boolean, onClose: () => void, requestClose: () => void,
   return ref;
 }
 
-type DirtyGuardCopy = { title?: string; body?: ReactNode; confirmLabel?: string; cancelLabel?: string };
-
-/**
- * Guards closing a form surface that has unsaved changes.
- *
- *   const guard = useDirtyGuard(isDirty, () => setOpen(false));
- *   <Dialog open={open} onClose={guard.requestClose}>...</Dialog>
- *   {guard.dialog}
- *
- * `requestClose()` closes immediately when clean, otherwise opens a "Discard changes?" confirm.
- * It also asks the browser to warn before the tab is closed while dirty.
- */
-export function useDirtyGuard(dirty: boolean, onDiscard: () => void, copy?: DirtyGuardCopy) {
-  const [asking, setAsking] = useState(false);
-
-  const requestClose = useCallback(() => {
-    if (dirty) setAsking(true);
-    else onDiscard();
-  }, [dirty, onDiscard]);
-
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
-
-  const dialog = (
-    <ConfirmDialog
-      open={asking}
-      onClose={() => setAsking(false)}
-      onConfirm={() => {
-        setAsking(false);
-        onDiscard();
-      }}
-      title={copy?.title ?? "Discard changes?"}
-      confirmLabel={copy?.confirmLabel ?? "Discard changes"}
-      cancelLabel={copy?.cancelLabel ?? "Keep editing"}
-    >
-      {copy?.body ?? "Your unsaved changes will be lost."}
-    </ConfirmDialog>
-  );
-
-  return { requestClose, dialog, asking };
-}
-
 const dialogSizes = { sm: "max-w-md", md: "max-w-xl", lg: "max-w-3xl", xl: "max-w-5xl" };
 
 /** Shared by Dialog and Drawer: header, scrolling body, optional footer. */

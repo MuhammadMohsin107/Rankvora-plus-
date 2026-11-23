@@ -8,7 +8,7 @@ import { demoNow, simulatedToast, useDemoSettings } from "@/demo-state";
 import type { ProviderConnection, ProviderLocalState } from "@/types/settings";
 
 /**
- * AI platform connections, shared by the Integrations hub and the AI platforms page.
+ * AI platform connections, used by the Integrations page, which owns them.
  * State lives in demo-state under `org.providers`. No key is ever read or stored: "replace key" creates a masked
  * demo key (last 4 characters only), so nobody is invited to paste a real secret.
  */

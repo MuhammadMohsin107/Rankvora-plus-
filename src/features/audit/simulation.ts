@@ -236,9 +236,6 @@ export function progressAt(plan: RunPlan, elapsedMs: number): RunProgress {
   };
 }
 
-/** Index of the request being sent right now (null when none). */
-export const currentJobIndex = (p: RunProgress): number | null => (p.phase === "running" && p.jobs.running > 0 ? p.jobs.sent : null);
-
 /** Slot order: prompt, then channel, then sample. */
 export function slotAt(index: number, promptCount: number, channelCount: number, samples: number): { prompt: number; channel: number; sample: number } | null {
   if (promptCount <= 0 || channelCount <= 0 || samples <= 0) return null;

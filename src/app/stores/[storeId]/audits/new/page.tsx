@@ -28,7 +28,7 @@ async function NewAuditPageContent(props: PageProps<"/stores/[storeId]/audits/ne
     return (
       <>
         {header}
-        <AuditSetupBlocked storeName={data.store.name} />
+        <AuditSetupBlocked storeId={data.store.id} storeName={data.store.name} />
       </>
     );
   }

@@ -260,7 +260,7 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
     },
     {
       id: "integrations",
-      label: "Integrations",
+      label: "Connections",
       content: (
         <IntegrationsTab
           detail={integrations.value}
@@ -355,7 +355,7 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
         ) : null}
 
         {commerceState === "needs_attention" && !readOnly ? (
-          <Callout tone="warning" title="Connector needs attention" actions={<Button size="sm" variant="secondary" onClick={() => goTab("integrations")}>Open integrations</Button>}>
+          <Callout tone="warning" title="Connector needs attention" actions={<Button size="sm" variant="secondary" onClick={() => goTab("integrations")}>Open connections</Button>}>
             {integrations.value.commerce.note}
           </Callout>
         ) : null}

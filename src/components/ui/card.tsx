@@ -1,5 +1,4 @@
-import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 import { formatPoints, formatPercent, ratePercent } from "@/lib/format";
@@ -11,7 +10,7 @@ import { Tooltip } from "./tooltip";
 
 /**
  * content: bare surface, you place CardHeader / CardBody inside (default, unchanged).
- * metric | chart | action | alert: self-padded variants (use the MetricCard / ChartCard / ActionCard exports).
+ * metric | chart | action | alert: self-padded variants (ChartCard is the ready-made chart card).
  */
 export type CardVariant = "content" | "metric" | "chart" | "action" | "alert";
 
@@ -228,15 +227,6 @@ export function MetricCell({ children }: { children: ReactNode }) {
   return <div className="bg-surface p-card">{children}</div>;
 }
 
-/** Standalone metric card: a Metric inside a self-padded card. */
-export function MetricCard({ className, ...metric }: MetricProps) {
-  return (
-    <Card variant="metric" className={className}>
-      <Metric {...metric} />
-    </Card>
-  );
-}
-
 /** Chart card: title row, chart body, optional one-line footnote (sample size, run dates). */
 export function ChartCard({
   title,
@@ -279,28 +269,3 @@ export function ChartCard({
   );
 }
 
-/** Linked card for one next step: icon, short title, one line. The whole card is the link. */
-export function ActionCard({
-  icon,
-  title,
-  description,
-  className,
-  ...link
-}: Omit<ComponentProps<typeof Link>, "children" | "title"> & { icon?: IconName; title: string; description?: string }) {
-  return (
-    <Link {...link} className={cn("group block rounded-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring", className)}>
-      <Card variant="action" className="flex h-full items-start gap-3">
-        {icon ? (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent">
-            <Icon name={icon} size={18} />
-          </span>
-        ) : null}
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-card-title font-semibold text-fg">{title}</span>
-          {description ? <span className="mt-0.5 block text-body-sm text-fg-muted">{description}</span> : null}
-        </span>
-        <Icon name="arrow-right" size={16} className="mt-1 shrink-0 text-fg-faint transition-transform duration-[var(--dur-fast)] group-hover:translate-x-0.5 motion-reduce:transition-none" />
-      </Card>
-    </Link>
-  );
-}

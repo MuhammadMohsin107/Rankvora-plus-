@@ -37,7 +37,7 @@ async function AuditsPageContent(props: PageProps<"/stores/[storeId]/audits">) {
       return (
         <>
           <PageHeader title="Audits" />
-          <AuditSetupBlocked storeName={store.name} />
+          <AuditSetupBlocked storeId={store.id} storeName={store.name} />
         </>
       );
     }

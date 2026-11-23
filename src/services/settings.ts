@@ -8,8 +8,6 @@ import {
   DEMO_BILLING,
   DEMO_BRAND_KNOWLEDGE,
   DEMO_BRAND_VERSIONS,
-  DEMO_CONNECTIONS,
-  DEMO_CONNECTORS,
   DEMO_DOMAINS,
   DEMO_INTEGRATIONS,
   DEMO_INVITES,
@@ -35,8 +33,6 @@ import type {
   BillingPlan,
   BillingState,
   BrandVersion,
-  ConnectionState,
-  ConnectorBase,
   SourcePage,
   DomainRecord,
   IntegrationDetail,
@@ -151,14 +147,6 @@ export async function listTeamActivity(): Promise<{ id: string; at: string; acto
 /** Plans and the starting billing state, for screens that only need the seat limit. */
 export async function getPlanSnapshot(): Promise<{ plans: BillingPlan[]; state: BillingState }> {
   return { plans: DEMO_BILLING.plans, state: DEMO_BILLING.state };
-}
-
-export async function listConnectors(): Promise<ConnectorBase[]> {
-  return DEMO_CONNECTORS;
-}
-
-export async function getConnections(): Promise<Record<string, ConnectionState>> {
-  return DEMO_CONNECTIONS;
 }
 
 export async function listStoreActivity(storeId: string): Promise<ActivityEntry[]> {

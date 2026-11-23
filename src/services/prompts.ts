@@ -109,7 +109,7 @@ function unresolvedContext(storeId: string, actor: string): PromptContext {
     existing: [],
     actor,
     otherWebsites: [],
-    profile: { brand: "", category: "products", brands: "product brands", market: "", city: "your city", competitor: "a leading brand", item: "product", need: "everyday use" },
+    profile: { brand: "", category: "offerings", brands: "providers", market: "", city: "your city", competitor: "a leading brand", item: "offering", need: "everyday use" },
     templates: DEMO_TEMPLATES,
     competitors: [],
   };

@@ -37,8 +37,8 @@ export const PAGE_TYPE_LABEL: Record<PageType, string> = {
   policy: "Policy",
 };
 
-/** Website settings, integrations tab (where AI platforms and optional connectors are connected). */
-export const integrationsHref = () => "/integrations";
+/** Website settings: where this website's publishing connector and Search Console are connected. */
+export const websiteConnectionsHref = (storeId: string) => `/stores/${storeId}/settings`;
 
 export function formatMinutes(totalSeconds: number): string {
   const m = Math.max(1, Math.round(totalSeconds / 60));

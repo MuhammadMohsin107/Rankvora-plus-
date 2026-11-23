@@ -4,11 +4,10 @@ import { useState } from "react";
 
 import { HeaderAction } from "@/components/shell/page-chrome";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Checkbox, Field, Input, Segmented, Select, Switch } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
-import { Drawer } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import { simulatedToast, useDemoCollection, useDemoSettings } from "@/demo-state";
 import type { Store } from "@/types/core";
@@ -37,7 +36,6 @@ export function NotificationsForm({ events, initial, orgTimezone, websites: base
   const websites = useDemoCollection<Store>("websites", baseWebsites).rows.filter((w) => w.status !== "archived");
   const baseMap: Overrides = Object.fromEntries(baseOverrides.map((o) => [o.storeId, o]));
   const overrides = useDemoSettings<Overrides>("org.notifications.overrides", baseMap);
-  const [editing, setEditing] = useState<string | null>(null);
 
   const dirty = !sameJson(saved, prefs);
   const webhookError = validateHttpsUrl(prefs.webhookUrl);
@@ -66,7 +64,6 @@ export function NotificationsForm({ events, initial, orgTimezone, websites: base
   };
 
   const nothing = prefs.digest === "off" && activeEventCount(prefs.matrix) === 0;
-  const editingSite = websites.find((w) => w.id === editing) ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -152,7 +149,7 @@ export function NotificationsForm({ events, initial, orgTimezone, websites: base
       {nothing ? <Callout tone="warning" title="Nothing will be delivered" /> : null}
 
       <Card>
-        <CardHeader title="Websites" />
+        <CardHeader title="Websites" subtitle="Overrides are set in each website's settings" />
         <ul className="mt-3 divide-y divide-line border-t border-line">
           {websites.map((w) => {
             const o = overrides.value[w.id];
@@ -165,76 +162,13 @@ export function NotificationsForm({ events, initial, orgTimezone, websites: base
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone={custom ? "accent" : "neutral"}>{custom ? "Custom" : "Default"}</Badge>
-                  <Button variant="secondary" size="sm" onClick={() => setEditing(w.id)}>Customise</Button>
+                  <ButtonLink href={`/stores/${w.id}/settings`} variant="secondary" size="sm" trailingIcon="arrow-right">Manage</ButtonLink>
                 </div>
               </li>
             );
           })}
         </ul>
       </Card>
-
-      <OverrideDrawer
-        key={editingSite?.id ?? "none"}
-        site={editingSite}
-        events={events}
-        current={editingSite ? overrides.value[editingSite.id] : undefined}
-        orgMatrix={saved.matrix}
-        webhookReady={webhookReady}
-        onClose={() => setEditing(null)}
-        onSave={(next) => {
-          overrides.patch({ [next.storeId]: next }, { kind: "settings.saved", label: `Notification overrides saved for ${editingSite?.name ?? next.storeId}` });
-          toast.push(simulatedToast("Website notifications saved"));
-          setEditing(null);
-        }}
-      />
     </div>
-  );
-}
-
-function OverrideDrawer({
-  site,
-  events,
-  current,
-  orgMatrix,
-  webhookReady,
-  onClose,
-  onSave,
-}: {
-  site: Store | null;
-  events: NotificationEvent[];
-  current: StoreNotificationOverride | undefined;
-  orgMatrix: NotificationMatrix;
-  webhookReady: boolean;
-  onClose: () => void;
-  onSave: (next: StoreNotificationOverride) => void;
-}) {
-  const [custom, setCustom] = useState(current?.mode === "override");
-  const [matrix, setMatrix] = useState<NotificationMatrix>(current?.matrix ?? orgMatrix);
-  const dirty = site ? custom !== (current?.mode === "override") || (custom && !sameJson(matrix, current?.matrix ?? orgMatrix)) : false;
-  return (
-    <Drawer
-      open={site !== null}
-      onClose={onClose}
-      title={site ? `Notifications: ${site.name}` : "Notifications"}
-      size="lg"
-      dirty={dirty}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={!site || !dirty} onClick={() => site && onSave({ storeId: site.id, mode: custom ? "override" : "inherit", matrix: custom ? matrix : orgMatrix })}>Save</Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-body font-medium text-fg">Customise this website</span>
-          <Switch label="Customise this website" checked={custom} onChange={setCustom} />
-        </div>
-        <div className="-mx-5 border-y border-line">
-          <NotificationMatrixTable events={events} value={custom ? matrix : orgMatrix} onChange={setMatrix} disabled={!custom} webhookReady={webhookReady} />
-        </div>
-        {!custom ? <p className="text-helper text-fg-subtle">Following the organization settings.</p> : null}
-      </div>
-    </Drawer>
   );
 }

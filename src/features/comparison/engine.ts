@@ -42,7 +42,6 @@ import type {
   UrlRow,
 } from "@/types/comparison";
 
-export const METHODOLOGY_VERSION = "1.0";
 export const COVERAGE_COMPARABLE = 0.75;
 export const COVERAGE_WITH_WARNINGS = 0.6;
 

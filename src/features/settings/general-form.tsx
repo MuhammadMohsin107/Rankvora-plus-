@@ -6,9 +6,8 @@ import { HeaderAction } from "@/components/shell/page-chrome";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/form";
-import { ConfirmDialog } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
-import { demoStore, simulatedToast, useDemoMeta, useDemoReset, useDemoSettings } from "@/demo-state";
+import { demoStore, simulatedToast, useDemoMeta, useDemoSettings } from "@/demo-state";
 import type { OrgGeneral } from "@/types/settings";
 
 import { downloadFile } from "./invoice-files";
@@ -21,8 +20,6 @@ export function GeneralForm({ initial }: { initial: OrgGeneral }) {
   const { value: saved, save } = useDemoSettings<OrgGeneral>("org.general", initial);
   const [values, setValues] = useSyncedDraft<OrgGeneral>(saved);
   const [touched, setTouched] = useState(false);
-  const [resetOpen, setResetOpen] = useState(false);
-  const reset = useDemoReset();
   const meta = useDemoMeta();
 
   const dirty = !sameJson(saved, values);
@@ -100,23 +97,9 @@ export function GeneralForm({ initial }: { initial: OrgGeneral }) {
         <CardHeader title="Demo data" />
         <CardBody className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" icon="download" onClick={exportData}>Export as JSON</Button>
-          <Button variant="secondary" icon="undo" disabled={!meta.hasChanges} onClick={() => setResetOpen(true)}>Reset demo data</Button>
           <span className="tnum text-helper text-fg-subtle">{meta.hasChanges ? `${meta.changeCount} local changes` : "No local changes"}</span>
         </CardBody>
       </Card>
-
-      <ConfirmDialog
-        open={resetOpen}
-        onClose={() => setResetOpen(false)}
-        onConfirm={() => {
-          reset();
-          setResetOpen(false);
-        }}
-        title="Reset demo data?"
-        confirmLabel="Reset demo data"
-      >
-        <p>Every change made in this browser is removed and the starting demo data returns.</p>
-      </ConfirmDialog>
     </div>
   );
 }

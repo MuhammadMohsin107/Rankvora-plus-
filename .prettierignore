@@ -3,7 +3,7 @@ node_modules
 out
 build
 coverage
-drizzle
+
 package-lock.json
 next-env.d.ts
 public

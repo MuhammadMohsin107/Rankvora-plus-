@@ -31,13 +31,12 @@ const STEPS = [
 
 const TITLES = ["What kind of audit?", "What should it cover?", "Which prompts?", "Which providers and models?", "Which market and language?", "What should be crawled?", "What should be checked?", "Set limits", "Workload and cost", "Ready to start?"];
 
-const KINDS: AuditType[] = ["initial", "full", "focused", "verification", "triggered", "scheduled"];
+const KINDS: AuditType[] = ["initial", "full", "focused", "verification"];
 
 function stepIssues(step: number, data: WizardData, s: WizardState, includedCount: number): string[] {
   switch (step) {
     case 0:
       if (s.kind === "verification" && !s.findingId) return ["Choose the finding to re-check"];
-      if (s.kind === "triggered" && !s.triggerReason.trim()) return ["Say what triggered the audit"];
       return [];
     case 1:
       return !s.ai && !s.web ? ["Select at least one lane"] : [];
@@ -101,6 +100,12 @@ function WizardInner({ data }: { data: WizardData }) {
     if (finding) s = applyFinding({ ...s, kind: "verification" }, data, prompts, finding);
     const task = params.get("task");
     if (task) s = { ...s, taskId: task };
+    // Focused re-check from Monitoring: one prompt on one provider, AI lane only.
+    const recheck = params.get("recheck");
+    if (recheck) {
+      const provider = params.get("provider");
+      s = { ...s, kind: "focused", ai: true, web: false, promptMode: "ids", promptIds: [recheck], samples: 1, ...(provider && data.channels.some((c) => c.id === provider) ? { channelIds: [provider] } : {}) };
+    }
     return s;
   });
 

@@ -21,9 +21,9 @@ const exact = (href: string) => (pathname: string) => pathname === href;
 const prefix = (href: string) => (pathname: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 /**
- * Sidebar structure: ORGANIZATION (all websites), WEBSITE (the selected website), SUPPORT.
- * `websiteId` is the website in context (from the URL, else the last one used). Without one the
- * website-specific items are left out.
+ * Sidebar structure. ORGANIZATION holds everything shared by all websites (websites, integrations, team, billing,
+ * organization settings). WEBSITE holds the selected website's workspace, including its own settings. SUPPORT is help.
+ * `websiteId` is the website in context (from the URL, else the last one used). Without one the website group is left out.
  */
 export function navGroups(websiteId: string | null): NavGroup[] {
   const base = websiteId ? `/stores/${websiteId}` : null;
@@ -33,7 +33,9 @@ export function navGroups(websiteId: string | null): NavGroup[] {
       label: "Organization",
       items: [
         { id: "websites", label: "Websites & Brands", href: "/stores", icon: "globe", isActive: (p) => p === "/stores" || p === "/stores/new" },
+        { id: "integrations", label: "Integrations", href: "/integrations", icon: "plug", isActive: prefix("/integrations") },
         { id: "team", label: "Team", href: "/settings/members", icon: "users", isActive: prefix("/settings/members") },
+        { id: "billing", label: "Billing", href: "/settings/billing", icon: "credit-card", isActive: prefix("/settings/billing") },
         {
           id: "org-settings",
           label: "Organization settings",
@@ -57,18 +59,12 @@ export function navGroups(websiteId: string | null): NavGroup[] {
         { id: "monitoring", label: "Monitoring", href: `${base}/monitoring`, icon: "monitoring", isActive: prefix(`${base}/monitoring`), badge: "unreadAlerts" },
         { id: "comparison", label: "Comparison", href: `${base}/comparisons`, icon: "compare", isActive: prefix(`${base}/comparisons`) },
         { id: "reports", label: "Reports", href: `${base}/reports`, icon: "reports", isActive: prefix(`${base}/reports`) },
+        { id: "website-settings", label: "Website settings", href: `${base}/settings`, icon: "settings", isActive: prefix(`${base}/settings`) },
       ],
     });
   }
 
-  const support: NavItem[] = [];
-  if (base) support.push({ id: "website-settings", label: "Website settings", href: `${base}/settings`, icon: "settings", isActive: prefix(`${base}/settings`) });
-  support.push(
-    { id: "integrations", label: "Integrations", href: "/integrations", icon: "plug", isActive: (p) => p === "/integrations" || p.startsWith("/integrations/") || p.startsWith("/settings/ai-platforms") },
-    { id: "billing", label: "Billing", href: "/settings/billing", icon: "credit-card", isActive: prefix("/settings/billing") },
-    { id: "help", label: "Help & Support", href: "/help", icon: "help", isActive: prefix("/help") },
-  );
-  groups.push({ id: "support", label: "Support", items: support });
+  groups.push({ id: "support", label: "Support", items: [{ id: "help", label: "Help & Support", href: "/help", icon: "help", isActive: prefix("/help") }] });
   return groups;
 }
 

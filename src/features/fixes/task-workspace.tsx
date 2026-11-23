@@ -91,7 +91,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, assigne
       primary =
         task.mode === "ai_draft" ? (
           <Button variant="primary" icon="check" onClick={() => setDialog("applied")}>Mark applied</Button>
-        ) : m.needsApproval && view.approvalState === "not_requested" ? (
+        ) : m.needsApproval && (view.approvalState === "not_requested" || view.approvalState === "rejected") ? (
           <Button variant="primary" icon="clock" onClick={() => goTo("approval")}>Request approval</Button>
         ) : (
           <Button variant="primary" icon="bolt" onClick={() => goTo("execution")}>Open execution</Button>

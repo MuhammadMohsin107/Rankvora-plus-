@@ -1,8 +1,5 @@
-import { config } from "dotenv";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
-
-config({ path: ".env.local" });
 
 export default defineConfig({
   resolve: {

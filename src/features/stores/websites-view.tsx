@@ -13,11 +13,9 @@ import { EmptyState } from "@/components/ui/feedback";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Segmented } from "@/components/ui/form";
 import { Menu, type MenuItem } from "@/components/ui/menu";
-import { ConfirmDialog } from "@/components/ui/overlay";
 import { RateInline } from "@/components/ui/rate-inline";
 import { DataTable, type Column } from "@/components/ui/table";
-import { useToast } from "@/components/ui/toast";
-import { isAlertUnread, simulatedToast, useDemoAlerts, useDemoCollection, useDemoEvents } from "@/demo-state";
+import { isAlertUnread, useDemoAlerts, useDemoCollection, useDemoEvents } from "@/demo-state";
 import { SITE_TYPE_ORDER, siteTypeLabel } from "@/lib/labels";
 import { OPEN_TASK_STATUSES } from "@/lib/record-status";
 import { STATUS } from "@/lib/status";
@@ -25,20 +23,17 @@ import { ratePercent } from "@/lib/format";
 import type { WebsiteTask } from "@/services/dashboard";
 import type { AlertHeadline, Store, StoreStatus } from "@/types/core";
 
-import { transitionCopy } from "./status-transitions";
 import { WebsiteCard } from "./website-card";
 import { nextWebsiteAction, untrackedReason } from "./website-model";
 
 type View = "table" | "cards";
-type PendingAction = { store: Store; to: StoreStatus };
 
 const STATUS_ORDER = Object.keys(STATUS.store);
 const mentionPct = (store: Store) => (store.summary ? ratePercent(store.summary.mention.n, store.summary.mention.d) : null);
 
 export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alerts: AlertHeadline[]; tasks: WebsiteTask[] }) {
   const router = useRouter();
-  const toast = useToast();
-  const { rows: websites, update } = useDemoCollection<Store>("websites", stores);
+  const { rows: websites } = useDemoCollection<Store>("websites", stores);
   const { rows: alertRows } = useDemoAlerts(alerts);
   const { rows: taskRows } = useDemoCollection<WebsiteTask>("tasks", tasks);
   const events = useDemoEvents();
@@ -48,7 +43,6 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
   const [status, setStatus] = useState("");
   const [siteType, setSiteType] = useState("");
   const [market, setMarket] = useState("");
-  const [pending, setPending] = useState<PendingAction | null>(null);
 
   const counts = useMemo(() => {
     const out = new Map<string, { unreadAlerts: number; pendingTasks: number }>();
@@ -84,23 +78,11 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
     setMarket("");
   };
 
-  const apply = (site: Store, to: StoreStatus) => {
-    const copy = transitionCopy(site.status, to, site.name);
-    update(site.id, { status: to }, { kind: "website.updated", label: copy.toastTitle, refs: { websiteId: site.id } });
-    toast.push(simulatedToast(copy.toastTitle));
-  };
-
   const rowMenu = (site: Store): MenuItem[] => {
     const items: MenuItem[] = [
       { label: "Dashboard", icon: "dashboard", href: `/stores/${site.id}` },
       { label: site.summary ? "Website settings" : "Continue setup", icon: "settings", href: `/stores/${site.id}/settings` },
-      { type: "separator" },
     ];
-    if (site.status === "active") items.push({ label: "Pause", icon: "pause", onSelect: () => setPending({ store: site, to: "paused" }) });
-    if (site.status === "paused") items.push({ label: "Resume", icon: "play", onSelect: () => apply(site, "active") });
-    if (site.status === "ready") items.push({ label: "Activate", icon: "play", onSelect: () => apply(site, "active") });
-    if (site.status === "archived") items.push({ label: "Restore", icon: "undo", onSelect: () => apply(site, "paused") });
-    if (site.status !== "archived") items.push({ label: "Archive", icon: "minus-circle", tone: "danger", onSelect: () => setPending({ store: site, to: "archived" }) });
     return items;
   };
 
@@ -157,7 +139,6 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
 
   if (websites.length === 0) return emptyAll;
 
-  const pendingCopy = pending ? transitionCopy(pending.store.status, pending.to, pending.store.name) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -206,20 +187,6 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
           ))}
         </div>
       )}
-
-      <ConfirmDialog
-        open={pending !== null}
-        onClose={() => setPending(null)}
-        onConfirm={() => {
-          if (pending) apply(pending.store, pending.to);
-          setPending(null);
-        }}
-        title={pendingCopy?.confirmTitle ?? ""}
-        confirmLabel={pendingCopy?.confirmLabel ?? "Confirm"}
-        tone={pendingCopy?.tone ?? "danger"}
-      >
-        {pendingCopy?.effect}
-      </ConfirmDialog>
     </div>
   );
 }

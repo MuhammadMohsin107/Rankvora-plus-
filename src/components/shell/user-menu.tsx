@@ -35,17 +35,13 @@ function useTheme(): [Theme, () => void] {
   return [theme, toggle];
 }
 
-/** Account menu: team and billing shortcuts, theme, and a confirmed reset of the local demo data. */
+/** Account menu: theme, and the one confirmed reset of the local demo data. Navigation lives in the sidebar. */
 export function UserMenu({ user }: { user: Member }) {
   const [theme, toggleTheme] = useTheme();
   const reset = useDemoReset();
   const [confirming, setConfirming] = useState(false);
 
   const items: MenuItem[] = [
-    { label: "Members & roles", href: "/settings/members", icon: "users" },
-    { label: "Usage & billing", href: "/settings/billing", icon: "credit-card" },
-    { label: "Help & Support", href: "/help", icon: "help" },
-    { type: "separator" },
     { label: theme === "dark" ? "Light theme" : "Dark theme", icon: theme === "dark" ? "sun" : "moon", onSelect: toggleTheme },
     { type: "separator" },
     { label: "Reset demo data", icon: "undo", tone: "danger", onSelect: () => setConfirming(true) },

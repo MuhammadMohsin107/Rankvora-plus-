@@ -124,7 +124,14 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
               { label: "Estimated cost", value: <span className="tnum">about {formatCurrency(usage.estimatedCostUsd)} of {formatCurrency(usage.budgetUsd)} cap</span> },
               {
                 label: "Compared with",
-                value: audit.baseline ? <Link href={`/stores/${storeId}/audits/${audit.baseline.id}`} className="text-accent-text hover:underline">{audit.baseline.title}</Link> : <span className="text-fg-muted">No comparable earlier audit</span>,
+                value: audit.baseline ? (
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Link href={`/stores/${storeId}/audits/${audit.baseline.id}`} className="text-accent-text hover:underline">{audit.baseline.title}</Link>
+                    {audit.snapshotId ? <Link href={`/stores/${storeId}/comparisons/new?baseline=${audit.baseline.id}&current=${audit.id}`} className="text-helper text-accent-text hover:underline">Compare</Link> : null}
+                  </span>
+                ) : (
+                  <span className="text-fg-muted">No comparable earlier audit</span>
+                ),
               },
             ]}
           />
