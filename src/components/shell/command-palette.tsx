@@ -208,10 +208,11 @@ export function CommandPalette({ index, websites, contextWebsiteId, onClose }: P
       className="m-0 h-dvh max-h-dvh w-dvw max-w-none bg-transparent p-3 pt-[10dvh] sm:pt-[14dvh]"
     >
       <div className="mx-auto flex max-h-[min(34rem,76dvh)] w-full max-w-xl flex-col overflow-hidden rounded-card border border-line bg-surface shadow-pop">
-        <div className="flex items-center gap-2 border-b border-line px-3">
+        <div className="flex items-center gap-2 border-b border-line px-3 transition-colors duration-[var(--dur-fast)] focus-within:border-accent">
           <Icon name="search" size={18} className="shrink-0 text-fg-subtle" />
           <input
             type="text"
+            data-bare
             role="combobox"
             aria-expanded="true"
             aria-controls={listId}

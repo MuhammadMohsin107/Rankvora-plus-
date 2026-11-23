@@ -308,6 +308,11 @@ body {
   outline-offset: 2px;
 }
 
+/* an input that sits inside a bordered row which already shows focus (for example the search palette) */
+input[data-bare]:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background: var(--accent-soft);
   color: var(--accent-text);

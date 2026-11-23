@@ -59,13 +59,14 @@ export function Textarea({ className, invalid, rows = 4, ...rest }: TextareaProp
   return <textarea rows={rows} aria-invalid={invalid || undefined} className={cn(control, "py-2 leading-relaxed", className)} {...rest} />;
 }
 
-type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean };
-export function Select({ className, invalid, children, ...rest }: SelectProps) {
+/** `dense`: 36px high instead of 40px, for toolbars and table rows. */
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean; dense?: boolean };
+export function Select({ className, invalid, dense, children, ...rest }: SelectProps) {
   return (
     <div className="relative">
       <select
         aria-invalid={invalid || undefined}
-        className={cn(control, "h-control cursor-pointer appearance-none pr-9", className)}
+        className={cn(control, dense ? "h-9" : "h-control", "cursor-pointer appearance-none pr-9", className)}
         {...rest}
       >
         {children}
@@ -214,8 +215,10 @@ type SearchFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "on
   value: string;
   onChange: (next: string) => void;
   label: string;
+  /** 36px high instead of 40px. */
+  dense?: boolean;
 };
-export function SearchField({ value, onChange, label, className, placeholder = "Search", ...rest }: SearchFieldProps) {
+export function SearchField({ value, onChange, label, className, placeholder = "Search", dense, ...rest }: SearchFieldProps) {
   return (
     <div className={cn("relative", className)}>
       <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
@@ -225,7 +228,7 @@ export function SearchField({ value, onChange, label, className, placeholder = "
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className={cn(control, "h-control pl-9", value && "pr-10")}
+        className={cn(control, dense ? "h-9" : "h-control", "pl-9", value && "pr-10")}
         {...rest}
       />
       {value ? (

@@ -17,13 +17,13 @@ export function WebsiteCard({ store, counts }: { store: Store; counts?: WebsiteC
   const summary = store.summary;
   const action = nextWebsiteAction(store, counts);
   return (
-    <Card as="article" className="flex h-full flex-col gap-3 p-4">
+    <Card as="article" className="relative flex h-full flex-col gap-3 p-4 transition-shadow duration-[var(--dur-fast)] hover:shadow-pop has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <WebsiteAvatar name={store.name} size="md" />
           <div className="min-w-0">
             <h3 className="truncate text-card-title font-semibold text-fg">
-              <Link href={`/stores/${store.id}`} className="rounded hover:underline">{store.name}</Link>
+              <Link href={`/stores/${store.id}`} className="rounded after:absolute after:inset-0 after:rounded-card after:content-[''] hover:underline">{store.name}</Link>
             </h3>
             <p className="truncate text-helper text-fg-muted">{store.domain}</p>
           </div>
@@ -49,7 +49,7 @@ export function WebsiteCard({ store, counts }: { store: Store; counts?: WebsiteC
 
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-line pt-2.5">
         <p className="min-w-0 truncate text-helper text-fg-muted">{action.reason}</p>
-        <ButtonLink href={action.href} variant="secondary" size="sm" trailingIcon="arrow-right">{action.label}</ButtonLink>
+        <ButtonLink href={action.href} variant="secondary" size="sm" trailingIcon="arrow-right" className="relative z-10">{action.label}</ButtonLink>
       </div>
     </Card>
   );

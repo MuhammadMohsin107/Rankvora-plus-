@@ -34,6 +34,8 @@ type FilterBarProps = {
   alwaysShowCount?: boolean;
   /** Right-aligned slot for view toggles (table / cards / board), density, export. */
   actions?: ReactNode;
+  /** Shorter controls (used with compact tables). */
+  dense?: boolean;
   className?: string;
 };
 
@@ -46,7 +48,7 @@ export function hasActiveFilters(search: string | undefined, filters: Pick<Filte
  * One consistent toolbar for tables, card grids and boards: search, filters, active chips, clear and result count,
  * plus a slot for view toggles. It owns no state; the list decides what the values mean.
  */
-export function FilterBar({ label, search, filters = [], children, chips = false, onClearAll, resultCount, alwaysShowCount, actions, className }: FilterBarProps) {
+export function FilterBar({ label, search, filters = [], children, chips = false, onClearAll, resultCount, alwaysShowCount, actions, dense, className }: FilterBarProps) {
   const active = hasActiveFilters(search?.value, filters);
   const activeFilters = filters.filter((filter) => filter.value !== "");
   const showCount = resultCount && (active || alwaysShowCount);
@@ -61,12 +63,13 @@ export function FilterBar({ label, search, filters = [], children, chips = false
             placeholder={search.placeholder ?? "Search"}
             value={search.value}
             onChange={search.onChange}
+            dense={dense}
             className="w-full sm:w-64"
           />
         ) : null}
         {filters.map((filter) => (
           <div key={filter.id} className="w-[calc(50%-0.25rem)] sm:w-auto sm:min-w-36">
-            <Select aria-label={filter.label} value={filter.value} onChange={(event) => filter.onChange(event.target.value)}>
+            <Select dense={dense} aria-label={filter.label} value={filter.value} onChange={(event) => filter.onChange(event.target.value)}>
               <option value="">{filter.label}: all</option>
               {filter.options.map((option) => (
                 <option key={option.value} value={option.value}>

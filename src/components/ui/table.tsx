@@ -280,6 +280,7 @@ export function DataTable<T>({
           onClearAll={clearFilters}
           resultCount={{ shown: rows.length, total: data.length }}
           actions={toolbarExtra}
+          dense={density === "compact"}
         />
       ) : null}
 

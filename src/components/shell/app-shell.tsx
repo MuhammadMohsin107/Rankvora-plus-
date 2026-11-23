@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 
 import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Menu } from "@/components/ui/menu";
 import { useDemoCollection, useDemoEvents, useDemoUi, useUnreadAlertCount } from "@/demo-state";
 import { OPEN_TASK_STATUSES } from "@/lib/record-status";
 import type { AlertHeadline, Member, Organization, Store } from "@/types/core";
@@ -33,36 +32,16 @@ type ShellProps = {
   children: ReactNode;
 };
 
-function OrgSelector({ org }: { org: Organization }) {
+/** First step of the header trail: home is the Websites & Brands list. */
+function HomeLink() {
   return (
-    <Menu
-      align="start"
-      width={264}
-      label="Organization"
-      header={<p className="text-helper font-semibold text-fg-muted">Organization</p>}
-      items={[
-        { label: org.name, icon: "building", meta: <Icon name="check" size={16} className="text-accent-text" label="Current organization" /> },
-        { type: "separator" },
-        { label: "Websites & Brands", href: "/stores", icon: "globe" },
-        { label: "Team", href: "/settings/members", icon: "users" },
-        { label: "Billing", href: "/settings/billing", icon: "credit-card" },
-      ]}
-      trigger={
-        <button
-          type="button"
-          aria-label={`Organization: ${org.name}`}
-          className="flex h-9 max-w-[14rem] shrink-0 cursor-pointer items-center gap-2 rounded-control px-2 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg aria-expanded:bg-surface-2 aria-expanded:text-fg"
-        >
-          <Icon name="building" size={16} className="shrink-0" />
-          <span className="min-w-0 truncate">{org.name}</span>
-          <Icon name="chevrons-up-down" size={14} className="shrink-0 text-fg-subtle" />
-        </button>
-      }
-    />
+    <Link href="/stores" aria-label="Home: Websites & Brands" title="Home" className="flex size-9 shrink-0 items-center justify-center rounded-control text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg">
+      <Icon name="home" size={18} />
+    </Link>
   );
 }
 
-export function AppShell({ org, user, stores, alerts, searchIndex, children }: ShellProps) {
+export function AppShell({ user, stores, alerts, searchIndex, children }: ShellProps) {
   const pathname = normalizeRoute(usePathname());
   const { ui, setLastWebsite } = useDemoUi();
   const { rows: allWebsites } = useDemoCollection<Store>("websites", stores);
@@ -164,17 +143,15 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
       <header className="sticky top-0 z-20 border-b border-line bg-surface">
         <div className="flex h-header items-center gap-1 px-page">
           <IconButton icon="menu" label="Open navigation" className="-ml-1 shrink-0 lg:hidden" onClick={() => setOpenFor(pathname)} />
-          <div className="hidden lg:block"><OrgSelector org={org} /></div>
+          <HomeLink />
           {routeId ? (
             <>
-              <Icon name="chevron-right" size={14} aria-hidden="true" className="hidden shrink-0 text-fg-faint lg:block" />
+              <Icon name="chevron-right" size={14} aria-hidden="true" className="shrink-0 text-fg-faint" />
               <div className="flex min-w-0 shrink items-center">
                 <WebsiteSelector websites={websites} active={contextWebsite} pathname={pathname} />
               </div>
             </>
-          ) : (
-            <p className="min-w-0 truncate text-body-sm font-medium text-fg lg:hidden">{org.name}</p>
-          )}
+          ) : null}
           <div className="@container hidden min-w-0 flex-1 md:block">
             <Breadcrumbs pathname={pathname} />
           </div>

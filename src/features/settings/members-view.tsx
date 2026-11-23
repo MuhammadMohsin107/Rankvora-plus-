@@ -106,7 +106,7 @@ export function MembersView({ members, websites: baseWebsites, currentUserId, pe
       sort: (r) => r.name.toLowerCase(),
       cell: (r) => (
         <div className="flex min-w-0 items-center gap-2.5">
-          <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent-text">{r.initials}</span>
+          <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-2xs font-semibold text-accent-text">{r.initials}</span>
           <div className="min-w-0">
             <p className="flex flex-wrap items-center gap-1.5 font-medium text-fg">
               <span className="truncate">{r.status === "invited" ? r.email : r.name}</span>
@@ -123,7 +123,7 @@ export function MembersView({ members, websites: baseWebsites, currentUserId, pe
       id: "role",
       header: "Role",
       sort: (r) => ROLE_ORDER.indexOf(r.role),
-      width: "w-44",
+      width: "w-40",
       cell: (r) =>
         r.role === "owner" ? (
           <span className="inline-flex items-center gap-1.5 text-fg">
@@ -131,7 +131,7 @@ export function MembersView({ members, websites: baseWebsites, currentUserId, pe
             <Badge tone="neutral" icon="lock" title="Ownership is transferred, not edited here">Fixed</Badge>
           </span>
         ) : (
-          <Select aria-label={`Role for ${r.name}`} value={r.role} disabled={r.status === "deactivated"} onChange={(event) => requestRole(r, event.target.value as Role)}>
+          <Select dense aria-label={`Role for ${r.name}`} value={r.role} disabled={r.status === "deactivated"} onChange={(event) => requestRole(r, event.target.value as Role)}>
             {ASSIGNABLE.map((role) => (
               <option key={role} value={role}>{ROLE_LABEL[role]}</option>
             ))}
@@ -202,7 +202,7 @@ export function MembersView({ members, websites: baseWebsites, currentUserId, pe
   const accessRow = rows.find((r) => r.id === accessFor) ?? null;
 
   const membersTab = (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 text-body-sm text-fg-muted">
         <span className="tnum">{seatsUsed} of {plan.limits.seats} seats used</span>
         {seatState === "near" ? <Badge tone="warning" icon="alert-triangle">Near limit</Badge> : null}
@@ -220,6 +220,7 @@ export function MembersView({ members, websites: baseWebsites, currentUserId, pe
           { id: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "invited", label: "Invited" }, { value: "deactivated", label: "Deactivated" }], value: (r) => r.status },
         ]}
         defaultSort={{ column: "role", dir: "asc" }}
+        density="compact"
       />
     </div>
   );

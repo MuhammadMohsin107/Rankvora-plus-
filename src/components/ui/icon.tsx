@@ -78,6 +78,7 @@ const paths: Record<string, ReactNode> = {
   help: (<><circle cx="12" cy="12" r="8.5" /><path d="M9.7 9.5a2.4 2.4 0 1 1 3.4 2.2c-.7.3-1.1.9-1.1 1.6M12 16.5v.01" /></>),
   loader: <path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5" />,
   flask: <path d="M9.5 3.5h5M10.5 3.5v5.2L5 18.4A1.6 1.6 0 0 0 6.4 20.8h11.2A1.6 1.6 0 0 0 19 18.4l-5.5-9.7V3.5M7.6 15h8.8" />,
+  home: <path d="M4 11 12 4l8 7M6 9.5V20h4.5v-5.5h3V20H18V9.5" />,
   // product navigation
   dashboard: <path d="M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z" />,
   store: <path d="M4 9.5 5.5 4h13L20 9.5M4 9.5V20h16V9.5M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M10 20v-5h4v5" />,
