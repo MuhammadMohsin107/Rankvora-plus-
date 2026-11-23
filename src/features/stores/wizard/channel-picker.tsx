@@ -26,7 +26,7 @@ export function ChannelPicker({ channels, selected, onChange, trackingMode, onTr
   const toggle = (id: string, on: boolean) => onChange(on ? [...selected, id] : selected.filter((item) => item !== id));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div data-field="channels" tabIndex={-1} className="flex flex-col gap-2 outline-none">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[13px] font-medium text-fg">AI channels</p>

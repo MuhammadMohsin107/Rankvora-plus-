@@ -114,7 +114,7 @@ function Evidence({ row }: { row: ObservationRow }) {
   const base = `/stores/${data.storeId}`;
   const samples = row.samples.map((x) => x.response);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="tnum text-helper text-fg-muted">{row.latest.d > 0 ? `${row.latest.n} / ${row.latest.d} samples mention the brand` : "No successful sample"}</span>
         <ButtonLink size="sm" href={`${base}/prompts/${row.promptId}`} icon="prompts">Open prompt</ButtonLink>

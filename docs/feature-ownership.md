@@ -30,16 +30,15 @@ Workflow: **Audit → Findings → Fixes → Monitoring → Comparison**. A find
 | Section | Owns |
 |---|---|
 | Websites & Brands `/stores` | Website list, add website wizard, status changes |
-| Integrations `/integrations` | AI platform connections (shared by all websites). Lists every website's connections read-only and links to Website settings. Connectors are never connected here |
-| Team `/settings/members` | Members, invites, roles |
+| Integrations `/integrations` | AI platform connections (shared by all websites). Website connectors and Search Console are not here; they are in Website settings |
 | Billing `/settings/billing` | Plan, usage across websites and providers, invoices |
 | Help & Support `/help` | Help center |
 
-`/settings/ai-platforms` redirects to `/integrations`; `/settings` redirects to Team. Export and reset of demo data are in the account menu.
+`/settings/ai-platforms` redirects to `/integrations`; `/settings` redirects to Billing. Export and reset of demo data are in the account menu.
 
 ## Rules that keep ownership clean
 
-- A connection is managed once: AI platforms in Integrations, per-website connectors in Website settings. The Integrations page reads website connections from the same website records, so the two can never disagree.
+- A connection is managed once: AI platforms in Integrations, per-website connectors in Website settings. The Integrations page does not list website connections.
 - Anything simulated carries a Demo or Simulated marker. Applied, Published and Verified stay separate task states and are never presented as real external writes.
 - Counts, rates and averages are never mixed: rates show numerator and denominator, averages are labelled as averages, and failed requests are never counted as "not mentioned".
 - Shopify, WooCommerce, WordPress, Webflow, Wix and Squarespace are equal site types. Products and services are optional website data, not a requirement.

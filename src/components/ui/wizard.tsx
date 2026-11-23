@@ -94,7 +94,7 @@ export function WizardFrame({
         {/* Full stepper from sm up; below that the line above plus the bar is the progress indicator. */}
         <Stepper steps={steps} current={current} onStepClick={onStepClick} className="mt-3 hidden sm:flex" />
       </div>
-      <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-5", aside ? "xl:grid-cols-[minmax(0,1fr)_320px]" : null)}>
+      <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-4", aside ? "xl:grid-cols-[minmax(0,1fr)_320px]" : null)}>
         <section aria-labelledby="wizard-step-title" className="min-w-0 rounded-card border border-line bg-surface shadow-card">
           <div className="border-b border-line px-5 py-4">
             <h2 id="wizard-step-title" className="text-base font-semibold text-fg">{title}</h2>

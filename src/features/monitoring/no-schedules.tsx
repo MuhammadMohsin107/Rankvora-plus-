@@ -34,7 +34,7 @@ export function NoSchedules() {
 
   return (
     <Card>
-      <CardBody className="flex flex-col items-start gap-5">
+      <CardBody className="flex flex-col items-start gap-4">
         <div>
           <h2 className="text-section font-semibold text-fg">Connect an AI provider first</h2>
           <p className="mt-1 text-body-sm text-fg-muted">Monitoring needs one provider before it can run.</p>

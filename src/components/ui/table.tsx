@@ -84,12 +84,12 @@ const hideClass = {
 const alignClass = { left: "text-left", right: "text-right", center: "text-center" };
 const cellPad: Record<TableDensity, string> = {
   compact: "px-3 py-1.5 pointer-coarse:py-2.5",
-  comfortable: "px-4 py-3 pointer-coarse:py-3.5",
+  comfortable: "px-3.5 py-2.5 pointer-coarse:py-3",
   spacious: "px-4 py-4",
 };
 const headPad: Record<TableDensity, string> = {
   compact: "px-3 py-2",
-  comfortable: "px-4 py-2.5",
+  comfortable: "px-3.5 py-2",
   spacious: "px-4 py-3",
 };
 

@@ -70,7 +70,7 @@ export function ScheduleDetail({ scheduleId }: { scheduleId: string }) {
   });
 
   const overview = (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {rec.statusReason ? <Callout tone={rec.status === "needs_attention" ? "warning" : "neutral"}>{rec.statusReason}</Callout> : null}
       <Card>
         <CardBody>
@@ -94,7 +94,7 @@ export function ScheduleDetail({ scheduleId }: { scheduleId: string }) {
   );
 
   const settings = (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader title="Run settings" />
         <CardBody>
@@ -211,7 +211,7 @@ export function ScheduleDetail({ scheduleId }: { scheduleId: string }) {
           { id: "settings", label: "Settings", content: settings },
           { id: "versions", label: "Versions", count: rec.versions.length, content: versions },
         ]}
-        panelClassName="pt-6"
+        panelClassName="pt-4"
       />
       <CancelScheduleDialog
         name={rec.name}

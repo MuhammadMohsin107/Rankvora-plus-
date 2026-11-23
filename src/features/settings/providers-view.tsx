@@ -19,8 +19,8 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
   const later = providers.filter((p) => p.availability === "later");
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2 2xl:grid-cols-4">
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2 2xl:grid-cols-4">
         {available.map((p) => {
           const s = state.local[p.provider];
           const isTesting = state.testing === p.provider;

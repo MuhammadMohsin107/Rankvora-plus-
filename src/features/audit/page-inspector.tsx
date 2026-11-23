@@ -27,7 +27,7 @@ export function contentPreview(page: CrawledPage): string {
 }
 
 function Pane({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-5 pt-4">{children}</div>;
+  return <div className="flex flex-col gap-4 pt-4">{children}</div>;
 }
 
 function Group({ title, children }: { title: string; children: ReactNode }) {

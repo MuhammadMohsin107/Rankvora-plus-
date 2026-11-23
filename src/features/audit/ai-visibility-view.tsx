@@ -26,7 +26,7 @@ export function AiVisibilityView({ audit, lane, findings = [] }: { audit: AuditD
   for (const f of findings) for (const id of f.affectedPromptIds) findingByPrompt[id] ??= f.id;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {audit.provisional ? <Callout tone="warning" title="Provisional">Rates change as more responses arrive.</Callout> : null}
 
       <MetricGrid>

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Tabs } from "@/components/ui/tabs";
 import type { Store } from "@/types/core";
-import type { BillingBase, PlanId, TeamMember } from "@/types/settings";
+import type { BillingBase, PlanId } from "@/types/settings";
 
 import { BillingHistory } from "./billing-history";
 import { InvoicesTab } from "./billing-invoices";
@@ -16,14 +16,13 @@ import { useBilling, type PromptCountRow } from "./use-billing";
 type Props = {
   base: BillingBase;
   stores: Store[];
-  team: TeamMember[];
   promptRows: PromptCountRow[];
   organization: string;
 };
 
 /** Demonstration billing: plan, usage, invoices, payment method and history. No real payments, no card data. */
-export function BillingView({ base, stores, team, promptRows, organization }: Props) {
-  const billing = useBilling(base, stores, team, promptRows, organization);
+export function BillingView({ base, stores, promptRows, organization }: Props) {
+  const billing = useBilling(base, stores, promptRows, organization);
   const [changeTo, setChangeTo] = useState<PlanId | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
 

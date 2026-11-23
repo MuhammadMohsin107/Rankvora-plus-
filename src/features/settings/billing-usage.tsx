@@ -44,7 +44,7 @@ function MeterCard({ m }: { m: Meter }) {
 export function UsageTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
   const [pack, setPack] = useState<CreditPack | null>(null);
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <UpgradeNudge b={b} onChange={onChange} />
 
       <Section title={`Usage, ${b.base.period.label}`}>

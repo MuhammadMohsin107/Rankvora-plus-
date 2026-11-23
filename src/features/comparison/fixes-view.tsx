@@ -38,7 +38,7 @@ export function FixesView({ detail }: { detail: ComparisonDetail }) {
   const done = fixes.filter((f) => f.placedBy === "completed").length;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Callout tone="info" title="Context, not cause. A change after a fix does not show the fix caused it." />
       <Card>
         <CardHeader title="Fixes" subtitle={`${done} completed of ${fixes.length}, placed by completion date. ${formatDate(rangeFrom)} to ${formatDate(rangeTo)}`} />

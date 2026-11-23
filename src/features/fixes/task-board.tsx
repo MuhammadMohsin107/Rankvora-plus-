@@ -231,7 +231,7 @@ export function TaskBoard({ storeId, tasks: baseTasks, findings, role, actorName
                       <span className="tnum rounded-full bg-surface px-1.5 text-helper text-fg-muted">{items.length}</span>
                     </header>
                     {items.length === 0 ? (
-                      <p className="rounded-control border border-dashed border-line-strong px-3 py-6 text-center text-helper text-fg-subtle">No tasks</p>
+                      <p className="rounded-control border border-dashed border-line-strong px-3 py-4 text-center text-helper text-fg-subtle">No tasks</p>
                     ) : (
                       <ul className="flex flex-col gap-2">
                         {items.map((task) => {

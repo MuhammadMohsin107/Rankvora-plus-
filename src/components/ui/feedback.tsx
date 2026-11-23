@@ -60,7 +60,7 @@ export function EmptyState({
   headingAs?: StateHeading;
 }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-surface px-6 py-12 text-center", className)}>
+    <div className={cn("flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-surface px-6 py-8 text-center", className)}>
       <span className="flex size-10 items-center justify-center rounded-full bg-surface-2 text-fg-faint">
         <Icon name={icon} size={20} />
       </span>
@@ -86,7 +86,7 @@ export function ErrorState({
   headingAs?: StateHeading;
 }) {
   return (
-    <div role="alert" className={cn("flex flex-col items-center justify-center gap-2 rounded-card border border-danger/30 bg-danger-soft px-6 py-10 text-center", className)}>
+    <div role="alert" className={cn("flex flex-col items-center justify-center gap-2 rounded-card border border-danger/30 bg-danger-soft px-6 py-6 text-center", className)}>
       <Icon name="alert-circle" size={22} className="text-danger-icon" />
       <Title className="text-card-title font-semibold text-fg">{title}</Title>
       {detail ? <p className="max-w-md text-body-sm text-fg-muted">{detail}</p> : null}

@@ -123,7 +123,7 @@ export function PromptsView({ storeId, comparisonId, rows, leftOut, channelLabel
   const clear = () => router.replace(pathname);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {verdict === "insufficient_data" ? <Callout tone="warning" title="Fewer than 20 matched pairs: read these rows as examples, not a trend." /> : null}
       {forced ? (
         <p className="flex items-center gap-2 text-body-sm text-fg-muted">

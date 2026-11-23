@@ -42,7 +42,7 @@ export function RunProgressView({ derived, paused }: { derived: DerivedAudit; pa
   const validating = progress.phase === "validating" || progress.status === "blocked";
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {paused ? <Callout tone="warning" title="Paused">The clock is stopped. Nothing advances until you resume.</Callout> : null}
       <SplitLayout
         main={

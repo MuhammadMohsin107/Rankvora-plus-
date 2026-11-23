@@ -84,7 +84,7 @@ export function BrandTab({ versions, draft, onDraft, readOnly, onSaveVersion, ti
   const previous = viewIndex >= 0 ? versions[viewIndex + 1] : undefined;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
       <Card className="min-w-0">
         <CardHeader title="Brand profile" />
         <CardBody>

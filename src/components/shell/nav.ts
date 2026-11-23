@@ -21,7 +21,7 @@ const exact = (href: string) => (pathname: string) => pathname === href;
 const prefix = (href: string) => (pathname: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 /**
- * Sidebar structure. ORGANIZATION holds everything shared by all websites (websites, integrations, team, billing). WEBSITE holds the selected website's workspace, including its own settings. SUPPORT is help.
+ * Sidebar structure. ORGANIZATION holds everything shared by all websites (websites, integrations, billing). WEBSITE holds the selected website's workspace, including its own settings. SUPPORT is help.
  * `websiteId` is the website in context (from the URL, else the last one used). Without one the website group is left out.
  */
 export function navGroups(websiteId: string | null): NavGroup[] {
@@ -33,7 +33,6 @@ export function navGroups(websiteId: string | null): NavGroup[] {
       items: [
         { id: "websites", label: "Websites & Brands", href: "/stores", icon: "globe", isActive: (p) => p === "/stores" || p === "/stores/new" },
         { id: "integrations", label: "Integrations", href: "/integrations", icon: "plug", isActive: prefix("/integrations") },
-        { id: "team", label: "Team", href: "/settings/members", icon: "users", isActive: prefix("/settings/members") },
         { id: "billing", label: "Billing", href: "/settings/billing", icon: "credit-card", isActive: prefix("/settings/billing") },
       ],
     },

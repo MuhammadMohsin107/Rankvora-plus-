@@ -24,7 +24,7 @@ export function VersionHistory({ versions }: { versions: PromptVersion[] }) {
   ));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Card as="section">
         <CardHeader title="History" info="Editing the wording creates a new version. Earlier runs keep the version they used." />
         <CardBody>

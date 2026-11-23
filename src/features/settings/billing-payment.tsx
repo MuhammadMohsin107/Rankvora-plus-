@@ -17,7 +17,7 @@ import { useSyncedDraft } from "./use-draft";
 
 export function PaymentTab({ b }: { b: Billing }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-2">
       <PaymentMethodCard b={b} />
       <ContactCard b={b} />
     </div>

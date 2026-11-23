@@ -168,7 +168,7 @@ export function FindingsInbox({ storeId, rows, tasks, assignees, actorName }: Pr
         mobileCards
         pageSize={10}
         empty={
-          <p className="py-6 text-center text-body-sm text-fg-muted">
+          <p className="py-4 text-center text-body-sm text-fg-muted">
             No findings match.{" "}
             <Button variant="ghost" size="sm" onClick={clear}>
               Reset filters

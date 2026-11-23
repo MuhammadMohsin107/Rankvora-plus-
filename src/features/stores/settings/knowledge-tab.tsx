@@ -84,7 +84,7 @@ function FactsSection({ state, readOnly, onChange }: Pick<Props, "state" | "read
   };
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 xl:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 xl:grid-cols-2">
       <Card>
         <CardHeader title="Brand facts" info="Short statements the brand stands behind. Used for prompt ideas and fix drafts (demo)." />
         <CardBody className="flex flex-col gap-4">
@@ -163,7 +163,7 @@ function ContentSection({ storeId, state, auditId, readOnly, onChange }: Pick<Pr
   };
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 xl:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 xl:grid-cols-2">
       <Card>
         <CardHeader title="Content context" info="A short summary of what the site covers. Used for prompt ideas and fix drafts (demo)." />
         <CardBody className="flex flex-col gap-3">

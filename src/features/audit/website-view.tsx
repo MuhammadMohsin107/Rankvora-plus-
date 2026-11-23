@@ -37,7 +37,7 @@ export function WebsiteView({ audit, lane, storeId, otherWithWebsite }: { audit:
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {lane.provisional ? <Callout tone="warning" title="Provisional">{lane.notice}</Callout> : lane.notice ? <Callout tone="info">{lane.notice}</Callout> : null}
 
       <MetricGrid>

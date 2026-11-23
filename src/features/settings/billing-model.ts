@@ -83,7 +83,7 @@ export function sumUsage(rows: WebsiteUsage[]): UsageTotals {
   );
 }
 
-export type MeterId = "requests" | "searchCalls" | "websites" | "prompts" | "seats" | "cost";
+export type MeterId = "requests" | "searchCalls" | "websites" | "prompts" | "cost";
 
 export type Meter = {
   id: MeterId;
@@ -96,8 +96,8 @@ export type Meter = {
   note?: string;
 };
 
-export function buildMeters(input: { plan: BillingPlan; credits: number; usage: UsageTotals; websites: number; seats: number }): Meter[] {
-  const { plan, credits, usage, websites, seats } = input;
+export function buildMeters(input: { plan: BillingPlan; credits: number; usage: UsageTotals; websites: number }): Meter[] {
+  const { plan, credits, usage, websites } = input;
   const costUsd = usage.costCents / 100;
   const make = (id: MeterId, label: string, used: number, limit: number, unit: Meter["unit"] = "count", note?: string): Meter => ({
     id,
@@ -114,7 +114,6 @@ export function buildMeters(input: { plan: BillingPlan; credits: number; usage: 
     make("searchCalls", "Search calls", usage.searchCalls, plan.limits.searchCalls + credits, "count", creditNote),
     make("websites", "Websites", websites, plan.limits.websites),
     make("prompts", "Active prompts", usage.activePrompts, plan.limits.prompts),
-    make("seats", "Seats", seats, plan.limits.seats),
     make("cost", "Estimated cost", costUsd, plan.limits.usageAllowanceUsd, "usd"),
   ];
 }
@@ -138,7 +137,7 @@ export function upgradeNudge(meters: Meter[], planId: PlanId, plans: BillingPlan
 
 /* ───────── Plan change ───────── */
 
-export type PlanChangeUsage = { websites: number; prompts: number; seats: number; requests: number; searchCalls: number };
+export type PlanChangeUsage = { websites: number; prompts: number; requests: number; searchCalls: number };
 
 export type PlanChange = {
   direction: "upgrade" | "downgrade" | "same";
@@ -169,7 +168,6 @@ export function planChangeEffect(from: BillingPlan, to: BillingPlan, usage: Plan
     { id: "prompts", label: "Active prompts", limit: (p) => p.limits.prompts },
     { id: "requests", label: "AI requests", limit: (p) => p.limits.requests },
     { id: "searchCalls", label: "Search calls", limit: (p) => p.limits.searchCalls },
-    { id: "seats", label: "Seats", limit: (p) => p.limits.seats },
   ];
   const limitChanges = rows.map((r) => ({ id: r.id, label: r.label, from: r.limit(from), to: r.limit(to) })).filter((r) => r.from !== r.to);
   const blockers = rows

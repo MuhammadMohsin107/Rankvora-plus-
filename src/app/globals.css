@@ -105,17 +105,17 @@
   --dur: 180ms;
 
   /* ---------- 3. component ---------- */
-  --control-h: 40px; /* input, select */
+  --control-h: 36px; /* input, select */
   --control-h-sm: 32px;
-  --control-h-lg: 44px;
-  --btn-h: 36px;
-  --btn-h-sm: 32px;
-  --btn-h-lg: 40px;
-  --card-pad: 20px;
+  --control-h-lg: 40px;
+  --btn-h: 32px;
+  --btn-h-sm: 28px;
+  --btn-h-lg: 36px;
+  --card-pad: 16px;
   --radius-card: 12px;
   --radius-control: 8px;
-  --sidebar-w: 248px;
-  --header-h: 64px;
+  --sidebar-w: 232px;
+  --header-h: 56px;
   --page-pad: 16px;
 }
 
@@ -260,22 +260,22 @@
   --spacing-page: var(--page-pad);
 
   /* type scale: text-title, text-section, text-card-title, text-body, text-body-sm, text-label, text-helper, text-metric */
-  --text-title: 1.625rem; /* 26 */
+  --text-title: 1.375rem; /* 22 */
   --text-title--line-height: 1.25;
   --text-title--letter-spacing: -0.015em;
-  --text-section: 1.0625rem; /* 17 */
+  --text-section: 1rem; /* 16 */
   --text-section--line-height: 1.4;
-  --text-card-title: 0.9375rem; /* 15 */
+  --text-card-title: 0.875rem; /* 14 */
   --text-card-title--line-height: 1.4;
-  --text-body: 0.875rem; /* 14 */
+  --text-body: 0.8125rem; /* 13 */
   --text-body--line-height: 1.5;
-  --text-body-sm: 0.8125rem; /* 13 */
+  --text-body-sm: 0.78125rem; /* 12.5 */
   --text-body-sm--line-height: 1.5;
-  --text-label: 0.78125rem; /* 12.5 */
+  --text-label: 0.75rem; /* 12 */
   --text-label--line-height: 1.4;
   --text-helper: 0.75rem; /* 12 */
   --text-helper--line-height: 1.4;
-  --text-metric: 1.625rem; /* 26, metric values */
+  --text-metric: 1.375rem; /* 22, metric values */
   --text-metric--line-height: 1;
   --text-metric--letter-spacing: -0.02em;
   --text-2xs: 0.6875rem;

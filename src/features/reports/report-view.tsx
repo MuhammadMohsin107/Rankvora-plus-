@@ -91,7 +91,7 @@ export function ReportView({ doc }: { doc: ReportDocument }) {
   const versus = doc.type === "comparison" ? "vs baseline" : "vs previous run";
   const metricCols = Math.min(4, Math.max(1, doc.metrics.length)) as 1 | 2 | 3 | 4;
   return (
-    <div className="flex flex-col gap-5 report-document">
+    <div className="flex flex-col gap-4 report-document">
       <Card as="section">
         <CardHeader title="Summary" actions={doc.verdict ? <Badge tone={doc.verdict.tone}>{doc.verdict.label}</Badge> : undefined} />
         <CardBody className="flex flex-col gap-4 pt-0">

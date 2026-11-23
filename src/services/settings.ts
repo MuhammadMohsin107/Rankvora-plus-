@@ -10,40 +10,29 @@ import {
   DEMO_BRAND_VERSIONS,
   DEMO_DOMAINS,
   DEMO_INTEGRATIONS,
-  DEMO_INVITES,
-  DEMO_MEMBER_ACCESS,
   DEMO_ORG_NOTIFICATIONS,
   DEMO_PROVIDERS,
   DEMO_SETUP_SAMPLE,
   DEMO_STORE_NOTIFICATIONS,
-  DEMO_TEAM_ACTIVITY,
   NOTIFICATION_EVENTS,
-  PERMISSIONS,
-  ROLE_PERMISSIONS,
 } from "@/demo/settings";
 import { WEBSITE_BASES } from "@/demo/audit";
 import { registryFor } from "@/demo/registry";
-import { listChannels, listCompetitors, listMembers, listPromptsBase, listStores } from "@/services/core";
+import { listChannels, listCompetitors, listPromptsBase, listStores } from "@/services/core";
 import type { Competitor } from "@/types/core";
 import type {
   ActivityEntry,
   BillingBase,
   BrandKnowledgeBase,
-  BillingPlan,
-  BillingState,
   BrandVersion,
   SourcePage,
   DomainRecord,
   IntegrationDetail,
   NotificationEvent,
   NotificationPrefs,
-  PendingInvite,
-  Permission,
   ProviderConnection,
-  RolePermissions,
   StoreNotificationOverride,
   StoreSetupSample,
-  TeamMember,
 } from "@/types/settings";
 
 export async function listProviderConnections(): Promise<ProviderConnection[]> {
@@ -72,48 +61,6 @@ export async function getStoreNotificationOverride(storeId: string): Promise<Sto
   return DEMO_STORE_NOTIFICATIONS.find((o) => o.storeId === storeId) ?? { storeId, mode: "inherit", matrix: DEMO_ORG_NOTIFICATIONS.matrix };
 }
 
-export async function listPermissions(): Promise<Permission[]> {
-  return PERMISSIONS;
-}
-
-export async function getRolePermissions(): Promise<RolePermissions> {
-  return ROLE_PERMISSIONS;
-}
-
-export async function listPendingInvites(): Promise<PendingInvite[]> {
-  return DEMO_INVITES;
-}
-
-/** Members and pending invites as one Team list. Owners and admins see every website. */
-export async function listTeam(): Promise<TeamMember[]> {
-  const members = await listMembers();
-  const active: TeamMember[] = members.map((m) => ({
-    id: m.id,
-    name: m.name,
-    email: m.email,
-    role: m.role,
-    initials: m.initials,
-    lastActive: m.lastActive,
-    status: "active",
-    invitedAt: null,
-    invitedBy: null,
-    websiteIds: m.role === "owner" || m.role === "admin" ? null : (DEMO_MEMBER_ACCESS[m.id] ?? null),
-  }));
-  const invited: TeamMember[] = DEMO_INVITES.map((i) => ({
-    id: i.id,
-    name: i.email,
-    email: i.email,
-    role: i.role,
-    initials: i.email.slice(0, 2).toUpperCase(),
-    lastActive: null,
-    status: "invited",
-    invitedAt: i.invitedAt,
-    invitedBy: i.invitedBy,
-    websiteIds: DEMO_MEMBER_ACCESS[i.id] ?? null,
-  }));
-  return [...active, ...invited];
-}
-
 /** Billing demonstration data. Request counts come from the demo usage; websites without usage count as zero. */
 export async function getBillingBase(): Promise<BillingBase> {
   const stores = await listStores();
@@ -126,15 +73,6 @@ export async function listPromptCountRows(): Promise<{ id: string; storeId: stri
   const stores = await listStores();
   const lists = await Promise.all(stores.map((store) => listPromptsBase(store.id)));
   return lists.flat().map((p) => ({ id: p.id, storeId: p.storeId, status: p.status }));
-}
-
-export async function listTeamActivity(): Promise<{ id: string; at: string; actor: string; title: string }[]> {
-  return DEMO_TEAM_ACTIVITY;
-}
-
-/** Plans and the starting billing state, for screens that only need the seat limit. */
-export async function getPlanSnapshot(): Promise<{ plans: BillingPlan[]; state: BillingState }> {
-  return { plans: DEMO_BILLING.plans, state: DEMO_BILLING.state };
 }
 
 export async function listStoreActivity(storeId: string): Promise<ActivityEntry[]> {

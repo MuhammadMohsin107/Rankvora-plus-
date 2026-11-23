@@ -55,7 +55,7 @@ function AnswerTab({ response }: { response: ResponseSample }) {
   const failed = response.status === "failed";
   const counts = spanCounts(response);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <section aria-label="Prompt">
         <SectionTitle>Exact prompt sent · v{response.promptVersion}</SectionTitle>
         <p className="rounded-control border border-line bg-surface-2 px-3 py-2.5 text-body-sm text-fg">{response.promptText}</p>
@@ -137,7 +137,7 @@ function AnalysisTab({ response }: { response: ResponseSample }) {
   if (response.status === "failed") return <p className="text-body-sm text-fg-muted">No analysis: the request failed, so this sample does not count toward any rate.</p>;
   const level = confidenceLevel(response.confidence);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <section aria-label="Analysis">
         <SectionTitle>Analysis · version {response.analysisVersion}</SectionTitle>
         <KeyValue
@@ -208,7 +208,7 @@ function ReviewControl({ response }: { response: ResponseSample }) {
 function TraceTab({ response, evidence, onOpenSibling }: { response: ResponseSample; evidence: EvidenceIds; onOpenSibling?: (responseId: string) => void }) {
   const latency = latencySeconds(response);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <section aria-label="Evidence trace">
         <SectionTitle>Evidence trace</SectionTitle>
         <EvidenceTrace ids={evidence} onOpenResponse={onOpenSibling} />

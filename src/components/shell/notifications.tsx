@@ -40,7 +40,7 @@ export function Notifications({ alerts, websites, contextWebsiteId }: Props) {
           className="pointer-coarse:size-11"
           badge={
             unreadCount ? (
-              <span aria-hidden="true" className="tnum absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-solid px-1 text-2xs font-semibold text-danger-fg">
+              <span aria-hidden="true" className="tnum absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-solid px-1 text-2xs font-semibold leading-none text-danger-fg ring-2 ring-surface">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             ) : null
@@ -62,7 +62,7 @@ export function Notifications({ alerts, websites, contextWebsiteId }: Props) {
             </button>
           </div>
           {recent.length === 0 ? (
-            <p className="px-4 py-8 text-center text-body-sm text-fg-muted">No notifications.</p>
+            <p className="px-4 py-5 text-center text-body-sm text-fg-muted">No notifications.</p>
           ) : (
             <ul className="flex flex-col">
               {recent.map((alert) => {

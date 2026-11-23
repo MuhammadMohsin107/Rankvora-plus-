@@ -64,35 +64,6 @@ export type NotificationPrefs = {
 
 export type StoreNotificationOverride = { storeId: string; mode: "inherit" | "override"; matrix: NotificationMatrix };
 
-/* ───────── Roles ───────── */
-
-export type PermissionId = "view" | "edit" | "run_audits" | "review" | "approve" | "members";
-
-export type Permission = { id: PermissionId; label: string; info: string };
-
-export type RolePermissions = Record<Role, PermissionId[]>;
-
-export type PendingInvite = { id: string; email: string; role: Role; invitedAt: string; invitedBy: string };
-
-/* ───────── Team ───────── */
-
-export type MemberStatus = "active" | "invited" | "deactivated";
-
-/** A person in the Team list. Extends the shared Member with invite state and website access. */
-export type TeamMember = {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  initials: string;
-  lastActive: string | null;
-  status: MemberStatus;
-  invitedAt: string | null;
-  invitedBy: string | null;
-  /** Website ids this person can open. null means every website. */
-  websiteIds: string[] | null;
-};
-
 /* ───────── Billing (demonstration only: no payments, no card data) ───────── */
 
 export type PlanId = "starter" | "growth" | "agency";
@@ -104,7 +75,6 @@ export type PlanLimits = {
   requests: number;
   /** Web search calls per month. */
   searchCalls: number;
-  seats: number;
   /** Estimated provider cost included per month, USD. */
   usageAllowanceUsd: number;
 };

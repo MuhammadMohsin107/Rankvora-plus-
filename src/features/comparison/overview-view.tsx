@@ -101,7 +101,7 @@ export function OverviewView({ detail, base }: { detail: ComparisonDetail; base:
       actions={<ButtonLink href={`${base}/quality`} variant="ghost" size="sm">Details</ButtonLink>}
     />
   );
-  if (result.verdict === "not_comparable") return <div className="flex flex-col gap-6">{banner}</div>;
+  if (result.verdict === "not_comparable") return <div className="flex flex-col gap-4">{banner}</div>;
 
   const countsOnly = result.verdict === "insufficient_data";
   const hero = HERO.map((id) => result.headline.find((m) => m.id === id)).filter((m): m is MetricResult => Boolean(m));
@@ -112,7 +112,7 @@ export function OverviewView({ detail, base }: { detail: ComparisonDetail; base:
   const cohort = hero[0]?.cohort ?? 0;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {banner}
 
       <Card>

@@ -25,10 +25,10 @@ export function GeneratingState({ report, progress, fraction }: { report: Report
   const simulated = fraction !== null && fraction !== undefined;
   const active = simulated ? stageIndex(fraction) : 0;
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-5">
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <Card as="section">
         <CardHeader title="Generating report" actions={simulated ? <SimulatedBadge /> : undefined} />
-        <CardBody className="flex flex-col gap-5 pt-0">
+        <CardBody className="flex flex-col gap-4 pt-0">
           {simulated ? (
             <div className="flex flex-col gap-1.5">
               <Progress value={Math.round(fraction * 100)} max={100} label="Report generation progress" />

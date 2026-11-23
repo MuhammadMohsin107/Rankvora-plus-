@@ -128,7 +128,7 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
   const requestsOk = pooled.requests - pooled.failed;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Card as="section">
         <CardHeader
           title="By provider"

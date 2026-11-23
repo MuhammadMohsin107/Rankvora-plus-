@@ -30,7 +30,7 @@ function RateRow({ name, tag, rate, unit }: { name: string; tag?: string; rate: 
 export function EvidenceSection({ evidence }: { evidence: PromptEvidence }) {
   const { competitors, citations, citationResponses } = evidence;
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <Card as="section">
         <CardHeader title="Competitor mentions" info="Share of successful responses that name each competitor." />
         <CardBody>

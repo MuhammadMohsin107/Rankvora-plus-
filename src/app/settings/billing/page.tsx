@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 
 import { DemoBadge } from "@/components/ui/demo";
 import { BillingView } from "@/features/settings/billing-view";
-import { SettingsHeader } from "@/features/settings/settings-header";
+import { PageHeader } from "@/components/shell/page-header";
 import { getOrganization, listStores } from "@/services/core";
-import { getBillingBase, listPromptCountRows, listTeam } from "@/services/settings";
+import { getBillingBase, listPromptCountRows } from "@/services/settings";
 
 export const metadata: Metadata = { title: "Billing" };
 
 export default async function BillingPage() {
-  const [base, stores, team, promptRows, org] = await Promise.all([getBillingBase(), listStores(), listTeam(), listPromptCountRows(), getOrganization()]);
+  const [base, stores, promptRows, org] = await Promise.all([getBillingBase(), listStores(), listPromptCountRows(), getOrganization()]);
   return (
     <>
-      <SettingsHeader
+      <PageHeader
         title="Billing"
         meta={
           <>
@@ -21,7 +21,7 @@ export default async function BillingPage() {
           </>
         }
       />
-      <BillingView base={base} stores={stores} team={team} promptRows={promptRows} organization={org.name} />
+      <BillingView base={base} stores={stores} promptRows={promptRows} organization={org.name} />
     </>
   );
 }

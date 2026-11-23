@@ -58,7 +58,7 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
   const trigger = config.trigger;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <StatusNote audit={audit} />
       {trigger ? (
         <p className="flex items-center gap-1.5 text-body-sm text-fg-muted">

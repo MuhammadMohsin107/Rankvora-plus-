@@ -134,7 +134,7 @@ export function ImportTab({ context, csv, setCsv, fileName, setFileName, addMany
   const hasRows = preview.rows.length > 0;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Card as="section">
         <CardHeader
           title="Paste or upload"

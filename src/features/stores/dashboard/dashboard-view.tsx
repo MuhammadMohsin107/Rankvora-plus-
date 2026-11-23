@@ -105,7 +105,7 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
   const last = inWindow[inWindow.length - 1];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <HeaderAction>
         <ButtonLink href={`${base}/audits/new`} variant="primary" size="sm" icon="plus">Start audit</ButtonLink>
       </HeaderAction>
@@ -189,7 +189,7 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
         </Tile>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <ChartCard
           title={view === "trend" ? "Visibility trend" : "Competitor visibility"}
           subtitle={view === "trend" ? `${inWindow.length} weekly ${inWindow.length === 1 ? "run" : "runs"} in range` : `Responses naming each brand · latest run`}

@@ -63,7 +63,7 @@ async function AuditsPageContent(props: PageProps<"/stores/[storeId]/audits">) {
       {latest && summary ? (
         <Section
           title="Latest results"
-          className="mb-6"
+          className="mb-4"
           actions={
             <Link href={`/stores/${storeId}/fixes`} className="text-label font-medium text-accent-text hover:underline">
               {open} open {open === 1 ? "finding" : "findings"}

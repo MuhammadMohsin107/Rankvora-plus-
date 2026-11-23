@@ -39,7 +39,7 @@ function NavLink({ item, pathname, count }: { item: NavItem; pathname: string; c
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex h-10 items-center rounded-control text-body-sm font-medium transition-colors duration-[var(--dur-fast)] pointer-coarse:h-11",
+        "group relative flex h-9 items-center rounded-control text-body-sm font-medium transition-colors duration-[var(--dur-fast)] pointer-coarse:h-11",
         "gap-2.5 px-2.5",
         active ? "bg-surface text-sidebar-fg shadow-card ring-1 ring-line" : "text-sidebar-fg-muted hover:bg-surface/70 hover:text-sidebar-fg",
       )}
@@ -66,7 +66,7 @@ export function Sidebar({ groups, pathname, counts, onSearch }: SidebarProps) {
         <Logo />
       </div>
 
-      <nav aria-label="Primary" className="ui-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
+      <nav aria-label="Primary" className="ui-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-4">
         {onSearch ? (
           <button
             type="button"

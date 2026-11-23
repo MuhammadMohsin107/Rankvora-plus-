@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -35,7 +35,7 @@ type ShellProps = {
 /** First step of the header trail: home is the Websites & Brands list. */
 function HomeLink() {
   return (
-    <Link href="/stores" aria-label="Home: Websites & Brands" title="Home" className="flex size-9 shrink-0 items-center justify-center rounded-control text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg">
+    <Link href="/stores" aria-label="Home: Websites & Brands" title="Home" className="flex size-9 shrink-0 items-center justify-center rounded-control text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg lg:-ml-2 pointer-coarse:size-11">
       <Icon name="home" size={18} />
     </Link>
   );
@@ -140,8 +140,9 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
         ) : null}
       </dialog>
 
-      <header className="sticky top-0 z-20 border-b border-line bg-surface">
-        <div className="flex h-header items-center gap-1 px-page">
+      {/* Every control in the bar is 36px high (--btn-h), and the bar content lines up with the page content below it. */}
+      <header className="sticky top-0 z-20 border-b border-line bg-surface" style={{ "--btn-h": "36px", "--btn-h-sm": "32px" } as CSSProperties}>
+        <div className="mx-auto flex h-header w-full max-w-[1360px] items-center gap-1 px-page">
           <IconButton icon="menu" label="Open navigation" className="-ml-1 shrink-0 lg:hidden" onClick={() => setOpenFor(pathname)} />
           <HomeLink />
           {routeId ? (
@@ -156,7 +157,7 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
             <Breadcrumbs pathname={pathname} />
           </div>
           <div className="min-w-0 flex-1 md:hidden" />
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {/* The page's ONE primary action lands here (see HeaderAction in page-chrome). */}
             <div ref={registerActionSlot} className="flex shrink-0 items-center gap-2 empty:hidden" />
             <button
@@ -165,22 +166,26 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
               aria-label="Search"
               title="Search (Ctrl K)"
               aria-keyshortcuts="Control+K Meta+K"
-              className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2"
+              className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-control px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-52 md:border md:border-line-strong md:bg-surface-2 md:px-3"
             >
-              <Icon name="search" size={16} />
+              <Icon name="search" size={16} className="shrink-0" />
               <span className="hidden md:inline">Search</span>
+              <kbd className="ml-auto hidden rounded border border-line bg-surface px-1.5 py-0.5 font-sans text-2xs leading-none text-fg-subtle lg:inline">Ctrl K</kbd>
             </button>
-            <Link href="/help" className="hidden h-9 items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 sm:inline-flex">
+            <Link href="/help" className="hidden h-9 items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg sm:inline-flex">
               <Icon name="help" size={16} />
               Support
             </Link>
-            <Notifications alerts={alerts} websites={websites} contextWebsiteId={navWebsiteId} />
-            <UserMenu user={user} />
+            <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-line sm:block" />
+            <div className="flex items-center gap-1">
+              <Notifications alerts={alerts} websites={websites} contextWebsiteId={navWebsiteId} />
+              <UserMenu user={user} />
+            </div>
           </div>
         </div>
       </header>
 
-      <main id="main" ref={mainRef} tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[1360px] px-page py-6 outline-none sm:py-8">
+      <main id="main" ref={mainRef} tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[1360px] px-page py-4 outline-none sm:py-5">
         {children}
       </main>
 

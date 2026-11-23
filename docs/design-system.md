@@ -37,9 +37,9 @@ Three layers: **primitive** (`--p-*`, raw palette, never used by components), **
 
 **Text on status colours:** use `text-*-text`. As a safety net `text-success|warning|danger|info` already resolve to the `-text` tone; use `text-*-icon` for the bright tone on icons.
 
-Sizes (component tokens, utilities in brackets): control height 40 (`h-control`, sm 32, lg 44) · button 36 (`h-btn`, sm 32, lg 40; all 44 on coarse pointers) · card padding 20 (`p-card`, `px-card`) · radius card 12 / control 8 (`rounded-card`, `rounded-control`) · sidebar 248 (`w-sidebar`) · header 64 (`h-header`) · page padding 16 / 24 (sm) / 32 (xl) (`px-page`, `.rv-page-x`).
+Sizes (component tokens, utilities in brackets): control height 36 (`h-control`, sm 32, lg 40) · button 32 (`h-btn`, sm 28, lg 36; all 44 on coarse pointers) · card padding 16 (`p-card`, `px-card`) · radius card 12 / control 8 (`rounded-card`, `rounded-control`) · sidebar 232 (`w-sidebar`) · header 56 (`h-header`) · page padding 16 / 24 (sm) / 32 (xl) (`px-page`, `.rv-page-x`).
 
-Type scale (`text-*`): `title` 26 (`.rv-page-title`) · `section` 17 (`.rv-section-title`) · `card-title` 15 (`.rv-card-title`) · `body` 14 · `body-sm` 13 · `label` 12.5 (`.rv-label`) · `helper` 12 (`.rv-helper`) · `metric` 26 for metric values. No arbitrary `text-[Npx]`; nothing below 12px. Numbers: add `tnum`.
+Type scale (`text-*`): `title` 22 (`.rv-page-title`) · `section` 16 (`.rv-section-title`) · `card-title` 14 (`.rv-card-title`) · `body` 13 · `body-sm` 12.5 · `label` 12 (`.rv-label`) · `helper` 12 (`.rv-helper`) · `metric` 22 for metric values. No arbitrary `text-[Npx]`; nothing below 12px. Numbers: add `tnum`.
 
 Motion: 120-180ms on colour, transform and opacity only; buttons press at `scale(0.98)`; everything honours `prefers-reduced-motion`. Shadows: `shadow-card`, `shadow-pop` only. Focus: 2px `ring` outline on every interactive element.
 

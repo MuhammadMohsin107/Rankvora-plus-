@@ -7,7 +7,7 @@ describe("normalizeRoute", () => {
     const routes = [
       "/stores",
       "/stores/new",
-      "/settings/members",
+      "/settings/billing",
       "/stores/nutrition",
       "/stores/nutrition/prompts",
       "/stores/nutrition/prompts/p-nu-001",

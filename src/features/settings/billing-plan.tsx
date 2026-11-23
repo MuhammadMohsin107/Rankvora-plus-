@@ -40,7 +40,7 @@ export function PlanTab({ b, onChange, onCancel }: { b: Billing; onChange: (id: 
   const { plan, base, state } = b;
   const cancelling = state.cancelAt !== null;
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <HeaderAction>
         <Button variant="primary" onClick={() => onChange(nextOther(b.plans, plan.id).id)}>
           Change plan
@@ -79,7 +79,7 @@ export function PlanTab({ b, onChange, onCancel }: { b: Billing; onChange: (id: 
             </>
           }
         />
-        <CardBody className="flex flex-col gap-5">
+        <CardBody className="flex flex-col gap-4">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="tnum text-metric font-semibold text-fg">{formatUsd(plan.priceUsd)}</span>
             <span className="text-body-sm text-fg-muted">per month, billed monthly</span>
@@ -89,7 +89,6 @@ export function PlanTab({ b, onChange, onCancel }: { b: Billing; onChange: (id: 
             items={[
               { label: "Billing period", value: `${formatDate(base.period.start)} to ${formatDate(base.period.end)}` },
               { label: cancelling ? "Ends" : "Renews", value: formatDate(cancelling ? (state.cancelAt as string) : base.period.renewsOn) },
-              { label: "Seats", value: `${formatNumber(plan.limits.seats)} included` },
               { label: "Websites", value: `${formatNumber(plan.limits.websites)} included` },
               { label: "Active prompts", value: `${formatNumber(plan.limits.prompts)} included` },
               { label: "AI requests", value: `${formatNumber(plan.limits.requests + state.credits)} per month${state.credits > 0 ? ` (+${formatNumber(state.credits)} credits)` : ""}` },
@@ -116,7 +115,6 @@ const ROWS: { label: string; value: (p: BillingPlan) => string }[] = [
   { label: "Active prompts", value: (p) => formatNumber(p.limits.prompts) },
   { label: "AI requests per month", value: (p) => formatNumber(p.limits.requests) },
   { label: "Search calls per month", value: (p) => formatNumber(p.limits.searchCalls) },
-  { label: "Seats", value: (p) => formatNumber(p.limits.seats) },
   { label: "Monitoring frequency", value: (p) => p.monitoring },
   { label: "History retention", value: (p) => `${p.retentionMonths} months` },
   { label: "Estimated cost included", value: (p) => formatUsd(p.limits.usageAllowanceUsd) },

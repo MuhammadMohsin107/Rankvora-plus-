@@ -62,7 +62,7 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 
 export function StepType({ data, state, set, prompts }: StepProps) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <RadioCards label="Audit type" columns={3} value={state.kind} onChange={(kind) => set({ kind, ...(kind === "verification" ? { samples: 1 } : {}) })} options={KIND_OPTIONS} />
 
       {state.kind === "verification" ? (
@@ -112,7 +112,7 @@ export function StepPrompts({ data, state, set, prompts }: StepProps) {
   const groups = [...new Map(prompts.filter((p) => p.groupId).map((p) => [p.groupId as string, p.groupName])).entries()].map(([id, name]) => ({ id, name }));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <RadioCards<PromptMode>
         label="Prompt selection"
         columns={3}
@@ -176,7 +176,7 @@ export function StepPrompts({ data, state, set, prompts }: StepProps) {
 export function StepProviders({ data, state, set }: StepProps) {
   if (!state.ai) return <Skipped lane="AI visibility" />;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <ul className="divide-y divide-line rounded-control border border-line">
         {data.channels.map((c) => {
           const on = state.channelIds.includes(c.id);
@@ -241,7 +241,7 @@ export function StepWebsite({ data, state, set }: StepProps) {
   const listCount = urlLines(state.urlList).length;
   const available = new Set<string>(data.pageTypes);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Block title="Start points">
         <div className="flex flex-col gap-3 rounded-control border border-line p-3">
           <Checkbox label="Homepage" description={`https://${data.store.domain}/`} checked={state.startHomepage} onChange={(e) => set({ startHomepage: e.target.checked })} />
@@ -311,7 +311,7 @@ function ToggleRow({ title, description, checked, onChange, disabled, extra }: {
 export function StepCriteria({ data, state, set }: StepProps) {
   if (!state.web) return <Skipped lane="Website readiness" />;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Block title="Categories">
         <div className="flex flex-wrap gap-x-5 gap-y-2.5">
           {CRITERIA_CATEGORIES.map((c) => (
@@ -364,7 +364,7 @@ export function StepCriteria({ data, state, set }: StepProps) {
 export function StepLimits({ state, set }: StepProps) {
   const positive = (n: number) => (n > 0 ? undefined : "Enter a number above 0.");
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
         {state.web ? (
           <Field label="Maximum URLs" error={positive(state.maxUrls)}>
@@ -413,7 +413,7 @@ export function StepLimits({ state, set }: StepProps) {
 export function StepEstimate({ state, usage }: StepProps & { usage: Usage }) {
   const ratio = usage.costUsd / Math.max(state.budgetUsd, 0.01);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="info" icon="info">Illustrative estimate</Badge>
         <p className="text-helper text-fg-muted">From typical per-request pricing. Nothing is charged in this demo.</p>
@@ -461,7 +461,7 @@ export function StepReview({ data, state, usage, prompts, onEdit }: StepProps & 
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="divide-y divide-line">
         {row("Type and lanes", 0, `${kind} · ${[state.ai && "AI visibility", state.web && "Website readiness"].filter(Boolean).join(" + ")}`)}
         {state.ai ? row("Prompts and providers", 2, <span className="tnum">{usage.prompts} prompts · {channelNames.join(", ")} · {state.samples} {state.samples === 1 ? "sample" : "samples"}</span>) : null}

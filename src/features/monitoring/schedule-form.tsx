@@ -344,10 +344,10 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
   );
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       <HeaderAction>{primary("max-sm:hidden")}</HeaderAction>
 
-      <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-4">
         <Block title="Basics">
           <Field label="Name" required>
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} value={s.name} maxLength={80} onChange={(event) => set("name", event.target.value)} placeholder="e.g. Weekly visibility check" />}
@@ -591,7 +591,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
         </Advanced>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-24 xl:self-start">
+      <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-24 xl:self-start">
         <Card>
           <CardHeader title="Estimate" />
           <CardBody className="flex flex-col gap-3">

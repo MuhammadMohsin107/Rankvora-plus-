@@ -55,7 +55,6 @@ const NO_PAGE = new Set(["fixes/findings"]);
 const ORG_CRUMBS: Record<string, Crumb[]> = {
   "/stores": [{ label: "Websites & Brands" }],
   "/stores/new": [{ label: "Websites & Brands", href: "/stores" }, { label: "Add website" }],
-  "/settings/members": [{ label: "Team" }],
   "/settings/billing": [{ label: "Billing" }],
   "/integrations": [{ label: "Integrations" }],
   "/help": [{ label: "Help & Support" }],

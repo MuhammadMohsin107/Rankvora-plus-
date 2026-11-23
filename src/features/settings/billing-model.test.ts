@@ -76,24 +76,24 @@ describe("near-limit detection", () => {
   });
 
   const usage = { requests: 1252, searchCalls: 1252, costCents: 7185, activePrompts: 21 };
-  it("flags seats and search calls on Growth with the demo numbers", () => {
-    const meters = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4, seats: 6 });
+  it("flags search calls on Growth with the demo numbers", () => {
+    const meters = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4 });
     const byId = Object.fromEntries(meters.map((m) => [m.id, m.state]));
-    expect(byId).toMatchObject({ requests: "ok", websites: "ok", prompts: "ok", cost: "ok", seats: "near", searchCalls: "near" });
-    expect(meterWarnings(meters).map((m) => m.id)).toEqual(["searchCalls", "seats"]);
+    expect(byId).toMatchObject({ requests: "ok", websites: "ok", prompts: "ok", cost: "ok", searchCalls: "near" });
+    expect(meterWarnings(meters).map((m) => m.id)).toEqual(["searchCalls"]);
   });
 
   it("credits raise the request and search limits and clear the search warning", () => {
-    const meters = buildMeters({ plan: plan("growth"), credits: 500, usage, websites: 4, seats: 6 });
+    const meters = buildMeters({ plan: plan("growth"), credits: 500, usage, websites: 4 });
     expect(meters.find((m) => m.id === "requests")?.limit).toBe(2900);
     expect(meters.find((m) => m.id === "searchCalls")?.state).toBe("ok");
   });
 
   it("shows the upgrade nudge only when a limit is near and a larger plan exists", () => {
-    const near = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4, seats: 6 });
+    const near = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4 });
     expect(upgradeNudge(near, "growth", DEMO_PLANS)?.target.id).toBe("agency");
-    const calm = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4, seats: 4 });
-    const calmSearch = buildMeters({ plan: plan("growth"), credits: 500, usage, websites: 4, seats: 4 });
+    const calm = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4 });
+    const calmSearch = buildMeters({ plan: plan("growth"), credits: 500, usage, websites: 4 });
     expect(meterWarnings(calm).length).toBeGreaterThan(0);
     expect(upgradeNudge(calmSearch, "growth", DEMO_PLANS)).toBeNull();
     expect(upgradeNudge(near, "agency", DEMO_PLANS)).toBeNull();
@@ -102,14 +102,13 @@ describe("near-limit detection", () => {
 });
 
 describe("plan change effect", () => {
-  const usage = { websites: 4, prompts: 21, seats: 6, requests: 1252, searchCalls: 1252 };
+  const usage = { websites: 4, prompts: 21, requests: 1252, searchCalls: 1252 };
 
   it("upgrades raise every limit and charge a prorated amount for the days left", () => {
     const change = planChangeEffect(plan("growth"), plan("agency"), usage, period, "2026-11-19T09:00:00Z");
     expect(change.direction).toBe("upgrade");
     expect(change.priceDeltaUsd).toBe(250);
     expect(change.blockers).toEqual([]);
-    expect(change.limitChanges.find((l) => l.id === "seats")).toMatchObject({ from: 7, to: 20 });
     // 12 of 30 days left: 250 * 12 / 30
     expect(change.prorationUsd).toBe(100);
   });
@@ -118,7 +117,7 @@ describe("plan change effect", () => {
     const change = planChangeEffect(plan("growth"), plan("starter"), usage, period, "2026-11-19T09:00:00Z");
     expect(change.direction).toBe("downgrade");
     expect(change.prorationUsd).toBe(0);
-    expect(change.blockers.map((b) => b.split(":")[0])).toEqual(["Websites", "AI requests", "Search calls", "Seats"]);
+    expect(change.blockers.map((b) => b.split(":")[0])).toEqual(["Websites", "AI requests", "Search calls"]);
   });
 
   it("allows a downgrade that fits", () => {

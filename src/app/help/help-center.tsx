@@ -36,7 +36,6 @@ const SHORTCUTS: { keys: string[]; action: string }[] = [
 
 const GUIDES: { label: string; href: string }[] = [
   { label: "Add your first website", href: "/stores/new" },
-  { label: "Invite your team", href: "/settings/members" },
   { label: "Connect integrations", href: "/integrations" },
   { label: "Usage and billing", href: "/settings/billing" },
 ];
@@ -191,8 +190,8 @@ export function HelpCenter() {
   const visible = q ? FAQS.filter((faq) => `${faq.question} ${faq.answer}`.toLowerCase().includes(q)) : FAQS;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="flex min-w-0 flex-col gap-6">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="flex min-w-0 flex-col gap-4">
         <Card>
           <CardHeader title="Common questions" />
           <CardBody className="flex flex-col gap-3">
@@ -230,7 +229,7 @@ export function HelpCenter() {
         </Card>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-4">
         <Card>
           <div id="contact" className="scroll-mt-24">
             <CardHeader title="Contact support" />

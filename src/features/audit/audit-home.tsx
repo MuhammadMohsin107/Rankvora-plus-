@@ -29,7 +29,7 @@ export function RunningAudits({ storeId, seeded }: { storeId: string; seeded: Au
   const running = useMemo(() => live.filter((a) => a.provisional && a.status !== "draft"), [live]);
   if (running.length === 0) return null;
   return (
-    <div className="mb-6 flex flex-col gap-3">
+    <div className="mb-4 flex flex-col gap-3">
       {running.map((a) => {
         const raw = rows.find((r) => r.id === a.id);
         const p = raw?.plan && raw.run && now > 0 ? progressAt(raw.plan, elapsedOf(raw.run, now)) : null;

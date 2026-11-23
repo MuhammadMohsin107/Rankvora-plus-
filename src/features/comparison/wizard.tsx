@@ -258,9 +258,9 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
       ) : null}
 
       {step === 1 ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {isPeriod ? (
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
               {(
                 [
                   { key: "baseline", title: "Baseline window", value: baseWindow, set: setBaseWindow, side: baseSide },
@@ -323,7 +323,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
       ) : null}
 
       {step === 2 ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
             <Field label="Prompt group">
               {({ id: fid }) => (
@@ -434,7 +434,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
 
       {step === 3 ? (
         preview ? (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             <p className="text-body-sm text-fg-muted">{summary}</p>
             <VerdictBanner
               verdict={preview.assessment.verdict}

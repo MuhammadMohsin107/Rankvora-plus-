@@ -22,10 +22,7 @@ import type {
   NotificationEvent,
   NotificationMatrix,
   NotificationPrefs,
-  Permission,
-  PendingInvite,
   ProviderConnectionBase,
-  RolePermissions,
   StoreNotificationOverride,
   StoreSetupSample,
 } from "@/types/settings";
@@ -149,47 +146,6 @@ export const DEMO_STORE_NOTIFICATIONS: StoreNotificationOverride[] = [
   { storeId: "nutrition", mode: "override", matrix: NU_OVERRIDE },
 ];
 
-/* ───────── Roles ───────── */
-
-export const PERMISSIONS: Permission[] = [
-  { id: "view", label: "View websites and results", info: "Read dashboards, responses and reports." },
-  { id: "edit", label: "Edit websites and prompts", info: "Change website profile, prompts and monitoring schedules." },
-  { id: "run_audits", label: "Run audits", info: "Start audits and monitoring runs. Uses provider requests." },
-  { id: "review", label: "Review findings", info: "Confirm, dismiss or accept risk on findings." },
-  { id: "approve", label: "Approve fixes", info: "Approval is separate from editing: editors draft changes, approvers allow them to be applied." },
-  { id: "members", label: "Manage members", info: "Invite people, change roles and deactivate members." },
-];
-
-export const ROLE_PERMISSIONS: RolePermissions = {
-  owner: ["view", "edit", "run_audits", "review", "approve", "members"],
-  admin: ["view", "edit", "run_audits", "review", "approve", "members"],
-  editor: ["view", "edit", "run_audits", "review"],
-  auditor: ["view", "run_audits", "review"],
-  viewer: ["view"],
-};
-
-export const DEMO_INVITES: PendingInvite[] = [
-  { id: "inv-001", email: "farah@client.example", role: "viewer", invitedAt: "2026-11-17T10:20:00Z", invitedBy: "Omar Farooq" },
-];
-
-/* ───────── Team ───────── */
-
-/**
- * Website access per member. A missing id means every website. The client viewer sees one website only.
- * Owners and admins always see every website.
- */
-export const DEMO_MEMBER_ACCESS: Record<string, string[]> = {
-  "u-zoya": ["runpro-pk"],
-};
-
-/** Earlier team changes, newest first. Local changes are added from demo-state events. */
-export const DEMO_TEAM_ACTIVITY: { id: string; at: string; actor: string; title: string }[] = [
-  { id: "ta-04", at: "2026-11-17T10:20:00Z", actor: "Omar Farooq", title: "Invited farah@client.example as Viewer" },
-  { id: "ta-03", at: "2026-11-02T09:00:00Z", actor: "Sana Iqbal", title: "Zoya Khan limited to RunPro Pakistan" },
-  { id: "ta-02", at: "2026-10-12T08:30:00Z", actor: "Sana Iqbal", title: "Bilal Ahmed joined as Auditor" },
-  { id: "ta-01", at: "2026-09-20T07:45:00Z", actor: "Sana Iqbal", title: "Omar Farooq changed from Editor to Admin" },
-];
-
 /* ───────── Billing (demonstration only: no payments, no card data) ───────── */
 
 /** Three invented plans, USD per month. Limits agree with the demo usage in src/demo/shared.ts (2,400 requests per month on Growth). */
@@ -198,7 +154,7 @@ export const DEMO_PLANS: BillingPlan[] = [
     id: "starter",
     name: "Starter",
     priceUsd: 49,
-    limits: { websites: 2, prompts: 40, requests: 600, searchCalls: 300, seats: 3, usageAllowanceUsd: 25 },
+    limits: { websites: 2, prompts: 40, requests: 600, searchCalls: 300, usageAllowanceUsd: 25 },
     monitoring: "Weekly",
     retentionMonths: 3,
   },
@@ -206,7 +162,7 @@ export const DEMO_PLANS: BillingPlan[] = [
     id: "growth",
     name: "Growth",
     priceUsd: 149,
-    limits: { websites: 5, prompts: 150, requests: 2400, searchCalls: 1400, seats: 7, usageAllowanceUsd: 100 },
+    limits: { websites: 5, prompts: 150, requests: 2400, searchCalls: 1400, usageAllowanceUsd: 100 },
     monitoring: "Up to daily",
     retentionMonths: 12,
   },
@@ -214,7 +170,7 @@ export const DEMO_PLANS: BillingPlan[] = [
     id: "agency",
     name: "Agency",
     priceUsd: 399,
-    limits: { websites: 15, prompts: 600, requests: 9600, searchCalls: 4800, seats: 20, usageAllowanceUsd: 400 },
+    limits: { websites: 15, prompts: 600, requests: 9600, searchCalls: 4800, usageAllowanceUsd: 400 },
     monitoring: "Up to every 6 hours",
     retentionMonths: 24,
   },

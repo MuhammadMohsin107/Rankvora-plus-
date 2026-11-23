@@ -113,7 +113,7 @@ function JobDetails({ job, detail, storeId, onOpenResponse }: { job: RunJob; det
   const failed = job.status === "failed";
   const r = job.response;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Status kind="job" value={job.status} />
         {job.errorClass ? <Badge tone="danger">{FAILURE_LABEL[job.errorClass]}</Badge> : <Status kind="recommendation" value={outcomeStatus[job.outcome]} />}

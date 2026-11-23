@@ -76,7 +76,7 @@ export function UserMenu({ user }: { user: Member }) {
           <button
             type="button"
             aria-label={`Account menu, ${user.name}`}
-            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity duration-[var(--dur-fast)] hover:opacity-85 sm:size-10"
+            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity duration-[var(--dur-fast)] hover:opacity-85 pointer-coarse:size-11"
           >
             <UserAvatar name={user.name} size="md" />
           </button>

@@ -81,7 +81,7 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
   if (schedules.length === 0) return <NoSchedules />;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented label="Period" value={periodId} onChange={setPeriodId} options={periods.map((p) => ({ value: p.id, label: p.label }))} />
         <p className="tnum text-body-sm text-fg-muted">{period.runCount} run{period.runCount === 1 ? "" : "s"}</p>

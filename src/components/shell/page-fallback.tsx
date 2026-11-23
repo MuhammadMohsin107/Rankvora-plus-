@@ -7,7 +7,7 @@ import { Skeleton, SkeletonCard } from "@/components/ui/feedback";
  */
 export function PageFallback() {
   return (
-    <div role="status" aria-busy="true" aria-label="Loading page" className="flex flex-col gap-6">
+    <div role="status" aria-busy="true" aria-label="Loading page" className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-56" />
         <Skeleton className="h-4 w-72 max-w-full" />

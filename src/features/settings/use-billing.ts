@@ -6,7 +6,7 @@ import { demoNow, simulatedToast, useDemoCollection, useDemoEvents, useDemoSetti
 import { useToast } from "@/components/ui/toast";
 import { formatDate, formatNumber } from "@/lib/format";
 import type { Store } from "@/types/core";
-import type { BillingBase, BillingContact, BillingHistoryEntry, BillingInvoice, BillingPlan, BillingState, CreditPack, PaymentMethod, PlanId, TeamMember } from "@/types/settings";
+import type { BillingBase, BillingContact, BillingHistoryEntry, BillingInvoice, BillingPlan, BillingState, CreditPack, PaymentMethod, PlanId } from "@/types/settings";
 
 import {
   buildMeters,
@@ -42,12 +42,11 @@ function entryKind(label: string): BillingHistoryEntry["kind"] {
  * contact, cancellation) live in demo-state under `org.billing` and every change emits an event for the history.
  * Nothing here charges anything or stores card data.
  */
-export function useBilling(base: BillingBase, stores: Store[], team: TeamMember[], promptRows: PromptCountRow[], organization: string) {
+export function useBilling(base: BillingBase, stores: Store[], promptRows: PromptCountRow[], organization: string) {
   const toast = useToast();
   const setting = useDemoSettings<BillingState>("org.billing", base.state);
   const { value: state, patch } = setting;
   const websites = useDemoCollection<Store>("websites", stores).rows;
-  const members = useDemoCollection<TeamMember>("members", team).rows;
   const prompts = useDemoCollection<PromptCountRow>("prompts", promptRows).rows;
   const events = useDemoEvents({ kinds: ["settings.saved"] });
 
@@ -64,16 +63,15 @@ export function useBilling(base: BillingBase, stores: Store[], team: TeamMember[
     );
     const totals = sumUsage(usageRows);
     const websiteCount = websites.filter((w) => w.status !== "archived").length;
-    const seats = members.filter((m) => m.status !== "deactivated").length;
-    const meters = buildMeters({ plan, credits: state.credits, usage: totals, websites: websiteCount, seats });
+    const meters = buildMeters({ plan, credits: state.credits, usage: totals, websites: websiteCount });
     const nudge = upgradeNudge(meters, plan.id, base.plans);
     const chart = historyPoints(base.history, {
       requests: totals.requests,
       limit: plan.limits.requests + state.credits,
     });
     const invoices = mergeInvoices(base.invoices, state.createdInvoices, state.invoiceStatus);
-    return { usageRows, totals, websiteCount, seats, meters, nudge, chart, invoices, activePrompts };
-  }, [websites, members, prompts, base, plan, state.credits, state.createdInvoices, state.invoiceStatus]);
+    return { usageRows, totals, websiteCount, meters, nudge, chart, invoices, activePrompts };
+  }, [websites, prompts, base, plan, state.credits, state.createdInvoices, state.invoiceStatus]);
 
   const timeline = useMemo<TimelineEntry[]>(() => {
     const local = events
@@ -87,7 +85,7 @@ export function useBilling(base: BillingBase, stores: Store[], team: TeamMember[
     planChangeEffect(
       plan,
       to,
-      { websites: derived.websiteCount, prompts: derived.totals.activePrompts, seats: derived.seats, requests: derived.totals.requests, searchCalls: derived.totals.searchCalls },
+      { websites: derived.websiteCount, prompts: derived.totals.activePrompts, requests: derived.totals.requests, searchCalls: derived.totals.searchCalls },
       base.period,
     );
 

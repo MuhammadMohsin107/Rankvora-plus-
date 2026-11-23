@@ -36,7 +36,7 @@ export function InProgressOverview({ audit, channelLabelText }: { audit: AuditDe
   if (!progress) return null;
   const attempted = progress.jobs.succeeded + progress.jobs.failed;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Callout tone="warning" title="Provisional results">
         Numbers on every tab are partial and will change until the audit completes.
       </Callout>

@@ -104,7 +104,7 @@ export function IntegrationsTab({ detail, host, readOnly, onChange }: Props) {
   const hasConnector = commerceConnected || reconnecting;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
       <Card className="min-w-0 self-start">
         <CardHeader
           title="Publishing connector"

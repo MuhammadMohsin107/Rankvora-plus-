@@ -85,7 +85,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
   };
 
   const overview = (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {active && simRec ? (
         <Card variant="action">
           <CardBody className="flex flex-col gap-3">
@@ -273,7 +273,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
           { id: "jobs", label: "Jobs", count: detail.jobs.length, content: jobs },
           { id: "snapshot", label: "Snapshot", content: snapshot },
         ]}
-        panelClassName="pt-6"
+        panelClassName="pt-4"
       />
     </>
   );

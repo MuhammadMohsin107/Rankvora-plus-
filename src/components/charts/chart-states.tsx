@@ -30,7 +30,7 @@ function Frame({ icon, title, detail, action, height, className, tone }: FramePr
       role={tone === "danger" ? "alert" : "status"}
       style={{ minHeight: height }}
       className={cn(
-        "flex flex-col items-center justify-center gap-2 rounded-control border border-dashed px-6 py-8 text-center",
+        "flex flex-col items-center justify-center gap-2 rounded-control border border-dashed px-6 py-5 text-center",
         tone === "danger" ? "border-danger/30 bg-danger-soft" : "border-line-strong bg-surface-2",
         className,
       )}

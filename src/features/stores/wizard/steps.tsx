@@ -255,7 +255,7 @@ function FactsBlock({ form, patch }: { form: WizardForm; patch: StepProps["patch
     setAnswer("");
   };
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         <p className="text-label font-medium text-fg">Brand facts</p>
         {form.facts.length > 0 ? (
@@ -301,7 +301,7 @@ function FactsBlock({ form, patch }: { form: WizardForm; patch: StepProps["patch
 
 export function BrandStep({ form, patch, error, blur, sample }: StepProps & { sample: StoreSetupSample }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
         <Field label="Category" required error={error("category")}>
           {({ id, describedBy, invalid }) => (
@@ -343,7 +343,7 @@ export function ConnectionsStep({ form, patch, channels }: StepProps & { channel
     ...CONNECTOR_OPTIONS.map((value) => ({ value, label: siteTypeLabel(value), description: CONNECTOR_NOTE[value] })),
   ];
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <p className="text-label font-medium text-fg">Publishing connector <span className="font-normal text-fg-muted">Optional</span></p>
         <RadioCards<ConnectorChoice | "none"> label="Publishing connector" value={form.connector} onChange={(connector) => patch({ connector })} options={options} columns={3} />
@@ -383,7 +383,7 @@ export function ReviewStep({ form, channels }: { form: WizardForm; channels: AiC
   const checklist = buildChecklist(form);
   const picked = channels.filter((c) => form.channelIds.includes(c.id)).map((c) => c.providerLabel);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <KeyValue
         columns={2}
         items={[

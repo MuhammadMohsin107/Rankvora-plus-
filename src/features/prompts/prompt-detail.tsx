@@ -144,7 +144,7 @@ export function PromptDetail({ data, promptId }: { data: PromptDetailData; promp
         }
       />
 
-      <MetricGrid className="mb-6">
+      <MetricGrid className="mb-4">
         <MetricCell>
           <Metric label="Mention rate" {...rate("mention")} />
         </MetricCell>
