@@ -15,7 +15,6 @@ import { Checkbox, Field, Segmented, Select } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
-import { Popover } from "@/components/ui/popover";
 import { DataTable, type Column } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -111,7 +110,6 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
   }, [prompts, filters, query, groups]);
 
   const filtering = Boolean(query.trim()) || Object.values(filters).some(Boolean);
-  const advancedCount = (["intent", "scope", "core", "topic", "source"] as const).filter((k) => filters[k]).length + (filters.status === "archived" ? 1 : 0);
   const clearAll = () => {
     setQuery("");
     setFilters(NO_FILTERS);
@@ -392,6 +390,14 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
         <FilterBar
           label="Prompt filters"
           search={{ value: query, onChange: setQuery, placeholder: "Search prompts", label: "Search prompts" }}
+          filters={[
+            { id: "status", label: "Status", value: filters.status, onChange: (v) => set("status", v), options: (Object.keys(STATUS.prompt) as PromptStatus[]).map((v) => ({ value: v, label: STATUS.prompt[v].label })) },
+            { id: "intent", label: "Intent", value: filters.intent, onChange: (v) => set("intent", v), options: Object.entries(INTENT_LABEL).map(([value, label]) => ({ value, label })) },
+            { id: "scope", label: "Scope", value: filters.scope, onChange: (v) => set("scope", v), options: (Object.keys(SCOPE_LABEL) as PromptScope[]).map((value) => ({ value, label: SCOPE_LABEL[value] })) },
+            { id: "core", label: "Core set", value: filters.core, onChange: (v) => set("core", v), options: [{ value: "yes", label: "Core" }, { value: "no", label: "Not core" }] },
+            { id: "topic", label: "Topic", value: filters.topic, onChange: (v) => set("topic", v), options: topics.map((t) => ({ value: t.topic, label: `${t.topic} (${t.count})` })) },
+            { id: "source", label: "Source", value: filters.source, onChange: (v) => set("source", v), options: (Object.keys(SOURCE_LABEL) as PromptSource[]).map((value) => ({ value, label: SOURCE_LABEL[value] })) },
+          ]}
           onClearAll={filtering ? clearAll : undefined}
           resultCount={{ shown: filtered.length, total: prompts.length, noun: "prompts" }}
           actions={
@@ -409,26 +415,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
               ]}
             />
           }
-        >
-          <Popover
-            label="More filters"
-            width={320}
-            trigger={
-              <Button icon="filter" variant="secondary">
-                Filters{advancedCount > 0 ? ` (${advancedCount})` : ""}
-              </Button>
-            }
-          >
-            <div className="flex flex-col gap-3 p-3">
-              <FilterSelect label="Status" value={filters.status} onChange={(v) => set("status", v)} options={(Object.keys(STATUS.prompt) as PromptStatus[]).map((v) => ({ value: v, label: STATUS.prompt[v].label }))} />
-              <FilterSelect label="Intent" value={filters.intent} onChange={(v) => set("intent", v)} options={Object.entries(INTENT_LABEL).map(([value, label]) => ({ value, label }))} />
-              <FilterSelect label="Scope" value={filters.scope} onChange={(v) => set("scope", v)} options={(Object.keys(SCOPE_LABEL) as PromptScope[]).map((value) => ({ value, label: SCOPE_LABEL[value] }))} />
-              <FilterSelect label="Core set" value={filters.core} onChange={(v) => set("core", v)} options={[{ value: "yes", label: "Core" }, { value: "no", label: "Not core" }]} />
-              <FilterSelect label="Topic" value={filters.topic} onChange={(v) => set("topic", v)} options={topics.map((t) => ({ value: t.topic, label: `${t.topic} (${t.count})` }))} />
-              <FilterSelect label="Source" value={filters.source} onChange={(v) => set("source", v)} options={(Object.keys(SOURCE_LABEL) as PromptSource[]).map((value) => ({ value, label: SOURCE_LABEL[value] }))} />
-            </div>
-          </Popover>
-        </FilterBar>
+        />
 
         {view === "table" ? (
           <DataTable
@@ -589,20 +576,5 @@ function GroupChip({ label, count, active, onClick }: { label: string; count: nu
       <span className="max-w-40 truncate">{label}</span>
       <span className="tnum text-helper">{count}</span>
     </button>
-  );
-}
-
-function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (next: string) => void; options: { value: string; label: string }[] }) {
-  return (
-    <Field label={label}>
-      {({ id }) => (
-        <Select id={id} value={value} onChange={(event) => onChange(event.target.value)}>
-          <option value="">All</option>
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </Select>
-      )}
-    </Field>
   );
 }

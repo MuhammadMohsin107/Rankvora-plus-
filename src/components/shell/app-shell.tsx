@@ -35,7 +35,7 @@ type ShellProps = {
 /** First step of the header trail: home is the Websites & Brands list. */
 function HomeLink() {
   return (
-    <Link href="/stores" aria-label="Home: Websites & Brands" title="Home" className="flex size-9 shrink-0 items-center justify-center rounded-control text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg lg:-ml-2 pointer-coarse:size-11">
+    <Link href="/stores" aria-label="Home: Websites & Brands" title="Home" className="-mr-1 flex h-9 w-8 shrink-0 items-center justify-center rounded-control text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg lg:-ml-1.5 pointer-coarse:size-11">
       <Icon name="home" size={18} />
     </Link>
   );

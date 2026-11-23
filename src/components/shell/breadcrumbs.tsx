@@ -14,14 +14,14 @@ export function Breadcrumbs({ pathname }: { pathname: string }) {
   return (
     <nav aria-label="Breadcrumb" className="hidden min-w-0 overflow-hidden @min-[11rem]:block">
       {/* Container query: when the header leaves too little room the trail is hidden instead of drawn as clipped fragments (the page title below names the page). */}
-      <ol className="flex min-w-0 items-center gap-1 text-body-sm text-fg-muted">
+      <ol className="flex min-w-0 items-center gap-0.5 text-body-sm text-fg-muted">
         <li aria-hidden="true" className="flex shrink-0 items-center">
           <Icon name="chevron-right" size={14} className="text-fg-faint" />
         </li>
         {crumbs.map((crumb, index) => {
           const last = index === crumbs.length - 1;
           return (
-            <li key={`${index}-${crumb.label}`} className={last ? "flex min-w-[5rem] flex-1 items-center gap-1" : "flex min-w-0 max-w-[40%] shrink items-center gap-1"}>
+            <li key={`${index}-${crumb.label}`} className={last ? "flex min-w-[5rem] flex-1 items-center gap-0.5" : "flex min-w-0 max-w-[40%] shrink items-center gap-0.5"}>
               {crumb.href && !last ? (
                 <Link href={crumb.href} title={crumb.label} className="min-w-0 truncate rounded px-0.5 hover:text-fg hover:underline">{crumb.label}</Link>
               ) : (

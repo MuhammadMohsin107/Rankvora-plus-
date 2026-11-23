@@ -102,6 +102,7 @@ export function AddWebsiteWizard({ channels, sample, existing }: { channels: AiC
     <WizardFrame
       steps={[...STEPS]}
       current={step}
+      hideStepper
       title={STEP_TITLE[step]}
       subtitle={STEP_SUBTITLE[step]}
       onStepClick={(index) => (index < step ? setStep(index) : undefined)}

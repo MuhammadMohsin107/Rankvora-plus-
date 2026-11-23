@@ -44,6 +44,8 @@ type WizardFrameProps = {
   showProgress?: boolean;
   /** Label of the Back button. */
   backLabel?: string;
+  /** Leave out the "Step n of N" card with the stepper (the step title and Back / Next remain). */
+  hideStepper?: boolean;
 };
 
 /**
@@ -68,6 +70,7 @@ export function WizardFrame({
   summarySlot,
   showProgress,
   backLabel = "Back",
+  hideStepper = false,
 }: WizardFrameProps) {
   const summaryRef = useRef<HTMLDivElement>(null);
   const [attempt, setAttempt] = useState(0);
@@ -82,8 +85,9 @@ export function WizardFrame({
   }, [attempt]);
 
   return (
-    <div className={cn("flex min-w-0 flex-col gap-4", className)}>
-      <div className="rounded-card border border-line bg-surface px-5 py-3 shadow-card">
+    <div className={cn("flex min-w-0 flex-col gap-3", className)}>
+      {hideStepper ? null : (
+      <div className="rounded-card border border-line bg-surface px-4 py-3 shadow-card">
         <div className="flex items-center justify-between gap-3">
           <p className="tnum text-[13px] font-medium text-fg" aria-live="polite">
             Step {current + 1} of {total}
@@ -94,20 +98,21 @@ export function WizardFrame({
         {/* Full stepper from sm up; below that the line above plus the bar is the progress indicator. */}
         <Stepper steps={steps} current={current} onStepClick={onStepClick} className="mt-3 hidden sm:flex" />
       </div>
-      <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-4", aside ? "xl:grid-cols-[minmax(0,1fr)_320px]" : null)}>
+      )}
+      <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-3", aside ? "xl:grid-cols-[minmax(0,1fr)_320px]" : null)}>
         <section aria-labelledby="wizard-step-title" className="min-w-0 rounded-card border border-line bg-surface shadow-card">
-          <div className="border-b border-line px-5 py-4">
+          <div className="border-b border-line px-4 py-3">
             <h2 id="wizard-step-title" className="text-base font-semibold text-fg">{title}</h2>
             {subtitle ? <p className="mt-0.5 text-[13px] text-fg-muted">{subtitle}</p> : null}
           </div>
-          <div className="px-5 py-5">
+          <div className="px-4 py-4">
             {list.length > 0 ? (
               <div
                 ref={summaryRef}
                 role="alert"
                 tabIndex={-1}
                 aria-labelledby="wizard-issues-title"
-                className="mb-5 rounded-control border border-danger/40 bg-danger-soft px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                className="mb-4 rounded-control border border-danger/40 bg-danger-soft px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-danger"
               >
                 <p id="wizard-issues-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-danger-text">
                   <Icon name="alert-circle" size={16} />
@@ -135,7 +140,7 @@ export function WizardFrame({
             {summarySlot}
             {children}
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2 px-5 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2 px-4 py-2.5">
             <div className="flex items-center gap-2">
               {onBack ? <Button variant="secondary" icon="arrow-left" onClick={onBack}>{backLabel}</Button> : null}
               {secondary}
@@ -156,7 +161,7 @@ export function WizardFrame({
             </div>
           </div>
         </section>
-        {aside ? <aside aria-label="Summary" className="min-w-0 self-start xl:sticky xl:top-36">{aside}</aside> : null}
+        {aside ? <aside aria-label="Summary" className="min-w-0 self-start xl:sticky xl:top-20">{aside}</aside> : null}
       </div>
     </div>
   );
