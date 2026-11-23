@@ -18,24 +18,21 @@ const PROVIDER_LABEL: Record<ProviderKey, string> = { openai: "OpenAI", gemini: 
 
 const show = (m: Meter, value: number) => (m.unit === "usd" ? formatUsd(value) : formatNumber(value));
 
-function MeterCard({ m }: { m: Meter }) {
+function MeterRow({ m }: { m: Meter }) {
   return (
-    <Card variant="metric" className="flex flex-col gap-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-label font-medium text-fg-muted">{m.label}</span>
+    <li className="grid grid-cols-[minmax(0,1fr)] items-center gap-x-6 gap-y-1.5 px-card py-3 sm:grid-cols-[11rem_minmax(0,1fr)_9rem]">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <span className="text-body-sm font-medium text-fg">{m.label}</span>
         {m.state === "near" ? <Badge tone="warning" icon="alert-triangle">Near limit</Badge> : null}
         {m.state === "at_limit" ? <Badge tone="danger" icon="alert-circle">Limit reached</Badge> : null}
       </div>
-      <p className="tnum flex items-baseline gap-1.5">
-        <span className="text-metric font-semibold text-fg">{show(m, m.used)}</span>
-        <span className="text-body text-fg-muted">/ {show(m, m.limit)}</span>
-      </p>
       <Progress value={m.used} max={m.limit} tone={STATE_TONE[m.state]} label={`${m.label}: ${show(m, m.used)} of ${show(m, m.limit)}`} />
-      <p className="tnum text-helper text-fg-subtle">
-        {m.limit > 0 ? `${formatRate(m.used, m.limit, 0)} used` : "No limit set"}
-        {m.note ? ` · ${m.note}` : ""}
+      <p className="tnum text-body-sm sm:text-right">
+        <span className="font-semibold text-fg">{show(m, m.used)}</span>
+        <span className="text-fg-muted"> / {show(m, m.limit)}</span>
+        <span className="block text-helper text-fg-subtle">{m.limit > 0 ? `${formatRate(m.used, m.limit, 0)} used` : "No limit set"}</span>
       </p>
-    </Card>
+    </li>
   );
 }
 
@@ -44,12 +41,14 @@ export function UsageTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) =
     <div className="flex flex-col gap-6">
       <UpgradeNudge b={b} onChange={onChange} />
 
-      <Section title={`Usage, ${b.base.period.label}`}>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {b.meters.map((m) => (
-            <MeterCard key={m.id} m={m} />
-          ))}
-        </div>
+      <Section title={`Plan limits, ${b.base.period.label}`}>
+        <Card>
+          <ul className="divide-y divide-line">
+            {b.meters.map((m) => (
+              <MeterRow key={m.id} m={m} />
+            ))}
+          </ul>
+        </Card>
       </Section>
 
       <WebsiteUsage b={b} />

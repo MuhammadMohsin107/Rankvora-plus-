@@ -2,13 +2,13 @@
 
 import { Fragment } from "react";
 
-import { HeaderAction } from "@/components/shell/page-chrome";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Callout, Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
+import { Callout, Card, CardHeader } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/form";
+import { Icon } from "@/components/ui/icon";
 import { Dialog } from "@/components/ui/overlay";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatDate, formatNumber, formatRate } from "@/lib/format";
 import type { BillingPlan, PlanId } from "@/types/settings";
 
 import { formatUsd } from "./billing-model";
@@ -18,7 +18,8 @@ import type { Billing } from "./use-billing";
 export function UpgradeNudge({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
   if (!b.nudge) return null;
   const { meters, target } = b.nudge;
-  const text = meters.map((m) => `${m.label} ${m.unit === "usd" ? formatUsd(m.used) : formatNumber(m.used)} / ${m.unit === "usd" ? formatUsd(m.limit) : formatNumber(m.limit)}`).join(", ");
+  const fmt = (m: (typeof meters)[number], value: number) => (m.unit === "usd" ? formatUsd(value) : formatNumber(value));
+  const text = meters.map((m) => `${m.label}: ${fmt(m, m.used)} of ${fmt(m, m.limit)} (${formatRate(m.used, m.limit, 0)})`).join(" · ");
   const reached = meters.some((m) => m.state === "at_limit");
   return (
     <Callout
@@ -35,50 +36,86 @@ export function UpgradeNudge({ b, onChange }: { b: Billing; onChange: (id: PlanI
   );
 }
 
+const BLURB: Record<PlanId, string> = {
+  starter: "For one or two websites",
+  growth: "For a growing set of websites",
+  agency: "For many client websites",
+};
+
 export function PlanTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
   const { plan, base } = b;
   return (
-    <div className="flex flex-col gap-4">
-      <HeaderAction>
-        <Button variant="primary" onClick={() => onChange(nextOther(b.plans, plan.id).id)}>
-          Change plan
-        </Button>
-      </HeaderAction>
+    <div className="flex flex-col gap-5">
       <UpgradeNudge b={b} onChange={onChange} />
 
-      <Card>
-        <CardHeader
-          title={`${plan.name} plan`}
-        />
-        <CardBody className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="tnum text-metric font-semibold text-fg">{formatUsd(plan.priceUsd)}</span>
-            <span className="text-body-sm text-fg-muted">per month, billed monthly</span>
-          </div>
-          <KeyValue
-            columns={4}
-            items={[
-              { label: "Billing period", value: `${formatDate(base.period.start)} to ${formatDate(base.period.end)}` },
-              { label: "Renews", value: formatDate(base.period.renewsOn) },
-              { label: "Websites", value: `${formatNumber(plan.limits.websites)} included` },
-              { label: "Active prompts", value: `${formatNumber(plan.limits.prompts)} included` },
-              { label: "AI requests", value: `${formatNumber(plan.limits.requests)} per month` },
-              { label: "Monitoring", value: plan.monitoring },
-              { label: "History kept", value: `${plan.retentionMonths} months` },
-            ]}
-          />
-        </CardBody>
-      </Card>
+      <p className="tnum text-body-sm text-fg-muted">
+        <span className="font-medium text-fg">{plan.name}</span> plan · renews {formatDate(base.period.renewsOn)} · billing period {formatDate(base.period.start)} to {formatDate(base.period.end)}
+      </p>
 
-      <PlanComparison b={b} onChange={onChange} />
+      <ul className="grid grid-cols-[minmax(0,1fr)] items-stretch gap-4 md:grid-cols-3">
+        {b.plans.map((p) => (
+          <li key={p.id} className="flex">
+            <PlanCard plan={p} current={p.id === plan.id} direction={p.priceUsd > plan.priceUsd ? "Upgrade" : "Downgrade"} onChange={onChange} />
+          </li>
+        ))}
+      </ul>
+
+      <PlanComparison b={b} />
     </div>
   );
 }
 
-/** The plan to open in the dialog when "Change plan" is pressed: the next one up, or the one below the top plan. */
-function nextOther(plans: BillingPlan[], current: PlanId): BillingPlan {
-  const index = plans.findIndex((p) => p.id === current);
-  return plans[index + 1] ?? plans[index - 1] ?? plans[0];
+function PlanCard({ plan, current, direction, onChange }: { plan: BillingPlan; current: boolean; direction: "Upgrade" | "Downgrade"; onChange: (id: PlanId) => void }) {
+  const items = [
+    `${formatNumber(plan.limits.websites)} websites`,
+    `${formatNumber(plan.limits.prompts)} active prompts`,
+    `${formatNumber(plan.limits.searchCalls)} search calls per month`,
+    `Monitoring: ${plan.monitoring}`,
+    `${plan.retentionMonths} months of history`,
+  ];
+  return (
+    <article
+      aria-label={`${plan.name} plan`}
+      className={`flex w-full flex-col gap-4 rounded-card border p-5 shadow-card ${current ? "border-accent bg-accent-soft/40 ring-1 ring-accent" : "border-line bg-surface"}`}
+    >
+      <header className="flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-card-title font-semibold text-fg">{plan.name}</h3>
+          {current ? <Badge tone="accent" icon="check-circle">Current</Badge> : null}
+        </div>
+        <p className="text-helper text-fg-muted">{BLURB[plan.id]}</p>
+      </header>
+
+      <p className="tnum flex items-baseline gap-1.5">
+        <span className="text-title font-semibold tracking-tight text-fg">{formatUsd(plan.priceUsd)}</span>
+        <span className="text-body-sm text-fg-muted">per month</span>
+      </p>
+
+      <div className="flex flex-col gap-0.5 border-y border-line py-3">
+        <span className="text-helper text-fg-muted">AI requests per month</span>
+        <span className="tnum text-body font-semibold text-fg">{formatNumber(plan.limits.requests)}</span>
+      </div>
+
+      {current ? (
+        <Button variant="secondary" disabled className="w-full">
+          Current plan
+        </Button>
+      ) : (
+        <Button variant={direction === "Upgrade" ? "primary" : "secondary"} className="w-full" onClick={() => onChange(plan.id)} aria-label={`${direction} to ${plan.name}`}>
+          {direction} to {plan.name}
+        </Button>
+      )}
+
+      <ul className="flex flex-col gap-2">
+        {items.map((text) => (
+          <li key={text} className="flex items-start gap-2 text-body-sm text-fg">
+            <Icon name="check" size={16} className="mt-0.5 shrink-0 text-success-icon" />
+            <span className="tnum">{text}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
 }
 
 const ROWS: { label: string; value: (p: BillingPlan) => string }[] = [
@@ -91,20 +128,29 @@ const ROWS: { label: string; value: (p: BillingPlan) => string }[] = [
   { label: "Estimated cost included", value: (p) => formatUsd(p.limits.usageAllowanceUsd) },
 ];
 
-function PlanComparison({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
+function PlanComparison({ b }: { b: Billing }) {
+  const cols = b.plans.length;
   return (
     <Card>
       <CardHeader title="Compare plans" />
       <div className="ui-scroll mt-3 overflow-x-auto">
-        <table className="w-full min-w-[34rem] border-collapse text-body-sm">
+        <table className="w-full min-w-[36rem] table-fixed border-collapse text-body-sm">
           <caption className="sr-only">Plan limits and prices</caption>
+          <colgroup>
+            <col style={{ width: "28%" }} />
+            {b.plans.map((p) => (
+              <col key={p.id} style={{ width: `${72 / cols}%` }} />
+            ))}
+          </colgroup>
           <thead>
-            <tr className="border-y border-line bg-surface-2/70">
-              <th scope="col" className="px-card py-3 text-left text-label font-medium text-fg-muted">Plan</th>
+            <tr className="border-y border-line">
+              <th scope="col" className="px-card py-3 text-left text-label font-medium text-fg-muted">
+                <span className="sr-only">Feature</span>
+              </th>
               {b.plans.map((p) => (
-                <th key={p.id} scope="col" className={`px-3 py-3 text-left align-top ${p.id === b.plan.id ? "bg-accent-soft/50" : ""}`}>
-                  <span className="flex flex-col gap-1">
-                    <span className="flex items-center gap-1.5 text-card-title font-semibold text-fg">
+                <th key={p.id} scope="col" className={`px-4 py-3 text-left align-top ${p.id === b.plan.id ? "bg-accent-soft/60" : ""}`}>
+                  <span className="flex flex-col gap-0.5">
+                    <span className="flex items-center gap-1.5 text-body font-semibold text-fg">
                       {p.name}
                       {p.id === b.plan.id ? <Badge tone="accent">Current</Badge> : null}
                     </span>
@@ -116,34 +162,14 @@ function PlanComparison({ b, onChange }: { b: Billing; onChange: (id: PlanId) =>
           </thead>
           <tbody>
             {ROWS.map((row) => (
-              <tr key={row.label} className="border-b border-line">
+              <tr key={row.label} className="border-b border-line last:border-b-0">
                 <th scope="row" className="px-card py-2.5 text-left font-normal text-fg-muted">{row.label}</th>
                 {b.plans.map((p) => (
-                  <td key={p.id} className={`tnum px-3 py-2.5 text-fg ${p.id === b.plan.id ? "bg-accent-soft/50" : ""}`}>{row.value(p)}</td>
+                  <td key={p.id} className={`tnum px-4 py-2.5 text-fg ${p.id === b.plan.id ? "bg-accent-soft/60 font-medium" : ""}`}>{row.value(p)}</td>
                 ))}
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr>
-              <td className="px-card py-3" />
-              {b.plans.map((p) => {
-                const current = p.id === b.plan.id;
-                const direction = p.priceUsd > b.plan.priceUsd ? "Upgrade" : "Downgrade";
-                return (
-                  <td key={p.id} className={`px-3 py-3 ${current ? "bg-accent-soft/50" : ""}`}>
-                    {current ? (
-                      <span className="text-label text-fg-muted">Your plan</span>
-                    ) : (
-                      <Button variant="secondary" size="sm" onClick={() => onChange(p.id)} aria-label={`${direction} to ${p.name}`}>
-                        {direction}
-                      </Button>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          </tfoot>
         </table>
       </div>
     </Card>
