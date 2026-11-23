@@ -3,7 +3,7 @@
  * Every file says it is a demonstration document. Nothing is sent anywhere.
  */
 import { formatCurrency, formatDate } from "@/lib/format";
-import type { BillingContact, BillingInvoice } from "@/types/settings";
+import type { BillingInvoice } from "@/types/settings";
 
 import { INVOICE_STATUS_LABEL } from "./billing-model";
 
@@ -24,9 +24,8 @@ export function invoicesCsv(invoices: BillingInvoice[]): string {
   return `${[header.map(csvCell).join(","), ...lines].join("\r\n")}\r\n`;
 }
 
-export function invoiceHtml(invoice: BillingInvoice, context: { organization: string; contact: BillingContact; paymentLabel: string }): string {
-  const { organization, contact, paymentLabel } = context;
-  const address = [contact.addressLine, [contact.postalCode, contact.city].filter(Boolean).join(" "), contact.country].filter(Boolean).map(escapeHtml).join("<br>");
+export function invoiceHtml(invoice: BillingInvoice, context: { organization: string }): string {
+  const { organization } = context;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -52,8 +51,8 @@ export function invoiceHtml(invoice: BillingInvoice, context: { organization: st
 <h1>Invoice ${escapeHtml(invoice.id)}</h1>
 <p class="muted">Issued ${escapeHtml(formatDate(invoice.issuedOn))} &middot; Period ${escapeHtml(invoice.period)}</p>
 <div class="meta">
-  <div><strong>Billed to</strong><br>${escapeHtml(contact.legalName || organization)}<br>${escapeHtml(contact.name)}<br>${escapeHtml(contact.email)}<br>${address}${contact.taxId ? `<br>Tax ID: ${escapeHtml(contact.taxId)}` : ""}</div>
-  <div><strong>From</strong><br>Rankvora AI (demo)<br>Payment method: ${escapeHtml(paymentLabel)}<br>Status: <span class="status">${escapeHtml(INVOICE_STATUS_LABEL[invoice.status])}</span></div>
+  <div><strong>Billed to</strong><br>${escapeHtml(organization)}</div>
+  <div><strong>From</strong><br>Rankvora AI (demo)<br>Status: <span class="status">${escapeHtml(INVOICE_STATUS_LABEL[invoice.status])}</span></div>
 </div>
 <table>
   <thead><tr><th>Description</th><th class="num">Amount</th></tr></thead>

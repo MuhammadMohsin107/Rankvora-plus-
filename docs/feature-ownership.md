@@ -31,7 +31,7 @@ Workflow: **Audit → Findings → Fixes → Monitoring → Comparison**. A find
 |---|---|
 | Websites & Brands `/stores` | Website list, add website wizard, status changes |
 | Integrations `/integrations` | AI platform connections (shared by all websites). Website connectors and Search Console are not here; they are in Website settings |
-| Billing `/settings/billing` | Plan, usage across websites and providers, invoices |
+| Billing `/settings/billing` | Plan and plan change, usage by website and by AI provider against the plan limits, demo invoices. No payment method, add-on packs or cancellation: nothing is really charged |
 | Help & Support `/help` | Help center |
 
 `/settings/ai-platforms` redirects to `/integrations`; `/settings` redirects to Billing. Export and reset of demo data are in the account menu.

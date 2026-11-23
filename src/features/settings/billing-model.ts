@@ -1,6 +1,6 @@
 /**
  * Pure helpers for the demonstration Billing screens: usage totals, near-limit detection,
- * plan change effect, invoices and demo card validation. No React, no storage, no network.
+ * plan change effect and invoices. No React, no storage, no network.
  * Nothing here talks to a payment provider.
  */
 import { DEMO_NOW, formatNumber } from "@/lib/format";
@@ -28,6 +28,8 @@ export type WebsiteUsage = {
   websiteId: string;
   name: string;
   requests: number;
+  /** Requests by AI provider. The values add up to `requests`. */
+  byProvider: Record<ProviderKey, number>;
   /** One search call is made per request in the demonstration data. */
   searchCalls: number;
   /** Estimated provider cost in whole cents, so rows always add up to the total. */
@@ -64,6 +66,7 @@ export function websiteUsageRows(
       websiteId: site.id,
       name: site.name,
       requests,
+      byProvider: { openai: seed?.requests.openai ?? 0, gemini: seed?.requests.gemini ?? 0, perplexity: seed?.requests.perplexity ?? 0 },
       searchCalls: requests,
       costCents: seedCostCents(seed, unitCostUsd),
       activePrompts: activePromptsByWebsite[site.id] ?? 0,
@@ -83,6 +86,17 @@ export function sumUsage(rows: WebsiteUsage[]): UsageTotals {
   );
 }
 
+export type ProviderUsage = { provider: ProviderKey; requests: number; costCents: number };
+
+/** Requests and estimated cost per AI provider across all websites. Costs use the same per-website rounding as the website rows, so they add up to the same total. */
+export function providerUsageRows(rows: WebsiteUsage[], unitCostUsd: Record<ProviderKey, number>): ProviderUsage[] {
+  return PROVIDER_KEYS.map((provider) => ({
+    provider,
+    requests: rows.reduce((sum, r) => sum + r.byProvider[provider], 0),
+    costCents: rows.reduce((sum, r) => sum + Math.round(r.byProvider[provider] * unitCostUsd[provider] * 100), 0),
+  }));
+}
+
 export type MeterId = "requests" | "searchCalls" | "websites" | "prompts" | "cost";
 
 export type Meter = {
@@ -92,12 +106,12 @@ export type Meter = {
   limit: number;
   unit: "count" | "usd";
   state: MeterState;
-  /** Extra context, for example "+500 credits". */
+  /** Extra context shown under the bar. */
   note?: string;
 };
 
-export function buildMeters(input: { plan: BillingPlan; credits: number; usage: UsageTotals; websites: number }): Meter[] {
-  const { plan, credits, usage, websites } = input;
+export function buildMeters(input: { plan: BillingPlan; usage: UsageTotals; websites: number }): Meter[] {
+  const { plan, usage, websites } = input;
   const costUsd = usage.costCents / 100;
   const make = (id: MeterId, label: string, used: number, limit: number, unit: Meter["unit"] = "count", note?: string): Meter => ({
     id,
@@ -108,10 +122,9 @@ export function buildMeters(input: { plan: BillingPlan; credits: number; usage: 
     state: meterState(used, limit),
     note,
   });
-  const creditNote = credits > 0 ? `Includes +${formatNumber(credits)} credits` : undefined;
   return [
-    make("requests", "AI requests", usage.requests, plan.limits.requests + credits, "count", creditNote),
-    make("searchCalls", "Search calls", usage.searchCalls, plan.limits.searchCalls + credits, "count", creditNote),
+    make("requests", "AI requests", usage.requests, plan.limits.requests),
+    make("searchCalls", "Search calls", usage.searchCalls, plan.limits.searchCalls),
     make("websites", "Websites", websites, plan.limits.websites),
     make("prompts", "Active prompts", usage.activePrompts, plan.limits.prompts),
     make("cost", "Estimated cost", costUsd, plan.limits.usageAllowanceUsd, "usd"),
@@ -219,53 +232,4 @@ export function nextInvoiceId(created: BillingInvoice[]): string {
 /** Total of invoices that were collected: paid only. Open, failed and refunded invoices are not counted. */
 export function paidTotalUsd(invoices: BillingInvoice[]): number {
   return invoices.filter((i) => i.status === "paid").reduce((sum, i) => sum + i.amountUsd, 0);
-}
-
-/* ───────── Demo card validation (nothing is stored except brand and last 4) ───────── */
-
-/** Published processor test numbers. Real card numbers are rejected on purpose. */
-export const DEMO_TEST_CARDS: { number: string; brand: "Visa" | "Mastercard" | "Amex" }[] = [
-  { number: "4242424242424242", brand: "Visa" },
-  { number: "4000056655665556", brand: "Visa" },
-  { number: "5555555555554444", brand: "Mastercard" },
-  { number: "378282246310005", brand: "Amex" },
-];
-
-export const digitsOnly = (value: string) => value.replace(/\D/g, "");
-
-export function demoCardBrand(input: string): "Visa" | "Mastercard" | "Amex" | null {
-  const digits = digitsOnly(input);
-  return DEMO_TEST_CARDS.find((c) => c.number === digits)?.brand ?? null;
-}
-
-export function validateDemoCard(input: string): string | null {
-  const digits = digitsOnly(input);
-  if (!digits) return "Card number is required.";
-  if (digits.length < 13) return "Enter the full demo card number.";
-  if (!demoCardBrand(digits)) return "Real card numbers are not accepted. Use the demo card 4242 4242 4242 4242.";
-  return null;
-}
-
-/** MM/YY, not earlier than the current demo month. */
-export function validateExpiry(input: string, now: string = DEMO_NOW): string | null {
-  const match = /^(\d{2})\s*\/\s*(\d{2})$/.exec(input.trim());
-  if (!match) return "Use the format MM/YY.";
-  const month = Number(match[1]);
-  const year = 2000 + Number(match[2]);
-  if (month < 1 || month > 12) return "Month must be between 01 and 12.";
-  const current = new Date(now);
-  if (year < current.getUTCFullYear() || (year === current.getUTCFullYear() && month < current.getUTCMonth() + 1)) return "This card has expired.";
-  return null;
-}
-
-export function validateCvc(input: string, brand: "Visa" | "Mastercard" | "Amex" | null): string | null {
-  const digits = digitsOnly(input);
-  const length = brand === "Amex" ? 4 : 3;
-  if (digits.length !== length || digits !== input.trim()) return `Enter the ${length}-digit security code.`;
-  return null;
-}
-
-export function parseExpiry(input: string): { month: number; year: number } {
-  const [mm, yy] = input.split("/").map((part) => Number(part.trim()));
-  return { month: mm, year: 2000 + yy };
 }

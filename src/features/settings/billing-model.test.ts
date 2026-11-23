@@ -14,11 +14,9 @@ import {
   paidTotalUsd,
   planChangeEffect,
   prorate,
+  providerUsageRows,
   sumUsage,
   upgradeNudge,
-  validateCvc,
-  validateDemoCard,
-  validateExpiry,
   websiteUsageRows,
 } from "./billing-model";
 
@@ -52,6 +50,14 @@ describe("usage totals", () => {
     expect(total.costCents).toBe(7185);
   });
 
+  it("splits requests and cost by provider and the providers add up to the same totals", () => {
+    const byProvider = providerUsageRows(rows, DEMO_UNIT_COST_USD);
+    expect(byProvider.map((p) => [p.provider, p.requests])).toEqual([["openai", 458], ["gemini", 440], ["perplexity", 354]]);
+    expect(byProvider.reduce((s, p) => s + p.requests, 0)).toBe(total.requests);
+    expect(byProvider.reduce((s, p) => s + p.costCents, 0)).toBe(total.costCents);
+    for (const row of rows) expect(row.byProvider.openai + row.byProvider.gemini + row.byProvider.perplexity).toBe(row.requests);
+  });
+
   it("counts one search call per request and sums active prompts", () => {
     expect(total.searchCalls).toBe(total.requests);
     expect(total.activePrompts).toBe(21);
@@ -77,23 +83,17 @@ describe("near-limit detection", () => {
 
   const usage = { requests: 1252, searchCalls: 1252, costCents: 7185, activePrompts: 21 };
   it("flags search calls on Growth with the demo numbers", () => {
-    const meters = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4 });
+    const meters = buildMeters({ plan: plan("growth"), usage, websites: 4 });
     const byId = Object.fromEntries(meters.map((m) => [m.id, m.state]));
     expect(byId).toMatchObject({ requests: "ok", websites: "ok", prompts: "ok", cost: "ok", searchCalls: "near" });
     expect(meterWarnings(meters).map((m) => m.id)).toEqual(["searchCalls"]);
   });
 
-  it("credits raise the request and search limits and clear the search warning", () => {
-    const meters = buildMeters({ plan: plan("growth"), credits: 500, usage, websites: 4 });
-    expect(meters.find((m) => m.id === "requests")?.limit).toBe(2900);
-    expect(meters.find((m) => m.id === "searchCalls")?.state).toBe("ok");
-  });
-
   it("shows the upgrade nudge only when a limit is near and a larger plan exists", () => {
-    const near = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4 });
+    const near = buildMeters({ plan: plan("growth"), usage, websites: 4 });
     expect(upgradeNudge(near, "growth", DEMO_PLANS)?.target.id).toBe("agency");
-    const calm = buildMeters({ plan: plan("growth"), credits: 0, usage, websites: 4 });
-    const calmSearch = buildMeters({ plan: plan("growth"), credits: 500, usage, websites: 4 });
+    const calm = buildMeters({ plan: plan("growth"), usage, websites: 4 });
+    const calmSearch = buildMeters({ plan: plan("growth"), usage: { ...usage, searchCalls: 600 }, websites: 4 });
     expect(meterWarnings(calm).length).toBeGreaterThan(0);
     expect(upgradeNudge(calmSearch, "growth", DEMO_PLANS)).toBeNull();
     expect(upgradeNudge(near, "agency", DEMO_PLANS)).toBeNull();
@@ -147,13 +147,13 @@ describe("history chart", () => {
 });
 
 describe("invoices", () => {
-  it("includes one failed and one refunded invoice and all four statuses", () => {
+  it("includes one open and one refunded invoice besides the paid ones", () => {
     const statuses = new Set(DEMO_BILLING_INVOICES.map((i) => i.status));
-    expect([...statuses].sort()).toEqual(["failed", "open", "paid", "refunded"]);
+    expect([...statuses].sort()).toEqual(["open", "paid", "refunded"]);
   });
 
   it("merges created invoices first and applies status overrides", () => {
-    const created = [{ id: "INV-2026-D01", issuedOn: "2026-11-19", period: "Nov 2026", description: "Add-on", amountUsd: 80, status: "paid" as const }];
+    const created = [{ id: "INV-2026-D01", issuedOn: "2026-11-19", period: "Nov 2026", description: "Plan change (prorated)", amountUsd: 80, status: "paid" as const }];
     const merged = mergeInvoices(DEMO_BILLING_INVOICES, created, { "INV-2026-1102": "paid" });
     expect(merged[0].id).toBe("INV-2026-D01");
     expect(merged.find((i) => i.id === "INV-2026-1102")?.status).toBe("paid");
@@ -163,28 +163,5 @@ describe("invoices", () => {
 
   it("counts only paid invoices as collected", () => {
     expect(paidTotalUsd(DEMO_BILLING_INVOICES)).toBe(149 * 3 + 49);
-  });
-});
-
-describe("demo card validation", () => {
-  it("accepts published test numbers with spaces", () => {
-    expect(validateDemoCard("4242 4242 4242 4242")).toBeNull();
-    expect(validateDemoCard("3782 822463 10005")).toBeNull();
-  });
-  it("rejects anything else, including numbers that pass the Luhn check", () => {
-    expect(validateDemoCard("4111 1111 1111 1111")).toMatch(/Real card numbers are not accepted/);
-    expect(validateDemoCard("")).toBe("Card number is required.");
-    expect(validateDemoCard("4242")).toMatch(/full demo card/);
-  });
-  it("validates expiry against the demo date", () => {
-    expect(validateExpiry("12/28")).toBeNull();
-    expect(validateExpiry("10/26")).toBe("This card has expired.");
-    expect(validateExpiry("13/28")).toMatch(/between 01 and 12/);
-    expect(validateExpiry("1228")).toMatch(/MM\/YY/);
-  });
-  it("validates the security code length by brand", () => {
-    expect(validateCvc("123", "Visa")).toBeNull();
-    expect(validateCvc("1234", "Visa")).toMatch(/3-digit/);
-    expect(validateCvc("1234", "Amex")).toBeNull();
   });
 });

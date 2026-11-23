@@ -300,7 +300,7 @@ export const SCHEDULE_DETAILS: Record<string, { createdAt: string; createdBy: st
   "sch-nu-002": {
     createdAt: "2026-11-11T07:20:00Z",
     createdBy: HIRA,
-    statusReason: "Paused by Omar Farooq on 13 Nov, before the first run, to keep plan credits for the weekly check.",
+    statusReason: "Paused by Omar Farooq on 13 Nov, before the first run, to keep plan requests for the weekly check.",
     versions: [{ version: 1, createdAt: "2026-11-11T07:20:00Z", createdBy: HIRA, changes: ["Created: 3 meal-planning prompts × OpenAI × 1 sample", "Daily · 08:00 Asia/Singapore"], config: schNu002Config }],
   },
   "sch-nu-003": {

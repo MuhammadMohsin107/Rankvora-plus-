@@ -4,11 +4,10 @@ import { Fragment } from "react";
 
 import { HeaderAction } from "@/components/shell/page-chrome";
 import { Badge } from "@/components/ui/badge";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/form";
-import { Menu } from "@/components/ui/menu";
-import { ConfirmDialog, Dialog } from "@/components/ui/overlay";
+import { Dialog } from "@/components/ui/overlay";
 import { formatDate, formatNumber } from "@/lib/format";
 import type { BillingPlan, PlanId } from "@/types/settings";
 
@@ -36,9 +35,8 @@ export function UpgradeNudge({ b, onChange }: { b: Billing; onChange: (id: PlanI
   );
 }
 
-export function PlanTab({ b, onChange, onCancel }: { b: Billing; onChange: (id: PlanId) => void; onCancel: () => void }) {
-  const { plan, base, state } = b;
-  const cancelling = state.cancelAt !== null;
+export function PlanTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
+  const { plan, base } = b;
   return (
     <div className="flex flex-col gap-4">
       <HeaderAction>
@@ -46,38 +44,11 @@ export function PlanTab({ b, onChange, onCancel }: { b: Billing; onChange: (id: 
           Change plan
         </Button>
       </HeaderAction>
-      {cancelling ? (
-        <Callout
-          tone="warning"
-          title={`Ends ${formatDate(state.cancelAt as string)}`}
-          actions={
-            <Button variant="secondary" size="sm" onClick={b.actions.resume}>
-              Resume subscription
-            </Button>
-          }
-        >
-          The plan stays active until then. Simulated: nothing was cancelled with a provider.
-        </Callout>
-      ) : null}
       <UpgradeNudge b={b} onChange={onChange} />
 
       <Card>
         <CardHeader
           title={`${plan.name} plan`}
-          actions={
-            <>
-              <Menu
-                label="Plan actions"
-                trigger={<IconButton icon="more" label="Plan actions" variant="secondary" />}
-                width={220}
-                items={[
-                  cancelling
-                    ? { label: "Resume subscription", icon: "refresh", onSelect: b.actions.resume }
-                    : { label: "Cancel subscription", icon: "x-circle", tone: "danger", onSelect: onCancel },
-                ]}
-              />
-            </>
-          }
         />
         <CardBody className="flex flex-col gap-4">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -88,10 +59,10 @@ export function PlanTab({ b, onChange, onCancel }: { b: Billing; onChange: (id: 
             columns={4}
             items={[
               { label: "Billing period", value: `${formatDate(base.period.start)} to ${formatDate(base.period.end)}` },
-              { label: cancelling ? "Ends" : "Renews", value: formatDate(cancelling ? (state.cancelAt as string) : base.period.renewsOn) },
+              { label: "Renews", value: formatDate(base.period.renewsOn) },
               { label: "Websites", value: `${formatNumber(plan.limits.websites)} included` },
               { label: "Active prompts", value: `${formatNumber(plan.limits.prompts)} included` },
-              { label: "AI requests", value: `${formatNumber(plan.limits.requests + state.credits)} per month${state.credits > 0 ? ` (+${formatNumber(state.credits)} credits)` : ""}` },
+              { label: "AI requests", value: `${formatNumber(plan.limits.requests)} per month` },
               { label: "Monitoring", value: plan.monitoring },
               { label: "History kept", value: `${plan.retentionMonths} months` },
             ]}
@@ -245,23 +216,5 @@ export function ChangePlanDialog({ b, targetId, onTarget, onClose }: { b: Billin
         </div>
       ) : null}
     </Dialog>
-  );
-}
-
-export function CancelDialog({ b, open, onClose }: { b: Billing; open: boolean; onClose: () => void }) {
-  return (
-    <ConfirmDialog
-      open={open}
-      onClose={onClose}
-      onConfirm={() => {
-        b.actions.cancel();
-        onClose();
-      }}
-      title="Cancel subscription?"
-      confirmLabel="Cancel subscription"
-      cancelLabel="Keep plan"
-    >
-      <p>Your {b.plan.name} plan stays active until {formatDate(b.base.period.renewsOn)}. Simulated: nothing is cancelled with a provider.</p>
-    </ConfirmDialog>
   );
 }

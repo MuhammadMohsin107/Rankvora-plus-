@@ -24,11 +24,8 @@ const STATUS_STYLE: Record<InvoiceStatus, { tone: Tone; icon: IconName }> = {
 
 export function InvoicesTab({ b }: { b: Billing }) {
   const toast = useToast();
-  const { paymentMethod, contact } = b.state;
-  const paymentLabel = `${paymentMethod.brand} ending ${paymentMethod.last4} (demo)`;
-
   const downloadHtml = (inv: BillingInvoice) => {
-    downloadFile(`${inv.id}.html`, "text/html", invoiceHtml(inv, { organization: b.organization, contact, paymentLabel }));
+    downloadFile(`${inv.id}.html`, "text/html", invoiceHtml(inv, { organization: b.organization }));
     toast.push(simulatedToast(`Invoice ${inv.id} prepared`, "info"));
   };
   const downloadCsv = (list: BillingInvoice[], name: string) => {

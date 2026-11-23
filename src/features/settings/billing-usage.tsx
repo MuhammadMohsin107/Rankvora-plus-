@@ -1,22 +1,20 @@
 "use client";
 
-import { useState } from "react";
-
 import { LineChart } from "@/components/charts/line-chart";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, ChartCard, Section } from "@/components/ui/card";
 import { Progress } from "@/components/ui/feedback";
-import { ConfirmDialog } from "@/components/ui/overlay";
 import { DataTable, type Column } from "@/components/ui/table";
 import { formatNumber, formatRate } from "@/lib/format";
-import type { CreditPack, PlanId } from "@/types/settings";
+import type { PlanId } from "@/types/settings";
 
-import { formatUsd, type Meter, type MeterState, type WebsiteUsage } from "./billing-model";
+import { formatUsd, PROVIDER_KEYS, type Meter, type MeterState, type ProviderKey, type ProviderUsage, type WebsiteUsage } from "./billing-model";
 import { UpgradeNudge } from "./billing-plan";
 import type { Billing } from "./use-billing";
 
 const STATE_TONE: Record<MeterState, "accent" | "warning" | "danger"> = { ok: "accent", near: "warning", at_limit: "danger" };
+
+const PROVIDER_LABEL: Record<ProviderKey, string> = { openai: "OpenAI", gemini: "Gemini", perplexity: "Perplexity" };
 
 const show = (m: Meter, value: number) => (m.unit === "usd" ? formatUsd(value) : formatNumber(value));
 
@@ -42,7 +40,6 @@ function MeterCard({ m }: { m: Meter }) {
 }
 
 export function UsageTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
-  const [pack, setPack] = useState<CreditPack | null>(null);
   return (
     <div className="flex flex-col gap-6">
       <UpgradeNudge b={b} onChange={onChange} />
@@ -56,41 +53,8 @@ export function UsageTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) =
       </Section>
 
       <WebsiteUsage b={b} />
+      <ProviderUsage b={b} />
       <History b={b} />
-
-      <Section title="Extra request packs" actions={b.state.credits > 0 ? <Badge tone="success" icon="check-circle">+{formatNumber(b.state.credits)} this period</Badge> : null}>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
-          {b.base.packs.map((p) => (
-            <Card key={p.id} variant="metric" className="flex flex-col gap-3">
-              <div>
-                <p className="tnum text-section font-semibold text-fg">+{formatNumber(p.requests)} requests</p>
-                <p className="tnum text-body-sm text-fg-muted">{formatUsd(p.priceUsd)} once</p>
-              </div>
-              <Button variant="secondary" className="self-start" onClick={() => setPack(p)}>
-                Buy pack
-              </Button>
-            </Card>
-          ))}
-        </div>
-      </Section>
-
-      <ConfirmDialog
-        open={pack !== null}
-        onClose={() => setPack(null)}
-        onConfirm={() => {
-          if (pack) b.actions.buyPack(pack);
-          setPack(null);
-        }}
-        title={pack ? `Buy +${formatNumber(pack.requests)} requests?` : ""}
-        confirmLabel="Buy pack"
-        tone="primary"
-      >
-        {pack ? (
-          <p>
-            Adds {formatNumber(pack.requests)} AI requests and search calls to this period for {formatUsd(pack.priceUsd)}. Simulated: no payment is taken.
-          </p>
-        ) : null}
-      </ConfirmDialog>
     </div>
   );
 }
@@ -111,6 +75,14 @@ function WebsiteUsage({ b }: { b: Billing }) {
         </span>
       ),
     },
+    ...PROVIDER_KEYS.map<Column<WebsiteUsage>>((key) => ({
+      id: key,
+      header: PROVIDER_LABEL[key],
+      align: "right",
+      hideBelow: "lg",
+      sort: (r) => r.byProvider[key],
+      cell: (r) => <span className="tnum">{r.byProvider[key] > 0 ? formatNumber(r.byProvider[key]) : <span className="text-fg-subtle">None</span>}</span>,
+    })),
     { id: "search", header: "Search calls", align: "right", hideBelow: "md", sort: (r) => r.searchCalls, cell: (r) => <span className="tnum">{formatNumber(r.searchCalls)}</span> },
     { id: "cost", header: "Estimated cost", align: "right", hideBelow: "sm", sort: (r) => r.costCents, cell: (r) => <span className="tnum">{formatUsd(r.costCents / 100)}</span> },
     { id: "prompts", header: "Active prompts", align: "right", hideBelow: "md", sort: (r) => r.activePrompts, cell: (r) => <span className="tnum">{formatNumber(r.activePrompts)}</span> },
@@ -121,6 +93,31 @@ function WebsiteUsage({ b }: { b: Billing }) {
       <p className="tnum text-body-sm text-fg-muted">
         <span className="font-medium text-fg">Organization total</span>: {formatNumber(totals.requests)} requests, {formatNumber(totals.searchCalls)} search calls, {formatUsd(totals.costCents / 100)}, {formatNumber(totals.activePrompts)} active prompts
       </p>
+    </Section>
+  );
+}
+
+function ProviderUsage({ b }: { b: Billing }) {
+  const { providerRows: rows, totals } = b;
+  const columns: Column<ProviderUsage>[] = [
+    { id: "provider", header: "Provider", sort: (r) => PROVIDER_LABEL[r.provider], cell: (r) => <span className="font-medium text-fg">{PROVIDER_LABEL[r.provider]}</span> },
+    {
+      id: "requests",
+      header: "AI requests",
+      align: "right",
+      sort: (r) => r.requests,
+      cell: (r) => (
+        <span className="tnum" title={`${r.requests} of ${totals.requests} requests`}>
+          {formatNumber(r.requests)}
+          <span className="block text-helper text-fg-subtle">{totals.requests > 0 ? `${formatRate(r.requests, totals.requests)} of ${formatNumber(totals.requests)}` : "No requests yet"}</span>
+        </span>
+      ),
+    },
+    { id: "cost", header: "Estimated cost", align: "right", sort: (r) => r.costCents, cell: (r) => <span className="tnum">{formatUsd(r.costCents / 100)}</span> },
+  ];
+  return (
+    <Section title="Usage by provider">
+      <DataTable<ProviderUsage> label="Usage by provider" data={rows} columns={columns} rowKey={(r) => r.provider} defaultSort={{ column: "requests", dir: "desc" }} />
     </Section>
   );
 }

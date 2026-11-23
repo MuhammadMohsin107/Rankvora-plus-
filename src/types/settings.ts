@@ -103,40 +103,12 @@ export type BillingInvoice = {
   note?: string;
 };
 
-export type PaymentMethod = {
-  brand: "Visa" | "Mastercard" | "Amex";
-  /** Last 4 digits of a demo test card only. */
-  last4: string;
-  expMonth: number;
-  expYear: number;
-  holder: string;
-};
-
-export type BillingContact = {
-  name: string;
-  email: string;
-  legalName: string;
-  addressLine: string;
-  city: string;
-  country: string;
-  postalCode: string;
-  taxId: string;
-};
-
 /** Everything the Billing screens change locally. Saved under the demo-state key `org.billing`. */
 export type BillingState = {
   planId: PlanId;
-  /** Extra requests (and matching search calls) bought for the current period. */
-  credits: number;
-  /** ISO date the subscription ends, or null while it renews. */
-  cancelAt: string | null;
-  paymentMethod: PaymentMethod;
-  contact: BillingContact;
   createdInvoices: BillingInvoice[];
   invoiceStatus: Record<string, InvoiceStatus>;
 };
-
-export type CreditPack = { id: string; requests: number; priceUsd: number };
 
 /** Requests for one website in the current period, by provider. */
 export type WebsiteUsageSeed = {
@@ -153,26 +125,16 @@ export type UsageMonth = {
   limit: number | null;
 };
 
-export type BillingHistoryEntry = {
-  id: string;
-  at: string;
-  kind: "plan" | "payment" | "addon" | "refund" | "method";
-  title: string;
-  detail?: string;
-};
-
 export type BillingBase = {
   plans: BillingPlan[];
   state: BillingState;
   invoices: BillingInvoice[];
-  packs: CreditPack[];
   /** Period dates are fixed for the demonstration. */
   period: { label: string; start: string; end: string; renewsOn: string };
   /** Unit cost per request, USD, by provider. */
   unitCostUsd: Record<"openai" | "gemini" | "perplexity", number>;
   usageSeeds: WebsiteUsageSeed[];
   history: UsageMonth[];
-  events: BillingHistoryEntry[];
 };
 
 /* ───────── Local provider state ───────── */

@@ -6,17 +6,13 @@
 import type {
   ActivityEntry,
   BillingBase,
-  BillingContact,
-  BillingHistoryEntry,
   BillingInvoice,
   BillingPlan,
   BillingState,
   BrandKnowledgeBase,
   BrandVersion,
-  CreditPack,
   DomainRecord,
   IntegrationDetail,
-  PaymentMethod,
   UsageMonth,
   WebsiteUsageSeed,
   NotificationEvent,
@@ -155,7 +151,7 @@ export const DEMO_PLANS: BillingPlan[] = [
     name: "Starter",
     priceUsd: 49,
     limits: { websites: 2, prompts: 40, requests: 600, searchCalls: 300, usageAllowanceUsd: 25 },
-    monitoring: "Weekly",
+    monitoring: "Weekly and monthly",
     retentionMonths: 3,
   },
   {
@@ -163,7 +159,7 @@ export const DEMO_PLANS: BillingPlan[] = [
     name: "Growth",
     priceUsd: 149,
     limits: { websites: 5, prompts: 150, requests: 2400, searchCalls: 1400, usageAllowanceUsd: 100 },
-    monitoring: "Up to daily",
+    monitoring: "Daily, weekly and monthly",
     retentionMonths: 12,
   },
   {
@@ -171,7 +167,7 @@ export const DEMO_PLANS: BillingPlan[] = [
     name: "Agency",
     priceUsd: 399,
     limits: { websites: 15, prompts: 600, requests: 9600, searchCalls: 4800, usageAllowanceUsd: 400 },
-    monitoring: "Up to every 6 hours",
+    monitoring: "Daily, weekly and monthly",
     retentionMonths: 24,
   },
 ];
@@ -202,69 +198,30 @@ export const DEMO_USAGE_HISTORY: UsageMonth[] = [
   { label: "Nov", requests: 1252, limit: 2400 },
 ];
 
-export const DEMO_CREDIT_PACKS: CreditPack[] = [
-  { id: "pack-500", requests: 500, priceUsd: 25 },
-  { id: "pack-2000", requests: 2000, priceUsd: 80 },
-  { id: "pack-5000", requests: 5000, priceUsd: 175 },
-];
-
-/** A demo test card. Only brand and last 4 digits are kept; nothing is charged. */
-export const DEMO_PAYMENT_METHOD: PaymentMethod = { brand: "Visa", last4: "4242", expMonth: 12, expYear: 2028, holder: "Sana Iqbal" };
-
-export const DEMO_BILLING_CONTACT: BillingContact = {
-  name: "Sana Iqbal",
-  email: "billing@northstar.example",
-  legalName: "Northstar Agency Ltd",
-  addressLine: "12 Example Road",
-  city: "Karachi",
-  country: "PK",
-  postalCode: "75500",
-  taxId: "",
-};
-
 export const DEMO_BILLING_STATE: BillingState = {
   planId: "growth",
-  credits: 0,
-  cancelAt: null,
-  paymentMethod: DEMO_PAYMENT_METHOD,
-  contact: DEMO_BILLING_CONTACT,
   createdInvoices: [],
   invoiceStatus: {},
 };
 
-/** One failed and one refunded example are included on purpose. Newest first. */
+/** One open and one refunded example are included on purpose. Newest first. */
 export const DEMO_BILLING_INVOICES: BillingInvoice[] = [
-  { id: "INV-2026-1102", issuedOn: "2026-11-17", period: "Nov 2026", description: "Add-on: +500 requests", amountUsd: 25, status: "open", note: "Waiting for payment" },
+  { id: "INV-2026-1102", issuedOn: "2026-11-17", period: "Dec 2026", description: "Growth plan", amountUsd: 149, status: "open", note: "Due 1 Dec 2026" },
   { id: "INV-2026-1101", issuedOn: "2026-11-01", period: "Nov 2026", description: "Growth plan", amountUsd: 149, status: "paid" },
-  { id: "INV-2026-1002", issuedOn: "2026-10-14", period: "Oct 2026", description: "Add-on: +500 requests", amountUsd: 25, status: "failed", note: "Card declined (demo)" },
   { id: "INV-2026-1001", issuedOn: "2026-10-01", period: "Oct 2026", description: "Growth plan", amountUsd: 149, status: "paid" },
-  { id: "INV-2026-0902", issuedOn: "2026-09-20", period: "Sep 2026", description: "Add-on: +2,000 requests", amountUsd: 80, status: "refunded", note: "Duplicate purchase refunded on 21 Sep (demo)" },
+  { id: "INV-2026-0902", issuedOn: "2026-09-20", period: "Sep 2026", description: "Growth plan (duplicate charge)", amountUsd: 149, status: "refunded", note: "Refunded on 21 Sep" },
   { id: "INV-2026-0901", issuedOn: "2026-09-01", period: "Sep 2026", description: "Growth plan", amountUsd: 149, status: "paid" },
   { id: "INV-2026-0804", issuedOn: "2026-08-04", period: "Aug 2026", description: "Starter plan", amountUsd: 49, status: "paid" },
-];
-
-export const DEMO_BILLING_EVENTS: BillingHistoryEntry[] = [
-  { id: "bh-09", at: "2026-11-17T08:10:00Z", kind: "addon", title: "Add-on invoice created", detail: "INV-2026-1102 · +500 requests · $25" },
-  { id: "bh-08", at: "2026-11-01T00:05:00Z", kind: "payment", title: "Payment received", detail: "INV-2026-1101 · $149" },
-  { id: "bh-07", at: "2026-10-14T11:30:00Z", kind: "payment", title: "Payment failed", detail: "INV-2026-1002 · Card declined (demo)" },
-  { id: "bh-06", at: "2026-10-01T00:05:00Z", kind: "payment", title: "Payment received", detail: "INV-2026-1001 · $149" },
-  { id: "bh-05", at: "2026-09-21T09:00:00Z", kind: "refund", title: "Refund issued", detail: "INV-2026-0902 · $80" },
-  { id: "bh-04", at: "2026-09-20T10:15:00Z", kind: "addon", title: "Add-on purchased", detail: "+2,000 requests · $80" },
-  { id: "bh-03", at: "2026-09-01T00:05:00Z", kind: "plan", title: "Plan changed to Growth", detail: "From Starter · $49 to $149 per month" },
-  { id: "bh-02", at: "2026-08-04T10:30:00Z", kind: "method", title: "Payment method added", detail: "Visa ending 4242 (demo)" },
-  { id: "bh-01", at: "2026-08-04T10:30:00Z", kind: "plan", title: "Subscription started on Starter", detail: "$49 per month" },
 ];
 
 export const DEMO_BILLING: BillingBase = {
   plans: DEMO_PLANS,
   state: DEMO_BILLING_STATE,
   invoices: DEMO_BILLING_INVOICES,
-  packs: DEMO_CREDIT_PACKS,
   period: DEMO_BILLING_PERIOD,
   unitCostUsd: DEMO_UNIT_COST_USD,
   usageSeeds: DEMO_USAGE_SEEDS,
   history: DEMO_USAGE_HISTORY,
-  events: DEMO_BILLING_EVENTS,
 };
 
 /* ───────── Store settings ───────── */
