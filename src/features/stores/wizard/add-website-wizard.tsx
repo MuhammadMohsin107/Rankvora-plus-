@@ -33,7 +33,7 @@ const FIELD_LABEL: Record<string, string> = {
   description: "Description",
 };
 
-/** Four steps that really create a website in demo-state: it then shows in the selector, Portfolio, list and search. */
+/** Four steps that really create a website in demo-state: it then shows in the selector, list and search. */
 export function AddWebsiteWizard({ channels, sample, existing }: { channels: AiChannel[]; sample: StoreSetupSample; existing: ExistingWebsite[] }) {
   const router = useRouter();
   const toast = useToast();

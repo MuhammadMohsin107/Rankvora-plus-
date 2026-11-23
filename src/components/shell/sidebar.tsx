@@ -25,7 +25,7 @@ type SidebarProps = {
 
 export function Logo({ compact }: { compact?: boolean }) {
   return (
-    <Link href="/" aria-label="Rankvora AI, portfolio" className="flex items-center gap-2.5 rounded-control px-1 py-1">
+    <Link href="/stores" aria-label="Rankvora AI, websites" className="flex items-center gap-2.5 rounded-control px-1 py-1">
       <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-control bg-accent text-accent-fg">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 19V5h7a4 4 0 0 1 0 8H5M12 13l6 6" />

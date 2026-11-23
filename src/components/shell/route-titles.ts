@@ -53,7 +53,6 @@ const NO_PAGE = new Set(["fixes/findings"]);
 
 /** Organization-level routes, fully described. */
 const ORG_CRUMBS: Record<string, Crumb[]> = {
-  "/": [{ label: "Portfolio" }],
   "/stores": [{ label: "Websites & Brands" }],
   "/stores/new": [{ label: "Websites & Brands", href: "/stores" }, { label: "Add website" }],
   "/settings": [{ label: "Organization settings" }],
@@ -95,7 +94,7 @@ export function buildCrumbs(pathname: string, titleOverride?: string | null): Cr
   }
 
   const first = clean.split("/").filter(Boolean)[0];
-  return [{ label: first ? first.charAt(0).toUpperCase() + first.slice(1) : "Portfolio" }];
+  return [{ label: first ? first.charAt(0).toUpperCase() + first.slice(1) : "Websites & Brands" }];
 }
 
 /** Every page that exists below /stores/[id] (the part after the website id). Keep in step with src/app/stores/[storeId]. */

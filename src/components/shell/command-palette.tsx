@@ -38,7 +38,6 @@ const PER_TYPE_LIMIT = 6;
 const TOTAL_LIMIT = 24;
 
 const ORG_PAGES: { label: string; href: string }[] = [
-  { label: "Portfolio", href: "/" },
   { label: "Websites & Brands", href: "/stores" },
   { label: "Add website", href: "/stores/new" },
   { label: "Team", href: "/settings/members" },

@@ -17,12 +17,12 @@ export default function Error({ retry, reset }: ErrorProps) {
     <ErrorState
       title="This page could not load"
       headingAs="h1"
-      detail="Try again, or go back to the portfolio."
+      detail="Try again, or go back to your websites."
       className="mx-auto mt-10 max-w-lg"
       action={
         <div className="flex flex-wrap justify-center gap-2">
           {tryAgain ? <Button variant="primary" icon="refresh" onClick={() => tryAgain()}>Try again</Button> : null}
-          <ButtonLink href="/">Portfolio</ButtonLink>
+          <ButtonLink href="/stores">Websites</ButtonLink>
         </div>
       }
     />

@@ -1,5 +1,5 @@
 /**
- * Aggregates the headline pieces of every module for the Dashboard and the Portfolio.
+ * Aggregates the headline pieces of every module for the Dashboard and the websites list.
  * Reads only shared records (registry, findings, generated responses), so these screens
  * never contradict the module screens. Everything returned is plain JSON so a client view can
  * layer local demo-state changes (alerts read, tasks approved, ...) on top.
@@ -122,9 +122,9 @@ export async function getDashboardData(storeId: string): Promise<DashboardData |
   };
 }
 
-export type PortfolioTask = { id: string; storeId: string; title: string; status: string };
+export type WebsiteTask = { id: string; storeId: string; title: string; status: string };
 
-/** Pending-work rows across websites for the Portfolio (tasks only: id, website, title, status). */
-export async function listPortfolioTasks(): Promise<PortfolioTask[]> {
+/** Task rows across websites for the websites list (tasks only: id, website, title, status). */
+export async function listWebsiteTasks(): Promise<WebsiteTask[]> {
   return DEMO_STORES.flatMap((s) => registryFor(s.id).tasks.map((t) => ({ id: t.id, storeId: s.id, title: t.title, status: t.status })));
 }

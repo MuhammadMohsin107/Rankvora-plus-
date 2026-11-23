@@ -46,7 +46,7 @@ function OrgSelector({ org }: { org: Organization }) {
       items={[
         { label: org.name, icon: "building", meta: <Icon name="check" size={16} className="text-accent-text" label="Current organization" /> },
         { type: "separator" },
-        { label: "Portfolio", href: "/", icon: "layers" },
+        { label: "Websites & Brands", href: "/stores", icon: "globe" },
         { label: "Organization settings", href: "/settings", icon: "settings" },
       ]}
       trigger={

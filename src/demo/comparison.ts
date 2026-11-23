@@ -13,7 +13,7 @@ export type ComparisonTypeInfo = {
 
 /**
  * The four types the wizard offers. Prompt, platform and competitor views are breakdown tabs and
- * scope filters of every comparison. Comparing websites lives in Portfolio.
+ * scope filters of every comparison. Comparing websites is not offered.
  */
 export const COMPARISON_TYPES: ComparisonTypeInfo[] = [
   { value: "snapshot_vs_snapshot", label: "Snapshot vs snapshot", short: "Two audits or monitoring runs." },

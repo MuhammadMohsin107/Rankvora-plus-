@@ -180,7 +180,7 @@ export function assessComparability(baseline: SideInfo, current: SideInfo, baseR
   const storesB = new Set(baseRows.map((r) => r.storeId));
   const storesC = new Set(currentRows.map((r) => r.storeId));
   const sameStore = storesB.size <= 1 && storesC.size <= 1 && [...storesB].every((s) => storesC.has(s));
-  checks.push({ id: "same-store", kind: "hard", state: sameStore ? "pass" : "fail", label: "Same website", detail: sameStore ? "Both sides belong to this website." : "Sides come from different websites. Compare websites in Portfolio." });
+  checks.push({ id: "same-store", kind: "hard", state: sameStore ? "pass" : "fail", label: "Same website", detail: sameStore ? "Both sides belong to this website." : "Sides come from different websites. A comparison covers one website." });
 
   const sameBrand = baseline.brand === current.brand;
   checks.push({ id: "same-brand", kind: "hard", state: sameBrand ? "pass" : "fail", label: "Same brand", detail: sameBrand ? `Both sides track ${baseline.brand}.` : `${baseline.brand} vs ${current.brand}.` });

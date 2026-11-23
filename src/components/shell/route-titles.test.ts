@@ -5,7 +5,6 @@ import { NOT_FOUND_PATH, buildCrumbs, normalizeRoute } from "./route-titles";
 describe("normalizeRoute", () => {
   it("keeps every real route", () => {
     const routes = [
-      "/",
       "/stores",
       "/stores/new",
       "/settings/members",

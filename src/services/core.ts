@@ -49,7 +49,7 @@ export async function getCurrentUser(): Promise<Member> {
 
 /**
  * Headline numbers for the store with full data come from the same registry and
- * generated responses every module uses, so the portfolio, dashboard and detail
+ * generated responses every module uses, so the websites list, dashboard and detail
  * screens can never disagree.
  */
 function ownedCitation(runId: string): Rate {

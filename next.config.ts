@@ -15,6 +15,10 @@ const onCloudflare = process.env.DEPLOY_TARGET === "cloudflare" || process.env.W
 const nextConfig: NextConfig = {
   cacheComponents: !onCloudflare,
   partialPrefetching: !onCloudflare,
+  // The Portfolio page was removed: the root URL goes to the websites list (a real 307, no page at "/").
+  async redirects() {
+    return [{ source: "/", destination: "/stores", permanent: false }];
+  },
   turbopack: {
     rules: {
       "*.css": {

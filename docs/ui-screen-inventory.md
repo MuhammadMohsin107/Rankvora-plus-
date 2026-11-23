@@ -13,7 +13,7 @@ Source of truth for the UI/UX phase. Derived from the four specifications: Multi
 | AI visibility and website readiness stay separate | Never one blended score. Two distinct areas in Audit. |
 | No causal claims | Fixes timeline wording: "visibility changed after this task was completed". |
 | Applied ≠ published ≠ verified | Four separate states shown for a Fix task. |
-| Org roll-up vs store data | Org area visually distinct (own sidebar section + label). Store area always shows active store context. Roll-ups labelled "pooled" or "unweighted". |
+| Org area vs store data | Org area visually distinct (own sidebar section + label). Store area always shows active store context. There is no org-wide roll-up page. |
 | Raw responses immutable | Response screens are read-only; reviews show machine result and reviewed result separately. |
 | Copy restraint | Short labels, tooltips/drawers for secondary info. No explanatory paragraphs. |
 | No dead controls | Every control does something (navigates, filters, sorts, opens a dialog, toggles local state). |
@@ -22,7 +22,7 @@ Source of truth for the UI/UX phase. Derived from the four specifications: Multi
 
 ```
 Organization area (neutral chrome, label "Organization")
-  /                          Portfolio overview
+  /                          (redirects to /stores)
   /stores                    Stores (table/cards)
   /stores/new                Add store (stepper)
   /settings/*                Organization settings
@@ -69,7 +69,7 @@ Shell: sidebar (Organization group, Store group), compact top bar (organization 
 - **Execution mode:** guidance only, AI draft/patch, CMS staged draft, approved apply/publish. **Risk level:** low, medium, high, critical. **Cause classification:** confirmed, likely, hypothesis.
 - **Alert severity:** info, low, medium, high, critical. **Alert status:** new, read, acknowledged, resolved, muted. **Delivery:** pending, sent, failed, retrying. **Channels:** in-app, email, webhook.
 - **Monitoring events:** new mention, lost mention, new recommendation, recommendation lost, new/lost owned citation, sentiment shift, competitor increase/decrease, rank movement, provider outage/error spike, run incomplete/late.
-- **Comparison type:** snapshot vs snapshot, period vs period, initial audit vs latest monitoring, before vs after fixes, prompt/topic, platform, brand vs competitors, store portfolio. **Comparability:** comparable, partially comparable, comparable with warnings, not comparable, insufficient data. **Comparison status:** draft, validating, queued, running, completed, completed with warnings, partially comparable, not comparable, insufficient data, failed, cancelled, archived.
+- **Comparison type:** snapshot vs snapshot, period vs period, initial audit vs latest monitoring, before vs after fixes, prompt/topic, platform, brand vs competitors. **Comparability:** comparable, partially comparable, comparable with warnings, not comparable, insufficient data. **Comparison status:** draft, validating, queued, running, completed, completed with warnings, partially comparable, not comparable, insufficient data, failed, cancelled, archived.
 - **Roles:** owner, admin, editor, auditor, viewer.
 - **Mention classification:** recommended / not recommended / merely mentioned / unclear. **Sentiment:** positive, neutral, negative, mixed, unknown. **Citation source type:** owned domain, competitor domain, third-party, none returned, not supported.
 
@@ -82,10 +82,10 @@ Brand mention rate, recommendation rate, recommendation conditional rate, owned-
 Legend — **P** primary action · **States** include loading, empty, error, success where relevant.
 
 ### A. Dashboard (store) — `/stores/[storeId]`
-Metric row (mention rate, recommendation rate, owned citation rate, competitor visibility top 3) with counts. Trend chart of mention rate (monitoring runs). Important findings (top 5), pending tasks, monitoring status (last/next run, open alerts), recent activity, latest comparison trend. **P:** Start audit. Org portfolio overview `/` repeats per-store cards with the same metrics and a labelled pooled roll-up.
+Metric row (mention rate, recommendation rate, owned citation rate, competitor visibility top 3) with counts. Trend chart of mention rate (monitoring runs). Important findings (top 5), pending tasks, monitoring status (last/next run, open alerts), recent activity, latest comparison trend. **P:** Start audit. The websites list (`/stores`) shows each website with the same metrics.
 
 ### B. Multi-store
-- **Portfolio overview** `/`: store cards (status, market, mention rate x/y, open alerts, next run), org roll-up row (pooled, weighting stated), org usage strip, recent alerts across stores (each labelled with store). **P:** Add store.
+- **Portfolio overview** (removed): `/` now redirects to `/stores`. The websites list carries the per-website cards and metrics.
 - **Stores** `/stores`: table + card toggle; search; filter status/platform/market; sort. Row → store dashboard. Status chips, integration status (connected / disconnected / manual).
 - **Add store** `/stores/new`: stepper — 1 Basics (name, website, platform), 2 Connection (manual / Shopify / later connectors), 3 Brand & market (brand name, aliases, industry, description, country, language, timezone), 4 Products/services, 5 Competitors (confirmed vs suggested), 6 AI channels + tracking mode + review & activate (checklist). Inline validation, back/next, draft status.
 - **Store details**: Settings page (see I). **Store switching**: selector in top bar, with status dot; archived hidden unless toggled.
@@ -128,7 +128,7 @@ Tab bar: Overview · Schedules · Runs · Observations · Alerts · Usage.
 - **List**: title, type, baseline → current, status, comparability, created by; **P:** New comparison.
 - **Create wizard**: 1 Type · 2 Baseline and current (snapshots or date windows; overlap warning) · 3 Filters (prompt group/prompt, provider/model, market, language, competitor, citation domain) and policy (matching, aggregation: matched-slot macro avg / pooled) · 4 **Compatibility preview** (hard checks, soft warnings, matched coverage, excluded rows, can/can't run) · 5 Run (sync) → opens comparison.
 - **Comparison view** tabs: **Overview** (comparability verdict banner, headline metric rows: baseline vs current with n/d, pp change, relative change or "new from zero", sample status, CI; grouped-bar chart; trend chart) · **Prompts** (matched table: old/new result, provider, deltas, response links; unmatched and excluded separately) · **Platforms/models** (segments; model-change warning) · **Competitors** (same-cohort comparison, added/removed lists) · **Citations** (owned citation rate, cited URLs/domains, N/A for unsupported providers) · **Sentiment** (distribution with excerpts) · **Fixes timeline** (tasks between periods, context-only wording) · **Data quality** (success/failure counts, coverage, exclusions with reasons) · **Report/export** (CSV row-level + aggregate, PDF summary, methodology version, sources).
-- Portfolio comparison lives on the org overview as per-store normalized rows (no pooled denominators).
+- Portfolio comparison was part of the removed Portfolio page and is not offered.
 
 ### H. Reports & history — `/stores/[storeId]/reports`
 Unified history of audit, monitoring and comparison reports: type, title, period, snapshot/methodology version, created, status; filters (type, date), search; row → report detail (structured sections per type, limitations, source ids, timestamp) with export actions (CSV / PDF / JSON) producing a visible toast/state. Historical records tab: previous audits and runs.

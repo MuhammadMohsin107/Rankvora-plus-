@@ -22,7 +22,7 @@ import { SITE_TYPE_ORDER, siteTypeLabel } from "@/lib/labels";
 import { OPEN_TASK_STATUSES } from "@/lib/record-status";
 import { STATUS } from "@/lib/status";
 import { ratePercent } from "@/lib/format";
-import type { PortfolioTask } from "@/services/dashboard";
+import type { WebsiteTask } from "@/services/dashboard";
 import type { AlertHeadline, Store, StoreStatus } from "@/types/core";
 
 import { transitionCopy } from "./status-transitions";
@@ -35,12 +35,12 @@ type PendingAction = { store: Store; to: StoreStatus };
 const STATUS_ORDER = Object.keys(STATUS.store);
 const mentionPct = (store: Store) => (store.summary ? ratePercent(store.summary.mention.n, store.summary.mention.d) : null);
 
-export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alerts: AlertHeadline[]; tasks: PortfolioTask[] }) {
+export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alerts: AlertHeadline[]; tasks: WebsiteTask[] }) {
   const router = useRouter();
   const toast = useToast();
   const { rows: websites, update } = useDemoCollection<Store>("websites", stores);
   const { rows: alertRows } = useDemoAlerts(alerts);
-  const { rows: taskRows } = useDemoCollection<PortfolioTask>("tasks", tasks);
+  const { rows: taskRows } = useDemoCollection<WebsiteTask>("tasks", tasks);
   const events = useDemoEvents();
 
   const [view, setView] = useState<View>("table");

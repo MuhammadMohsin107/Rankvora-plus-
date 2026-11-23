@@ -21,7 +21,7 @@ const exact = (href: string) => (pathname: string) => pathname === href;
 const prefix = (href: string) => (pathname: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 /**
- * Sidebar structure: ORGANIZATION (whole portfolio), WEBSITE (the selected website), SUPPORT.
+ * Sidebar structure: ORGANIZATION (all websites), WEBSITE (the selected website), SUPPORT.
  * `websiteId` is the website in context (from the URL, else the last one used). Without one the
  * website-specific items are left out.
  */
@@ -32,7 +32,6 @@ export function navGroups(websiteId: string | null): NavGroup[] {
       id: "organization",
       label: "Organization",
       items: [
-        { id: "portfolio", label: "Portfolio", href: "/", icon: "layers", isActive: exact("/") },
         { id: "websites", label: "Websites & Brands", href: "/stores", icon: "globe", isActive: (p) => p === "/stores" || p === "/stores/new" },
         { id: "team", label: "Team", href: "/settings/members", icon: "users", isActive: prefix("/settings/members") },
         {

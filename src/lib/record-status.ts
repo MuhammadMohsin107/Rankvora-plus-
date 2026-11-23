@@ -1,6 +1,6 @@
 import type { Finding } from "@/types/shared-records";
 
-/** Finding statuses that still need work. Shared by Dashboard, Portfolio and store summaries. */
+/** Finding statuses that still need work. Shared by the Dashboard and website summaries. */
 export const OPEN_FINDING_STATUSES = new Set<Finding["status"]>(["new", "under_review", "confirmed", "in_remediation", "awaiting_verification", "reopened"]);
 
 /** Task statuses that are not finished (includes failed, which needs a decision). */
