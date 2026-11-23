@@ -1,12 +1,7 @@
-import { COUNTRIES as SITE_COUNTRIES, TIMEZONES as SITE_TIMEZONES } from "@/features/stores/options";
+import { COUNTRIES as SITE_COUNTRIES } from "@/features/stores/options";
 
 /** Option lists for organization forms. One source: the website setup lists in `@/features/stores/options`. */
-export const TIMEZONES: string[] = SITE_TIMEZONES;
 export const COUNTRIES: { value: string; label: string }[] = SITE_COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
-
-export function withCurrent<T extends string>(list: string[], current: T): string[] {
-  return list.includes(current) ? list : [current, ...list];
-}
 
 export function validateText(value: string, label: string, min = 1, max = 120): string | null {
   const text = value.trim();
@@ -21,15 +16,4 @@ export function validateEmailAddress(value: string): string | null {
   if (!text) return "Email is required.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(text)) return "Enter a valid email address.";
   return null;
-}
-
-/** Optional https address. */
-export function validateHttpsUrl(value: string): string | null {
-  const raw = value.trim();
-  if (!raw) return null;
-  try {
-    return new URL(raw).protocol === "https:" ? null : "Webhook addresses must use https.";
-  } catch {
-    return "Enter a full address, e.g. https://hooks.example.com/rankvora.";
-  }
 }

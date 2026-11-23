@@ -17,10 +17,10 @@ export function WebsiteCard({ store, counts }: { store: Store; counts?: WebsiteC
   const summary = store.summary;
   const action = nextWebsiteAction(store, counts);
   return (
-    <Card as="article" className="flex h-full flex-col gap-4 p-card">
+    <Card as="article" className="flex h-full flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <WebsiteAvatar name={store.name} size="lg" />
+          <WebsiteAvatar name={store.name} size="md" />
           <div className="min-w-0">
             <h3 className="truncate text-card-title font-semibold text-fg">
               <Link href={`/stores/${store.id}`} className="rounded hover:underline">{store.name}</Link>
@@ -36,18 +36,18 @@ export function WebsiteCard({ store, counts }: { store: Store; counts?: WebsiteC
       </p>
 
       {summary ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Metric label="Mention rate" numerator={summary.mention.n} denominator={summary.mention.d} delta={{ points: pointChange(summary.mentionPrevious, summary.mention) }} />
           <Metric label="Recommendation" numerator={summary.recommendation.n} denominator={summary.recommendation.d} delta={{ points: pointChange(summary.recommendationPrevious, summary.recommendation) }} />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Metric label="Mention rate" naReason={untrackedReason(store)} />
           <Metric label="Recommendation" naReason="Not tracked yet" />
         </div>
       )}
 
-      <div className="mt-auto flex items-center justify-between gap-3 border-t border-line pt-3">
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-line pt-2.5">
         <p className="min-w-0 truncate text-helper text-fg-muted">{action.reason}</p>
         <ButtonLink href={action.href} variant="secondary" size="sm" trailingIcon="arrow-right">{action.label}</ButtonLink>
       </div>

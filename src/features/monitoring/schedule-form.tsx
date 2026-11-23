@@ -579,7 +579,6 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
                 </div>
               )}
             </Field>
-            <p className="text-helper text-fg-muted">Digest or immediate delivery is set in <Link href="/settings/notifications" className="text-accent-text hover:underline">notification settings</Link>.</p>
           </fieldset>
         </Advanced>
 

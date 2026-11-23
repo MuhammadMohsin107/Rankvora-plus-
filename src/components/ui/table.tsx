@@ -453,7 +453,7 @@ export function DataTable<T>({
             {!loading && pageRows.length === 0 ? (
               <div className="p-4">
                 {filtering ? (
-                  <EmptyState icon="filter" title="No matches" description="Nothing fits these filters." action={<Button size="sm" onClick={clearFilters}>Clear filters</Button>} />
+                  <EmptyState icon="filter" title="No matches" description="Nothing fits these filters." action={<Button size="sm" onClick={clearFilters}>Reset filters</Button>} />
                 ) : (
                   (empty ?? <EmptyState icon="list" title="Nothing here yet" />)
                 )}

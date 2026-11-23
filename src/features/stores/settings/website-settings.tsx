@@ -81,7 +81,6 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
   const activity = useDemoSettings(settingKey(id, "activity"), activityBase);
   const trackingBase = useMemo(() => ({ trackingMode: "web_grounded" as TrackingMode }), []);
   const tracking = useDemoSettings(settingKey(id, "tracking"), trackingBase);
-  const orgPrefs = useDemoSettings<NotificationPrefs>("org.notifications", data.orgPrefs);
   const overridesBase = useMemo<Overrides>(() => ({ [id]: data.notifications }), [id, data.notifications]);
   const overrides = useDemoSettings<Overrides>("org.notifications.overrides", overridesBase);
   const { prompts } = usePrompts(id, data.prompts);
@@ -97,7 +96,8 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
   const versions = brand.value.versions;
   const [brandDraft, setBrandDraft] = useState<BrandDraft | null>(null);
   const brandForm = brandDraft ?? draftFromVersion(versions[0], store.industry);
-  const savedNotif: StoreNotifState = overrides.value[id] ?? data.notifications;
+  const storedNotif = overrides.value[id] ?? data.notifications;
+  const savedNotif: StoreNotifState = { mode: "override", matrix: storedNotif.mode === "override" ? storedNotif.matrix : data.orgPrefs.matrix };
   const [notifDraft, setNotifDraft] = useState<StoreNotifState | null>(null);
   const notif = notifDraft ?? savedNotif;
 
@@ -137,7 +137,7 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
   const showSetup = status === "draft" || status === "needs_review" || status === "ready";
   const pendingCopy = pending ? transitionCopy(status, pending, store.name) : null;
 
-  const webhookReady = orgPrefs.value.webhookUrl.trim() !== "";
+  const webhookReady = data.orgPrefs.webhookUrl.trim() !== "";
 
   const brandTab = (
     <BrandTab
@@ -284,16 +284,15 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
       content: (
         <NotificationsTab
           events={data.events}
-          orgMatrix={orgPrefs.value.matrix}
           webhookReady={webhookReady}
           saved={savedNotif}
           draft={notif}
           onDraft={setNotifDraft}
           readOnly={readOnly}
           onSave={() => {
-            overrides.save({ ...overrides.value, [id]: { storeId: id, mode: notif.mode, matrix: notif.matrix } });
+            overrides.save({ ...overrides.value, [id]: { storeId: id, mode: "override", matrix: notif.matrix } });
             setNotifDraft(null);
-            log(notif.mode === "inherit" ? "Notifications follow organization defaults" : "Notification overrides saved", "notification");
+            log("Notification settings saved", "notification");
             said("Notifications saved");
           }}
         />

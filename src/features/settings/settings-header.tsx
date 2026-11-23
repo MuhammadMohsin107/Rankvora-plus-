@@ -6,7 +6,6 @@ import { LinkTabs } from "@/components/ui/tabs";
 const ITEMS = [
   { href: "/settings/members", label: "Team" },
   { href: "/settings/billing", label: "Billing" },
-  { href: "/settings/notifications", label: "Notifications" },
 ];
 
 /** Organization hub header: title plus the shared sub-navigation. Every organization page uses it. */

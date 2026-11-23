@@ -25,7 +25,7 @@ Organization area (neutral chrome, label "Organization")
   /                          (redirects to /stores)
   /stores                    Stores (table/cards)
   /stores/new                Add store (stepper)
-  /settings/*                Team, Billing, Notifications
+  /settings/*                Team, Billing
 
 Store area (accent chrome, label = store name + market)
   /stores/[storeId]                     Dashboard
@@ -134,9 +134,9 @@ Tab bar: Overview · Schedules · Runs · Observations · Alerts · Usage.
 Unified history of audit, monitoring and comparison reports: type, title, period, snapshot/methodology version, created, status; filters (type, date), search; row → report detail (structured sections per type, limitations, source ids, timestamp) with export actions (CSV / PDF / JSON) producing a visible toast/state. Historical records tab: previous audits and runs.
 
 ### I. Settings & integrations
-- **Organization** `/settings/*` (`/settings` redirects to Team): tabs — Team (members and roles table, invite dialog, role change, role matrix) · Billing (usage per website and provider, caps, plan limit bars, invoices placeholder labelled demo) · Notifications (event categories, channels, digest, quiet hours).
+- **Organization** `/settings/*` (`/settings` redirects to Team): tabs — Team (members and roles table, invite dialog, role change, role matrix) · Billing (usage per website and provider, caps, plan limit bars, invoices placeholder labelled demo).
 - **Integrations** `/integrations`: organization level. AI platforms (OpenAI/Gemini/Perplexity: connection status, model, search capability, masked demo key, test connection, own key; `/settings/ai-platforms` redirects here) and a read-only list of every website's connections, each linking to that website's settings. Connectors are never connected here.
-- **Store** `/stores/[storeId]/settings`: tabs — Profile (name, platform, timezone, status transition with confirm) · Brand (current version + version history, aliases, differentiators) · Domains (canonical, aliases/redirects, former domains history) · Competitors (confirmed/suggested/archived, confirm action) · Products & services · Connections (this website's publishing connector and Search Console: state, granted scopes, property, disconnect confirm) · Notifications (store overrides) · Activity log · Danger zone (pause / archive with confirmation).
+- **Store** `/stores/[storeId]/settings`: tabs — Profile (name, platform, timezone, status transition with confirm) · Brand (current version + version history, aliases, differentiators) · Domains (canonical, aliases/redirects, former domains history) · Competitors (confirmed/suggested/archived, confirm action) · Products & services · Connections (this website's publishing connector and Search Console: state, granted scopes, property, disconnect confirm) · Notifications (events and channels for this website) · Activity log · Danger zone (pause / archive with confirmation).
 
 ## 5. Shared states (every list/detail)
 Loading skeleton matching layout · Empty (one next action) · Error (cause + retry) · Success (toast) · No permission (role-based hide/disable with reason) · Demo-data marker in shell footer / banner.

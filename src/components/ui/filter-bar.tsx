@@ -27,7 +27,7 @@ type FilterBarProps = {
   children?: ReactNode;
   /** Show a removable chip for each active filter. Useful when filters live in a popover; off by default because the select already shows its value. */
   chips?: boolean;
-  /** Called by "Clear". The button only shows while a search or filter is active. */
+  /** Called by "Reset". The button only shows while a search or filter is active. */
   onClearAll?: () => void;
   /** "Showing x of y". Announced politely when it changes. Shown only while filters are active unless `alwaysShowCount`. */
   resultCount?: { shown: number; total: number; noun?: string };
@@ -78,8 +78,8 @@ export function FilterBar({ label, search, filters = [], children, chips = false
         ))}
         {children}
         {active && onClearAll ? (
-          <Button variant="ghost" size="sm" icon="x" onClick={onClearAll}>
-            Clear
+          <Button variant="ghost" size="sm" icon="undo" onClick={onClearAll}>
+            Reset
           </Button>
         ) : null}
         {showCount || actions ? (

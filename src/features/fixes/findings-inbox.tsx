@@ -171,7 +171,7 @@ export function FindingsInbox({ storeId, rows, tasks, assignees, actorName }: Pr
           <p className="py-6 text-center text-body-sm text-fg-muted">
             No findings match.{" "}
             <Button variant="ghost" size="sm" onClick={clear}>
-              Clear filters
+              Reset filters
             </Button>
           </p>
         }

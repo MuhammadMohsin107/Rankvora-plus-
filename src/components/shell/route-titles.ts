@@ -57,7 +57,6 @@ const ORG_CRUMBS: Record<string, Crumb[]> = {
   "/stores/new": [{ label: "Websites & Brands", href: "/stores" }, { label: "Add website" }],
   "/settings/members": [{ label: "Team" }],
   "/settings/billing": [{ label: "Billing" }],
-  "/settings/notifications": [{ label: "Notifications" }],
   "/integrations": [{ label: "Integrations" }],
   "/help": [{ label: "Help & Support" }],
   [NOT_FOUND_PATH]: [{ label: "Page not found" }],

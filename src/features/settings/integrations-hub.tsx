@@ -53,7 +53,7 @@ export function IntegrationsHub({ providers, websites: baseWebsites }: { provide
           {websites.map((w) => {
             const connector = w.integrations.commerce;
             return (
-              <Card key={w.id} as="article" className="flex flex-col gap-4 p-card">
+              <Card key={w.id} as="article" className="flex flex-col gap-3 p-4">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-surface-2 text-fg-muted">
                     <Icon name="globe" size={18} />
@@ -63,7 +63,7 @@ export function IntegrationsHub({ providers, websites: baseWebsites }: { provide
                     <p className="truncate text-helper text-fg-subtle">{w.domain}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <ConnectionStatus label={connector === "manual" || connector === "not_connected" ? "Publishing" : siteTypeLabel(w.platform)}>
                     <Status kind="integration" value={connector} />
                   </ConnectionStatus>

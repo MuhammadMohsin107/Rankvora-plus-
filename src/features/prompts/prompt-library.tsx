@@ -293,7 +293,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
   ];
 
   const emptyFiltered = (
-    <EmptyState icon="filter" title="No prompts match" description="Try another search or clear the filters." action={<Button size="sm" onClick={clearAll}>Clear filters</Button>} />
+    <EmptyState icon="filter" title="No prompts match" description="Try another search or clear the filters." action={<Button size="sm" onClick={clearAll}>Reset filters</Button>} />
   );
 
   const shownCards = filtered.slice(0, cardLimit);

@@ -2,15 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Segmented } from "@/components/ui/form";
 import { NotificationMatrixTable } from "@/features/settings/notification-matrix";
 import type { NotificationEvent, NotificationMatrix } from "@/types/settings";
 
+/** Saved per website under `org.notifications.overrides` (the key keeps its old name). */
 export type StoreNotifState = { mode: "inherit" | "override"; matrix: NotificationMatrix };
 
 type Props = {
   events: NotificationEvent[];
-  orgMatrix: NotificationMatrix;
   webhookReady: boolean;
   saved: StoreNotifState;
   draft: StoreNotifState;
@@ -19,28 +18,14 @@ type Props = {
   readOnly: boolean;
 };
 
-/** This website follows the organization defaults or customises them. Saved under `org.notifications.overrides`. */
-export function NotificationsTab({ events, orgMatrix, webhookReady, saved, draft, onDraft, onSave, readOnly }: Props) {
-  const dirty = saved.mode !== draft.mode || (draft.mode === "override" && JSON.stringify(saved.matrix) !== JSON.stringify(draft.matrix));
-  const inherit = draft.mode === "inherit";
+/** Which events notify this website's team, and on which channels. This is the only place notifications are set. */
+export function NotificationsTab({ events, webhookReady, saved, draft, onDraft, onSave, readOnly }: Props) {
+  const dirty = JSON.stringify(saved.matrix) !== JSON.stringify(draft.matrix);
 
   return (
     <div className="flex flex-col gap-4">
       <Card>
-        <div className="flex justify-end px-card pt-card">
-          <Segmented<StoreNotifState["mode"]>
-            label="Notification source"
-            value={draft.mode}
-            onChange={(mode) => onDraft({ ...draft, mode, matrix: mode === "override" && saved.mode === "inherit" ? orgMatrix : draft.matrix })}
-            options={[
-              { value: "inherit", label: "Organization defaults" },
-              { value: "override", label: "Customise" },
-            ]}
-          />
-        </div>
-        <div className="mt-3">
-          <NotificationMatrixTable events={events} value={inherit ? orgMatrix : draft.matrix} onChange={(matrix) => onDraft({ ...draft, matrix })} disabled={readOnly || inherit} webhookReady={webhookReady} />
-        </div>
+        <NotificationMatrixTable events={events} value={draft.matrix} onChange={(matrix) => onDraft({ ...draft, mode: "override", matrix })} disabled={readOnly} webhookReady={webhookReady} />
       </Card>
       <div className="flex items-center gap-2">
         <Button variant="primary" disabled={readOnly || !dirty} onClick={onSave}>Save notifications</Button>

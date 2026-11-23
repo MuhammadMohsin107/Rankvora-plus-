@@ -128,10 +128,6 @@ export async function listPromptCountRows(): Promise<{ id: string; storeId: stri
   return lists.flat().map((p) => ({ id: p.id, storeId: p.storeId, status: p.status }));
 }
 
-export async function listNotificationOverrides(): Promise<StoreNotificationOverride[]> {
-  return DEMO_STORE_NOTIFICATIONS;
-}
-
 export async function listTeamActivity(): Promise<{ id: string; at: string; actor: string; title: string }[]> {
   return DEMO_TEAM_ACTIVITY;
 }

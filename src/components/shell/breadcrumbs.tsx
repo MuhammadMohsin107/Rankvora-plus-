@@ -15,6 +15,9 @@ export function Breadcrumbs({ pathname }: { pathname: string }) {
     <nav aria-label="Breadcrumb" className="hidden min-w-0 overflow-hidden @min-[11rem]:block">
       {/* Container query: when the header leaves too little room the trail is hidden instead of drawn as clipped fragments (the page title below names the page). */}
       <ol className="flex min-w-0 items-center gap-1 text-body-sm text-fg-muted">
+        <li aria-hidden="true" className="flex shrink-0 items-center">
+          <Icon name="chevron-right" size={14} className="text-fg-faint" />
+        </li>
         {crumbs.map((crumb, index) => {
           const last = index === crumbs.length - 1;
           return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -32,8 +32,6 @@ type ShellProps = {
   searchIndex: SearchIndex;
   children: ReactNode;
 };
-
-const RAIL_WIDTH = "72px";
 
 function OrgSelector({ org }: { org: Organization }) {
   return (
@@ -66,7 +64,7 @@ function OrgSelector({ org }: { org: Organization }) {
 
 export function AppShell({ org, user, stores, alerts, searchIndex, children }: ShellProps) {
   const pathname = normalizeRoute(usePathname());
-  const { ui, toggleSidebar, setLastWebsite } = useDemoUi();
+  const { ui, setLastWebsite } = useDemoUi();
   const { rows: allWebsites } = useDemoCollection<Store>("websites", stores);
   const { rows: tasks } = useDemoCollection<SearchTask>("tasks", searchIndex.tasks);
   const events = useDemoEvents();
@@ -74,9 +72,10 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
   const websites = useMemo(() => allWebsites.filter((w) => w.status !== "archived"), [allWebsites]);
   const routeId = storeIdFromPath(pathname);
   const routeWebsite = routeId ? (allWebsites.find((w) => w.id === routeId) ?? null) : null;
-  // Website in context: the one in the URL; in the organization area, the last one used (else the first).
-  const contextWebsite = routeWebsite ?? (routeId ? null : (websites.find((w) => w.id === ui.lastWebsiteId) ?? websites[0] ?? null));
-  const navWebsiteId = routeId ?? contextWebsite?.id ?? null;
+  // Organization pages have no website in context: the header and the sidebar show the organization only.
+  // Website pages show the website from the URL.
+  const contextWebsite = routeWebsite;
+  const navWebsiteId = routeId;
 
   const routeWebsiteId = routeWebsite?.id ?? null;
   useEffect(() => {
@@ -127,16 +126,14 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
     mainRef.current?.focus({ preventScroll: true });
   }, [pathname]);
 
-  const collapsed = ui.sidebarCollapsed;
-
   return (
-    <div className="min-h-dvh min-w-0 lg:pl-[var(--shell-w)]" style={{ "--shell-w": collapsed ? RAIL_WIDTH : "var(--sidebar-w)" } as CSSProperties}>
+    <div className="min-h-dvh min-w-0 lg:pl-[var(--sidebar-w)]">
       <a href="#main" className="sr-only z-[80] rounded-control bg-accent px-3 py-2 text-body font-medium text-accent-fg focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
         Skip to main content
       </a>
 
-      <aside aria-label="Sidebar" className="fixed inset-y-0 left-0 z-30 hidden w-[var(--shell-w)] border-r border-line bg-sidebar transition-[width] duration-[var(--dur)] ease-[var(--ease)] lg:block">
-        <Sidebar groups={groups} pathname={pathname} counts={counts} collapsed={collapsed} onToggleCollapsed={toggleSidebar} />
+      <aside aria-label="Sidebar" className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-w)] border-r border-line bg-sidebar lg:block">
+        <Sidebar groups={groups} pathname={pathname} counts={counts} />
       </aside>
 
       <dialog
@@ -168,10 +165,17 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
         <div className="flex h-header items-center gap-2 px-page">
           <IconButton icon="menu" label="Open navigation" className="-ml-1 shrink-0 lg:hidden" onClick={() => setOpenFor(pathname)} />
           <div className="hidden lg:block"><OrgSelector org={org} /></div>
-          <div className="flex min-w-0 shrink items-center">
-            <WebsiteSelector websites={websites} active={contextWebsite} pathname={pathname} />
-          </div>
-          <div className="@container hidden min-w-0 flex-1 pl-1 md:block">
+          {routeId ? (
+            <>
+              <Icon name="chevron-right" size={14} aria-hidden="true" className="hidden shrink-0 text-fg-faint lg:block" />
+              <div className="flex min-w-0 shrink items-center">
+                <WebsiteSelector websites={websites} active={contextWebsite} pathname={pathname} />
+              </div>
+            </>
+          ) : (
+            <p className="min-w-0 truncate text-body-sm font-medium text-fg lg:hidden">{org.name}</p>
+          )}
+          <div className="@container hidden min-w-0 flex-1 md:block">
             <Breadcrumbs pathname={pathname} />
           </div>
           <div className="min-w-0 flex-1 md:hidden" />
