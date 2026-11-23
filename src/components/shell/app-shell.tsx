@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -7,7 +8,6 @@ import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Menu } from "@/components/ui/menu";
 import { useDemoCollection, useDemoEvents, useDemoUi, useUnreadAlertCount } from "@/demo-state";
-import { cn } from "@/lib/cn";
 import { OPEN_TASK_STATUSES } from "@/lib/record-status";
 import type { AlertHeadline, Member, Organization, Store } from "@/types/core";
 
@@ -51,11 +51,11 @@ function OrgSelector({ org }: { org: Organization }) {
         <button
           type="button"
           aria-label={`Organization: ${org.name}`}
-          className="flex h-11 max-w-[12rem] shrink-0 cursor-pointer items-center gap-2 rounded-control px-2 text-body-sm font-medium text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 aria-expanded:bg-surface-2"
+          className="flex h-9 max-w-[14rem] shrink-0 cursor-pointer items-center gap-2 rounded-control px-2 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg aria-expanded:bg-surface-2 aria-expanded:text-fg"
         >
-          <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fg text-xs font-semibold text-canvas">{org.name.charAt(0)}</span>
-          <span className="hidden min-w-0 truncate xl:inline">{org.name}</span>
-          <Icon name="chevrons-up-down" size={14} className="hidden shrink-0 text-fg-subtle xl:block" />
+          <Icon name="building" size={16} className="shrink-0" />
+          <span className="min-w-0 truncate">{org.name}</span>
+          <Icon name="chevrons-up-down" size={14} className="shrink-0 text-fg-subtle" />
         </button>
       }
     />
@@ -161,8 +161,8 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
         ) : null}
       </dialog>
 
-      <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur supports-[backdrop-filter]:bg-canvas/80">
-        <div className="flex h-header items-center gap-2 px-page">
+      <header className="sticky top-0 z-20 border-b border-line bg-surface">
+        <div className="flex h-header items-center gap-1 px-page">
           <IconButton icon="menu" label="Open navigation" className="-ml-1 shrink-0 lg:hidden" onClick={() => setOpenFor(pathname)} />
           <div className="hidden lg:block"><OrgSelector org={org} /></div>
           {routeId ? (
@@ -188,15 +188,15 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
               aria-label="Search"
               title="Search (Ctrl K)"
               aria-keyshortcuts="Control+K Meta+K"
-              className={cn(
-                "hidden h-10 cursor-pointer items-center gap-2 rounded-control border border-line-strong bg-surface px-3 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg sm:inline-flex",
-                "2xl:w-52 2xl:justify-start",
-              )}
+              className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2"
             >
               <Icon name="search" size={16} />
-              <span className="hidden 2xl:inline">Search</span>
-              <kbd className="ml-auto hidden font-sans text-xs text-fg-subtle 2xl:inline">Ctrl K</kbd>
+              <span className="hidden md:inline">Search</span>
             </button>
+            <Link href="/help" className="hidden h-9 items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 sm:inline-flex">
+              <Icon name="help" size={16} />
+              Support
+            </Link>
             <Notifications alerts={alerts} websites={websites} contextWebsiteId={navWebsiteId} />
             <UserMenu user={user} />
           </div>

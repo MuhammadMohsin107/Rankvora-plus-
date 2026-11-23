@@ -73,7 +73,7 @@ function WebsiteList({ websites, active, pathname, close }: Props & { close: () 
   );
 }
 
-/** Header website selector: avatar, name, domain and market. Switching keeps the current section. */
+/** Header website selector: the website name as a breadcrumb step. The list shows domain and market. Switching keeps the current section. */
 export function WebsiteSelector({ websites, active, pathname }: Props) {
   return (
     <Popover
@@ -83,13 +83,9 @@ export function WebsiteSelector({ websites, active, pathname }: Props) {
       trigger={
         <button
           type="button"
-          className="flex h-11 min-w-0 max-w-[15rem] cursor-pointer items-center gap-2.5 rounded-control border border-line-strong bg-surface pl-2 pr-2.5 text-left transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 aria-expanded:bg-surface-2 sm:max-w-[18rem]"
+          className="flex h-9 min-w-0 max-w-[14rem] cursor-pointer items-center gap-1.5 rounded-control px-2 text-left text-body-sm font-semibold text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 aria-expanded:bg-surface-2 sm:max-w-[18rem]"
         >
-          {active ? <WebsiteAvatar name={active.name} size="md" /> : <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-control border border-dashed border-line-strong text-fg-subtle"><Icon name="globe" size={16} /></span>}
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-body-sm font-semibold leading-tight text-fg">{active ? active.name : "Select website"}</span>
-            {active ? <span className="hidden truncate text-helper leading-tight text-fg-muted sm:block">{active.domain} · {active.market}</span> : null}
-          </span>
+          <span className="truncate">{active ? active.name : "Select website"}</span>
           <Icon name="chevrons-up-down" size={14} className="shrink-0 text-fg-subtle" />
           <span className="sr-only">Change website</span>
         </button>
