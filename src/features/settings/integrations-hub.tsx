@@ -44,42 +44,40 @@ export function IntegrationsHub({ providers, websites: baseWebsites }: { provide
 
   return (
     <div className="flex flex-col gap-8">
-      <Group title="AI platforms" hint="Shared by every website">
+      <Group title="AI platforms" hint="">
         <ProvidersView providers={providers} />
       </Group>
 
       <Group title="Website connections" hint="Managed in each website's settings">
-        <Card>
-          <ul className="divide-y divide-line">
-            {websites.map((w) => {
-              const connector = w.integrations.commerce;
-              return (
-                <li key={w.id} className="grid grid-cols-[minmax(0,1fr)] items-center gap-3 px-card py-3.5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-6">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-surface-2 text-fg-muted">
-                      <Icon name="globe" size={18} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-fg">{w.name}</p>
-                      <p className="truncate text-helper text-fg-subtle">{w.domain}</p>
-                    </div>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2 2xl:grid-cols-4">
+          {websites.map((w) => {
+            const connector = w.integrations.commerce;
+            return (
+              <Card key={w.id} as="article" className="flex flex-col gap-4 p-card">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-surface-2 text-fg-muted">
+                    <Icon name="globe" size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-fg">{w.name}</p>
+                    <p className="truncate text-helper text-fg-subtle">{w.domain}</p>
                   </div>
-                  <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
-                    <ConnectionStatus label={connector === "manual" || connector === "not_connected" ? "Publishing" : siteTypeLabel(w.platform)}>
-                      <Status kind="integration" value={connector} />
-                    </ConnectionStatus>
-                    <ConnectionStatus label="Search Console">
-                      <Status kind="integration" value={w.integrations.searchConsole} />
-                    </ConnectionStatus>
-                  </div>
-                  <ButtonLink href={`/stores/${w.id}/settings`} variant="secondary" size="sm" trailingIcon="arrow-right">
-                    Manage
-                  </ButtonLink>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <ConnectionStatus label={connector === "manual" || connector === "not_connected" ? "Publishing" : siteTypeLabel(w.platform)}>
+                    <Status kind="integration" value={connector} />
+                  </ConnectionStatus>
+                  <ConnectionStatus label="Search Console">
+                    <Status kind="integration" value={w.integrations.searchConsole} />
+                  </ConnectionStatus>
+                </div>
+                <ButtonLink href={`/stores/${w.id}/settings`} variant="secondary" trailingIcon="arrow-right" className="mt-auto self-start">
+                  Manage
+                </ButtonLink>
+              </Card>
+            );
+          })}
+        </div>
       </Group>
     </div>
   );

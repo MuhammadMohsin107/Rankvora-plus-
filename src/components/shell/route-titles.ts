@@ -55,10 +55,9 @@ const NO_PAGE = new Set(["fixes/findings"]);
 const ORG_CRUMBS: Record<string, Crumb[]> = {
   "/stores": [{ label: "Websites & Brands" }],
   "/stores/new": [{ label: "Websites & Brands", href: "/stores" }, { label: "Add website" }],
-  "/settings": [{ label: "Organization settings" }],
   "/settings/members": [{ label: "Team" }],
   "/settings/billing": [{ label: "Billing" }],
-  "/settings/notifications": [{ label: "Organization settings", href: "/settings" }, { label: "Notifications" }],
+  "/settings/notifications": [{ label: "Notifications" }],
   "/integrations": [{ label: "Integrations" }],
   "/help": [{ label: "Help & Support" }],
   [NOT_FOUND_PATH]: [{ label: "Page not found" }],

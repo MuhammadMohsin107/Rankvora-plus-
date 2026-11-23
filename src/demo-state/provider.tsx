@@ -89,7 +89,7 @@ export type DemoSetting<T> = {
 
 const isPlain = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
-/** One saved settings value by key (for example "org.general", "website.runpro-pk.profile"). Keep `base` stable. */
+/** One saved settings value by key (for example "org.notifications", "website.runpro-pk.profile"). Keep `base` stable. */
 export function useDemoSettings<T>(key: string, base: T): DemoSetting<T> {
   const store = useStore();
   const settings = useSnapshot(store).settings;

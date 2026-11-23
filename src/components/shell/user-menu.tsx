@@ -6,7 +6,9 @@ import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { ConfirmDialog } from "@/components/ui/overlay";
-import { useDemoReset } from "@/demo-state";
+import { useToast } from "@/components/ui/toast";
+import { demoStore, simulatedToast, useDemoReset } from "@/demo-state";
+import { downloadFile } from "@/features/settings/invoice-files";
 import type { Member } from "@/types/core";
 
 const ROLE_LABEL = { owner: "Owner", admin: "Admin", editor: "Editor", auditor: "Auditor", viewer: "Viewer" } as const;
@@ -35,15 +37,24 @@ function useTheme(): [Theme, () => void] {
   return [theme, toggle];
 }
 
-/** Account menu: theme, and the one confirmed reset of the local demo data. Navigation lives in the sidebar. */
+/** Account menu: theme, demo data export and the one confirmed reset. Navigation lives in the sidebar. */
 export function UserMenu({ user }: { user: Member }) {
   const [theme, toggleTheme] = useTheme();
   const reset = useDemoReset();
+  const toast = useToast();
   const [confirming, setConfirming] = useState(false);
 
   const items: MenuItem[] = [
     { label: theme === "dark" ? "Light theme" : "Dark theme", icon: theme === "dark" ? "sun" : "moon", onSelect: toggleTheme },
     { type: "separator" },
+    {
+      label: "Export demo data",
+      icon: "download",
+      onSelect: () => {
+        downloadFile("rankvora-demo-data.json", "application/json", `${JSON.stringify(demoStore.getSnapshot(), null, 2)}\n`);
+        toast.push(simulatedToast("Demo data file prepared", "info"));
+      },
+    },
     { label: "Reset demo data", icon: "undo", tone: "danger", onSelect: () => setConfirming(true) },
   ];
 

@@ -11,7 +11,7 @@ Routes keep the internal name `/stores/[storeId]`; everything a person reads say
 |---|---|---|
 | **Audit** `/audits` | Audit creation wizard (initial, full, focused and verification audits; recurring runs belong to Monitoring), configuration and scope, progress, history, snapshot results, AI visibility and website readiness lanes (kept separate), response and page inspection, finding evidence, audit report preview | Fix workflow (a finding links to Fixes), prompt editing (Prompt Library) |
 | **Fixes** `/fixes` | Findings inbox, recommendations, task board and list, draft, approval, simulated execution, verification, rollback, fix history | Evidence capture (links back to the Audit response or page), trend measurement (Monitoring, Comparison) |
-| **Monitoring** `/monitoring` | Schedules (daily, weekly, monthly), simulated runs and jobs, observations, visibility trends, competitor observations, alerts, usage and caps | Prompt text and groups (Prompt Library), notification defaults (Organization settings) |
+| **Monitoring** `/monitoring` | Schedules (daily, weekly, monthly), simulated runs and jobs, observations, visibility trends, competitor observations, alerts, usage and caps | Prompt text and groups (Prompt Library), notification defaults (Notifications) |
 | **Comparison** `/comparisons` | New comparison wizard, history, snapshot, period, audit-to-monitoring and before-and-after-fix comparisons, compatibility and data quality, matched, unmatched and excluded rows, fixes timeline, export | Raw audit and run records (it reads them) |
 
 Workflow: **Audit → Findings → Fixes → Monitoring → Comparison**. A finding opens in Fixes; a task links back to its audit evidence; a verification run is a Monitoring run; Comparison reads saved snapshots and runs and lists fixes between periods as context only (no causal claims).
@@ -33,10 +33,10 @@ Workflow: **Audit → Findings → Fixes → Monitoring → Comparison**. A find
 | Integrations `/integrations` | AI platform connections (shared by all websites). Lists every website's connections read-only and links to Website settings. Connectors are never connected here |
 | Team `/settings/members` | Members, invites, roles |
 | Billing `/settings/billing` | Plan, usage across websites and providers, invoices |
-| Organization settings `/settings` | Name, time zone, default market and language (they start every new website), default notifications. Websites that override notifications are listed read-only with a link to their settings |
+| Notifications `/settings/notifications` | Default alert preferences. Websites that override notifications are listed read-only with a link to their settings |
 | Help & Support `/help` | Help center |
 
-`/settings/ai-platforms` redirects to `/integrations`.
+`/settings/ai-platforms` redirects to `/integrations`; `/settings` redirects to Team. Export and reset of demo data are in the account menu.
 
 ## Rules that keep ownership clean
 

@@ -1,4 +1,4 @@
-/** Types for Organization settings and Store settings (demo-backed, service-shaped). */
+/** Types for organization pages (team, billing, notifications, integrations) and Store settings (demo-backed, service-shaped). */
 import type { IntegrationState, ProviderCode, Role, SearchMode, StorePlatform } from "@/types/core";
 
 /* ───────── Providers (organization → AI platforms) ───────── */
@@ -205,10 +205,7 @@ export type BillingBase = {
   events: BillingHistoryEntry[];
 };
 
-/* ───────── Organization profile and local provider state ───────── */
-
-/** Saved under `org.general`. The shell can read it to show the organization name. */
-export type OrgGeneral = { name: string; timezone: string; market: string; language: string };
+/* ───────── Local provider state ───────── */
 
 /** Saved per provider under `org.providers`. Keys are never stored, only the last 4 characters of a masked demo key. */
 export type ProviderLocalState = {

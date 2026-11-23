@@ -25,7 +25,7 @@ Organization area (neutral chrome, label "Organization")
   /                          (redirects to /stores)
   /stores                    Stores (table/cards)
   /stores/new                Add store (stepper)
-  /settings/*                Organization settings
+  /settings/*                Team, Billing, Notifications
 
 Store area (accent chrome, label = store name + market)
   /stores/[storeId]                     Dashboard
@@ -87,7 +87,7 @@ Metric row (mention rate, recommendation rate, owned citation rate, competitor v
 ### B. Multi-store
 - **Portfolio overview** (removed): `/` now redirects to `/stores`. The websites list carries the per-website cards and metrics.
 - **Websites & Brands** `/stores`: table + card toggle; search; filter status/platform/market; sort. Row → store dashboard. Status chips, integration status (connected / disconnected / manual).
-- **Add website** `/stores/new` (four steps in code: Basics, Brand profile, Connections, Review; market, language and time zone start from Organization settings): 1 Basics (name, website, site type), 2 Connection (manual, or an optional publishing connector such as WordPress, Webflow, Wix, WooCommerce or Shopify), 3 Brand & market (brand name, aliases, industry, description, country, language, timezone), 4 Products/services, 5 Competitors (confirmed vs suggested), 6 AI channels + tracking mode + review & activate (checklist). Inline validation, back/next, draft status.
+- **Add website** `/stores/new` (four steps in code: Basics, Brand profile, Connections, Review): 1 Basics (name, website, site type), 2 Connection (manual, or an optional publishing connector such as WordPress, Webflow, Wix, WooCommerce or Shopify), 3 Brand & market (brand name, aliases, industry, description, country, language, timezone), 4 Products/services, 5 Competitors (confirmed vs suggested), 6 AI channels + tracking mode + review & activate (checklist). Inline validation, back/next, draft status.
 - **Store details**: Settings page (see I). **Store switching**: selector in top bar, with status dot; archived hidden unless toggled.
 
 ### C. Prompts — `/stores/[storeId]/prompts`
@@ -134,7 +134,7 @@ Tab bar: Overview · Schedules · Runs · Observations · Alerts · Usage.
 Unified history of audit, monitoring and comparison reports: type, title, period, snapshot/methodology version, created, status; filters (type, date), search; row → report detail (structured sections per type, limitations, source ids, timestamp) with export actions (CSV / PDF / JSON) producing a visible toast/state. Historical records tab: previous audits and runs.
 
 ### I. Settings & integrations
-- **Organization** `/settings`: tabs — General (name, default timezone) · Members & roles (table, invite dialog, role change, role matrix) · Notifications (event categories, channels, digest, quiet hours) · Usage & billing (per store/provider, caps, plan limit bars, invoices placeholder labelled demo).
+- **Organization** `/settings/*` (`/settings` redirects to Team): tabs — Team (members and roles table, invite dialog, role change, role matrix) · Billing (usage per website and provider, caps, plan limit bars, invoices placeholder labelled demo) · Notifications (event categories, channels, digest, quiet hours).
 - **Integrations** `/integrations`: organization level. AI platforms (OpenAI/Gemini/Perplexity: connection status, model, search capability, masked demo key, test connection, own key; `/settings/ai-platforms` redirects here) and a read-only list of every website's connections, each linking to that website's settings. Connectors are never connected here.
 - **Store** `/stores/[storeId]/settings`: tabs — Profile (name, platform, timezone, status transition with confirm) · Brand (current version + version history, aliases, differentiators) · Domains (canonical, aliases/redirects, former domains history) · Competitors (confirmed/suggested/archived, confirm action) · Products & services · Connections (this website's publishing connector and Search Console: state, granted scopes, property, disconnect confirm) · Notifications (store overrides) · Activity log · Danger zone (pause / archive with confirmation).
 

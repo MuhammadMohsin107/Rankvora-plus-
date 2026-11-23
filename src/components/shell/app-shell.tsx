@@ -6,8 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Menu } from "@/components/ui/menu";
-import { Tooltip } from "@/components/ui/tooltip";
-import { SyncIndicator, useDemoCollection, useDemoEvents, useDemoSettings, useDemoUi, useUnreadAlertCount } from "@/demo-state";
+import { useDemoCollection, useDemoEvents, useDemoUi, useUnreadAlertCount } from "@/demo-state";
 import { cn } from "@/lib/cn";
 import { OPEN_TASK_STATUSES } from "@/lib/record-status";
 import type { AlertHeadline, Member, Organization, Store } from "@/types/core";
@@ -47,7 +46,8 @@ function OrgSelector({ org }: { org: Organization }) {
         { label: org.name, icon: "building", meta: <Icon name="check" size={16} className="text-accent-text" label="Current organization" /> },
         { type: "separator" },
         { label: "Websites & Brands", href: "/stores", icon: "globe" },
-        { label: "Organization settings", href: "/settings", icon: "settings" },
+        { label: "Team", href: "/settings/members", icon: "users" },
+        { label: "Billing", href: "/settings/billing", icon: "credit-card" },
       ]}
       trigger={
         <button
@@ -68,9 +68,6 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
   const pathname = normalizeRoute(usePathname());
   const { ui, toggleSidebar, setLastWebsite } = useDemoUi();
   const { rows: allWebsites } = useDemoCollection<Store>("websites", stores);
-  // The organization name can be renamed in Organization settings (saved as `org.general`).
-  const orgBase = useMemo<{ name?: string }>(() => ({ name: org.name }), [org.name]);
-  const orgName = useDemoSettings<{ name?: string }>("org.general", orgBase).value.name?.trim() || org.name;
   const { rows: tasks } = useDemoCollection<SearchTask>("tasks", searchIndex.tasks);
   const events = useDemoEvents();
 
@@ -170,7 +167,7 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur supports-[backdrop-filter]:bg-canvas/80">
         <div className="flex h-header items-center gap-2 px-page">
           <IconButton icon="menu" label="Open navigation" className="-ml-1 shrink-0 lg:hidden" onClick={() => setOpenFor(pathname)} />
-          <div className="hidden lg:block"><OrgSelector org={{ ...org, name: orgName }} /></div>
+          <div className="hidden lg:block"><OrgSelector org={org} /></div>
           <div className="flex min-w-0 shrink items-center">
             <WebsiteSelector websites={websites} active={contextWebsite} pathname={pathname} />
           </div>
@@ -196,14 +193,6 @@ export function AppShell({ org, user, stores, alerts, searchIndex, children }: S
               <span className="hidden 2xl:inline">Search</span>
               <kbd className="ml-auto hidden font-sans text-xs text-fg-subtle 2xl:inline">Ctrl K</kbd>
             </button>
-            <Tooltip content="Demo data. Nothing here is real." side="bottom">
-              <span tabIndex={0} className="hidden h-7 items-center gap-1 rounded-full border border-dashed border-line-strong px-1.5 text-xs font-medium text-fg-muted sm:inline-flex lg:px-2">
-                <Icon name="database" size={14} />
-                <span className="hidden lg:inline">Demo data</span>
-                <span className="sr-only lg:hidden">Demo data</span>
-              </span>
-            </Tooltip>
-            <SyncIndicator className="hidden lg:inline-flex" />
             <Notifications alerts={alerts} websites={websites} contextWebsiteId={navWebsiteId} />
             <UserMenu user={user} />
           </div>

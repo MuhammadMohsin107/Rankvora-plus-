@@ -12,7 +12,6 @@ import {
   DEMO_INTEGRATIONS,
   DEMO_INVITES,
   DEMO_MEMBER_ACCESS,
-  DEMO_ORG_GENERAL,
   DEMO_ORG_NOTIFICATIONS,
   DEMO_PROVIDERS,
   DEMO_SETUP_SAMPLE,
@@ -24,7 +23,7 @@ import {
 } from "@/demo/settings";
 import { WEBSITE_BASES } from "@/demo/audit";
 import { registryFor } from "@/demo/registry";
-import { getOrganization, listChannels, listCompetitors, listMembers, listPromptsBase, listStores } from "@/services/core";
+import { listChannels, listCompetitors, listMembers, listPromptsBase, listStores } from "@/services/core";
 import type { Competitor } from "@/types/core";
 import type {
   ActivityEntry,
@@ -38,7 +37,6 @@ import type {
   IntegrationDetail,
   NotificationEvent,
   NotificationPrefs,
-  OrgGeneral,
   PendingInvite,
   Permission,
   ProviderConnection,
@@ -84,12 +82,6 @@ export async function getRolePermissions(): Promise<RolePermissions> {
 
 export async function listPendingInvites(): Promise<PendingInvite[]> {
   return DEMO_INVITES;
-}
-
-/** Organization profile defaults (name and time zone come from the organization record). */
-export async function getOrgGeneral(): Promise<OrgGeneral> {
-  const org = await getOrganization();
-  return { name: org.name, timezone: org.timezone, ...DEMO_ORG_GENERAL };
 }
 
 /** Members and pending invites as one Team list. Owners and admins see every website. */

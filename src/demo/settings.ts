@@ -16,7 +16,6 @@ import type {
   CreditPack,
   DomainRecord,
   IntegrationDetail,
-  OrgGeneral,
   PaymentMethod,
   UsageMonth,
   WebsiteUsageSeed,
@@ -172,10 +171,6 @@ export const ROLE_PERMISSIONS: RolePermissions = {
 export const DEMO_INVITES: PendingInvite[] = [
   { id: "inv-001", email: "farah@client.example", role: "viewer", invitedAt: "2026-11-17T10:20:00Z", invitedBy: "Omar Farooq" },
 ];
-
-/* ───────── Organization profile ───────── */
-
-export const DEMO_ORG_GENERAL: Pick<OrgGeneral, "market" | "language"> = { market: "PK", language: "en" };
 
 /* ───────── Team ───────── */
 

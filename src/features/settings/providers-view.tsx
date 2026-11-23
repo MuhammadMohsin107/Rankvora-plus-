@@ -20,7 +20,7 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2 2xl:grid-cols-4">
         {available.map((p) => {
           const s = state.local[p.provider];
           const isTesting = state.testing === p.provider;

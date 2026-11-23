@@ -1,9 +1,8 @@
-import { COUNTRIES as SITE_COUNTRIES, LANGUAGES as SITE_LANGUAGES, TIMEZONES as SITE_TIMEZONES } from "@/features/stores/options";
+import { COUNTRIES as SITE_COUNTRIES, TIMEZONES as SITE_TIMEZONES } from "@/features/stores/options";
 
 /** Option lists for organization forms. One source: the website setup lists in `@/features/stores/options`. */
 export const TIMEZONES: string[] = SITE_TIMEZONES;
 export const COUNTRIES: { value: string; label: string }[] = SITE_COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
-export const LANGUAGES: { value: string; label: string }[] = SITE_LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
 export function withCurrent<T extends string>(list: string[], current: T): string[] {
   return list.includes(current) ? list : [current, ...list];
