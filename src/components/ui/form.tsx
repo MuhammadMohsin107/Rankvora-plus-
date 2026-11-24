@@ -15,6 +15,10 @@ import { Icon } from "./icon";
 const control =
   "w-full rounded-control border border-line-strong bg-surface px-3 text-base text-fg placeholder:text-fg-subtle transition-[border-color,background-color] duration-[var(--dur-fast)] hover:border-fg-faint focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-60 read-only:bg-surface-2 aria-[invalid=true]:border-danger md:text-body";
 
+/** Borderless look for controls that sit inside a toolbar (FilterBar): the bar draws the border. Text colour is set by the caller. */
+const bare =
+  "h-8 w-full rounded-control border-0 bg-transparent text-base transition-colors duration-[var(--dur-fast)] placeholder:text-fg-subtle hover:bg-surface-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:text-body";
+
 type FieldProps = {
   label: string;
   hint?: string;
@@ -60,18 +64,18 @@ export function Textarea({ className, invalid, rows = 4, ...rest }: TextareaProp
 }
 
 /** `dense`: 36px high instead of 40px, for toolbars and table rows. */
-type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean; dense?: boolean };
-export function Select({ className, invalid, dense, children, ...rest }: SelectProps) {
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean; dense?: boolean; /** Borderless, for use inside a toolbar. */ bare?: boolean };
+export function Select({ className, invalid, dense, bare: isBare, children, ...rest }: SelectProps) {
   return (
     <div className="relative">
       <select
         aria-invalid={invalid || undefined}
-        className={cn(control, dense ? "h-9" : "h-control", "cursor-pointer appearance-none pr-9", className)}
+        className={isBare ? cn(bare, "cursor-pointer appearance-none pl-3 pr-8", className) : cn(control, dense ? "h-9" : "h-control", "cursor-pointer appearance-none pr-9", className)}
         {...rest}
       >
         {children}
       </select>
-      <Icon name="chevron-down" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
+      <Icon name="chevron-down" className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle", isBare ? "right-2.5" : "right-3")} />
     </div>
   );
 }
@@ -217,8 +221,10 @@ type SearchFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "on
   label: string;
   /** 36px high instead of 40px. */
   dense?: boolean;
+  /** Borderless, for use inside a toolbar. */
+  bare?: boolean;
 };
-export function SearchField({ value, onChange, label, className, placeholder = "Search", dense, ...rest }: SearchFieldProps) {
+export function SearchField({ value, onChange, label, className, placeholder = "Search", dense, bare: isBare, ...rest }: SearchFieldProps) {
   return (
     <div className={cn("relative", className)}>
       <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
@@ -228,7 +234,7 @@ export function SearchField({ value, onChange, label, className, placeholder = "
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className={cn(control, dense ? "h-9" : "h-control", "pl-9", value && "pr-10")}
+        className={isBare ? cn(bare, "pl-9 text-fg", value ? "pr-9" : "pr-3") : cn(control, dense ? "h-9" : "h-control", "pl-9", value && "pr-10")}
         {...rest}
       />
       {value ? (

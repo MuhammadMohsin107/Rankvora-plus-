@@ -34,7 +34,7 @@ type FilterBarProps = {
   alwaysShowCount?: boolean;
   /** Right-aligned slot for view toggles (table / cards / board), density, export. */
   actions?: ReactNode;
-  /** Shorter controls (used with compact tables). */
+  /** Kept for callers; the bar is always the same compact height. */
   dense?: boolean;
   className?: string;
 };
@@ -48,7 +48,7 @@ export function hasActiveFilters(search: string | undefined, filters: Pick<Filte
  * One consistent toolbar for tables, card grids and boards: search, filters, active chips, clear and result count,
  * plus a slot for view toggles. It owns no state; the list decides what the values mean.
  */
-export function FilterBar({ label, search, filters = [], children, chips = false, onClearAll, resultCount, alwaysShowCount, actions, dense, className }: FilterBarProps) {
+export function FilterBar({ label, search, filters = [], children, chips = false, onClearAll, resultCount, alwaysShowCount, actions, className }: FilterBarProps) {
   const active = hasActiveFilters(search?.value, filters);
   const activeFilters = filters.filter((filter) => filter.value !== "");
   const showCount = resultCount && (active || alwaysShowCount);
@@ -56,20 +56,22 @@ export function FilterBar({ label, search, filters = [], children, chips = false
   if (empty) return null;
   return (
     <div role="group" aria-label={label} className={cn("flex min-w-0 flex-col gap-2", className)}>
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
+      {/* One bar: the search and every filter sit inside it, separated by thin dividers. */}
+      <div className="flex min-w-0 flex-wrap items-center gap-1 rounded-card border border-line bg-surface p-1 shadow-card">
         {search ? (
           <SearchField
+            bare
             label={search.label ?? `Search ${label.replace(/ filters$/i, "").toLowerCase()}`}
             placeholder={search.placeholder ?? "Search"}
             value={search.value}
             onChange={search.onChange}
-            dense={dense}
-            className="w-full sm:w-64"
+            className="w-full sm:w-72"
           />
         ) : null}
-        {filters.map((filter) => (
-          <div key={filter.id} className="w-[calc(50%-0.25rem)] sm:w-auto sm:min-w-36">
-            <Select dense={dense} aria-label={filter.label} value={filter.value} onChange={(event) => filter.onChange(event.target.value)}>
+        {filters.map((filter, index) => (
+          <div key={filter.id} className="flex w-[calc(50%-0.125rem)] items-center sm:w-auto sm:min-w-36">
+            {index > 0 || search ? <span aria-hidden="true" className="mr-1 hidden h-5 w-px shrink-0 bg-line sm:block" /> : null}
+            <Select bare aria-label={filter.label} value={filter.value} className={filter.value ? "font-medium text-accent-text" : "text-fg"} onChange={(event) => filter.onChange(event.target.value)}>
               <option value="">{filter.label}: all</option>
               {filter.options.map((option) => (
                 <option key={option.value} value={option.value}>
