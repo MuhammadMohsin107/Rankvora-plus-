@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Badge, Status } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
@@ -10,11 +12,14 @@ import { formatRelative } from "@/lib/format";
 import { SEARCH_MODE_LABEL } from "@/lib/labels";
 import type { ProviderConnection } from "@/types/settings";
 
+import { AddApiDialog, AddApiTile, CustomApiCard, useCustomApis } from "./custom-apis";
 import { useProviders } from "./use-providers";
 
-/** Detailed AI platform cards. The Integrations hub shows the same connections as short rows. */
+/** AI platform cards, the APIs added by hand, and a blank "+" tile to add another. */
 export function ProvidersView({ providers }: { providers: ProviderConnection[] }) {
   const state = useProviders(providers);
+  const custom = useCustomApis();
+  const [adding, setAdding] = useState(false);
   const available = providers.filter((p) => p.availability === "available");
   const later = providers.filter((p) => p.availability === "later");
 
@@ -76,6 +81,12 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
             </Card>
           );
         })}
+
+        {custom.items.map((api) => (
+          <CustomApiCard key={api.id} api={api} testing={custom.testing === api.id} onTest={() => custom.test(api)} onRemove={() => custom.remove(api)} />
+        ))}
+
+        <AddApiTile onClick={() => setAdding(true)} />
       </div>
 
       <Tooltip className="self-start" content="Consumer apps such as Copilot and the ChatGPT app are not tracked. Results are API answer samples.">
@@ -86,6 +97,7 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
       </Tooltip>
 
       {state.dialogs}
+      <AddApiDialog open={adding} onClose={() => setAdding(false)} onAdd={custom.add} />
     </div>
   );
 }

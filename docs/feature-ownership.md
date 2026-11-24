@@ -30,7 +30,7 @@ Workflow: **Audit → Findings → Fixes → Monitoring → Comparison**. A find
 | Section | Owns |
 |---|---|
 | Websites & Brands `/stores` | Website list, add website wizard, delete an archived website |
-| Integrations `/integrations` | AI platform connections (shared by all websites). Website connectors and Search Console are not here; they are in Website settings |
+| Integrations `/integrations` | AI platform connections (shared by all websites) and an "Add API" tile for others (demo only). Website connectors and Search Console are not here; they are in Website settings |
 | Billing `/settings/billing` | Plan and plan change, usage by website and by AI provider against the plan limits, demo invoices. No payment method, add-on packs or cancellation: nothing is really charged |
 | Help & Support `/help` | Help center |
 

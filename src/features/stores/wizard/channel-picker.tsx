@@ -19,17 +19,19 @@ type ChannelPickerProps = {
   onTrackingModeChange: (next: TrackingMode) => void;
   error?: string;
   disabled?: boolean;
+  /** Hide the "AI channels" label when the surrounding card already has that title. */
+  hideHeading?: boolean;
 };
 
 /** AI channels (provider API · model · search mode) plus the tracking mode. Used by Add store and Store settings. */
-export function ChannelPicker({ channels, selected, onChange, trackingMode, onTrackingModeChange, error, disabled }: ChannelPickerProps) {
+export function ChannelPicker({ channels, selected, onChange, trackingMode, onTrackingModeChange, error, disabled, hideHeading }: ChannelPickerProps) {
   const toggle = (id: string, on: boolean) => onChange(on ? [...selected, id] : selected.filter((item) => item !== id));
 
   return (
     <div className="flex flex-col gap-4">
       <div data-field="channels" tabIndex={-1} className="flex flex-col gap-2 outline-none">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[13px] font-medium text-fg">AI channels</p>
+        <div className={cn("flex items-center gap-2", hideHeading ? "justify-end" : "justify-between")}>
+          {hideHeading ? null : <p className="text-[13px] font-medium text-fg">AI channels</p>}
           <span className="tnum text-xs text-fg-subtle">{selected.length} of {channels.length} selected</span>
         </div>
         <ul className="grid grid-cols-[minmax(0,1fr)] gap-2">

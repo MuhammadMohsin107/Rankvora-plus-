@@ -60,7 +60,7 @@ export function ProfileTab({ domain, readOnly, profile, savedProfile, onProfile,
                 if (!nameError) onSaveProfile();
               }}
             >
-              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-1">
                 <Field label="Website name" required error={touched ? (nameError ?? undefined) : undefined}>
                   {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} value={profile.name} disabled={readOnly} onChange={(e) => onProfile({ ...profile, name: e.target.value })} onBlur={() => setTouched(true)} />}
                 </Field>
@@ -115,9 +115,9 @@ export function ProfileTab({ domain, readOnly, profile, savedProfile, onProfile,
 
         <Card className="flex flex-col">
           <CardHeader title="AI channels" />
-          <CardBody className="flex flex-col gap-4">
-            <ChannelPicker channels={channels} selected={channelIds} onChange={onChannels} trackingMode={trackingMode} onTrackingModeChange={onTracking} error={channelsDirty ? channelError : undefined} disabled={readOnly} />
-            <div className="flex items-center gap-2">
+          <CardBody className="flex flex-1 flex-col gap-4">
+            <ChannelPicker channels={channels} selected={channelIds} onChange={onChannels} trackingMode={trackingMode} onTrackingModeChange={onTracking} error={channelsDirty ? channelError : undefined} disabled={readOnly} hideHeading />
+            <div className="mt-auto flex items-center gap-2">
               <Button variant="primary" disabled={readOnly || !channelsDirty || channelIds.length === 0} onClick={onSaveChannels}>Save channels</Button>
             </div>
           </CardBody>

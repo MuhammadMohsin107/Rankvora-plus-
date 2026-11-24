@@ -166,11 +166,11 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
               aria-label="Search"
               title="Search (Ctrl K)"
               aria-keyshortcuts="Control+K Meta+K"
-              className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-control px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-52 md:border md:border-line-strong md:bg-surface-2 md:px-3"
+              className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-control px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-60 md:border md:border-line-strong md:bg-surface md:px-3 md:hover:border-fg-subtle md:hover:bg-surface"
             >
               <Icon name="search" size={16} className="shrink-0" />
-              <span className="hidden md:inline">Search</span>
-              <kbd className="ml-auto hidden rounded border border-line bg-surface px-1.5 py-0.5 font-sans text-2xs leading-none text-fg-subtle lg:inline">Ctrl K</kbd>
+              <span className="hidden text-fg-subtle md:inline">Search</span>
+              <span aria-hidden="true" className="tnum ml-auto hidden text-helper text-fg-subtle lg:inline">Ctrl K</span>
             </button>
             <Link href="/help" className="hidden h-9 items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg sm:inline-flex">
               <Icon name="help" size={16} />
