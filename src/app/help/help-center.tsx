@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,6 +103,14 @@ function ContactForm() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const summaryRef = useRef<HTMLDivElement>(null);
+  const doneRef = useRef<HTMLDivElement>(null);
+  const uid = useId();
+  const fieldId = (key: keyof FormValues) => `${uid}-${key}`;
+
+  // The form is replaced by the confirmation: keep keyboard and screen reader users in place.
+  useEffect(() => {
+    if (sent) doneRef.current?.focus();
+  }, [sent]);
 
   const errors = validate(values);
   const shown = (key: keyof FormValues) => (touched[key] || submitted ? errors[key] : undefined);
@@ -134,7 +142,7 @@ function ContactForm() {
 
   if (sent) {
     return (
-      <div role="status" className="flex flex-col items-start gap-3">
+      <div ref={doneRef} tabIndex={-1} role="status" className="flex flex-col items-start gap-3 outline-none">
         <Badge tone="info" icon="layers">Simulated</Badge>
         <p className="text-body font-medium text-fg">Message recorded in this browser.</p>
         <p className="text-body-sm text-fg-muted">No email was sent. In a live account the team would reply to {values.email.trim()}.</p>
@@ -150,16 +158,29 @@ function ContactForm() {
         <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-control border border-danger/30 bg-danger-soft p-3 text-body-sm text-danger-text outline-none">
           <p className="font-medium">Fix {errorList.length === 1 ? "1 field" : `${errorList.length} fields`} to continue.</p>
           <ul className="mt-1 list-disc pl-5">
-            {errorList.map(([key, message]) => <li key={key}>{message}</li>)}
+            {errorList.map(([key, message]) => (
+              <li key={key}>
+                <a
+                  href={`#${fieldId(key)}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    document.getElementById(fieldId(key))?.focus();
+                  }}
+                  className="rounded underline underline-offset-2 hover:decoration-2"
+                >
+                  {message}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
       ) : null}
-      <Field label="Name" required error={shown("name")}>
+      <Field id={fieldId("name")} label="Name" required error={shown("name")}>
         {({ id, describedBy, invalid }) => (
           <Input id={id} aria-describedby={describedBy} invalid={invalid} autoComplete="name" value={values.name} onChange={(e) => set("name")(e.target.value)} onBlur={blur("name")} />
         )}
       </Field>
-      <Field label="Email" required error={shown("email")}>
+      <Field id={fieldId("email")} label="Email" required error={shown("email")}>
         {({ id, describedBy, invalid }) => (
           <Input id={id} type="email" aria-describedby={describedBy} invalid={invalid} autoComplete="email" value={values.email} onChange={(e) => set("email")(e.target.value)} onBlur={blur("email")} />
         )}
@@ -171,7 +192,7 @@ function ContactForm() {
           </Select>
         )}
       </Field>
-      <Field label="Message" required error={shown("message")}>
+      <Field id={fieldId("message")} label="Message" required error={shown("message")}>
         {({ id, describedBy, invalid }) => (
           <Textarea id={id} rows={4} aria-describedby={describedBy} invalid={invalid} value={values.message} onChange={(e) => set("message")(e.target.value)} onBlur={blur("message")} />
         )}

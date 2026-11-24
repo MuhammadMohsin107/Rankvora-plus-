@@ -12,6 +12,13 @@ export type WizardIssue = {
   message: string;
   /** Id of the field to focus when the message is chosen. */
   fieldId?: string;
+  /** Or the `name` attribute of the control, when its id is generated. */
+  fieldName?: string;
+};
+
+const focusField = (issue: WizardIssue) => {
+  const el = issue.fieldId ? document.getElementById(issue.fieldId) : issue.fieldName ? document.querySelector<HTMLElement>(`[name="${CSS.escape(issue.fieldName)}"]`) : null;
+  el?.focus();
 };
 
 type WizardFrameProps = {
@@ -120,11 +127,11 @@ export function WizardFrame({
                 </p>
                 <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5 text-[13px] text-fg">
                   {list.map((issue) => (
-                    <li key={`${issue.fieldId ?? ""}${issue.message}`}>
-                      {issue.fieldId ? (
+                    <li key={`${issue.fieldId ?? issue.fieldName ?? ""}${issue.message}`}>
+                      {issue.fieldId || issue.fieldName ? (
                         <button
                           type="button"
-                          onClick={() => document.getElementById(issue.fieldId as string)?.focus()}
+                          onClick={() => focusField(issue)}
                           className="cursor-pointer text-left underline decoration-fg-muted underline-offset-2 hover:decoration-fg"
                         >
                           {issue.message}

@@ -70,7 +70,7 @@ export function AddWebsiteWizard({
   const errors = stepErrors(step, form, taken);
   const visible = (field: string) => (touched[field] || attempted[step] ? errors[field] : undefined);
   const blur = (field: string) => setTouched((current) => ({ ...current, [field]: true }));
-  const issues = attempted[step] ? Object.entries(errors).map(([field, message]) => ({ message: `${FIELD_LABEL[field] ?? field}: ${message}` })) : [];
+  const issues = attempted[step] ? Object.entries(errors).map(([field, message]) => ({ message: `${FIELD_LABEL[field] ?? field}: ${message}`, fieldName: field })) : [];
 
   const mark = (target: number) => {
     setStep(target);

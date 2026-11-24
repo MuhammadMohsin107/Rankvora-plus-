@@ -20,6 +20,8 @@ const bare =
   "h-8 w-full rounded-full border-0 bg-transparent text-base transition-colors duration-[var(--dur-fast)] placeholder:text-fg-subtle hover:bg-surface-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:text-body";
 
 type FieldProps = {
+  /** Fixed id for the control, so an error summary can link to it. Defaults to a generated id. */
+  id?: string;
   label: string;
   hint?: string;
   error?: string;
@@ -29,8 +31,9 @@ type FieldProps = {
 };
 
 /** Visible label + helper text + error, wired with aria-describedby. */
-export function Field({ label, hint, error, required, className, children }: FieldProps) {
-  const id = useId();
+export function Field({ id: idProp, label, hint, error, required, className, children }: FieldProps) {
+  const generatedId = useId();
+  const id = idProp ?? generatedId;
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [errorId, hintId].filter(Boolean).join(" ") || undefined;
