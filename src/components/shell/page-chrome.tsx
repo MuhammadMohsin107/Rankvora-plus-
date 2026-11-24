@@ -11,6 +11,9 @@ import { createPortal } from "react-dom";
  *                                       Render it anywhere in the page (server or client component);
  *                                       it is portalled into the header and removed when the page unmounts.
  *                                       Pages without one render nothing there. Use one per page.
+ *                                       Below 640px the header has no room for a labelled button next to the
+ *                                       website selector, search, alerts and account, so the action moves under
+ *                                       the page title (PageHeader renders the target) instead.
  *   <BreadcrumbLabel>Title</BreadcrumbLabel>
  *                                       replaces a trailing record id in the breadcrumb ("Task" -> the task
  *                                       title). Only applies to pages whose last URL segment is a record id.
@@ -19,11 +22,11 @@ import { createPortal } from "react-dom";
  * Implementation: a tiny external store (no context re-renders of the whole tree).
  */
 
-type Chrome = { slot: HTMLElement | null; label: { path: string; text: string } | null };
+type Chrome = { slot: HTMLElement | null; mobileSlot: HTMLElement | null; label: { path: string; text: string } | null };
 
-let state: Chrome = { slot: null, label: null };
+let state: Chrome = { slot: null, mobileSlot: null, label: null };
 const listeners = new Set<() => void>();
-const SERVER_STATE: Chrome = { slot: null, label: null };
+const SERVER_STATE: Chrome = { slot: null, mobileSlot: null, label: null };
 
 function setState(next: Partial<Chrome>) {
   state = { ...state, ...next };
@@ -47,10 +50,40 @@ export function registerActionSlot(element: HTMLElement | null) {
   if (state.slot !== element) setState({ slot: element });
 }
 
-/** The page's single primary action, rendered in the global header. */
-export function HeaderAction({ children }: { children: ReactNode }) {
-  const { slot } = useChrome();
-  return slot ? createPortal(children, slot) : null;
+/** Below `sm` the action leaves the header (see the note at the top). */
+const NARROW_QUERY = "(max-width: 639.98px)";
+function subscribeNarrow(listener: () => void) {
+  const query = window.matchMedia(NARROW_QUERY);
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
+}
+const getNarrow = () => window.matchMedia(NARROW_QUERY).matches;
+const getNarrowServer = () => false;
+
+/** The page's single primary action: the global header on wide screens, under the page title on narrow ones. */
+export function HeaderAction({ children, hideWhenNarrow = false }: { children: ReactNode; /** For pages that put the action somewhere else on narrow screens (a long form with its own submit button at the end). */ hideWhenNarrow?: boolean }) {
+  const { slot, mobileSlot } = useChrome();
+  const narrow = useSyncExternalStore(subscribeNarrow, getNarrow, getNarrowServer);
+  if (narrow && hideWhenNarrow) return null;
+  const target = narrow && mobileSlot ? mobileSlot : slot;
+  return target ? createPortal(children, target) : null;
+}
+
+/** Ref callback for the narrow-screen slot. The returned cleanup clears it only if it is still this element. */
+function registerMobileSlot(element: HTMLElement | null) {
+  if (!element) return;
+  setState({ mobileSlot: element });
+  return () => {
+    if (state.mobileSlot === element) setState({ mobileSlot: null });
+  };
+}
+
+/**
+ * Narrow-screen home of the page action. `PageHeader` renders it under the title: on its own row (empty and hidden when the
+ * page has no action) or, with `inline`, as the first item of the row of secondary actions so both sit side by side.
+ */
+export function MobileActionSlot({ inline = false }: { inline?: boolean }) {
+  return <div ref={registerMobileSlot} className={inline ? "contents sm:hidden" : "flex flex-wrap items-center gap-2 empty:hidden sm:hidden"} />;
 }
 
 /** Real title for the last breadcrumb when the URL ends in a record id. */

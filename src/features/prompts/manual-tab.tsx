@@ -141,7 +141,7 @@ export function ManualTab({ context, form, setForm, onCreate }: Props) {
               aria-expanded={more}
               aria-controls="more-options"
               onClick={() => setMore((open) => !open)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded text-body-sm font-medium text-accent-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="inline-flex min-h-target cursor-pointer items-center gap-1.5 rounded text-body-sm font-medium text-accent-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               <Icon name={more ? "chevron-up" : "chevron-down"} size={14} />
               {more ? "Fewer options" : "More options"}

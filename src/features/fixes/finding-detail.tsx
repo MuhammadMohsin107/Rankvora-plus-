@@ -200,17 +200,17 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
           <CardBody className="flex flex-col gap-3">
             <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
               <div className="rounded-control border border-line bg-surface-2 p-3">
-                <h3 className="flex items-center gap-1.5 text-helper font-medium text-success-text">
+                <h2 className="flex items-center gap-1.5 text-helper font-medium text-success-text">
                   <Icon name="check-circle" size={14} className="text-success-icon" />
                   Expected
-                </h3>
+                </h2>
                 <p className="mt-1 text-body-sm text-fg">{finding.expected}</p>
               </div>
               <div className="rounded-control border border-line bg-surface-2 p-3">
-                <h3 className="flex items-center gap-1.5 text-helper font-medium text-warning-text">
+                <h2 className="flex items-center gap-1.5 text-helper font-medium text-warning-text">
                   <Icon name="alert-circle" size={14} className="text-warning-icon" />
                   Observed
-                </h3>
+                </h2>
                 <p className="mt-1 text-body-sm text-fg">{finding.actual}</p>
               </div>
             </div>
@@ -317,7 +317,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
                                   </>
                                 ) : e.kind === "page" ? (
                                   <>
-                                    <a href={e.url} target="_blank" rel="noreferrer noopener" className="inline-flex max-w-full items-center gap-1 text-body-sm font-medium text-accent-text hover:underline">
+                                    <a href={e.url} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-target max-w-full items-center gap-1 text-body-sm font-medium text-accent-text hover:underline">
                                       <span className="truncate">{e.url.replace("https://", "")}</span>
                                       <Icon name="external" size={12} className="shrink-0" />
                                     </a>
@@ -354,7 +354,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
                           <ul className="flex flex-col gap-1">
                             {finding.affectedUrls.map((url) => (
                               <li key={url}>
-                                <a href={url} target="_blank" rel="noreferrer noopener" className="inline-flex max-w-full items-center gap-1 text-body-sm text-accent-text hover:underline">
+                                <a href={url} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-target max-w-full items-center gap-1 text-body-sm text-accent-text hover:underline">
                                   <span className="truncate">{url.replace("https://", "")}</span>
                                   <Icon name="external" size={12} className="shrink-0" />
                                 </a>

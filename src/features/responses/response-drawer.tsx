@@ -118,7 +118,7 @@ function CitationList({ response }: { response: ResponseSample }) {
             <ul className="divide-y divide-line rounded-control border border-line">
               {items.map((c) => (
                 <li key={c.url} aria-current={c.url === cited ? "true" : undefined} className={c.url === cited ? "min-w-0 bg-accent-soft px-3 py-2" : "min-w-0 px-3 py-2"}>
-                  <a href={c.url} target="_blank" rel="noreferrer noopener" className="inline-flex max-w-full items-center gap-1 text-body-sm font-medium text-accent-text hover:underline">
+                  <a href={c.url} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-target max-w-full items-center gap-1 text-body-sm font-medium text-accent-text hover:underline">
                     <span className="truncate">{c.title}</span>
                     <Icon name="external" size={12} className="shrink-0" />
                   </a>
@@ -314,7 +314,7 @@ export function ResponseButton({ response, samples, evidence, children }: { resp
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="cursor-pointer rounded text-left text-body-sm font-medium text-accent-text hover:underline pointer-coarse:min-h-11">
+      <button type="button" onClick={() => setOpen(true)} className="rv-target cursor-pointer rounded text-left text-body-sm font-medium text-accent-text hover:underline pointer-coarse:min-h-11">
         {children ?? "View response"}
       </button>
       <ResponseDrawer response={response} open={open} onClose={() => setOpen(false)} samples={samples} evidence={evidence} />

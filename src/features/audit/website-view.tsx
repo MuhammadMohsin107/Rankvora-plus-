@@ -71,7 +71,7 @@ export function WebsiteView({ audit, lane, storeId, otherWithWebsite }: { audit:
                       <span tabIndex={0} className="cursor-help text-helper text-fg-muted underline decoration-dotted">Rule</span>
                     </Tooltip>
                     {c.findingId ? (
-                      <Link href={`/stores/${storeId}/fixes/findings/${c.findingId}`} className="text-label font-medium text-accent-text hover:underline">Finding</Link>
+                      <Link href={`/stores/${storeId}/fixes/findings/${c.findingId}`} className="rv-target text-label font-medium text-accent-text hover:underline">Finding</Link>
                     ) : null}
                     {c.allowed ? <Badge tone="success" icon="check-circle">Allowed</Badge> : <Badge tone="danger" icon="lock">Disallowed</Badge>}
                   </div>

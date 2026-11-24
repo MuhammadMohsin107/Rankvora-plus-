@@ -137,7 +137,7 @@ export function OverviewView({ detail, base }: { detail: ComparisonDetail; base:
                       <span>{item.text}</span>
                     </p>
                     {item.to ? (
-                      <Link href={`${base}/${item.to.tab}${item.to.query ? `?${item.to.query}` : ""}`} className="text-body-sm font-medium text-accent-text hover:underline">
+                      <Link href={`${base}/${item.to.tab}${item.to.query ? `?${item.to.query}` : ""}`} className="rv-target text-body-sm font-medium text-accent-text hover:underline">
                         View
                       </Link>
                     ) : null}

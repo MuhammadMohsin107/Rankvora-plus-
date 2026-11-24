@@ -23,7 +23,7 @@ export function Breadcrumbs({ pathname }: { pathname: string }) {
           return (
             <li key={`${index}-${crumb.label}`} className={last ? "flex min-w-[5rem] flex-1 items-center gap-0.5" : "flex min-w-0 max-w-[40%] shrink items-center gap-0.5"}>
               {crumb.href && !last ? (
-                <Link href={crumb.href} title={crumb.label} className="min-w-0 truncate rounded px-0.5 hover:text-fg hover:underline">{crumb.label}</Link>
+                <Link href={crumb.href} title={crumb.label} className="block min-w-0 truncate rounded px-0.5 leading-target hover:text-fg hover:underline">{crumb.label}</Link>
               ) : (
                 <span aria-current={last ? "page" : undefined} title={crumb.label} className={last ? "truncate font-medium text-fg" : undefined}>{crumb.label}</span>
               )}

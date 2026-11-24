@@ -126,8 +126,8 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
                 label: "Compared with",
                 value: audit.baseline ? (
                   <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <Link href={`/stores/${storeId}/audits/${audit.baseline.id}`} className="text-accent-text hover:underline">{audit.baseline.title}</Link>
-                    {audit.snapshotId ? <Link href={`/stores/${storeId}/comparisons/new?baseline=${audit.baseline.id}&current=${audit.id}`} className="text-helper text-accent-text hover:underline">Compare</Link> : null}
+                    <Link href={`/stores/${storeId}/audits/${audit.baseline.id}`} className="rv-target text-accent-text hover:underline">{audit.baseline.title}</Link>
+                    {audit.snapshotId ? <Link href={`/stores/${storeId}/comparisons/new?baseline=${audit.baseline.id}&current=${audit.id}`} className="rv-target text-helper text-accent-text hover:underline">Compare</Link> : null}
                   </span>
                 ) : (
                   <span className="text-fg-muted">No comparable earlier audit</span>

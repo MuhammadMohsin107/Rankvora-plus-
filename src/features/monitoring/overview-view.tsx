@@ -212,7 +212,7 @@ export function OverviewView({ data }: { data: MonitoringOverview }) {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card>
-          <CardHeader title="Changes" actions={<Link href={`${base}/alerts`} className="text-label font-medium text-accent-text hover:underline">All alerts</Link>} />
+          <CardHeader title="Changes" actions={<Link href={`${base}/alerts`} className="rv-target text-label font-medium text-accent-text hover:underline">All alerts</Link>} />
           <CardBody>
             {changes.length === 0 ? (
               <p className="text-body-sm text-fg-muted">Nothing changed.</p>

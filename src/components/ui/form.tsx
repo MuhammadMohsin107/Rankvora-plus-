@@ -85,7 +85,7 @@ export function Checkbox({ label, description, className, id: idProp, ...rest }:
   const generated = useId();
   const id = idProp ?? generated;
   return (
-    <label htmlFor={id} className={cn("flex cursor-pointer items-start gap-2.5", className)}>
+    <label htmlFor={id} className={cn("flex min-h-target cursor-pointer items-start gap-2.5", className)}>
       <input
         id={id}
         type="checkbox"
@@ -119,15 +119,16 @@ export function Switch({ checked, onChange, label, disabled, className }: Switch
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors duration-[var(--dur)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-45 pointer-coarse:h-6 pointer-coarse:w-11",
+        // 24px tall: the smallest pointer target, independent of the spacing step (WCAG 2.2 2.5.8).
+        "relative inline-flex h-target w-[2.625rem] shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors duration-[var(--dur)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-45 pointer-coarse:h-[28px] pointer-coarse:w-[48px]",
         checked ? "bg-accent" : "bg-fg-faint",
         className,
       )}
     >
       <span
         className={cn(
-          "inline-block size-4 rounded-full bg-surface shadow-card transition-transform duration-[var(--dur)] motion-reduce:transition-none pointer-coarse:size-5",
-          checked ? "translate-x-[18px] pointer-coarse:translate-x-[22px]" : "translate-x-0.5",
+          "inline-block size-[18px] rounded-full bg-surface shadow-card transition-transform duration-[var(--dur)] motion-reduce:transition-none pointer-coarse:size-[22px]",
+          checked ? "translate-x-[20px] pointer-coarse:translate-x-[22px]" : "translate-x-[2px]",
         )}
       />
     </button>

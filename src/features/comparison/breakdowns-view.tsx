@@ -141,7 +141,7 @@ function Citations({ data }: { data: BreakdownData }) {
               {data.urls.slice(0, 10).map((u) => (
                 <li key={u.url} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">
                   <div className="min-w-0">
-                    <a href={u.url} target="_blank" rel="noreferrer noopener" className="inline-flex max-w-full items-center gap-1 text-body-sm font-medium text-accent-text hover:underline">
+                    <a href={u.url} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-target max-w-full items-center gap-1 text-body-sm font-medium text-accent-text hover:underline">
                       <span className="truncate">{u.title}</span>
                       <Icon name="external" size={12} className="shrink-0" />
                     </a>

@@ -117,6 +117,7 @@
   --sidebar-w: 232px;
   --header-h: 56px;
   --page-pad: 16px;
+  --target-min: 24px; /* smallest pointer target (WCAG 2.2 AA 2.5.8). Not tied to the spacing step. */
 }
 
 @media (min-width: 640px) {
@@ -261,6 +262,8 @@
   --spacing-card: var(--card-pad);
   --spacing-sidebar: var(--sidebar-w);
   --spacing-header: var(--header-h);
+  --spacing-target: var(--target-min);
+  --leading-target: var(--target-min);
   --spacing-page: var(--page-pad);
 
   /* type scale: text-title, text-section, text-card-title, text-body, text-body-sm, text-label, text-helper, text-metric */
@@ -367,6 +370,12 @@ input[data-bare]:focus-visible {
   }
   .rv-page-x {
     padding-inline: var(--page-pad);
+  }
+  /* stand-alone text link or text button: keeps a 24px tall hit area whatever the text size or spacing step */
+  .rv-target {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target-min);
   }
   /* diagonal hatch: non-colour cue for baseline / comparison marks */
   .rv-hatch {

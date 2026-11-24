@@ -83,11 +83,11 @@ export function LocalFindingView({ storeId, findingId, tasks, actorName }: Props
             {raw.expected || raw.actual ? (
               <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
                 <div className="rounded-control border border-line bg-surface-2 p-3">
-                  <h3 className="text-helper font-medium text-success-text">Expected</h3>
+                  <h2 className="text-helper font-medium text-success-text">Expected</h2>
                   <p className="mt-1 text-body-sm text-fg">{raw.expected ?? "Not recorded."}</p>
                 </div>
                 <div className="rounded-control border border-line bg-surface-2 p-3">
-                  <h3 className="text-helper font-medium text-warning-text">Observed</h3>
+                  <h2 className="text-helper font-medium text-warning-text">Observed</h2>
                   <p className="mt-1 text-body-sm text-fg">{raw.actual ?? "Not recorded."}</p>
                 </div>
               </div>

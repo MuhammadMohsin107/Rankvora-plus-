@@ -80,7 +80,7 @@ function PlanCard({ plan, current, direction, onChange }: { plan: BillingPlan; c
     >
       <header className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-card-title font-semibold text-fg">{plan.name}</h3>
+          <h2 className="text-card-title font-semibold text-fg">{plan.name}</h2>
           {current ? <Badge tone="accent" icon="check-circle">Current</Badge> : null}
         </div>
         <p className="text-helper text-fg-muted">{BLURB[plan.id]}</p>

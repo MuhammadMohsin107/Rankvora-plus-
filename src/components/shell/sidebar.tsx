@@ -78,7 +78,7 @@ export function Sidebar({ groups, pathname, counts, onSearch }: SidebarProps) {
         ) : null}
         {groups.map((group) => (
           <section key={group.id} aria-labelledby={`${uid}-${group.id}`} className="flex flex-col gap-0.5">
-            <h2 id={`${uid}-${group.id}`} className="px-2.5 pb-1 text-2xs font-semibold uppercase tracking-wider text-sidebar-fg-muted">{group.label}</h2>
+            <p id={`${uid}-${group.id}`} className="px-2.5 pb-1 text-2xs font-semibold uppercase tracking-wider text-sidebar-fg-muted">{group.label}</p>
             <ul className="flex flex-col gap-0.5">
               {group.items.map((item) => (
                 <li key={item.id} className="w-full">

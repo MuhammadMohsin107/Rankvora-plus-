@@ -11,7 +11,7 @@ export type HostResult = { host: string; error?: undefined } | { host?: undefine
 /** "https://Shop.Example.com/path" → "shop.example.com". Keeps "www.". */
 export function normalizeWebsite(input: string): HostResult {
   const raw = input.trim();
-  if (!raw) return { error: "Website is required." };
+  if (!raw) return { error: "Domain is required." };
 
   const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw);
   if (!hasScheme && /^[a-z][a-z0-9+.-]*:/i.test(raw) && !/^[^/]*:\d+(\/|$)/.test(raw)) {
@@ -22,13 +22,13 @@ export function normalizeWebsite(input: string): HostResult {
   try {
     url = new URL(hasScheme ? raw : `https://${raw}`);
   } catch {
-    return { error: "Enter a valid website, e.g. example.com." };
+    return { error: "Enter a valid domain, e.g. example.com." };
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") return { error: "Only http and https websites are supported." };
   if (url.username || url.password) return { error: "Remove credentials from the address." };
 
   const host = url.hostname.replace(/\.$/, "").toLowerCase();
-  if (!host) return { error: "Website is required." };
+  if (!host) return { error: "Domain is required." };
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith("[")) return { error: "An IP address is not a valid website domain." };
   const labels = host.split(".");
   if (labels.length < 2) return { error: "Include a top-level domain, e.g. example.com." };

@@ -26,7 +26,7 @@ export function LinkTabs({ items, label, className }: { items: LinkTab[]; label:
             )}
           >
             {item.label}
-            {item.count !== undefined ? <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg-muted">{item.count}</span> : null}
+            {item.count !== undefined ? <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg">{item.count}</span> : null}
           </Link>
         );
       })}
@@ -101,7 +101,7 @@ export function Tabs({
               )}
             >
               {tab.label}
-              {tab.count !== undefined ? <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg-muted">{tab.count}</span> : null}
+              {tab.count !== undefined ? <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg">{tab.count}</span> : null}
             </button>
           );
         })}

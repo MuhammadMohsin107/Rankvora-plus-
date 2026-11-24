@@ -308,7 +308,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
       <PageHeader title="Prompt Library" subtitle={coverage} />
     <div className="flex min-w-0 flex-col gap-3">
 
-      <section aria-label="Library overview" className="grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-card border border-line bg-line shadow-card sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="Library overview" className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-card xl:grid-cols-4">
         {STATUS_CELLS.map((status) => {
           const pressed = filters.status === status;
           return (

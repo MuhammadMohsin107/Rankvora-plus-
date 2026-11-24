@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-import { BreadcrumbLabel } from "./page-chrome";
+import { BreadcrumbLabel, MobileActionSlot } from "./page-chrome";
 
 type PageHeaderProps = {
   title: string;
@@ -35,8 +35,15 @@ export function PageHeader({ title, subtitle, meta, actions, tabs, className }: 
           </div>
           {subtitle ? <p className="mt-1 text-body-sm text-fg-muted">{subtitle}</p> : null}
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <MobileActionSlot inline />
+            {actions}
+          </div>
+        ) : null}
       </div>
+      {/* The page's primary action lands here below 640px (it lives in the global header above that). */}
+      {actions ? null : <MobileActionSlot />}
       {tabs}
     </header>
   );

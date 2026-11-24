@@ -155,7 +155,7 @@ function AddApiBody({ open, onClose, onAdd }: { open: boolean; onClose: () => vo
 export function CustomApiCard({ api, testing, onTest, onRemove }: { api: CustomApi; testing: boolean; onTest: () => void; onRemove: () => void }) {
   return (
     <Card as="article" className="flex flex-col">
-      <CardHeader as="h3" title={api.name} subtitle={api.apiType} actions={<Status kind="integration" value="connected" />} />
+      <CardHeader title={api.name} subtitle={api.apiType} actions={<Status kind="integration" value="connected" />} />
       <CardBody className="flex flex-1 flex-col gap-4">
         <KeyValue
           columns={2}

@@ -9,10 +9,10 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { useToast } from "@/components/ui/toast";
 import { WizardFrame } from "@/components/ui/wizard";
-import { demoNow, demoStore, simulatedToast, useDemoCollection } from "@/demo-state";
+import { demoNow, demoStore, simulatedToast, useDemoCollection, useDemoSettings } from "@/demo-state";
 import { cn } from "@/lib/cn";
 import type { AiChannel, Store } from "@/types/core";
-import type { StoreSetupSample } from "@/types/settings";
+import type { BillingState, PlanId, StoreSetupSample } from "@/types/settings";
 
 import { settingKey } from "../settings/keys";
 import { BasicsStep, BrandStep, ConnectionsStep, ReviewStep, type StepProps } from "./steps";
@@ -34,10 +34,30 @@ const FIELD_LABEL: Record<string, string> = {
 };
 
 /** Four steps that really create a website in demo-state: it then shows in the selector, list and search. */
-export function AddWebsiteWizard({ channels, sample, existing }: { channels: AiChannel[]; sample: StoreSetupSample; existing: ExistingWebsite[] }) {
+export function AddWebsiteWizard({
+  channels,
+  sample,
+  existing,
+  plans,
+  billingState,
+  seededActive,
+}: {
+  channels: AiChannel[];
+  sample: StoreSetupSample;
+  existing: ExistingWebsite[];
+  /** Website allowance of each plan, so the review step can say when this website goes over the current plan. */
+  plans: { id: PlanId; name: string; websites: number }[];
+  billingState: BillingState;
+  /** Seeded websites that are not archived. */
+  seededActive: number;
+}) {
   const router = useRouter();
   const toast = useToast();
   const { rows: localWebsites, create } = useDemoCollection<Store>("websites", NO_WEBSITES);
+  const { value: billing } = useDemoSettings<BillingState>("org.billing", billingState);
+  const plan = plans.find((p) => p.id === billing.planId) ?? plans[0];
+  const activeWebsites = seededActive + localWebsites.filter((w) => w.status !== "archived").length;
+  const planNote = plan && activeWebsites >= plan.websites ? { plan: plan.name, limit: plan.websites, count: activeWebsites } : null;
   // Seeded websites plus the ones made in this browser: a second website on the same domain is refused.
   const taken = useMemo(() => [...existing, ...localWebsites.map((w) => ({ name: w.name, domain: w.domain }))], [existing, localWebsites]);
   const [form, setForm] = useState<WizardForm>(initialForm);
@@ -132,7 +152,7 @@ export function AddWebsiteWizard({ channels, sample, existing }: { channels: AiC
       {step === 0 ? <BasicsStep {...stepProps} /> : null}
       {step === 1 ? <BrandStep {...stepProps} sample={sample} /> : null}
       {step === 2 ? <ConnectionsStep {...stepProps} channels={channels} /> : null}
-      {step === 3 ? <ReviewStep form={form} channels={channels} /> : null}
+      {step === 3 ? <ReviewStep form={form} channels={channels} planNote={planNote} /> : null}
     </WizardFrame>
   );
 }

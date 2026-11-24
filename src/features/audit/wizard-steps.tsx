@@ -329,7 +329,7 @@ export function StepCriteria({ data, state, set }: StepProps) {
             checked={state.searchConsole}
             disabled={!data.integrations.searchConsole}
             onChange={(searchConsole) => set({ searchConsole })}
-            extra={data.integrations.searchConsole ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={websiteConnectionsHref(data.store.id)} className="text-helper font-medium text-accent-text hover:underline">Connect</Link>}
+            extra={data.integrations.searchConsole ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={websiteConnectionsHref(data.store.id)} className="rv-target text-helper font-medium text-accent-text hover:underline">Connect</Link>}
           />
           <ToggleRow title="PageSpeed Insights" description="Lab performance. Field data only where it exists." checked={state.pageSpeed} onChange={(pageSpeed) => set({ pageSpeed })} />
           <ToggleRow
@@ -338,7 +338,7 @@ export function StepCriteria({ data, state, set }: StepProps) {
             checked={state.cms}
             disabled={!data.integrations.cms}
             onChange={(cms) => set({ cms })}
-            extra={data.integrations.cms ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={websiteConnectionsHref(data.store.id)} className="text-helper font-medium text-accent-text hover:underline">{data.integrations.cmsNeedsAttention ? "Fix" : "Connect"}</Link>}
+            extra={data.integrations.cms ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={websiteConnectionsHref(data.store.id)} className="rv-target text-helper font-medium text-accent-text hover:underline">{data.integrations.cmsNeedsAttention ? "Fix" : "Connect"}</Link>}
           />
         </div>
       </Block>

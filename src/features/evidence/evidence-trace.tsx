@@ -41,7 +41,7 @@ function Chip({ node, compact, responseId, onOpenResponse }: { node: EvidenceNod
   const opensDrawer = onOpenResponse && responseId && (node.kind === "response" || node.kind === "citation");
   const classes = cn(
     "inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border border-line bg-surface text-fg transition-colors duration-[var(--dur-fast)] hover:border-line-strong hover:bg-surface-2",
-    compact ? "h-6 px-1.5 text-helper" : "h-7 px-2.5 text-label pointer-coarse:h-9",
+    compact ? "h-target px-1.5 text-helper" : "h-7 px-2.5 text-label pointer-coarse:h-9",
   );
   const body = (
     <>

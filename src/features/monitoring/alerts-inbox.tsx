@@ -150,7 +150,7 @@ export function AlertsInbox({ events, storeTimezone }: { events: MonitoringEvent
       ),
     },
     { id: "severity", header: "Severity", sort: (e) => (e.alert ? SEVERITY_ORDER[e.alert.severity] : 0), cell: (e) => (e.alert ? <Status kind="severity" value={SEVERITY_STATUS[e.alert.severity]} /> : <span className="text-helper text-fg-muted">No alert</span>) },
-    { id: "status", header: "Status", sort: (e) => e.liveStatus ?? "", cell: (e) => (e.liveStatus ? <Status kind="alert" value={e.liveStatus} /> : <span className="text-fg-faint">—</span>) },
+    { id: "status", header: "Status", sort: (e) => e.liveStatus ?? "", cell: (e) => (e.liveStatus ? <Status kind="alert" value={e.liveStatus} /> : <span className="text-fg-subtle">—</span>) },
     { id: "when", header: "Detected", hideBelow: "sm", sort: (e) => e.at, cell: (e) => <When iso={e.at} tz={storeTimezone} /> },
     {
       id: "actions",

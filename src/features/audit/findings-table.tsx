@@ -60,7 +60,7 @@ export function FindingsTable({ findings, storeId, tasks = [] }: { findings: Aud
     { id: "severity", header: "Severity", sort: (f) => SEVERITY_ORDER.indexOf(f.severity), cell: (f) => <Status kind="severity" value={f.severity} /> },
     { id: "status", header: "Status", sort: (f) => f.status, cell: (f) => <Status kind="finding" value={f.status} />, hideBelow: "sm" },
     { id: "affected", header: "Affected", sort: affectedCount, cell: (f) => <span className="tnum text-fg-muted">{affectedText(f)}</span>, hideBelow: "md" },
-    { id: "open", header: "Open", srOnlyHeader: true, align: "right", cell: (f) => <Link href={href(f)} className="text-label font-medium text-accent-text hover:underline">Fixes</Link> },
+    { id: "open", header: "Open", srOnlyHeader: true, align: "right", cell: (f) => <Link href={href(f)} className="rv-target text-label font-medium text-accent-text hover:underline">Fixes</Link> },
   ];
 
   const present = <T extends string>(values: T[]) => [...new Set(values)];

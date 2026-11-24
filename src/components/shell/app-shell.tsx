@@ -166,7 +166,7 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
               aria-label="Search"
               title="Search (Ctrl K)"
               aria-keyshortcuts="Control+K Meta+K"
-              className="inline-flex h-btn cursor-pointer items-center gap-2 rounded-control px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-60 md:border md:border-line-strong md:bg-surface md:px-3 md:hover:border-fg-subtle md:hover:bg-surface"
+              className="inline-flex h-btn cursor-pointer items-center gap-2 rounded-full px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-60 md:border md:border-line-strong md:bg-surface md:px-4 md:hover:border-fg-subtle md:hover:bg-surface"
             >
               <Icon name="search" size={16} className="shrink-0" />
               <span className="hidden text-fg-subtle md:inline">Search</span>

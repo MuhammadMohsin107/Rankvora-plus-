@@ -342,7 +342,7 @@ export function DataTable<T>({
                             type="button"
                             onClick={() => toggleSort(column)}
                             className={cn(
-                              "-mx-1 inline-flex min-h-6 cursor-pointer items-center gap-1 rounded px-1 py-0.5 hover:text-fg pointer-coarse:min-h-11",
+                              "-mx-1 inline-flex min-h-target cursor-pointer items-center gap-1 rounded px-1 py-0.5 hover:text-fg pointer-coarse:min-h-11",
                               column.align === "right" && "flex-row-reverse",
                               sort?.column === column.id && "text-fg",
                             )}

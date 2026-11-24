@@ -83,7 +83,7 @@ export function MonitoringHeader() {
                 >
                   {tab.label}
                   {tab.count !== undefined ? (
-                    <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg-muted">
+                    <span className="tnum rounded-full bg-surface-3 px-1.5 text-helper text-fg">
                       {tab.count}
                       <span className="sr-only"> unread</span>
                     </span>

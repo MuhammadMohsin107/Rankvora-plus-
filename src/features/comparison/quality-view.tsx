@@ -89,7 +89,7 @@ export function QualityView({ detail, base }: { detail: ComparisonDetail; base: 
                   <span className="text-body-sm text-fg">{REASON_LABEL[reason] ?? reason}</span>
                   <span className="flex items-center gap-4">
                     <span className="tnum text-body-sm text-fg-muted">{count} slots</span>
-                    <Link href={`${base}/prompts?left=1`} className="text-body-sm font-medium text-accent-text hover:underline">View</Link>
+                    <Link href={`${base}/prompts?left=1`} className="rv-target text-body-sm font-medium text-accent-text hover:underline">View</Link>
                   </span>
                 </li>
               ))}

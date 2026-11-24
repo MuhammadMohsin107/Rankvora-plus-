@@ -172,7 +172,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
                 return (
                   <li key={item.id} className="flex flex-wrap items-start justify-between gap-3 px-3 py-2.5">
                     <div className="min-w-0 flex-1">
-                      <a href={item.pageUrl} target="_blank" rel="noreferrer noopener" className="inline-flex max-w-full items-center gap-1 text-[13px] font-medium text-accent-text hover:underline">
+                      <a href={item.pageUrl} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-target max-w-full items-center gap-1 text-[13px] font-medium text-accent-text hover:underline">
                         <span className="truncate">{item.pageUrl.replace("https://", "")}</span>
                         <Icon name="external" size={12} className="shrink-0" />
                       </a>

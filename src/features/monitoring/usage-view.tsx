@@ -120,7 +120,7 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
 
       {planRequests ? (
         <Card>
-          <CardHeader title="Plan requests" subtitle="Requests this month, all modules" actions={<Link href="/settings/billing" className="text-label font-medium text-accent-text hover:underline">Billing</Link>} />
+          <CardHeader title="Plan requests" subtitle="Requests this month, all modules" actions={<Link href="/settings/billing" className="rv-target text-label font-medium text-accent-text hover:underline">Billing</Link>} />
           <CardBody className="flex flex-col gap-2">
             <div className="flex items-baseline justify-between">
               <span className="tnum text-body-sm text-fg-muted"><span className="text-body font-semibold text-fg">{formatNumber(planRequests.used)}</span> / {formatNumber(planRequests.cap)} used</span>

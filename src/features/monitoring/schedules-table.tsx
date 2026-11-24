@@ -79,7 +79,7 @@ export function SchedulesTable() {
       id: "name",
       header: "Schedule",
       sort: (r) => r.name,
-      cell: (r) => <Link href={`${base}/schedules/${r.id}`} className="block max-w-72 truncate text-body-sm font-medium text-fg hover:text-accent-text hover:underline">{r.name}</Link>,
+      cell: (r) => <Link href={`${base}/schedules/${r.id}`} className="block max-w-72 truncate text-body-sm font-medium leading-target text-fg hover:text-accent-text hover:underline">{r.name}</Link>,
     },
     { id: "frequency", header: "Frequency", hideBelow: "md", cell: (r) => <span className="whitespace-nowrap text-body-sm text-fg">{r.frequencyLabel}</span> },
     {
@@ -111,7 +111,7 @@ export function SchedulesTable() {
       header: "Next run",
       sort: (r) => (r.status === "active" || r.status === "needs_attention" ? (r.nextRunAt ?? null) : null),
       hideBelow: "sm",
-      cell: (r) => (r.status === "active" || r.status === "needs_attention" ? <When iso={r.nextRunAt} tz={data.timezone} /> : <span className="text-fg-faint">—</span>),
+      cell: (r) => (r.status === "active" || r.status === "needs_attention" ? <When iso={r.nextRunAt} tz={data.timezone} /> : <span className="text-fg-subtle">—</span>),
     },
     {
       id: "actions",

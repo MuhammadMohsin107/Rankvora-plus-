@@ -31,7 +31,7 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
           const isTesting = state.testing === p.provider;
           return (
             <Card key={p.provider} as="article" className="flex flex-col">
-              <CardHeader as="h3" title={p.label} subtitle={p.apiLabel} actions={<Status kind="integration" value={s.status} />} />
+              <CardHeader title={p.label} subtitle={p.apiLabel} actions={<Status kind="integration" value={s.status} />} />
               <CardBody className="flex flex-1 flex-col gap-4">
                 <KeyValue
                   columns={2}
@@ -69,7 +69,7 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
           const notified = state.local[p.provider].notify;
           return (
             <Card key={p.provider} as="article" className="flex flex-col bg-surface-2/40">
-              <CardHeader as="h3" title={p.label} subtitle={p.apiLabel} actions={<Badge tone="neutral">Later</Badge>} />
+              <CardHeader title={p.label} subtitle={p.apiLabel} actions={<Badge tone="neutral">Later</Badge>} />
               <CardBody className="flex flex-1 flex-col gap-4">
                 <p className="text-body-sm text-fg-muted">{p.laterNote}</p>
                 {notified ? (

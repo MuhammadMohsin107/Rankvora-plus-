@@ -87,7 +87,7 @@ export function ScheduleDetail({ scheduleId }: { scheduleId: string }) {
           />
         </CardBody>
       </Card>
-      <Section title="Recent runs" actions={<Link href={`${base}/runs`} className="text-label font-medium text-accent-text hover:underline">All runs</Link>}>
+      <Section title="Recent runs" actions={<Link href={`${base}/runs`} className="rv-target text-label font-medium text-accent-text hover:underline">All runs</Link>}>
         <RunsTable runs={mine.slice(0, 5)} compact />
       </Section>
     </div>

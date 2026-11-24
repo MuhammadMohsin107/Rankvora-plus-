@@ -132,7 +132,7 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
             <ul className="flex flex-wrap gap-1.5">
               {rec.evidenceIds.map((id) => (
                 <li key={id}>
-                  <a href={`#ev-${id}`} onClick={onOpenEvidence ? (event) => { event.preventDefault(); onOpenEvidence(id); } : undefined} className="inline-flex max-w-full items-center gap-1 rounded-full border border-line-strong bg-surface px-2 py-0.5 text-helper text-accent-text hover:bg-surface-2">
+                  <a href={`#ev-${id}`} onClick={onOpenEvidence ? (event) => { event.preventDefault(); onOpenEvidence(id); } : undefined} className="inline-flex min-h-target max-w-full items-center gap-1 rounded-full border border-line-strong bg-surface px-2 py-0.5 text-helper text-accent-text hover:bg-surface-2">
                     <Icon name="link" size={12} className="shrink-0" />
                     <span className="truncate">{evidenceLabels[id] ?? id}</span>
                   </a>
@@ -167,7 +167,7 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
           <>
             {local.taskId ? (
               <>
-                <Link href={`/stores/${storeId}/fixes/tasks/${local.taskId}`} className="inline-flex items-center gap-1.5 text-label font-medium text-accent-text hover:underline">
+                <Link href={`/stores/${storeId}/fixes/tasks/${local.taskId}`} className="inline-flex min-h-target items-center gap-1.5 text-label font-medium text-accent-text hover:underline">
                   <Icon name="fixes" size={14} />
                   Open {local.taskId}
                 </Link>

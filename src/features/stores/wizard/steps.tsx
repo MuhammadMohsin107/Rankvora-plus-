@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
 
 import { Badge, Chip } from "@/components/ui/badge";
@@ -376,7 +377,7 @@ export function ConnectionsStep({ form, patch, channels }: StepProps & { channel
 
 /* ───────── 4. Review ───────── */
 
-export function ReviewStep({ form, channels }: { form: WizardForm; channels: AiChannel[] }) {
+export function ReviewStep({ form, channels, planNote }: { form: WizardForm; channels: AiChannel[]; planNote?: { plan: string; limit: number; count: number } | null }) {
   const site = normalizeWebsite(form.website);
   const country = COUNTRIES.find((c) => c.code === form.country);
   const status = startingStatus(form, false);
@@ -408,6 +409,12 @@ export function ReviewStep({ form, channels }: { form: WizardForm; channels: AiC
           </li>
         ))}
       </ul>
+      {planNote ? (
+        <Callout tone="warning" title="Over your plan">
+          {planNote.plan} includes {planNote.limit} {planNote.limit === 1 ? "website" : "websites"} and you have {planNote.count}. This one is allowed in the demo and shows over the limit in{" "}
+          <Link href="/settings/billing" className="font-medium text-accent-text hover:underline">Billing</Link>.
+        </Callout>
+      ) : null}
       <Callout tone={status === "ready" ? "success" : "info"} title={`Starts as ${STATUS.store[status].label}`}>
         {form.channelIds.length === 0 ? "Choose an AI channel later in Website settings to start tracking." : "Run an audit to see the first results."} Stored in this browser only.
       </Callout>

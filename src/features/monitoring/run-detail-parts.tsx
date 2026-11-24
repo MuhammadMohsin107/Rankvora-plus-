@@ -60,14 +60,14 @@ export function RunJobsTable({ detail, storeId, initialResponseId = null }: Tabl
       id: "result",
       header: "Brand result",
       hideBelow: "lg",
-      cell: (j) => (j.status === "failed" ? <span className="text-fg-faint">—</span> : <Status kind="recommendation" value={outcomeStatus[j.outcome]} />),
+      cell: (j) => (j.status === "failed" ? <span className="text-fg-subtle">—</span> : <Status kind="recommendation" value={outcomeStatus[j.outcome]} />),
     },
     { id: "attempts", header: "Attempts", align: "right", hideBelow: "lg", sort: (j) => j.attempts, cell: (j) => <span className="tnum text-body-sm">{j.attempts}</span> },
     {
       id: "error",
       header: "Error",
       hideBelow: "xl",
-      cell: (j) => (j.errorClass ? <Badge tone="danger">{FAILURE_LABEL[j.errorClass]}</Badge> : <span className="text-fg-faint">—</span>),
+      cell: (j) => (j.errorClass ? <Badge tone="danger">{FAILURE_LABEL[j.errorClass]}</Badge> : <span className="text-fg-subtle">—</span>),
     },
   ];
 

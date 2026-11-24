@@ -345,7 +345,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <HeaderAction>{primary("max-sm:hidden")}</HeaderAction>
+      <HeaderAction hideWhenNarrow>{primary()}</HeaderAction>
 
       <div className="flex min-w-0 flex-col gap-3">
         <Block title="Basics">

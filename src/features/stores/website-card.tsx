@@ -22,9 +22,9 @@ export function WebsiteCard({ store, counts, onDelete }: { store: Store; counts?
         <div className="flex min-w-0 items-center gap-3">
           <WebsiteAvatar name={store.name} size="md" />
           <div className="min-w-0">
-            <h3 className="truncate text-card-title font-semibold text-fg">
+            <h2 className="truncate text-card-title font-semibold text-fg">
               <Link href={`/stores/${store.id}`} className="rounded after:absolute after:inset-0 after:rounded-card after:content-[''] hover:underline">{store.name}</Link>
-            </h3>
+            </h2>
             <p className="truncate text-helper text-fg-muted">{store.domain}</p>
           </div>
         </div>
