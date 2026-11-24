@@ -8,6 +8,7 @@ import { Button } from "./button";
 import { Chip } from "./badge";
 import { SearchField } from "./form";
 import { Icon } from "./icon";
+import { Menu, type MenuItem } from "./menu";
 
 export type FilterBarFilter = {
   id: string;
@@ -73,31 +74,33 @@ export function FilterBar({ label, search, filters = [], children, chips = false
         {search && filters.length > 0 ? <span aria-hidden="true" className="mx-1 hidden h-5 w-px shrink-0 bg-line sm:block" /> : null}
         {filters.map((filter) => {
           const selected = filter.options.find((option) => option.value === filter.value);
+          const tick = <Icon name="check" size={16} className="shrink-0 text-accent-text" />;
+          const items: MenuItem[] = [
+            { label: `Any ${filter.label.toLowerCase()}`, meta: filter.value === "" ? tick : undefined, onSelect: () => filter.onChange("") },
+            { type: "separator" },
+            ...filter.options.map((option): MenuItem => ({ label: option.label, meta: option.value === filter.value ? tick : undefined, onSelect: () => filter.onChange(option.value) })),
+          ];
           return (
-            // The pill's width follows the text it shows; the real <select> sits invisibly on top so it stays native and accessible.
-            <div
+            <Menu
               key={filter.id}
-              className={cn(
-                "relative inline-flex h-8 max-w-[14rem] items-center gap-1.5 rounded-full border px-3 text-body-sm transition-colors duration-[var(--dur-fast)] focus-within:outline-2 focus-within:outline-ring",
-                filter.value ? "border-accent/40 bg-accent-soft font-medium text-accent-text" : "border-line-strong text-fg-muted hover:border-fg-faint hover:bg-surface-2 hover:text-fg",
-              )}
-            >
-              <span className="truncate">{filter.value ? `${filter.label}: ${selected?.label ?? filter.value}` : filter.label}</span>
-              <Icon name="chevron-down" size={14} className="shrink-0" />
-              <select
-                aria-label={filter.label}
-                value={filter.value}
-                onChange={(event) => filter.onChange(event.target.value)}
-                className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
-              >
-                <option value="">{filter.label}: all</option>
-                {filter.options.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+              align="start"
+              width={232}
+              label={`${filter.label} filter`}
+              items={items}
+              trigger={
+                <button
+                  type="button"
+                  aria-label={`${filter.label}: ${selected?.label ?? "all"}`}
+                  className={cn(
+                    "inline-flex h-8 max-w-[14rem] cursor-pointer items-center gap-1.5 rounded-full border px-3 text-body-sm transition-colors duration-[var(--dur-fast)] aria-expanded:border-fg-faint aria-expanded:bg-surface-2 pointer-coarse:h-11",
+                    filter.value ? "border-accent/40 bg-accent-soft font-medium text-accent-text" : "border-line-strong text-fg-muted hover:border-fg-faint hover:bg-surface-2 hover:text-fg",
+                  )}
+                >
+                  <span className="truncate">{filter.value ? `${filter.label}: ${selected?.label ?? filter.value}` : filter.label}</span>
+                  <Icon name="chevron-down" size={14} className="shrink-0" />
+                </button>
+              }
+            />
           );
         })}
         {children}
