@@ -31,7 +31,7 @@ function WebsiteList({ websites, active, pathname, close }: Props & { close: () 
       {websites.length > SEARCH_THRESHOLD ? <SearchField value={query} onChange={setQuery} label="Find a website" placeholder="Find a website" /> : null}
       <p className="px-1 text-helper font-semibold text-fg-muted">Websites</p>
       {visible.length === 0 ? (
-        <p className="px-2 py-4 text-center text-body-sm text-fg-muted">No website matches “{query.trim()}”.</p>
+        <p className="px-2 py-3 text-center text-body-sm text-fg-muted">No website matches “{query.trim()}”.</p>
       ) : (
         <ul className="flex flex-col gap-0.5">
           {visible.map((website) => {

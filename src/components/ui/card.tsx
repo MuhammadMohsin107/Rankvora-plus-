@@ -26,7 +26,7 @@ type CardProps = {
 const cardVariant: Record<CardVariant, string> = {
   content: "",
   metric: "p-card",
-  chart: "flex flex-col gap-4 p-card",
+  chart: "flex flex-col gap-3 p-card",
   action: "p-card transition-[border-color,box-shadow,transform] duration-[var(--dur-fast)] hover:border-line-strong hover:shadow-pop",
   alert: "p-card",
 };
@@ -84,7 +84,7 @@ export function CardBody({ className, children }: { className?: string; children
 /** Page section with a heading row. */
 export function Section({ title, actions, children, className }: { title: string; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("flex flex-col gap-4", className)}>
+    <section className={cn("flex flex-col gap-3", className)}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-section font-semibold text-fg">{title}</h2>
         {actions}
@@ -121,7 +121,7 @@ export function Callout({ tone = "info", title, children, actions, className }: 
   return (
     <div
       role={tone === "danger" || tone === "warning" ? "alert" : "status"}
-      className={cn("flex items-start gap-3 rounded-control border px-3.5 py-3 text-body-sm", toneClass[tone], className)}
+      className={cn("flex items-start gap-3 rounded-control border px-3.5 py-2.5 text-body-sm", toneClass[tone], className)}
     >
       <Icon name={calloutIcon[tone]} size={16} className={cn("mt-0.5 shrink-0", toneIconClass[tone])} />
       <div className="min-w-0 flex-1 text-fg">

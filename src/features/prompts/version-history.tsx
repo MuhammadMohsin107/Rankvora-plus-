@@ -24,7 +24,7 @@ export function VersionHistory({ versions }: { versions: PromptVersion[] }) {
   ));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Card as="section">
         <CardHeader title="History" info="Editing the wording creates a new version. Earlier runs keep the version they used." />
         <CardBody>
@@ -57,7 +57,7 @@ export function VersionHistory({ versions }: { versions: PromptVersion[] }) {
       {versions.length > 1 ? (
         <Card as="section">
           <CardHeader title="Compare versions" />
-          <CardBody className="flex flex-col gap-4">
+          <CardBody className="flex flex-col gap-3">
             <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
               <Field label="From">
                 {({ id }) => (

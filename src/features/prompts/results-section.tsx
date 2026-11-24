@@ -39,7 +39,7 @@ function RateCell({ title, subtitle, counts, showFailed = true }: { title: strin
   const na = d === 0 ? (counts.requests === 0 ? "No responses" : "All requests failed") : undefined;
   const status = d === 0 ? "ok" : sampleStatus(d);
   return (
-    <div className="flex min-w-0 flex-col gap-4 bg-surface p-4">
+    <div className="flex min-w-0 flex-col gap-3 bg-surface p-4">
       <div className="min-w-0">
         <p className="truncate text-body-sm font-semibold text-fg">{title}</p>
         <p className="truncate text-helper text-fg-muted" title={subtitle}>{subtitle}</p>
@@ -128,7 +128,7 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
   const requestsOk = pooled.requests - pooled.failed;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Card as="section">
         <CardHeader
           title="By provider"

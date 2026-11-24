@@ -114,7 +114,7 @@ export function Tabs({
           aria-labelledby={`${base}-tab-${tab.id}`}
           hidden={tab.id !== active}
           tabIndex={0}
-          className={cn("pt-4 outline-offset-4", panelClassName)}
+          className={cn("pt-3 outline-offset-4", panelClassName)}
         >
           {tab.id === active ? tab.content : null}
         </div>

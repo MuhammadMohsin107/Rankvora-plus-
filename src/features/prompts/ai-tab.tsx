@@ -110,7 +110,7 @@ export function AiTab({ context, state, source, onSource, onRegenerate, onAccept
               const match = added ? null : findDuplicate(suggestion.text, existing);
               const exact = match?.kind === "exact";
               return (
-                <li key={suggestion.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <li key={suggestion.id} className="flex flex-col gap-2 py-2 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="text-body-sm font-medium text-fg [overflow-wrap:anywhere]">{suggestion.text}</p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -166,7 +166,7 @@ export function AiTab({ context, state, source, onSource, onRegenerate, onAccept
         }
       >
         {editing ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <Field label="Prompt text" required error={editError}>
               {({ id, describedBy, invalid }) => (
                 <>

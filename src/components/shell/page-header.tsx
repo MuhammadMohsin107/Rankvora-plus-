@@ -24,7 +24,7 @@ type PageHeaderProps = {
 
 export function PageHeader({ title, subtitle, meta, actions, tabs, className }: PageHeaderProps) {
   return (
-    <header className={cn("mb-4 flex flex-col gap-3", className)}>
+    <header className={cn("mb-3 flex flex-col gap-3", className)}>
       {/* Gives a trailing record id in the breadcrumb a real name (no effect on static routes). */}
       <BreadcrumbLabel>{title}</BreadcrumbLabel>
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
@@ -45,9 +45,9 @@ export function PageHeader({ title, subtitle, meta, actions, tabs, className }: 
 /** Two-column layout used by detail pages: main content + a narrower side panel. */
 export function SplitLayout({ main, aside, className }: { main: ReactNode; aside: ReactNode; className?: string }) {
   return (
-    <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_320px]", className)}>
-      <div className="flex min-w-0 flex-col gap-4">{main}</div>
-      <div className="flex min-w-0 flex-col gap-4">{aside}</div>
+    <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]", className)}>
+      <div className="flex min-w-0 flex-col gap-3">{main}</div>
+      <div className="flex min-w-0 flex-col gap-3">{aside}</div>
     </div>
   );
 }

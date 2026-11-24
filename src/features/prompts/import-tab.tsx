@@ -134,7 +134,7 @@ export function ImportTab({ context, csv, setCsv, fileName, setFileName, addMany
   const hasRows = preview.rows.length > 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Card as="section">
         <CardHeader
           title="Paste or upload"
@@ -146,7 +146,7 @@ export function ImportTab({ context, csv, setCsv, fileName, setFileName, addMany
             </>
           }
         />
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-1.5" aria-label="CSV columns">
             {CSV_COLUMNS.map((column) => (
               <Mono key={column} className={column === "prompt_text" ? "text-fg" : undefined}>{column}{column === "prompt_text" ? " *" : ""}</Mono>
@@ -199,7 +199,7 @@ export function ImportTab({ context, csv, setCsv, fileName, setFileName, addMany
       {hasRows ? (
         <Card as="section">
           <CardHeader title="Dry run" />
-          <CardBody className="flex flex-col gap-4">
+          <CardBody className="flex flex-col gap-3">
             <StackedBar
               unit="rows"
               segments={[

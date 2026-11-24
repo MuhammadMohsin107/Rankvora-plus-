@@ -62,7 +62,7 @@ export function Notifications({ alerts, websites, contextWebsiteId }: Props) {
             </button>
           </div>
           {recent.length === 0 ? (
-            <p className="px-4 py-5 text-center text-body-sm text-fg-muted">No notifications.</p>
+            <p className="px-4 py-4 text-center text-body-sm text-fg-muted">No notifications.</p>
           ) : (
             <ul className="flex flex-col">
               {recent.map((alert) => {

@@ -25,7 +25,7 @@ async function ObservationsPageContent(props: PageProps<"/stores/[storeId]/monit
   if (schedules.length === 0) return <NoSchedules />;
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <HistorySwitch current="prompts" />
         <EmptyState icon="monitoring" title="No prompt history yet" description="It appears once a run stores answers per prompt and provider." />
       </div>

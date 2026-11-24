@@ -95,7 +95,7 @@ export function ManualTab({ context, form, setForm, onCreate }: Props) {
           submit();
         }}
       >
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           <Field label="Prompt text" required error={errors.text}>
             {({ id, describedBy, invalid }) => (
               <>
@@ -120,7 +120,7 @@ export function ManualTab({ context, form, setForm, onCreate }: Props) {
           </Field>
           {duplicate ? <DuplicateNotice match={duplicate} storeId={store.id} /> : null}
 
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
             <Field label="Intent">
               {({ id }) => (
                 <Select id={id} value={form.intent} onChange={(event) => set("intent", event.target.value as PromptIntent)}>
@@ -147,8 +147,8 @@ export function ManualTab({ context, form, setForm, onCreate }: Props) {
               {more ? "Fewer options" : "More options"}
             </button>
             {more ? (
-              <div id="more-options" className="mt-3 flex flex-col gap-4">
-                <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+              <div id="more-options" className="mt-3 flex flex-col gap-3">
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
                   <Field label="Group">
                     {({ id }) => (
                       <Select id={id} value={form.groupId} onChange={(event) => set("groupId", event.target.value)}>

@@ -15,7 +15,7 @@ import { CharCount, DuplicateNotice } from "./parts";
 import type { ConfigDraft } from "./prompt-ops";
 import { MAX_PROMPT_LENGTH, findDuplicate, validatePromptText } from "./text";
 
-const footerClass = "-mx-5 -mb-4 mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2/60 px-5 py-3";
+const footerClass = "-mx-4 -mb-3 mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2/60 px-4 py-2.5";
 
 // ---------------------------------------------------------------------------
 // Wording: saving creates a new version, after confirmation.
@@ -58,7 +58,7 @@ function WordingBody({ onClose, prompt, storeId, existing, currentRuns, onCommit
 
   return (
     <>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Field label="Prompt text" required error={error}>
           {({ id, describedBy, invalid }) => (
             <>
@@ -146,8 +146,8 @@ function ConfigBody({ onClose, prompt, groups, products, onSave }: Omit<ConfigPr
 
   return (
     <>
-      <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
           <Field label="Intent">
             {({ id }) => (
               <Select id={id} value={draft.intent} onChange={(event) => set("intent", event.target.value as PromptIntent)}>
