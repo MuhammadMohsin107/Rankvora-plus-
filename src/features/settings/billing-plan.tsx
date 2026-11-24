@@ -101,7 +101,7 @@ function PlanCard({ plan, current, direction, onChange }: { plan: BillingPlan; c
           Current plan
         </Button>
       ) : (
-        <Button variant={direction === "Upgrade" ? "primary" : "secondary"} className="w-full" onClick={() => onChange(plan.id)} aria-label={`${direction} to ${plan.name}`}>
+        <Button variant={direction === "Upgrade" ? "primary" : "dark"} className="w-full" onClick={() => onChange(plan.id)} aria-label={`${direction} to ${plan.name}`}>
           {direction} to {plan.name}
         </Button>
       )}
@@ -110,7 +110,7 @@ function PlanCard({ plan, current, direction, onChange }: { plan: BillingPlan; c
         {items.map((text) => (
           <li key={text} className="flex items-start gap-2 text-body-sm text-fg">
             <Icon name="check" size={16} className="mt-0.5 shrink-0 text-success-icon" />
-            <span className="tnum">{text}</span>
+            <span className="tnum italic">{text}</span>
           </li>
         ))}
       </ul>

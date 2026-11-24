@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 
 import { Icon, type IconName } from "./icon";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-ghost";
+export type ButtonVariant = "primary" | "secondary" | "dark" | "ghost" | "danger" | "danger-ghost";
 export type ButtonSize = "sm" | "md" | "lg";
 
 /**
@@ -18,6 +18,8 @@ const base =
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-fg hover:bg-accent-hover",
   secondary: "border border-line-strong bg-surface text-fg hover:border-fg-faint hover:bg-surface-2",
+  /** Solid near-black (light theme) or near-white (dark theme): the strongest neutral button. */
+  dark: "bg-fg text-surface hover:bg-fg/85",
   ghost: "text-fg-muted hover:bg-surface-2 hover:text-fg",
   danger: "bg-danger-solid text-danger-fg hover:bg-danger-solid-hover",
   "danger-ghost": "text-danger-text hover:bg-danger-soft",
