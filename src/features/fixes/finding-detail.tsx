@@ -164,9 +164,9 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
       />
       <HeaderAction>{primary}</HeaderAction>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <Card>
-          <CardBody className="flex flex-col gap-4">
+          <CardBody className="flex flex-col gap-3">
             <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
               <div className="rounded-control border border-line bg-surface-2 p-3">
                 <h3 className="flex items-center gap-1.5 text-helper font-medium text-success-text">
@@ -258,7 +258,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
               label: "Evidence",
               count: evidence.length,
               content: (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                   <Card>
                     <CardHeader title="Evidence" info="Raw responses are read-only. Failed requests are never counted as the brand being absent." />
                     <CardBody className="pt-2">
@@ -309,7 +309,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
 
                   <Card>
                     <CardHeader title="Affected" />
-                    <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+                    <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
                       <div className="min-w-0">
                         <h3 className="mb-1.5 text-helper font-medium text-fg-subtle">URLs</h3>
                         {finding.affectedUrls.length === 0 ? (

@@ -81,7 +81,7 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
   if (schedules.length === 0) return <NoSchedules />;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented label="Period" value={periodId} onChange={setPeriodId} options={periods.map((p) => ({ value: p.id, label: p.label }))} />
         <p className="tnum text-body-sm text-fg-muted">{period.runCount} run{period.runCount === 1 ? "" : "s"}</p>
@@ -96,7 +96,7 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
       <Card>
         <CardHeader title="Usage against caps" info="Caps are the monthly limits set on the schedules. Token and search-call counts are estimated. Cost is an estimate from provider usage." />
         <CardBody>
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-3">
             {KEYS.map((key) => {
               const value = period.total[key];
               const cap = usage.caps[key];
@@ -111,7 +111,7 @@ export function UsageView({ usage }: { usage: UsageSummary }) {
               );
             })}
           </ul>
-          <p className="tnum mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-helper text-fg-muted">
+          <p className="tnum mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-helper text-fg-muted">
             <span>Failed requests: {formatNumber(failedRequests)} of {formatNumber(period.total.requests)} ({formatPercent(ratePercent(failedRequests, period.total.requests))}), counted in requests</span>
             {isCurrent ? <span>Active schedules plan ~{formatNumber(plannedJobs)} jobs · ~{formatUsd(plannedCost)} a month</span> : null}
           </p>

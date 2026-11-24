@@ -147,7 +147,7 @@ export function CompetitorsTab({ storeId, competitors, market, marketName, readO
       >
         <form
           noValidate
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
             add();

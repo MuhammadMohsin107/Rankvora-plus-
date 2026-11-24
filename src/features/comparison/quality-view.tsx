@@ -46,7 +46,7 @@ export function QualityView({ detail, base }: { detail: ComparisonDetail; base: 
   if (smallChannels.length) warnings.push(`${smallChannels.length} of ${result.channels.length} platform segments`);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <MetricGrid>
         <MetricCell>
           <Metric label="Success · baseline" numerator={result.successRate.baseline?.n} denominator={result.successRate.baseline?.d} unit="requests" info={result.successRate.info} />
@@ -71,7 +71,7 @@ export function QualityView({ detail, base }: { detail: ComparisonDetail; base: 
 
       <Card>
         <CardHeader title="Failed requests" info="Excluded from rates. Never counted as the brand being absent." />
-        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
           <Failures quality={result.quality.baseline} />
           <Failures quality={result.quality.current} />
         </CardBody>
@@ -100,7 +100,7 @@ export function QualityView({ detail, base }: { detail: ComparisonDetail; base: 
 
       <Card>
         <CardHeader title="Whole source" info="All successful responses of each source, including slots outside the matched cohort. Reconciles with the source's own headline." />
-        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
           <Metric label="Mention rate · baseline" numerator={result.wholeSource.baseline.n} denominator={result.wholeSource.baseline.d} />
           <Metric label="Mention rate · current" numerator={result.wholeSource.current.n} denominator={result.wholeSource.current.d} />
         </CardBody>

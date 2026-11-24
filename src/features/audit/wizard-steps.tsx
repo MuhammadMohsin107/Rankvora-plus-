@@ -42,7 +42,7 @@ function Advanced({ title = "Advanced", children }: { title?: string; children: 
   return (
     <details className="group rounded-control border border-line">
       <summary className="cursor-pointer select-none px-3 py-2.5 text-label font-medium text-fg-muted marker:text-fg-subtle">{title}</summary>
-      <div className="flex flex-col gap-4 border-t border-line p-3">{children}</div>
+      <div className="flex flex-col gap-3 border-t border-line p-3">{children}</div>
     </details>
   );
 }
@@ -62,7 +62,7 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 
 export function StepType({ data, state, set, prompts }: StepProps) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <RadioCards label="Audit type" columns={3} value={state.kind} onChange={(kind) => set({ kind, ...(kind === "verification" ? { samples: 1 } : {}) })} options={KIND_OPTIONS} />
 
       {state.kind === "verification" ? (
@@ -112,7 +112,7 @@ export function StepPrompts({ data, state, set, prompts }: StepProps) {
   const groups = [...new Map(prompts.filter((p) => p.groupId).map((p) => [p.groupId as string, p.groupName])).entries()].map(([id, name]) => ({ id, name }));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <RadioCards<PromptMode>
         label="Prompt selection"
         columns={3}
@@ -176,12 +176,12 @@ export function StepPrompts({ data, state, set, prompts }: StepProps) {
 export function StepProviders({ data, state, set }: StepProps) {
   if (!state.ai) return <Skipped lane="AI visibility" />;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <ul className="divide-y divide-line rounded-control border border-line">
         {data.channels.map((c) => {
           const on = state.channelIds.includes(c.id);
           return (
-            <li key={c.id} className="grid grid-cols-[minmax(0,1fr)] items-center gap-3 px-3 py-3 md:grid-cols-[minmax(0,1fr)_14rem]">
+            <li key={c.id} className="grid grid-cols-[minmax(0,1fr)] items-center gap-3 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_14rem]">
               <Checkbox label={`${c.providerLabel} · ${c.model}`} description={c.supportsCitations ? "Returns citations" : "No citations"} checked={on} onChange={() => set({ channelIds: toggle(state.channelIds, c.id) })} />
               <Select aria-label={`Search mode for ${c.providerLabel}`} disabled={!on} value={state.searchModes[c.id] ?? c.searchMode} onChange={(e) => set({ searchModes: { ...state.searchModes, [c.id]: e.target.value as SearchMode } })}>
                 {searchModeOptions.map((o) => (
@@ -209,7 +209,7 @@ export function StepProviders({ data, state, set }: StepProps) {
 export function StepMarket({ data, state, set }: StepProps) {
   if (!state.ai) return <Skipped lane="AI visibility" />;
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
       <Field label="Market" hint={`This website: ${data.store.marketName}`}>
         {({ id, describedBy }) => (
           <Select id={id} aria-describedby={describedBy} value={state.market} onChange={(e) => set({ market: e.target.value })}>
@@ -241,7 +241,7 @@ export function StepWebsite({ data, state, set }: StepProps) {
   const listCount = urlLines(state.urlList).length;
   const available = new Set<string>(data.pageTypes);
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Block title="Start points">
         <div className="flex flex-col gap-3 rounded-control border border-line p-3">
           <Checkbox label="Homepage" description={`https://${data.store.domain}/`} checked={state.startHomepage} onChange={(e) => set({ startHomepage: e.target.checked })} />
@@ -273,7 +273,7 @@ export function StepWebsite({ data, state, set }: StepProps) {
       </Block>
 
       <Advanced title="Depth and exclusions">
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
           <Field label="Excluded paths" hint="One per line">
             {({ id, describedBy }) => <Textarea id={id} aria-describedby={describedBy} rows={4} className="font-mono text-xs" value={state.excludedPaths} onChange={(e) => set({ excludedPaths: e.target.value })} />}
           </Field>
@@ -298,7 +298,7 @@ export function StepWebsite({ data, state, set }: StepProps) {
 
 function ToggleRow({ title, description, checked, onChange, disabled, extra }: { title: string; description: string; checked: boolean; onChange: (next: boolean) => void; disabled?: boolean; extra?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 px-3 py-3">
+    <div className="flex items-center justify-between gap-4 px-3 py-2.5">
       <div className="min-w-0">
         <p className="flex flex-wrap items-center gap-2 text-body-sm text-fg">{title}{extra}</p>
         <p className="text-helper text-fg-subtle">{description}</p>
@@ -311,7 +311,7 @@ function ToggleRow({ title, description, checked, onChange, disabled, extra }: {
 export function StepCriteria({ data, state, set }: StepProps) {
   if (!state.web) return <Skipped lane="Website readiness" />;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Block title="Categories">
         <div className="flex flex-wrap gap-x-5 gap-y-2.5">
           {CRITERIA_CATEGORIES.map((c) => (
@@ -364,8 +364,8 @@ export function StepCriteria({ data, state, set }: StepProps) {
 export function StepLimits({ state, set }: StepProps) {
   const positive = (n: number) => (n > 0 ? undefined : "Enter a number above 0.");
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3">
         {state.web ? (
           <Field label="Maximum URLs" error={positive(state.maxUrls)}>
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} type="number" min={1} inputMode="numeric" value={state.maxUrls || ""} onChange={(e) => set({ maxUrls: Number(e.target.value) })} />}
@@ -381,7 +381,7 @@ export function StepLimits({ state, set }: StepProps) {
       <p className="text-helper text-fg-muted">The audit stops at a limit and is marked partially completed.</p>
 
       <Advanced>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:max-w-xs">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:max-w-xs">
           <Field label="Concurrency">
             {({ id, describedBy }) => (
               <Select id={id} aria-describedby={describedBy} value={String(state.concurrency)} onChange={(e) => set({ concurrency: Number(e.target.value) })}>
@@ -413,7 +413,7 @@ export function StepLimits({ state, set }: StepProps) {
 export function StepEstimate({ state, usage }: StepProps & { usage: Usage }) {
   const ratio = usage.costUsd / Math.max(state.budgetUsd, 0.01);
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="info" icon="info">Illustrative estimate</Badge>
         <p className="text-helper text-fg-muted">From typical per-request pricing. Nothing is charged in this demo.</p>
@@ -451,7 +451,7 @@ export function StepReview({ data, state, usage, prompts, onEdit }: StepProps & 
   const starts = [state.startHomepage && "Homepage", state.startSitemap && "Sitemap", state.startUrlList && `URL list (${urlLines(state.urlList).length})`, state.startCms && "Connector"].filter(Boolean) as string[];
 
   const row = (title: string, step: number, children: ReactNode) => (
-    <div className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+    <div className="flex items-start justify-between gap-4 py-2 first:pt-0 last:pb-0">
       <div className="min-w-0 flex-1">
         <p className="mb-0.5 text-helper font-semibold uppercase tracking-wide text-fg-subtle">{title}</p>
         <div className="text-body-sm text-fg">{children}</div>
@@ -461,7 +461,7 @@ export function StepReview({ data, state, usage, prompts, onEdit }: StepProps & 
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="divide-y divide-line">
         {row("Type and lanes", 0, `${kind} · ${[state.ai && "AI visibility", state.web && "Website readiness"].filter(Boolean).join(" + ")}`)}
         {state.ai ? row("Prompts and providers", 2, <span className="tnum">{usage.prompts} prompts · {channelNames.join(", ")} · {state.samples} {state.samples === 1 ? "sample" : "samples"}</span>) : null}

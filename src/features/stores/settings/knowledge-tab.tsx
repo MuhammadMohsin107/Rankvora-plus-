@@ -33,7 +33,7 @@ type Props = {
 export function KnowledgeTab({ storeId, state, crawlers, auditId, readOnly, onChange, profile }: Props) {
   const [section, setSection] = useState<Section>("profile");
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Segmented<Section>
         label="Brand knowledge section"
         value={section}
@@ -87,7 +87,7 @@ function FactsSection({ state, readOnly, onChange }: Pick<Props, "state" | "read
     <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 xl:grid-cols-2">
       <Card>
         <CardHeader title="Brand facts" info="Short statements the brand stands behind. Used for prompt ideas and fix drafts (demo)." />
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           {state.facts.length === 0 ? (
             <EmptyState icon="file-text" title="No facts yet" />
           ) : (
@@ -118,7 +118,7 @@ function FactsSection({ state, readOnly, onChange }: Pick<Props, "state" | "read
 
       <Card>
         <CardHeader title="FAQs" />
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           {state.faqs.length === 0 ? (
             <EmptyState icon="help" title="No FAQs yet" />
           ) : (
@@ -187,7 +187,7 @@ function ContentSection({ storeId, state, auditId, readOnly, onChange }: Pick<Pr
             </Button>
           }
         />
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           {state.sourcePages.length === 0 ? (
             <EmptyState icon="globe" title="No source pages yet" />
           ) : (

@@ -89,7 +89,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
 
   if (draft.kind === "guidance") {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Card>
           <CardHeader
             title="Steps"
@@ -157,7 +157,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
 
   if (draft.kind === "batch") {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Card>
           <CardHeader title="Batch" subtitle={draft.resource} info="Each resource gets its own result. Excluded rows are never written." />
           <CardBody className="flex flex-col gap-3 pt-3">
@@ -227,7 +227,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
   const live = claims.filter((claim) => text.includes(claim.text));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {header}
 
       {needsReapproval ? (
@@ -237,7 +237,7 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
       ) : null}
       {locked ? <Callout tone="neutral" title="Draft locked">This task is past drafting. Applied content is not edited here.</Callout> : null}
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader title={isPatch ? "Patch" : "Draft text"} subtitle={draft.resource} />
           <CardBody>

@@ -68,7 +68,7 @@ export function AuditWizard({ data }: { data: WizardData }) {
   const hydrated = useHydrated();
   if (!hydrated) {
     return (
-      <div className="flex flex-col gap-4" aria-busy="true">
+      <div className="flex flex-col gap-3" aria-busy="true">
         <Skeleton className="h-20 w-full" />
         <Skeleton className="h-72 w-full" />
       </div>

@@ -73,7 +73,7 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
   if (websites.length === 0) return emptyAll;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <FilterBar
         label="Website filters"
         search={{ value: query, onChange: setQuery, placeholder: "Search websites", label: "Search websites" }}
@@ -89,7 +89,7 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
       {filtered.length === 0 ? (
         emptyMatch
       ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filtered.map((site) => (
             <WebsiteCard key={site.id} store={site} counts={counts.get(site.id)} onDelete={site.status === "archived" ? () => setDeleting(site) : undefined} />
           ))}

@@ -68,7 +68,7 @@ function RunNowDialog() {
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {options.length > 1 ? (
           <Field label="Schedule">
             {({ id }) => (

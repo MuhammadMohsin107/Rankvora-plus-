@@ -258,9 +258,9 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
       ) : null}
 
       {step === 1 ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {isPeriod ? (
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
               {(
                 [
                   { key: "baseline", title: "Baseline window", value: baseWindow, set: setBaseWindow, side: baseSide },
@@ -283,7 +283,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
               ))}
             </div>
           ) : isFix ? (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <Field label="Completed fix" hint="Baseline is the last snapshot before it was completed. Current is the first one after.">
                 {({ id: fid, describedBy }) => (
                   <Select id={fid} aria-describedby={describedBy} value={taskId} onChange={(e) => setTaskId(e.target.value)}>
@@ -299,7 +299,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
               ) : null}
             </div>
           ) : (
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
               <Field label="Baseline" hint={type === "initial_vs_latest" ? "Audit snapshots" : undefined}>
                 {({ id: fid, describedBy }) => (
                   <Select id={fid} aria-describedby={describedBy} value={baseSnap} onChange={(e) => setBaseSnap(e.target.value)}>
@@ -323,8 +323,8 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
       ) : null}
 
       {step === 2 ? (
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
             <Field label="Prompt group">
               {({ id: fid }) => (
                 <Select id={fid} value={filters.groupId ?? ""} onChange={(e) => setFilter("groupId", e.target.value)}>
@@ -371,7 +371,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
               More filters and method
               <span className="text-helper font-normal text-fg-subtle">{filterCount(cleanFilters) > 0 ? `${pluralize(filterCount(cleanFilters), "filter")} on` : "Optional"}</span>
             </summary>
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 border-t border-line p-4 md:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-3 border-t border-line p-4 md:grid-cols-2">
               <Field label="Model">
                 {({ id: fid }) => (
                   <Select id={fid} value={filters.channelId ?? ""} onChange={(e) => setFilter("channelId", e.target.value)}>
@@ -434,7 +434,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
 
       {step === 3 ? (
         preview ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <p className="text-body-sm text-fg-muted">{summary}</p>
             <VerdictBanner
               verdict={preview.assessment.verdict}

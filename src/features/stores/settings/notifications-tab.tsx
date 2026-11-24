@@ -23,7 +23,7 @@ export function NotificationsTab({ events, webhookReady, saved, draft, onDraft, 
   const dirty = JSON.stringify(saved.matrix) !== JSON.stringify(draft.matrix);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Card>
         <NotificationMatrixTable events={events} value={draft.matrix} onChange={(matrix) => onDraft({ ...draft, mode: "override", matrix })} disabled={readOnly} webhookReady={webhookReady} />
       </Card>

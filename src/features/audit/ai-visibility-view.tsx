@@ -26,7 +26,7 @@ export function AiVisibilityView({ audit, lane, findings = [] }: { audit: AuditD
   for (const f of findings) for (const id of f.affectedPromptIds) findingByPrompt[id] ??= f.id;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {audit.provisional ? <Callout tone="warning" title="Provisional">Rates change as more responses arrive.</Callout> : null}
 
       <MetricGrid>
@@ -51,12 +51,12 @@ export function AiVisibilityView({ audit, lane, findings = [] }: { audit: AuditD
           <Tabs
             label="Competitors and citations"
             tabs={[
-              { id: "competitors", label: "Competitors", content: <div className="pt-4"><CompetitorTable rows={lane.competitors} /></div> },
+              { id: "competitors", label: "Competitors", content: <div className="pt-3"><CompetitorTable rows={lane.competitors} /></div> },
               {
                 id: "citations",
                 label: `Citations (${totalCitations})`,
                 content: (
-                  <div className="flex flex-col gap-4 pt-4">
+                  <div className="flex flex-col gap-3 pt-3">
                     {totalCitations > 0 ? (
                       <StackedBar
                         unit="citations"

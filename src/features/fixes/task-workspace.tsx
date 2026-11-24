@@ -159,7 +159,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
       />
       <HeaderAction>{primary}</HeaderAction>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <LifecycleTracker status={status} mode={task.mode} execution={view.execution} />
         <EvidenceTrace ids={traceIds} label="Evidence trace for this task" />
 

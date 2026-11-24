@@ -81,8 +81,8 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
   };
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
-      <div className="flex min-w-0 flex-col gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-3">
         <Card>
           <CardHeader title="Canonical domain" info="The main address this website is measured on. Results link to it." />
           <CardBody className="flex flex-wrap items-center justify-between gap-3">
@@ -93,7 +93,7 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
 
         <Card>
           <CardHeader title="Aliases and redirects" />
-          <CardBody className="flex flex-col gap-4">
+          <CardBody className="flex flex-col gap-3">
             {record.aliases.length === 0 ? (
               <p className="text-[13px] text-fg-muted">No aliases yet.</p>
             ) : (

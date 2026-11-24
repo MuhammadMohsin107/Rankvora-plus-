@@ -100,13 +100,13 @@ function Competitors({ data }: { data: BreakdownData }) {
   if (data.competitors.length === 0) return <EmptyState icon="users" title="No tracked competitors" description="Confirm competitors in website settings to compare them on the same slots." />;
   const rows = [...(data.brand ? [metricBarRow(data.brand, { label: "Your brand" })] : []), ...data.competitors.map((m) => metricBarRow(m))];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Card>
         <CardHeader title="Mention rate" subtitle={`Brand and tracked competitors, same ${data.brand?.cohort ?? 0} matched slots in every row.`} />
         <CardBody><RateBars rows={rows} /></CardBody>
       </Card>
       <Card>
-        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
           <NameList title="Newly named" names={data.appeared} />
           <NameList title="No longer named" names={data.gone} />
         </CardBody>
@@ -122,7 +122,7 @@ function Citations({ data }: { data: BreakdownData }) {
   const domains = data.domains.slice(0, 8).map((d) => rateRow(d.domain, d.domain, d.baseline, d.current, CITATION_SOURCE_LABEL[d.source]));
   const sourceOf = (domain: string) => data.domains.find((d) => d.domain === domain)?.source ?? "third_party";
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Card>
         <CardHeader title="Owned citation by platform" subtitle="Responses with citation data only. No citation support is N/A, never 0%." />
         <CardBody>{providers.length ? <RateBars rows={providers} /> : <p className="text-body-sm text-fg-muted">No matched slots.</p>}</CardBody>
@@ -184,10 +184,10 @@ function Distribution({ title, counts }: { title: string; counts: SentimentCount
 function Sentiment({ data }: { data: BreakdownData }) {
   const { sentiment } = data;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Card>
         <CardHeader title="Sentiment" subtitle="Responses that mention the brand." />
-        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
           <Distribution title="Baseline" counts={sentiment.baseline} />
           <Distribution title="Current" counts={sentiment.current} />
         </CardBody>
@@ -200,7 +200,7 @@ function Sentiment({ data }: { data: BreakdownData }) {
           ) : (
             <ul className="divide-y divide-line">
               {sentiment.excerpts.map((e) => (
-                <li key={e.key} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+                <li key={e.key} className="flex flex-col gap-2 py-2 first:pt-0 last:pb-0">
                   <div className="min-w-0">
                     <p className="truncate text-body-sm font-medium text-fg" title={e.promptText}>{e.promptText}</p>
                     <p className="truncate text-helper text-fg-subtle">{e.channelLabel}</p>
@@ -243,7 +243,7 @@ export function BreakdownsView({ data }: { data: BreakdownData }) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Segmented
         label="Breakdown"
         value={view}

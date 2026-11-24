@@ -25,7 +25,7 @@ export function SeededProgress({ storeId, row, audit, channelLabelText }: { stor
     );
   }
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {current.paused ? <Callout tone="warning" title="Paused">This audit is paused. Resume it from the header.</Callout> : null}
       <InProgressOverview audit={audit} channelLabelText={channelLabelText} />
     </div>

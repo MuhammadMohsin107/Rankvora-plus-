@@ -50,7 +50,7 @@ export function ReportView({ data, storeId }: { data: AuditReportData; storeId: 
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {failed ? (
         <Callout tone="danger" title="The formatted report failed to generate" actions={<Button icon="refresh" loading={generating} onClick={regenerate}>Regenerate</Button>}>
           The preview and exports below are built from the immutable snapshot, so they are complete.

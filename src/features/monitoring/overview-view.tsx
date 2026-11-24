@@ -80,7 +80,7 @@ export function OverviewView({ data }: { data: MonitoringOverview }) {
   const unhealthy = data.health.filter((h) => h.state !== "healthy");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {active && isSim(active) ? (
         <Card variant="action">
           <CardBody className="flex flex-col gap-2">
@@ -97,7 +97,7 @@ export function OverviewView({ data }: { data: MonitoringOverview }) {
       ) : null}
 
       <Card>
-        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
+        <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3">
           <div className="min-w-0">
             <p className="text-label font-medium text-fg-muted">Latest run</p>
             {latest ? (
@@ -193,7 +193,7 @@ export function OverviewView({ data }: { data: MonitoringOverview }) {
           info="Each point shows mentions divided by successful answers. Markers show configuration changes."
           actions={<Segmented label="Lines" size="sm" value={lines} onChange={setLines} options={[{ value: "pooled", label: "Pooled" }, { value: "providers", label: "By provider" }]} />}
         />
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           {timeline.length >= 2 ? (
             <MentionTrend timeline={timeline} providers={data.providerSeries} markers={data.markers} showProviders={lines === "providers"} />
           ) : (
@@ -210,7 +210,7 @@ export function OverviewView({ data }: { data: MonitoringOverview }) {
         </CardBody>
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader title="Changes" actions={<Link href={`${base}/alerts`} className="text-label font-medium text-accent-text hover:underline">All alerts</Link>} />
           <CardBody>

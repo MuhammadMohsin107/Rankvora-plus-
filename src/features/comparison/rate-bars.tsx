@@ -86,7 +86,7 @@ export function RateBars({ rows, className }: { rows: RateBarRow[]; className?: 
         {rows.map((row) => {
           const tone: Tone = row.points === null || row.points === 0 ? "neutral" : (row.points > 0) === ((row.goodWhen ?? "up") === "up") ? "success" : "danger";
           return (
-            <li key={`${row.id}:${row.label}`} className="grid gap-2 py-3 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_6.5rem] md:items-center md:gap-4">
+            <li key={`${row.id}:${row.label}`} className="grid gap-2 py-2 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_6.5rem] md:items-center md:gap-4">
               <div className="min-w-0">
                 <p className="truncate text-body-sm font-medium text-fg" title={row.label}>{row.label}</p>
                 {row.sub ? <p className="text-helper text-fg-subtle">{row.sub}</p> : null}

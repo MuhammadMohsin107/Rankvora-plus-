@@ -85,7 +85,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
   };
 
   const overview = (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {active && simRec ? (
         <Card variant="action">
           <CardBody className="flex flex-col gap-3">
@@ -141,7 +141,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
       {detail.providers.length > 0 ? (
         <Card>
           <CardHeader title="By provider" subtitle={detail.previousRunId ? `Mention rate vs ${detail.previousRunId}` : "Mention rate"} />
-          <CardBody className="flex flex-col gap-4">
+          <CardBody className="flex flex-col gap-3">
             <BarCompare baselineLabel="Prev" currentLabel="This" rows={detail.providers.map((p) => ({ id: p.channelId, label: p.short, baseline: p.previousMention, current: p.mention }))} />
             <ProviderSplitTable providers={detail.providers} />
             <p className="text-helper text-fg-muted">Cost is an estimate allocated by provider usage. Retries count as requests.</p>
@@ -177,7 +177,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
   const snap = detail.snapshot;
   const snapshot = (
     <Card>
-      <CardBody className="flex flex-col gap-4">
+      <CardBody className="flex flex-col gap-3">
         <KeyValue
           columns={2}
           items={[
@@ -273,7 +273,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
           { id: "jobs", label: "Jobs", count: detail.jobs.length, content: jobs },
           { id: "snapshot", label: "Snapshot", content: snapshot },
         ]}
-        panelClassName="pt-4"
+        panelClassName="pt-3"
       />
     </>
   );

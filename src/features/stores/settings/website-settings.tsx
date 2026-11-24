@@ -314,7 +314,7 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
         </HeaderAction>
       ) : null}
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {readOnly ? <Callout tone="neutral" title="Read-only">Restore the website in Danger zone to edit it.</Callout> : null}
 
         {showSetup ? (

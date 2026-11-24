@@ -306,7 +306,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
         </ButtonLink>
       </HeaderAction>
       <PageHeader title="Prompt Library" subtitle={coverage} />
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-3">
 
       <section aria-label="Library overview" className="grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-card border border-line bg-line shadow-card sm:grid-cols-2 xl:grid-cols-4">
         {STATUS_CELLS.map((status) => {
@@ -375,7 +375,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
         </Callout>
       ) : null}
 
-      <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex min-w-0 flex-col gap-2">
         <div role="group" aria-label="Group" className="flex min-w-0 flex-wrap items-center gap-1.5">
           <GroupChip label="All" count={prompts.length} active={filters.group === ""} onClick={() => set("group", "")} />
           {groups.map((g) => (
@@ -432,9 +432,9 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
             empty={filtering ? emptyFiltered : undefined}
           />
         ) : (
-          <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex min-w-0 flex-col gap-2">
             {selectedCardRows.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-control border border-accent/30 bg-accent-soft px-3 py-2" role="region" aria-label="Bulk actions">
+              <div className="flex flex-wrap items-center gap-2 rounded-control border border-accent/30 bg-accent-soft px-3 py-1.5" role="region" aria-label="Bulk actions">
                 <span className="tnum text-body-sm font-medium text-accent-text" aria-live="polite">{selectedCardRows.length} selected</span>
                 <div className="flex flex-wrap items-center gap-2">{bulk(selectedCardRows, () => setSelectedCards([]))}</div>
                 <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setSelectedCards([])}>Deselect</Button>
@@ -443,10 +443,10 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
             {filtered.length === 0 ? (
               <Card>{emptyFiltered}</Card>
             ) : (
-              <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Prompt cards">
+              <ul className="grid grid-cols-[minmax(0,1fr)] gap-2.5 md:grid-cols-2 xl:grid-cols-3" aria-label="Prompt cards">
                 {shownCards.map((r) => (
                   <li key={r.id}>
-                    <Card className="flex h-full flex-col gap-3 p-card">
+                    <Card className="flex h-full flex-col gap-2 p-card">
                       <div className="flex items-start gap-2">
                         <Checkbox checked={selectedCards.includes(r.id)} onChange={() => toggleCard(r.id)} aria-label={`Select ${r.text}`} className="-m-2.5 p-2.5" />
                         <Link href={`${base}/${r.id}`} className="line-clamp-3 min-w-0 flex-1 rounded text-body font-medium text-fg hover:text-accent-text hover:underline">
@@ -460,7 +460,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
                         <PromptKind mentionsBrand={r.mentionsBrand} />
                       </div>
                       <p className="truncate text-helper text-fg-muted">{[INTENT_LABEL[r.intent], r.topic || null, groupName(r.groupId), SCOPE_SHORT[r.scope]].filter(Boolean).join(" · ")}</p>
-                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-line-soft pt-3">
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-line-soft pt-2">
                         <LastResults results={r.lastResults ?? []} reason={untracked ? "No provider" : "Not run yet"} />
                         <span className="tnum shrink-0 text-helper text-fg-muted">v{r.version}</span>
                       </div>

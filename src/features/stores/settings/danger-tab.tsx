@@ -35,7 +35,7 @@ export function DangerTab({ status, websiteName, reactivateBlocked, onStatus, on
           {rows.map((row) => {
             const copy = transitionCopy(status, row.to, websiteName);
             return (
-              <li key={row.label} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <li key={row.label} className="flex flex-wrap items-center justify-between gap-3 py-2">
                 <div className="min-w-0 max-w-xl">
                   <p className="text-[13px] text-fg">{row.description}</p>
                   {row.reason ? <p className="mt-0.5 text-helper text-fg-muted">{row.reason}</p> : null}
@@ -46,7 +46,7 @@ export function DangerTab({ status, websiteName, reactivateBlocked, onStatus, on
               </li>
             );
           })}
-          <li className="flex flex-wrap items-center justify-between gap-3 py-3">
+          <li className="flex flex-wrap items-center justify-between gap-3 py-2">
             <div className="min-w-0 max-w-xl">
               <p className="text-[13px] text-fg">Permanently removes this website with its prompts, results, tasks and settings. This cannot be undone.</p>
             </div>

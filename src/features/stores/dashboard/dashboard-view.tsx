@@ -37,7 +37,7 @@ const pctText = (n: number, d: number) => formatRate(n, d);
 
 function Tile({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Card variant="metric" as="section" className="flex flex-col gap-3">
+    <Card variant="metric" as="section" className="flex flex-col gap-2">
       <h2 className="text-label font-medium text-fg-muted">{title}</h2>
       {children}
     </Card>
@@ -105,7 +105,7 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
   const last = inWindow[inWindow.length - 1];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <HeaderAction>
         <ButtonLink href={`${base}/audits/new`} variant="primary" size="sm" icon="plus">Start audit</ButtonLink>
       </HeaderAction>
@@ -118,7 +118,7 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
         <DateRange value={range} onChange={setRange} anchorDate={ANCHOR} presets={["7d", "30d", "90d"]} min="2026-08-01" max={ANCHOR} align="end" />
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Tile title="What is happening">
           <Metric label="Brand mention rate" numerator={mention.n} denominator={mention.d} delta={{ points: pointChange(mentionPrev, mention), versus: "vs previous run" }} />
           <TrustLabel samples={mention.d} extra={`${data.channelCount} channels · ${activePrompts} active prompts`} />
@@ -136,7 +136,7 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
               <p className="text-helper text-fg-muted">
                 {change.basis === "before" ? "Since" : "From"} {formatShortDate(change.baseline.date)} ({change.baseline.runId})
               </p>
-              <ul className="flex flex-col gap-3">
+              <ul className="flex flex-col gap-2">
                 {changeRows.map((row) => (
                   <li key={row.key} className="flex flex-col gap-1">
                     <div className="flex items-baseline justify-between gap-2">
@@ -189,7 +189,7 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
         </Tile>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
         <ChartCard
           title={view === "trend" ? "Visibility trend" : "Competitor visibility"}
           subtitle={view === "trend" ? `${inWindow.length} weekly ${inWindow.length === 1 ? "run" : "runs"} in range` : `Responses naming each brand · latest run`}
@@ -209,10 +209,10 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
         >
           {view === "trend" ? (
             inWindow.length < 2 ? (
-              <ChartEmpty title="Only one run in this range" detail="Choose a longer range to see a trend." height={240} />
+              <ChartEmpty title="Only one run in this range" detail="Choose a longer range to see a trend." height={208} />
             ) : (
               <LineChart
-                height={240}
+                height={208}
                 percent
                 yMax={100}
                 summary={`Brand mention rate went from ${formatRate(first.mention.n, first.mention.d)} to ${formatRate(last.mention.n, last.mention.d)} across ${inWindow.length} runs.`}
@@ -223,9 +223,9 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
               />
             )
           ) : competitors.length === 0 ? (
-            <ChartEmpty title="No competitors yet" detail="Add competitors in Website settings." height={240} />
+            <ChartEmpty title="No competitors yet" detail="Add competitors in Website settings." height={208} />
           ) : (
-            <ul className="flex flex-col gap-3.5">
+            <ul className="flex flex-col gap-2.5">
               {competitors.map((c) => (
                 <li key={c.id} className="flex flex-col gap-1">
                   <div className="flex items-baseline justify-between gap-2">

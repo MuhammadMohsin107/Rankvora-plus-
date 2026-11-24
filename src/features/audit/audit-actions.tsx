@@ -32,7 +32,7 @@ export function ConfigDrawerButton({ config, channels, lanes }: { config: AuditC
     <>
       <Button icon="settings" onClick={() => setOpen(true)}>Configuration</Button>
       <Drawer open={open} onClose={() => setOpen(false)} title="Configuration" description="Frozen when the audit started" size="md">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <Group title="AI visibility">
             <KeyValue
               columns={1}

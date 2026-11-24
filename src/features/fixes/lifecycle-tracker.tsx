@@ -46,7 +46,7 @@ export function LifecycleTracker({ status, mode, execution }: { status: TaskStat
   const anyDone = steps.some((step) => step.state !== "pending" && step.state !== "na");
 
   return (
-    <div className="flex flex-col gap-2 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
+    <div className="flex flex-col gap-2 rounded-card border border-line bg-surface px-4 py-2.5 shadow-card">
     <ol aria-label="Lifecycle: completed, applied, published, verified" className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
       {steps.map((step) => {
         const view = VIEW[step.state];

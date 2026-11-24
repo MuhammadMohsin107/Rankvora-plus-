@@ -48,7 +48,7 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
   const passed = outcome ? outcome.checks.filter((c) => c.after.status === "pass").length : 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {outcome ? (
         <>
           <Card>

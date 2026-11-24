@@ -84,13 +84,13 @@ export function BrandTab({ versions, draft, onDraft, readOnly, onSaveVersion, ti
   const previous = viewIndex >= 0 ? versions[viewIndex + 1] : undefined;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
       <Card className="min-w-0">
         <CardHeader title="Brand profile" />
         <CardBody>
           <form
             noValidate
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-3"
             onSubmit={(event) => {
               event.preventDefault();
               requestSave();
@@ -184,7 +184,7 @@ export function BrandTab({ versions, draft, onDraft, readOnly, onSaveVersion, ti
 
       <Dialog open={viewing !== null} onClose={() => setViewing(null)} title={viewing ? `Changes in v${viewing.version}` : ""} description={previous ? undefined : "First version"} size="lg">
         {viewing ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <DiffView before={previous?.description ?? ""} after={viewing.description} beforeLabel={previous ? `v${previous.version} description` : "Before"} afterLabel={`v${viewing.version} description`} />
             {listChange("Aliases", previous?.aliases ?? [], viewing.aliases)}
             {listChange("Differentiators", previous?.differentiators ?? [], viewing.differentiators)}

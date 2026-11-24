@@ -119,7 +119,7 @@ export function UntrackedDashboard({ store: seeded }: { store: Store }) {
       <HeaderAction>
         <ButtonLink href={action.href} variant="primary" size="sm" trailingIcon="arrow-right">{action.label}</ButtonLink>
       </HeaderAction>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Callout tone="info" title="No tracking data yet">{action.reason}. Rates stay N/A until the first run.</Callout>
         <MetricGrid className="xl:grid-cols-3">
           <MetricCell><Metric label="Brand mention rate" naReason="No runs yet" /></MetricCell>

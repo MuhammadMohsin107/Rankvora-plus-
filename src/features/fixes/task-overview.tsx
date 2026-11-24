@@ -26,7 +26,7 @@ export function TaskOverviewTab({ storeId, detail, view }: Props) {
   const met = detail.dependencies.filter((d) => d.met).length;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <Card>
         <CardHeader title="Details" />
         <CardBody>
@@ -47,13 +47,13 @@ export function TaskOverviewTab({ storeId, detail, view }: Props) {
               },
             ]}
           />
-          <p className="tnum mt-4 border-t border-line pt-3 text-helper text-fg-subtle">
+          <p className="tnum mt-3 border-t border-line pt-3 text-helper text-fg-subtle">
             Created {formatDate(detail.createdAt)} by {detail.createdBy}
           </p>
         </CardBody>
       </Card>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         {status === "rejected" && view.rejection ? (
           <Callout tone="neutral" title="Rejected">
             <p>{view.rejection.reason}</p>
@@ -90,7 +90,7 @@ export function TaskOverviewTab({ storeId, detail, view }: Props) {
         ) : null}
         <Card>
           <CardHeader title="Done when" info="Met only when the verification checks pass. Applied or published is not enough." />
-          <CardBody className="flex flex-col gap-4 pt-2">
+          <CardBody className="flex flex-col gap-3 pt-2">
             <ul className="flex flex-col gap-2">
               {detail.successCriteria.map((c) => (
                 <li key={c} className="flex items-start gap-2 text-body-sm text-fg-muted">

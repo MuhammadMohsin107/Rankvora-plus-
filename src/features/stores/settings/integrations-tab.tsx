@@ -104,7 +104,7 @@ export function IntegrationsTab({ detail, host, readOnly, onChange }: Props) {
   const hasConnector = commerceConnected || reconnecting;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
       <Card className="min-w-0 self-start">
         <CardHeader
           title="Publishing connector"
@@ -112,7 +112,7 @@ export function IntegrationsTab({ detail, host, readOnly, onChange }: Props) {
           info="Lets approved fixes be published to the site. Each website keeps its own connection. Without one, fixes are guidance only."
           actions={<Status kind="integration" value={commerce.state} />}
         />
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           {commerce.note && (commerce.state !== "needs_attention" || readOnly) ? <Callout tone="neutral">{commerce.note}</Callout> : null}
 
           <KeyValue
@@ -151,7 +151,7 @@ export function IntegrationsTab({ detail, host, readOnly, onChange }: Props) {
 
       <Card className="min-w-0 self-start">
         <CardHeader title="Search Console" info="Search performance for the canonical domain." actions={<Status kind="integration" value={searchConsole.state} />} />
-        <CardBody className="flex flex-col gap-4">
+        <CardBody className="flex flex-col gap-3">
           {searchConsole.note ? <Callout tone="neutral">{searchConsole.note}</Callout> : null}
           <KeyValue
             columns={2}

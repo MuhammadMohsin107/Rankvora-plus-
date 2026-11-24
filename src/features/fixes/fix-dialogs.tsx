@@ -51,7 +51,7 @@ function ReasonBody({ open, onClose, title, description, confirmLabel, tone = "d
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Field label="Reason">
           {({ id }) => (
             <Select id={id} value={reason} onChange={(event) => setReason(event.target.value)}>
@@ -118,7 +118,7 @@ function SupersedeBody({ open, onClose, candidates, onConfirm }: SupersedeProps)
       {candidates.length === 0 ? (
         <Callout tone="neutral" title="No replacement yet">Create the replacing task from the finding first.</Callout>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <Field label="Replaced by">
             {({ id }) => (
               <Select id={id} value={successor} onChange={(event) => setSuccessor(event.target.value)}>
@@ -171,7 +171,7 @@ function CreateBody({ open, onClose, recommendation, openTasks, onCreate }: Crea
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {openTasks.length > 0 ? (
           <Callout tone="warning" title="A task is already open">
             {openTasks.map((t) => t.id).join(", ")} addresses this finding. Create another only if it is different work.

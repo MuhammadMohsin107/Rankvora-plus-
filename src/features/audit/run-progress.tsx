@@ -21,7 +21,7 @@ const stageBadge = {
 function StageRow({ stage, paused }: { stage: AuditStage; paused: boolean }) {
   const badge = stageBadge[stage.state];
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)] gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+    <li className="grid grid-cols-[minmax(0,1fr)] gap-2 py-2 first:pt-0 last:pb-0 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
       <span><Badge tone={badge.tone} icon={badge.icon}>{paused && stage.state === "running" ? "Paused" : badge.label}</Badge></span>
       <div className="min-w-0">
         <p className="text-body-sm font-medium text-fg">{stage.label}</p>
@@ -42,7 +42,7 @@ export function RunProgressView({ derived, paused }: { derived: DerivedAudit; pa
   const validating = progress.phase === "validating" || progress.status === "blocked";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {paused ? <Callout tone="warning" title="Paused">The clock is stopped. Nothing advances until you resume.</Callout> : null}
       <SplitLayout
         main={

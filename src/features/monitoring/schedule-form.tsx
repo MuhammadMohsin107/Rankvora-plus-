@@ -190,14 +190,14 @@ function toConfig(s: FormState, versions: Record<string, number>): ScheduleConfi
 function Advanced({ title, summary, children }: { title: string; summary?: string; children: ReactNode }) {
   return (
     <details className="group rounded-card border border-line bg-surface shadow-card">
-      <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-card py-3 text-card-title font-semibold text-fg marker:content-none">
+      <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-card py-2.5 text-card-title font-semibold text-fg marker:content-none">
         <span>{title}</span>
         <span className="flex items-center gap-2 text-label font-normal text-fg-muted">
           {summary}
           <Icon name="chevron-down" size={16} className="transition-transform group-open:rotate-180" />
         </span>
       </summary>
-      <div className="flex flex-col gap-4 border-t border-line p-card">{children}</div>
+      <div className="flex flex-col gap-3 border-t border-line p-card">{children}</div>
     </details>
   );
 }
@@ -206,7 +206,7 @@ function Block({ title, info, children }: { title: string; info?: string; childr
   return (
     <Card as="section">
       <CardHeader title={title} info={info} />
-      <CardBody className="flex flex-col gap-4">{children}</CardBody>
+      <CardBody className="flex flex-col gap-3">{children}</CardBody>
     </Card>
   );
 }
@@ -344,10 +344,10 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
   );
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
       <HeaderAction>{primary("max-sm:hidden")}</HeaderAction>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <Block title="Basics">
           <Field label="Name" required>
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} value={s.name} maxLength={80} onChange={(event) => set("name", event.target.value)} placeholder="e.g. Weekly visibility check" />}
@@ -395,7 +395,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
         </Block>
 
         <Block title="Timetable">
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
             <Field label="Frequency">
               {({ id }) => (
                 <Select id={id} value={s.kind} onChange={(event) => set("kind", event.target.value as FrequencyKind)}>
@@ -448,7 +448,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
         </Block>
 
         <Advanced title="Sampling and retries" summary={`${s.samples} samples · ${s.maxAttempts} attempts`}>
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
             <NumberField label="Samples per job" value={s.samples} onChange={(n) => set("samples", n)} min={1} max={5} />
             <NumberField label="Run window" value={s.windowMinutes} onChange={(n) => set("windowMinutes", n)} min={10} max={240} suffix="min" />
             <NumberField label="Max concurrency" value={s.maxConcurrency} onChange={(n) => set("maxConcurrency", n)} min={1} max={10} suffix="jobs at once" />
@@ -510,7 +510,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
                   </div>
                 </fieldset>
               ))}
-              <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
                 <Field label="Threshold">
                   {({ id }) => (
                     <Select id={id} value={s.threshold} onChange={(event) => set("threshold", event.target.value)}>
@@ -583,7 +583,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
         </Advanced>
 
         <Advanced title="Usage limits" summary={`${formatNumber(s.capJobs)} jobs · ${formatUsd(s.capCost)}`}>
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
             <NumberField label="Jobs cap" value={s.capJobs} onChange={(n) => set("capJobs", n)} min={1} max={5000} suffix="per month" />
             <NumberField label="Cost cap (estimate)" value={s.capCost} onChange={(n) => set("capCost", n)} min={1} max={500} suffix="USD per month" />
           </div>
@@ -591,7 +591,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
         </Advanced>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-24 xl:self-start">
+      <div className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-24 xl:self-start">
         <Card>
           <CardHeader title="Estimate" />
           <CardBody className="flex flex-col gap-3">

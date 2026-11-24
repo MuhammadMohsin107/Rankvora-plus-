@@ -36,7 +36,7 @@ export function LocalFindingView({ storeId, findingId, tasks, actorName }: Props
 
   if (!hydrated) {
     return (
-      <div className="flex flex-col gap-4" aria-busy="true">
+      <div className="flex flex-col gap-3" aria-busy="true">
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -77,9 +77,9 @@ export function LocalFindingView({ storeId, findingId, tasks, actorName }: Props
           </Button>
         ) : null}
       </HeaderAction>
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <Card>
-          <CardBody className="flex flex-col gap-4">
+          <CardBody className="flex flex-col gap-3">
             {raw.expected || raw.actual ? (
               <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
                 <div className="rounded-control border border-line bg-surface-2 p-3">

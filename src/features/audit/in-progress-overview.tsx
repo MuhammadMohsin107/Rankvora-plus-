@@ -16,7 +16,7 @@ const stageBadge: Record<StageState, { tone: "success" | "accent" | "neutral"; i
 function StageRow({ stage }: { stage: AuditStage }) {
   const badge = stageBadge[stage.state];
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)] gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+    <li className="grid grid-cols-[minmax(0,1fr)] gap-2 py-2 first:pt-0 last:pb-0 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
       <div className="flex min-w-0 items-center gap-2.5">
         <span className="w-24 shrink-0"><Badge tone={badge.tone} icon={badge.icon}>{badge.label}</Badge></span>
       </div>
@@ -36,7 +36,7 @@ export function InProgressOverview({ audit, channelLabelText }: { audit: AuditDe
   if (!progress) return null;
   const attempted = progress.jobs.succeeded + progress.jobs.failed;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <Callout tone="warning" title="Provisional results">
         Numbers on every tab are partial and will change until the audit completes.
       </Callout>

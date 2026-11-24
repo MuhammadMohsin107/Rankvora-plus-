@@ -47,7 +47,7 @@ export function ReportDetail({ storeId, reportId, seeded, documents, progress }:
   if (!row) {
     if (!hydrated) {
       return (
-        <div className="flex flex-col gap-4" aria-busy="true">
+        <div className="flex flex-col gap-3" aria-busy="true">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-48 w-full" />
         </div>

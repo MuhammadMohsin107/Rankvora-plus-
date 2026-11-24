@@ -123,7 +123,7 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
       >
         <form
           noValidate
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
             save();

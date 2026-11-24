@@ -132,8 +132,8 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
   const rollbackReady = reason.trim().length >= 5 && (!rollback.laterEdit || ack);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className={cms === "guidance" ? "grid grid-cols-[minmax(0,1fr)] gap-4" : "grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2"}>
+    <div className="flex flex-col gap-3">
+      <div className={cms === "guidance" ? "grid grid-cols-[minmax(0,1fr)] gap-3" : "grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2"}>
         <Card>
           <CardHeader title="Connector" subtitle="Optional" actions={connector && connector.state !== "disconnected" ? <DemoBadge>Demo</DemoBadge> : <Badge tone="neutral" icon="plug">Not connected</Badge>} />
           <CardBody className="flex flex-col gap-3">
@@ -418,7 +418,7 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
           </>
         }
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {rollback.laterEdit ? (
             <Callout tone="warning" title="The remote resource was edited after this change">
               {rollback.laterEdit.by} edited it {formatDateTime(rollback.laterEdit.at)}. {rollback.laterEdit.note} Rollback does not overwrite it automatically, so it needs manual reconciliation.

@@ -27,7 +27,7 @@ export function contentPreview(page: CrawledPage): string {
 }
 
 function Pane({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-4 pt-4">{children}</div>;
+  return <div className="flex flex-col gap-3 pt-3">{children}</div>;
 }
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
@@ -43,7 +43,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 export function PageInspector({ page, issues, storeId }: { page: CrawledPage; issues: PageIssue[]; storeId?: string }) {
   const ok = page.status < 400;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone={statusTone(page.status)} icon={ok ? "check-circle" : "x-circle"}>HTTP {page.status}</Badge>
         <Badge>{PAGE_TYPE_LABEL[page.type]}</Badge>

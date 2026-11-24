@@ -52,7 +52,7 @@ export function LocalAuditShell({ storeId, auditId, basis, seed, channels, other
 
   if (!hydrated || now === 0) {
     return (
-      <div className="flex flex-col gap-4" aria-busy="true">
+      <div className="flex flex-col gap-3" aria-busy="true">
         <Skeleton className="h-16 w-2/3" />
         <Skeleton className="h-64 w-full" />
       </div>

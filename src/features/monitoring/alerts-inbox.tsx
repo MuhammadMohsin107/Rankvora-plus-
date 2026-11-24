@@ -175,7 +175,7 @@ export function AlertsInbox({ events, storeTimezone }: { events: MonitoringEvent
   if (events.length === 0) return <EmptyState icon="bell" title="No alerts yet" />;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-3">
       <Segmented
         label="Category"
         value={category}
@@ -236,7 +236,7 @@ function EventDrawerBody({ event, status, tz, handled, base, storeId, onVerify }
   const audit = `/stores/${storeId}/audits/new?recheck=${encodeURIComponent(event.promptId ?? "")}&provider=${encodeURIComponent(event.channelId ?? "")}&from=${encodeURIComponent(event.runId)}&event=${encodeURIComponent(event.id)}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-1.5">
         {alert ? <Status kind="severity" value={SEVERITY_STATUS[alert.severity]} /> : null}
         {status ? <Status kind="alert" value={status} /> : null}

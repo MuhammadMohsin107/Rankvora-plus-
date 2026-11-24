@@ -25,7 +25,7 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
   const aiGrid = full ? "sm:grid-cols-2" : "sm:grid-cols-3";
   const webGrid = "sm:grid-cols-2";
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
       <Card as="section" className="flex flex-col">
         <CardHeader
           title="AI visibility"
@@ -35,7 +35,7 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
         />
         {ai ? (
           <>
-            <CardBody className={`grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-5 ${aiGrid}`}>
+            <CardBody className={`grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-3 ${aiGrid}`}>
               <Metric label="Mention rate" numerator={ai.mention.n} denominator={ai.mention.d} sampleStatus={sampleStatus(ai.mention.d)} info="Successful responses that mention the brand ÷ successful responses." />
               <Metric label="Recommendation rate" numerator={ai.recommendation.n} denominator={ai.recommendation.d} sampleStatus={sampleStatus(ai.recommendation.d)} />
               <Metric label="Owned citation rate" numerator={ai.ownedCitation.n} denominator={ai.ownedCitation.d} unit="citation-capable responses" info="Denominator counts only successful responses from providers that return citations." />
@@ -63,7 +63,7 @@ export function LaneCards({ summary, base, basis, showLinks = true, variant = "f
         />
         {website ? (
           <>
-            <CardBody className={`grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-5 ${webGrid}`}>
+            <CardBody className={`grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-3 ${webGrid}`}>
               <Metric label="Technical pass rate" numerator={website.technical.n} denominator={website.technical.d} unit="checks" naReason={website.technical.d === 0 ? "No determinate checks" : undefined} />
               <Metric label="Content-quality pass rate" numerator={website.content.n} denominator={website.content.d} unit="checks" naReason={website.content.d === 0 ? "No determinate checks" : undefined} />
               {full ? <Metric label="Check coverage" numerator={website.checks.n} denominator={website.checks.d} unit="applicable checks" info="Checks with a determinate result ÷ applicable checks." /> : null}

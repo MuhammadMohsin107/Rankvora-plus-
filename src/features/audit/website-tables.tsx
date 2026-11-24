@@ -76,7 +76,7 @@ export function ChecksTable({ checks, storeId }: { checks: WebsiteCheck[]; store
       />
       <Drawer open={open !== null} onClose={() => setOpen(null)} title={open?.name ?? "Check"} description={open ? CHECK_GROUP_LABEL[open.group] : undefined} size="md">
         {open ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-1.5">
               <Status kind="check" value={open.status} />
               <Badge>{CHECK_KIND_LABEL[open.kind]}</Badge>

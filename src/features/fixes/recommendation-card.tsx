@@ -87,7 +87,7 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
     );
 
   return (
-    <Card as="article" className="flex flex-col gap-4 p-4">
+    <Card as="article" className="flex flex-col gap-3 p-4">
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="min-w-0 text-body font-semibold text-fg">{rec.title}</h3>
@@ -116,7 +116,7 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
           Details
           <Icon name="chevron-down" size={14} className="transition-transform group-open:rotate-180" />
         </summary>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 px-3 pb-3 sm:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-3 pb-3 sm:grid-cols-2">
           <Block label="Root cause">
             <span className="flex flex-wrap items-center gap-1.5" title={CAUSE_HINT[rec.cause.classification]}>
               <Status kind="cause" value={rec.cause.classification} />

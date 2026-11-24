@@ -87,7 +87,7 @@ export function FindingsTable({ findings, storeId, tasks = [] }: { findings: Aud
       />
       <Drawer open={open !== null} onClose={() => setOpenId(null)} title={open?.title ?? "Finding"} description={open ? `${open.id} · ${LANE_LABEL[open.lane]}` : undefined} size="md">
         {open ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-1.5">
               <Status kind="severity" value={open.severity} />
               <Status kind="finding" value={open.status} />

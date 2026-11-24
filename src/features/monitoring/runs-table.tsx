@@ -101,7 +101,7 @@ export function RunsTable({ runs: given, compact }: { runs?: RunSummary[]; compa
   if (!compact && !given && allSchedules.length === 0) return <NoSchedules />;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {compact ? null : <HistorySwitch current="runs" />}
       <DataTable
         label="Monitoring runs"

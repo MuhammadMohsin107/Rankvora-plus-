@@ -60,10 +60,10 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
   const canRequest = (state === "not_requested" || state === "rejected") && (status === "draft_ready" || status === "in_progress");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div>
         <Card>
-          <CardBody className="flex flex-col gap-4">
+          <CardBody className="flex flex-col gap-3">
             {state === "not_required" ? (
               <Callout tone="neutral" title="No approval needed">{approval.notRequiredReason ?? `${MODE_LABEL[mode]} makes no external write.`}</Callout>
             ) : (
@@ -183,7 +183,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
           </>
         }
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <Field label="Reason">
             {({ id }) => (
               <Select id={id} value={reason} onChange={(event) => setReason(event.target.value)}>

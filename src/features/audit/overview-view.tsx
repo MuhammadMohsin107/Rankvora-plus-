@@ -58,7 +58,7 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
   const trigger = config.trigger;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <StatusNote audit={audit} />
       {trigger ? (
         <p className="flex items-center gap-1.5 text-body-sm text-fg-muted">
@@ -85,7 +85,7 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
       {empty ? null : (
         <Card as="section">
           <CardHeader title="Coverage" subtitle="Planned versus returned" />
-          <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+          <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             {hasAi ? <Metric label="Responses" numerator={coverage.responses.n} denominator={coverage.responses.d} unit="requests" basis={audit.failedJobs ? `${audit.failedJobs} failed` : undefined} /> : null}
             {hasAi ? <Metric label="Prompts answered" numerator={coverage.prompts.n} denominator={coverage.prompts.d} unit="prompts" /> : null}
             {hasWebsite ? <Metric label="Pages" numerator={coverage.pages.n} denominator={coverage.pages.d} unit="in scope" basis={`${coverage.pagesDetail.excluded} excluded · ${coverage.pagesDetail.blocked} blocked · ${coverage.pagesDetail.unvisited} unvisited`} /> : null}
@@ -95,7 +95,7 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
       )}
 
       <details className="group rounded-card border border-line bg-surface shadow-card">
-        <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-card py-3 text-card-title font-semibold text-fg">
+        <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-card py-2.5 text-card-title font-semibold text-fg">
           <span>Limitations ({audit.limitations.length})</span>
           <Icon name="chevron-down" size={16} className="text-fg-subtle transition-transform duration-[var(--dur-fast)] group-open:rotate-180" />
         </summary>
@@ -110,7 +110,7 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
       </details>
 
       <details className="group rounded-card border border-line bg-surface shadow-card">
-        <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-card py-3 text-card-title font-semibold text-fg">
+        <summary className="flex cursor-pointer select-none items-center justify-between gap-3 px-card py-2.5 text-card-title font-semibold text-fg">
           <span>Run summary</span>
           <Icon name="chevron-down" size={16} className="text-fg-subtle transition-transform duration-[var(--dur-fast)] group-open:rotate-180" />
         </summary>

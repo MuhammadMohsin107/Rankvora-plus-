@@ -113,7 +113,7 @@ function JobDetails({ job, detail, storeId, onOpenResponse }: { job: RunJob; det
   const failed = job.status === "failed";
   const r = job.response;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Status kind="job" value={job.status} />
         {job.errorClass ? <Badge tone="danger">{FAILURE_LABEL[job.errorClass]}</Badge> : <Status kind="recommendation" value={outcomeStatus[job.outcome]} />}
@@ -154,7 +154,7 @@ function JobDetails({ job, detail, storeId, onOpenResponse }: { job: RunJob; det
         <p className="mt-2 text-helper text-fg-muted">Attempt timing is estimated from the request and completion times.</p>
       </section>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
         <Button size="sm" variant="primary" icon="eye" onClick={onOpenResponse}>{failed ? "View failure" : "View response"}</Button>
         <ButtonLink size="sm" href={`/stores/${storeId}/prompts/${job.promptId}`} icon="prompts">Open prompt</ButtonLink>
         <ButtonLink size="sm" href={`/stores/${storeId}/audits/new?recheck=${encodeURIComponent(job.promptId)}&provider=${encodeURIComponent(job.channelId)}&from=${encodeURIComponent(detail.run.id)}`} icon="audit">Focused re-check</ButtonLink>

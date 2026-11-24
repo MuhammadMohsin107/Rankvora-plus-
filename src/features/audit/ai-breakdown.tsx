@@ -30,7 +30,7 @@ function SingleRates({ rows, metric }: { rows: BreakdownRow[]; metric: MetricKey
       {rows.map((r) => {
         const rate = r.current[metric];
         return (
-          <li key={r.id} className="grid gap-2 py-3 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:items-center md:gap-4">
+          <li key={r.id} className="grid gap-2 py-2 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:items-center md:gap-4">
             <div className="min-w-0">
               <p className="truncate text-[13px] font-medium text-fg" title={r.label}>{r.label}</p>
               <p className="truncate text-xs text-fg-subtle" title={r.sub}>{r.failed > 0 ? `${r.sub} · ${r.failed} failed, excluded` : r.sub}</p>
@@ -79,7 +79,7 @@ export function BreakdownCards({ providers, groups, compareTitle }: Props) {
           options={(Object.keys(METRIC_LABEL) as MetricKey[]).map((k) => ({ value: k, label: METRIC_LABEL[k] }))}
         />
       </div>
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
         {([
           { id: "provider", title: "By provider", rows: providers },
           { id: "group", title: "By prompt group", rows: groups },

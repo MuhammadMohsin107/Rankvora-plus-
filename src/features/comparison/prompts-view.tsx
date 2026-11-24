@@ -39,11 +39,11 @@ function SlotsDrawer({ group, storeId, comparisonId, channelLabels, onClose }: {
   return (
     <Drawer open={group !== null} onClose={onClose} title={group?.text ?? "Prompt"} description={group ? `${group.promptId} · ${pluralize(group.slots.length, "matched slot")}` : undefined} size="lg">
       {group ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <EvidenceTrace ids={{ storeId, promptId: group.promptId, comparisonId }} live={false} />
           <ul className="divide-y divide-line">
             {group.slots.map((slot) => (
-              <li key={slot.key} className="flex flex-col gap-2 py-3 first:pt-0">
+              <li key={slot.key} className="flex flex-col gap-2 py-2 first:pt-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-body-sm font-medium text-fg">{channelLabels[slot.channelId] ?? slot.channelId}</p>
                   <p className="tnum text-helper text-fg-subtle">v{slot.promptVersion} · sample {slot.sample}</p>
@@ -123,7 +123,7 @@ export function PromptsView({ storeId, comparisonId, rows, leftOut, channelLabel
   const clear = () => router.replace(pathname);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {verdict === "insufficient_data" ? <Callout tone="warning" title="Fewer than 20 matched pairs: read these rows as examples, not a trend." /> : null}
       {forced ? (
         <p className="flex items-center gap-2 text-body-sm text-fg-muted">
@@ -145,7 +145,7 @@ export function PromptsView({ storeId, comparisonId, rows, leftOut, channelLabel
         empty={<p className="p-2 text-center text-body-sm text-fg-muted">No matched prompts.</p>}
       />
       <details className="rounded-card border border-line bg-surface shadow-card" open={params.get("left") === "1" ? true : undefined}>
-        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-card px-card py-3 text-card-title font-semibold text-fg focus-visible:outline-2 focus-visible:outline-ring">
+        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-card px-card py-2.5 text-card-title font-semibold text-fg focus-visible:outline-2 focus-visible:outline-ring">
           Left out
           <span className="tnum text-helper font-normal text-fg-subtle">{leftOut.length}</span>
         </summary>

@@ -46,8 +46,8 @@ export function ProfileTab({ domain, readOnly, profile, savedProfile, onProfile,
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-2">
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
         <Card className="flex flex-col">
           <CardHeader title="Website details" />
           <CardBody className="flex-1">

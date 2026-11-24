@@ -50,7 +50,7 @@ function GenerateDialog({ open, onClose, sources, onCreate }: { open: boolean; o
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Field label="Report type">
           {(p) => (
             <Select id={p.id} value={type} onChange={(e) => { setType(e.target.value as ReportKind); setSourceId(""); }}>

@@ -48,7 +48,7 @@ function CountsOnly({ metrics }: { metrics: MetricResult[] }) {
 function MoreMetrics({ metrics }: { metrics: MetricResult[] }) {
   return (
     <details className="group rounded-card border border-line bg-surface shadow-card">
-      <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-card px-card py-3 text-card-title font-semibold text-fg focus-visible:outline-2 focus-visible:outline-ring">
+      <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-card px-card py-2.5 text-card-title font-semibold text-fg focus-visible:outline-2 focus-visible:outline-ring">
         More metrics
         <span className="text-helper font-normal text-fg-subtle">{metrics.length}</span>
       </summary>
@@ -101,7 +101,7 @@ export function OverviewView({ detail, base }: { detail: ComparisonDetail; base:
       actions={<ButtonLink href={`${base}/quality`} variant="ghost" size="sm">Details</ButtonLink>}
     />
   );
-  if (result.verdict === "not_comparable") return <div className="flex flex-col gap-4">{banner}</div>;
+  if (result.verdict === "not_comparable") return <div className="flex flex-col gap-3">{banner}</div>;
 
   const countsOnly = result.verdict === "insufficient_data";
   const hero = HERO.map((id) => result.headline.find((m) => m.id === id)).filter((m): m is MetricResult => Boolean(m));
@@ -112,7 +112,7 @@ export function OverviewView({ detail, base }: { detail: ComparisonDetail; base:
   const cohort = hero[0]?.cohort ?? 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {banner}
 
       <Card>
