@@ -53,12 +53,13 @@ export function FilterBar({ label, search, filters = [], children, chips = false
   const active = hasActiveFilters(search?.value, filters);
   const activeFilters = filters.filter((filter) => filter.value !== "");
   const showCount = resultCount && (active || alwaysShowCount);
+  const hasActions = Boolean(actions);
   const empty = !search && filters.length === 0 && !children && !actions;
   if (empty) return null;
   return (
     <div role="group" aria-label={label} className={cn("flex min-w-0 flex-col gap-2", className)}>
       {/* One bar: the search and every filter sit inside it, separated by thin dividers. */}
-      <div className={cn("flex min-w-0 max-w-full flex-wrap items-center gap-1 self-start rounded-card border border-line bg-surface p-1 shadow-card max-sm:w-full sm:rounded-full", actions && "sm:w-full")}>
+      <div className={cn("flex min-w-0 max-w-full flex-wrap items-center gap-1 self-start rounded-card border border-line bg-surface p-1 shadow-card max-sm:w-full sm:rounded-full", hasActions && "sm:w-full")}>
         {search ? (
           <SearchField
             bare
@@ -106,7 +107,7 @@ export function FilterBar({ label, search, filters = [], children, chips = false
           </Button>
         ) : null}
         {showCount || actions ? (
-          <div className={cn("flex items-center gap-3 pl-1 pr-3", actions && "ml-auto")}>
+          <div className={cn("flex items-center gap-3 pl-1 pr-3", hasActions && "ml-auto")}>
             {showCount ? (
               <p className="tnum text-xs text-fg-muted" aria-live="polite" aria-atomic="true">
                 Showing {resultCount.shown} of {resultCount.total}
