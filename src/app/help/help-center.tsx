@@ -64,7 +64,7 @@ function FaqList({ items }: { items: Faq[] }) {
                 aria-expanded={isOpen}
                 aria-controls={`${uid}-${faq.id}`}
                 onClick={() => toggle(faq.id)}
-                className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 py-3 text-left text-body font-medium text-fg hover:text-accent-text pointer-coarse:min-h-14"
+                className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left text-body font-medium text-fg hover:text-accent-text pointer-coarse:min-h-14"
               >
                 {faq.question}
                 <Icon name="chevron-down" size={18} className={cn("shrink-0 text-fg-subtle transition-transform duration-[var(--dur-fast)]", isOpen && "rotate-180")} />
@@ -145,7 +145,7 @@ function ContactForm() {
 
   const errorList = Object.entries(errors) as [keyof FormValues, string][];
   return (
-    <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form noValidate onSubmit={onSubmit} className="flex flex-col gap-3">
       {submitted && errorList.length > 0 ? (
         <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-control border border-danger/30 bg-danger-soft p-3 text-body-sm text-danger-text outline-none">
           <p className="font-medium">Fix {errorList.length === 1 ? "1 field" : `${errorList.length} fields`} to continue.</p>
@@ -190,8 +190,8 @@ export function HelpCenter() {
   const visible = q ? FAQS.filter((faq) => `${faq.question} ${faq.answer}`.toLowerCase().includes(q)) : FAQS;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="flex min-w-0 flex-col gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="flex min-w-0 flex-col gap-3">
         <Card>
           <CardHeader title="Common questions" />
           <CardBody className="flex flex-col gap-3">
@@ -215,7 +215,7 @@ export function HelpCenter() {
           <CardBody>
             <dl className="divide-y divide-line-soft">
               {SHORTCUTS.map((shortcut) => (
-                <div key={shortcut.action} className="flex items-center justify-between gap-4 py-2.5">
+                <div key={shortcut.action} className="flex items-center justify-between gap-4 py-2">
                   <dt className="text-body-sm text-fg-muted">{shortcut.action}</dt>
                   <dd className="flex shrink-0 items-center gap-1">
                     {shortcut.keys.map((key) => (
@@ -229,7 +229,7 @@ export function HelpCenter() {
         </Card>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <Card>
           <div id="contact" className="scroll-mt-24">
             <CardHeader title="Contact support" />
