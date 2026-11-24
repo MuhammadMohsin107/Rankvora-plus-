@@ -20,7 +20,7 @@ const show = (m: Meter, value: number) => (m.unit === "usd" ? formatUsd(value) :
 
 function MeterRow({ m }: { m: Meter }) {
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)] items-center gap-x-6 gap-y-1.5 px-card py-3 sm:grid-cols-[11rem_minmax(0,1fr)_9rem]">
+    <li className="grid grid-cols-[minmax(0,1fr)] items-center gap-x-6 gap-y-1 px-card py-2 sm:grid-cols-[11rem_minmax(0,1fr)_9rem]">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <span className="text-body-sm font-medium text-fg">{m.label}</span>
         {m.state === "near" ? <Badge tone="warning" icon="alert-triangle">Near limit</Badge> : null}
@@ -38,7 +38,7 @@ function MeterRow({ m }: { m: Meter }) {
 
 export function UsageTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <UpgradeNudge b={b} onChange={onChange} />
 
       <Section title={`Plan limits, ${b.base.period.label}`}>

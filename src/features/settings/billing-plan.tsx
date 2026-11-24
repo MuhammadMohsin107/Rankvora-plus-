@@ -45,14 +45,14 @@ const BLURB: Record<PlanId, string> = {
 export function PlanTab({ b, onChange }: { b: Billing; onChange: (id: PlanId) => void }) {
   const { plan, base } = b;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
       <UpgradeNudge b={b} onChange={onChange} />
 
       <p className="tnum text-body-sm text-fg-muted">
         <span className="font-medium text-fg">{plan.name}</span> plan · renews {formatDate(base.period.renewsOn)} · billing period {formatDate(base.period.start)} to {formatDate(base.period.end)}
       </p>
 
-      <ul className="grid grid-cols-[minmax(0,1fr)] items-stretch gap-4 md:grid-cols-3">
+      <ul className="grid grid-cols-[minmax(0,1fr)] items-stretch gap-3 md:grid-cols-3">
         {b.plans.map((p) => (
           <li key={p.id} className="flex">
             <PlanCard plan={p} current={p.id === plan.id} direction={p.priceUsd > plan.priceUsd ? "Upgrade" : "Downgrade"} onChange={onChange} />
@@ -76,7 +76,7 @@ function PlanCard({ plan, current, direction, onChange }: { plan: BillingPlan; c
   return (
     <article
       aria-label={`${plan.name} plan`}
-      className={`flex w-full flex-col gap-4 rounded-card border p-5 shadow-card ${current ? "border-accent bg-accent-soft/40 ring-1 ring-accent" : "border-line bg-surface"}`}
+      className={`flex w-full flex-col gap-3 rounded-card border p-4 shadow-card ${current ? "border-accent bg-accent-soft/40 ring-1 ring-accent" : "border-line bg-surface"}`}
     >
       <header className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
@@ -91,7 +91,7 @@ function PlanCard({ plan, current, direction, onChange }: { plan: BillingPlan; c
         <span className="text-body-sm text-fg-muted">per month</span>
       </p>
 
-      <div className="flex flex-col gap-0.5 border-y border-line py-3">
+      <div className="flex flex-col gap-0.5 border-y border-line py-2">
         <span className="text-helper text-fg-muted">AI requests per month</span>
         <span className="tnum text-body font-semibold text-fg">{formatNumber(plan.limits.requests)}</span>
       </div>
@@ -106,7 +106,7 @@ function PlanCard({ plan, current, direction, onChange }: { plan: BillingPlan; c
         </Button>
       )}
 
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-1.5">
         {items.map((text) => (
           <li key={text} className="flex items-start gap-2 text-body-sm text-fg">
             <Icon name="check" size={16} className="mt-0.5 shrink-0 text-success-icon" />
@@ -144,11 +144,11 @@ function PlanComparison({ b }: { b: Billing }) {
           </colgroup>
           <thead>
             <tr className="border-y border-line">
-              <th scope="col" className="px-card py-3 text-left text-label font-medium text-fg-muted">
+              <th scope="col" className="px-card py-2 text-left text-label font-medium text-fg-muted">
                 <span className="sr-only">Feature</span>
               </th>
               {b.plans.map((p) => (
-                <th key={p.id} scope="col" className={`px-4 py-3 text-left align-top ${p.id === b.plan.id ? "bg-accent-soft/60" : ""}`}>
+                <th key={p.id} scope="col" className={`px-4 py-2 text-left align-top ${p.id === b.plan.id ? "bg-accent-soft/60" : ""}`}>
                   <span className="flex flex-col gap-0.5">
                     <span className="flex items-center gap-1.5 text-body font-semibold text-fg">
                       {p.name}
@@ -163,9 +163,9 @@ function PlanComparison({ b }: { b: Billing }) {
           <tbody>
             {ROWS.map((row) => (
               <tr key={row.label} className="border-b border-line last:border-b-0">
-                <th scope="row" className="px-card py-2.5 text-left font-normal text-fg-muted">{row.label}</th>
+                <th scope="row" className="px-card py-1.5 text-left font-normal text-fg-muted">{row.label}</th>
                 {b.plans.map((p) => (
-                  <td key={p.id} className={`tnum px-4 py-2.5 text-fg ${p.id === b.plan.id ? "bg-accent-soft/60 font-medium" : ""}`}>{row.value(p)}</td>
+                  <td key={p.id} className={`tnum px-4 py-1.5 text-fg ${p.id === b.plan.id ? "bg-accent-soft/60 font-medium" : ""}`}>{row.value(p)}</td>
                 ))}
               </tr>
             ))}
