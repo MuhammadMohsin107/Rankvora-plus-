@@ -191,7 +191,7 @@
 @theme inline {
   /* Tailwind's spacing step (default 0.25rem). Every gap, padding, margin and size utility is a multiple of it,
      so lowering it tightens the whole app at once. Control and button heights have their own tokens below. */
-  --spacing: 0.235rem;
+  --spacing: 0.225rem;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
