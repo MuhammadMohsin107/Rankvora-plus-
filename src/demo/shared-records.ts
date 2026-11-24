@@ -580,7 +580,7 @@ const TH_FINDINGS: Finding[] = [
     lastObservedAt: "2026-11-16T11:10:00Z",
     auditId: "aud-th-001",
     affectedUrls: ["https://threadly.example/collections/summer-linen"],
-    affectedPromptIds: ["p-th-006"],
+    affectedPromptIds: ["p-th-002"],
     expected: "The collection page can be indexed (no noindex directive).",
     actual: "Resolved: the verification audit on 16 Nov found no noindex directive on the Summer Linen collection page.",
     recurrenceCount: 4,

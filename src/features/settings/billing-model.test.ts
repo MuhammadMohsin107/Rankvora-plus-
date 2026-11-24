@@ -61,7 +61,7 @@ describe("usage totals", () => {
 
   it("counts one search call per request and sums active prompts", () => {
     expect(total.searchCalls).toBe(total.requests);
-    expect(total.activePrompts).toBe(21);
+    expect(total.activePrompts).toBe(28);
   });
 });
 

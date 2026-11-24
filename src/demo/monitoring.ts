@@ -1670,7 +1670,7 @@ export const EVENT_SPECS: EventSpec[] = [
     at: "2026-11-16T09:49:00Z",
     headlineId: "al-034",
     metric: "brand_fact",
-    promptId: "p-th-006",
+    promptId: "p-th-002",
     channelId: "ch-gemini",
     findingId: "fnd-th-003",
     fact: {

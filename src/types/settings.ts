@@ -1,5 +1,5 @@
-/** Types for organization pages (team, billing, notifications, integrations) and Store settings (demo-backed, service-shaped). */
-import type { IntegrationState, ProviderCode, Role, SearchMode, StorePlatform } from "@/types/core";
+/** Types for organization pages (billing, notifications, integrations) and Store settings (demo-backed, service-shaped). */
+import type { IntegrationState, ProviderCode, SearchMode, StorePlatform } from "@/types/core";
 
 /* ───────── Providers (organization → AI platforms) ───────── */
 

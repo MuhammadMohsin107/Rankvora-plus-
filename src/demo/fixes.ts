@@ -2945,7 +2945,7 @@ const TH_FINDING_EXTRAS: Record<string, FindingExtras> = {
       { id: "e1", kind: "page", url: `${TH_URL}/collections/summer-linen`, note: "meta robots: noindex, follow", auditId: "aud-th-001" },
       { id: "e2", kind: "page", url: `${TH_URL}/collections/summer-linen`, note: "meta robots: noindex, follow (third audit in a row)", auditId: "aud-th-003" },
       { id: "e3", kind: "page", url: `${TH_URL}/collections/summer-linen`, note: "meta robots: index, follow; self canonical", auditId: "aud-th-004" },
-      { id: "e4", kind: "prompt", promptId: "p-th-006", note: "Merino knitwear prompt tracked for the same store. Context only." },
+      { id: "e4", kind: "prompt", promptId: "p-th-002", note: "Linen shirt prompt tracked for the same store. Context only." },
     ],
     observations: [
       { id: "o1", at: "2026-10-08T09:29:00Z", source: "Initial audit", sourceHref: "audits/aud-th-001", note: "noindex found" },
@@ -3555,7 +3555,7 @@ const TH_TASK_DETAILS: Record<string, TaskDetailSeed> = {
         ],
       },
       simulated: null,
-      context: { label: "Brand mention rate on the knitwear prompt p-th-006 (context only)", n: 1, d: 3, basis: "3 responses, 1 sample each, verification audit. Directional." },
+      context: { label: "Brand mention rate on the linen shirt prompt p-th-002 (context only)", n: 3, d: 3, basis: "3 responses, 1 sample each, verification audit. Directional." },
     },
     history: [
       { id: "h1", at: "2026-10-08T09:29:00Z", actor: "Audit aud-th-001", kind: "created", title: "Finding fnd-th-003 detected" },
