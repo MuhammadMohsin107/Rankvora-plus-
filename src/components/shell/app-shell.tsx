@@ -35,7 +35,7 @@ type ShellProps = {
 /** First step of the header trail: home is the Websites & Brands list. */
 function HomeLink() {
   return (
-    <Link href="/stores" aria-label="Home: Websites & Brands" title="Home" className="-mr-1 flex h-9 w-8 shrink-0 items-center justify-center rounded-control text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg lg:-ml-1.5 pointer-coarse:size-11">
+    <Link href="/stores" aria-label="Home: Websites & Brands" title="Home" className="-mr-1 flex h-btn w-8 shrink-0 items-center justify-center rounded-control text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 hover:text-fg lg:-ml-1.5 pointer-coarse:size-11">
       <Icon name="home" size={18} />
     </Link>
   );
@@ -166,13 +166,13 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
               aria-label="Search"
               title="Search (Ctrl K)"
               aria-keyshortcuts="Control+K Meta+K"
-              className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-control px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-60 md:border md:border-line-strong md:bg-surface md:px-3 md:hover:border-fg-subtle md:hover:bg-surface"
+              className="inline-flex h-btn cursor-pointer items-center gap-2 rounded-control px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-60 md:border md:border-line-strong md:bg-surface md:px-3 md:hover:border-fg-subtle md:hover:bg-surface"
             >
               <Icon name="search" size={16} className="shrink-0" />
               <span className="hidden text-fg-subtle md:inline">Search</span>
               <span aria-hidden="true" className="tnum ml-auto hidden text-helper text-fg-subtle lg:inline">Ctrl K</span>
             </button>
-            <Link href="/help" className="hidden h-9 items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg sm:inline-flex">
+            <Link href="/help" className="hidden h-btn items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg sm:inline-flex">
               <Icon name="help" size={16} />
               Support
             </Link>

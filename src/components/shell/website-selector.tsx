@@ -83,7 +83,7 @@ export function WebsiteSelector({ websites, active, pathname }: Props) {
       trigger={
         <button
           type="button"
-          className="flex h-9 min-w-0 max-w-[14rem] cursor-pointer items-center gap-1.5 rounded-control px-2 text-left text-body-sm font-semibold text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 aria-expanded:bg-surface-2 sm:max-w-[18rem]"
+          className="flex h-btn min-w-0 max-w-[14rem] cursor-pointer items-center gap-1.5 rounded-control px-2 text-left text-body-sm font-semibold text-fg transition-colors duration-[var(--dur-fast)] hover:bg-surface-2 aria-expanded:bg-surface-2 sm:max-w-[18rem]"
         >
           <span className="truncate">{active ? active.name : "Select website"}</span>
           <Icon name="chevrons-up-down" size={14} className="shrink-0 text-fg-subtle" />
