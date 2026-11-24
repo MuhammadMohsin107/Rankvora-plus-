@@ -7,7 +7,7 @@ import { Callout } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Dialog } from "@/components/ui/overlay";
 import { formatDate } from "@/lib/format";
-import type { AssigneeOption, ExecutionMode, Recommendation, TaskRow } from "@/types/fixes";
+import type { ExecutionMode, Recommendation, TaskRow } from "@/types/fixes";
 
 import { MODE_HINT, MODE_LABEL } from "./fixes-shared";
 
@@ -143,19 +143,17 @@ type CreateProps = {
   open: boolean;
   onClose: () => void;
   recommendation: Recommendation | null;
-  assignees: AssigneeOption[];
   /** Open tasks that already address this finding. */
   openTasks: { id: string; title: string }[];
-  onCreate: (input: { mode: ExecutionMode; assignee: string | null; dueAt: string | null }) => void;
+  onCreate: (input: { mode: ExecutionMode; dueAt: string | null }) => void;
 };
 
 export function CreateTaskDialog(props: CreateProps) {
   return <CreateBody key={`${props.open}-${props.recommendation?.id ?? ""}`} {...props} />;
 }
 
-function CreateBody({ open, onClose, recommendation, assignees, openTasks, onCreate }: CreateProps) {
+function CreateBody({ open, onClose, recommendation, openTasks, onCreate }: CreateProps) {
   const [mode, setMode] = useState<ExecutionMode>(recommendation?.suggestedMode ?? "guidance");
-  const [assignee, setAssignee] = useState("");
   const [due, setDue] = useState("");
   return (
     <Dialog
@@ -167,7 +165,7 @@ function CreateBody({ open, onClose, recommendation, assignees, openTasks, onCre
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" icon="plus" onClick={() => onCreate({ mode, assignee: assignee || null, dueAt: due ? `${due}T00:00:00Z` : null })}>
+          <Button variant="primary" icon="plus" onClick={() => onCreate({ mode, dueAt: due ? `${due}T00:00:00Z` : null })}>
             Create task
           </Button>
         </>
@@ -190,23 +188,9 @@ function CreateBody({ open, onClose, recommendation, assignees, openTasks, onCre
             </Select>
           )}
         </Field>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
-          <Field label="Assignee" hint="Optional">
-            {({ id, describedBy }) => (
-              <Select id={id} aria-describedby={describedBy} value={assignee} onChange={(event) => setAssignee(event.target.value)}>
-                <option value="">Unassigned</option>
-                {assignees.map((a) => (
-                  <option key={a.id} value={a.name}>
-                    {a.name}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Due date" hint={due ? formatDate(`${due}T00:00:00Z`) : "Optional"}>
-            {({ id, describedBy }) => <Input id={id} aria-describedby={describedBy} type="date" value={due} onChange={(event) => setDue(event.target.value)} />}
-          </Field>
-        </div>
+        <Field label="Due date" hint={due ? formatDate(`${due}T00:00:00Z`) : "Optional"}>
+          {({ id, describedBy }) => <Input id={id} aria-describedby={describedBy} type="date" value={due} onChange={(event) => setDue(event.target.value)} />}
+        </Field>
       </div>
     </Dialog>
   );

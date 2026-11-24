@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Status } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, Metric } from "@/components/ui/card";
 import { WebsiteAvatar } from "@/components/ui/avatar";
 import { siteTypeLabel } from "@/lib/labels";
@@ -13,7 +13,7 @@ import { nextWebsiteAction, untrackedReason } from "./website-model";
 export type WebsiteCounts = { unreadAlerts?: number; pendingTasks?: number };
 
 /** One website: identity, status, its own key rates with counts, and ONE next action. */
-export function WebsiteCard({ store, counts }: { store: Store; counts?: WebsiteCounts }) {
+export function WebsiteCard({ store, counts, onDelete }: { store: Store; counts?: WebsiteCounts; onDelete?: () => void }) {
   const summary = store.summary;
   const action = nextWebsiteAction(store, counts);
   return (
@@ -49,7 +49,14 @@ export function WebsiteCard({ store, counts }: { store: Store; counts?: WebsiteC
 
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-line pt-2.5">
         <p className="min-w-0 truncate text-helper text-fg-muted">{action.reason}</p>
-        <ButtonLink href={action.href} variant="secondary" size="sm" trailingIcon="arrow-right" className="relative z-10">{action.label}</ButtonLink>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {onDelete ? (
+            <Button variant="danger-ghost" size="sm" icon="trash" onClick={onDelete} className="relative z-10">
+              Delete
+            </Button>
+          ) : null}
+          <ButtonLink href={action.href} variant="secondary" size="sm" trailingIcon="arrow-right" className="relative z-10">{action.label}</ButtonLink>
+        </div>
       </div>
     </Card>
   );

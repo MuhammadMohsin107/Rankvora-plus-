@@ -4,10 +4,9 @@
  * Local changes (status moves, created tasks) are layered on in the browser by src/features/fixes.
  */
 import { EXTRA_TASKS, FINDING_EXTRAS, RECOMMENDATIONS, TASK_DETAILS, TASK_SUMMARY_EXTRAS, TASK_TITLE_OVERRIDES } from "@/demo/fixes";
-import { getCurrentUser, listMembers, listPromptsBase, listStoreChannels } from "@/services/core";
+import { getCurrentUser, listPromptsBase, listStoreChannels } from "@/services/core";
 import { getFinding, getResponse, listFindings, registry } from "@/services/records";
 import type {
-  AssigneeOption,
   FindingDetailData,
   FindingRow,
   HistoryEvent,
@@ -199,11 +198,6 @@ export async function taskStaticParams(storeIds: string[]): Promise<{ storeId: s
   const out: { storeId: string; taskId: string }[] = [];
   for (const storeId of storeIds) for (const t of await summaries(storeId)) out.push({ storeId, taskId: t.id });
   return out;
-}
-
-export async function listAssignees(): Promise<AssigneeOption[]> {
-  const members = await listMembers();
-  return members.filter((m) => m.role !== "viewer").map((m) => ({ id: m.id, name: m.name, role: m.role }));
 }
 
 export async function getActor() {

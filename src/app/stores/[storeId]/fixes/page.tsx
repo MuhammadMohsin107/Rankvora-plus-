@@ -9,7 +9,7 @@ import { FindingsInbox } from "@/features/fixes/findings-inbox";
 import { FixesEmpty } from "@/features/fixes/fixes-empty";
 import { FixesTabs } from "@/features/fixes/fixes-tabs";
 import { getStore, storeIds } from "@/services/core";
-import { getActor, getFixesSetup, listAssignees, listFindingRows, listTaskSummaries } from "@/services/fixes";
+import { getActor, getFixesSetup, listFindingRows, listTaskSummaries } from "@/services/fixes";
 
 export const metadata: Metadata = { title: "Fixes" };
 
@@ -22,7 +22,7 @@ async function FixesInboxPageContent(props: PageProps<"/stores/[storeId]/fixes">
   const store = await getStore(storeId);
   if (!store) notFound();
 
-  const [rows, tasks, setup, assignees, actor] = await Promise.all([listFindingRows(storeId), listTaskSummaries(storeId), getFixesSetup(storeId), listAssignees(), getActor()]);
+  const [rows, tasks, setup, actor] = await Promise.all([listFindingRows(storeId), listTaskSummaries(storeId), getFixesSetup(storeId), getActor()]);
   const tabs = <FixesTabs storeId={storeId} findings={rows.length} tasks={tasks} />;
 
   if (rows.length === 0) {
@@ -37,7 +37,7 @@ async function FixesInboxPageContent(props: PageProps<"/stores/[storeId]/fixes">
   return (
     <>
       <PageHeader title="Fixes" tabs={tabs} />
-      <FindingsInbox storeId={storeId} rows={rows} tasks={tasks} assignees={assignees} actorName={actor.name} />
+      <FindingsInbox storeId={storeId} rows={rows} tasks={tasks} actorName={actor.name} />
     </>
   );
 }

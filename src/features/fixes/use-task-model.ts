@@ -206,7 +206,6 @@ export function useTaskModel({ storeId, detail, tasks: baseTasks, actorName, lin
     reject: (reason: string) => moveTask(row, "rejected", { reason }),
     supersede: (successorId: string, reason: string) => moveTask(row, "superseded", { successorId, reason }),
     reopen: () => moveTask(row, "suggested"),
-    assign: (name: string) => fix.assign(row, name),
     annotate: (comparisonId: string) => {
       const comparison = links.comparisons.find((c) => c.id === comparisonId);
       emit({

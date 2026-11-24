@@ -8,7 +8,7 @@ import { transitionCopy } from "../status-transitions";
 
 type Row = { to: StoreStatus; label: string; description: string; enabled: boolean; reason?: string };
 
-export function DangerTab({ status, websiteName, reactivateBlocked, onStatus }: { status: StoreStatus; websiteName: string; reactivateBlocked?: string; onStatus: (to: StoreStatus) => void }) {
+export function DangerTab({ status, websiteName, reactivateBlocked, onStatus, onDelete }: { status: StoreStatus; websiteName: string; reactivateBlocked?: string; onStatus: (to: StoreStatus) => void; onDelete: () => void }) {
   const rows: Row[] = [];
 
   if (status === "archived") {
@@ -46,6 +46,14 @@ export function DangerTab({ status, websiteName, reactivateBlocked, onStatus }: 
               </li>
             );
           })}
+          <li className="flex flex-wrap items-center justify-between gap-3 py-3">
+            <div className="min-w-0 max-w-xl">
+              <p className="text-[13px] text-fg">Permanently removes this website with its prompts, results, tasks and settings. This cannot be undone.</p>
+            </div>
+            <Button variant="danger" icon="trash" onClick={onDelete}>
+              Delete website
+            </Button>
+          </li>
         </ul>
       </CardBody>
     </Card>

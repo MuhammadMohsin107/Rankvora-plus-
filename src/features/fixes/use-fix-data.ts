@@ -190,14 +190,6 @@ export function useFixData(storeId: string, baseTasks: readonly TaskSummary[], b
     [actorName, patchTask, notify],
   );
 
-  const assign = useCallback(
-    (task: TaskRow, name: string) => {
-      patchTask(task, { assignee: name }, { title: `Assigned to ${name}` });
-      notify(`Assigned to ${name}`);
-    },
-    [patchTask, notify],
-  );
-
   /** Creates a Suggested task from a finding and moves the finding to In remediation. */
   const createTask = useCallback(
     (input: Omit<NewTaskInput, "storeId" | "actorName" | "now">) => {
@@ -237,7 +229,7 @@ export function useFixData(storeId: string, baseTasks: readonly TaskSummary[], b
     [findingStatus, updateFinding, notify, actorName, storeId],
   );
 
-  return { tasks, findings, notify, findingStatus, patchTask, moveTask, assign, createTask, reviewFinding, syncFinding, actorName, updateFinding };
+  return { tasks, findings, notify, findingStatus, patchTask, moveTask, createTask, reviewFinding, syncFinding, actorName, updateFinding };
 }
 
 export type FixData = ReturnType<typeof useFixData>;

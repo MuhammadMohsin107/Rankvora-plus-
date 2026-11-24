@@ -914,7 +914,7 @@ const PK_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     createdAt: "2026-11-18T08:20:00Z",
     createdBy: "Sana Iqbal",
     successCriteria: ["Both samples reviewed against the previous run", "A short note records persistent change or normal variation"],
-    dependencies: [{ label: "Assignee chosen", met: false }],
+    dependencies: [],
     draft: {
       kind: "guidance",
       owner: "Unassigned",
@@ -1650,7 +1650,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     createdAt: "2026-11-18T10:30:00Z",
     createdBy: "Sana Iqbal",
     successCriteria: ["The cited GulfRun and runpro.ae pages are compared", "A short note records whether the gap is content, listings or neither"],
-    dependencies: [{ label: "Assignee chosen", met: false }],
+    dependencies: [],
     draft: {
       kind: "guidance",
       owner: "Unassigned",
@@ -1792,7 +1792,7 @@ const AE_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     createdAt: "2026-11-06T09:00:00Z",
     createdBy: "Sana Iqbal",
     successCriteria: ["The homepage states hot-weather suitability using supported facts only", "p-ae-003 re-run on the same channels with 3 samples"],
-    dependencies: [{ label: "Assignee chosen", met: true }],
+    dependencies: [],
     rejection: {
       by: "Sana Iqbal",
       at: "2026-11-12T10:00:00Z",
@@ -2691,7 +2691,7 @@ const NU_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     createdAt: "2026-11-17T08:30:00Z",
     createdBy: "Sana Iqbal",
     successCriteria: ["The cited NourishWell and nutrition.example pages are compared", "A short note records whether the gap is content, structure or neither"],
-    dependencies: [{ label: "Assignee chosen", met: false }],
+    dependencies: [],
     draft: {
       kind: "guidance",
       owner: "Unassigned",
@@ -2828,7 +2828,7 @@ const NU_TASK_DETAILS: Record<string, TaskDetailSeed> = {
     createdAt: "2026-11-18T06:30:00Z",
     createdBy: "Sana Iqbal",
     successCriteria: ["The homepage states a short protein answer using supported facts only", "p-nu-007 re-run on the same channels with 3 samples"],
-    dependencies: [{ label: "Assignee chosen", met: true }],
+    dependencies: [],
     cancellation: {
       by: "Sana Iqbal",
       at: "2026-11-18T11:00:00Z",

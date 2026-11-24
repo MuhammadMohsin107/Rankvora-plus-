@@ -12,7 +12,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { useDemoEvents } from "@/demo-state";
 import { EvidenceTrace } from "@/features/evidence/evidence-trace";
 import type { Role } from "@/types/core";
-import type { AssigneeOption, TaskDetailData, TaskSummary } from "@/types/fixes";
+import type { TaskDetailData, TaskSummary } from "@/types/fixes";
 
 import { ReasonDialog, REASONS, SupersedeDialog } from "./fix-dialogs";
 import { allowedMoves, isTaskOpen } from "./fixes-logic";
@@ -28,10 +28,10 @@ import { useTaskModel, type FixLinks } from "./use-task-model";
 type TabId = "overview" | "draft" | "approval" | "execution" | "verification" | "history";
 type Dialogs = "cancel" | "reject" | "supersede" | "applied" | null;
 
-type Props = { storeId: string; detail: TaskDetailData; tasks: TaskSummary[]; role: Role; actorName: string; assignees: AssigneeOption[]; links: FixLinks };
+type Props = { storeId: string; detail: TaskDetailData; tasks: TaskSummary[]; role: Role; actorName: string; links: FixLinks };
 
 /** Task detail: lifecycle (four separate states) and tabs. Every change is saved locally and emits an event. */
-export function TaskWorkspace({ storeId, detail, tasks, role, actorName, assignees, links }: Props) {
+export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }: Props) {
   const m = useTaskModel({ storeId, detail, tasks, actorName, links });
   const { view, act } = m;
   const { task, draft, verification } = detail;
@@ -62,11 +62,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, assigne
   let primary: React.ReactNode = null;
   switch (status) {
     case "suggested":
-      primary = view.assignee ? (
-        <Button variant="primary" icon="play" onClick={act.startWork}>Start work</Button>
-      ) : (
-        <Button variant="primary" icon="user" onClick={() => goTo("overview")}>Assign</Button>
-      );
+      primary = <Button variant="primary" icon="play" onClick={act.startWork}>Start work</Button>;
       break;
     case "pending_approval":
       primary = <Button variant="primary" icon="check" onClick={() => goTo("approval")}>Review approval</Button>;
@@ -143,7 +139,6 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, assigne
   }
 
   const more: MenuItem[] = [
-    { label: view.assignee ? "Change assignee" : "Assign", icon: "user", onSelect: () => goTo("overview") },
     ...(moves.includes("rolled_back") ? [{ label: "Roll back", icon: "undo" as const, onSelect: () => goTo("execution") }] : []),
     ...(moves.includes("rejected") ? [{ label: "Reject", icon: "minus-circle" as const, onSelect: () => setDialog("reject") }] : []),
     ...(moves.includes("superseded") ? [{ label: "Replace with another task", icon: "layers" as const, onSelect: () => setDialog("supersede") }] : []),
@@ -173,7 +168,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, assigne
           label="Task sections"
           defaultId={jump.tab}
           tabs={[
-            { id: "overview", label: "Overview", content: <TaskOverviewTab storeId={storeId} detail={detail} view={view} assignees={assignees} onAssign={act.assign} /> },
+            { id: "overview", label: "Overview", content: <TaskOverviewTab storeId={storeId} detail={detail} view={view} /> },
             {
               id: "draft",
               label: "Draft",

@@ -426,4 +426,3 @@ export type TaskLocal = {
 /** A task row as stored in the local overlay: summary plus local changes. */
 export type TaskRow = TaskSummary & TaskLocal;
 
-export type AssigneeOption = { id: string; name: string; role: string };

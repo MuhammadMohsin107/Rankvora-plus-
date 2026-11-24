@@ -36,7 +36,7 @@ Store area (accent chrome, label = store name + market)
   /stores/[storeId]/audits/new          Start audit wizard
   /stores/[storeId]/audits/[auditId]    Audit run (progress or results; tabs)
   /stores/[storeId]/fixes               Findings inbox
-  /stores/[storeId]/fixes/tasks         Task board/list
+  /stores/[storeId]/fixes/tasks         Task list
   /stores/[storeId]/fixes/findings/[findingId]   Finding detail + recommendations
   /stores/[storeId]/fixes/tasks/[taskId]         Task detail (tabs)
   /stores/[storeId]/monitoring          Overview
@@ -110,7 +110,7 @@ Metric row (mention rate, recommendation rate, owned citation rate, competitor v
 
 ### E. Fixes — `/stores/[storeId]/fixes`
 - **Findings inbox**: filters (severity, priority, category, confidence, status), duplicate indication, affected counts. Bulk select → create tasks.
-- **Task board/list**: toggle list/board (board columns: Suggested/Pending approval · Approved/Queued/In progress/Blocked · Draft ready/Staged · Applied/Published · Verification pending · Done (verified/partially/failed/rolled back)). Card: title, assignee, due, priority, risk, blockers.
+- **Task list**: sortable table with filters. Row: title, status, assignee, due, priority and risk; a row menu moves the task between allowed statuses.
 - **Finding → recommendation detail** (`/fixes/findings/[id]`): recommendation cards (problem, evidence refs, cause classification chip, proposed action, why it matters, expected outcome, effort, risk, dependencies, limitations, verification plan) with approve / edit / reject.
 - **Task detail** `/fixes/tasks/[taskId]` tabs: **Overview** (status stepper showing completed → applied → published → verified as four separate states, assignee, due, execution mode, risk) · **Draft** (AI-assisted drafting: generate/regenerate, source facts used, unsupported-claim warnings, editor + live preview, before/after diff) · **Approval** (exact diff hash, required approver, approve/reject; role gating) · **Execution** (connector, granted scopes, remote version check, exact diff, per-field outcome, CMS state: guidance / draft / staged / applied) · **Verification** (checks re-run, before/after evidence, result, finding status effect) · **History** (drafts, approvals, executions, rollbacks). Rollback dialog with conflict warning. Batch fixes: affected URL list with per-resource result rows and exclusion reasons.
 

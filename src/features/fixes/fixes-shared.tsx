@@ -1,4 +1,3 @@
-import { Icon } from "@/components/ui/icon";
 import { DEMO_NOW, formatShortDate } from "@/lib/format";
 import type { Role } from "@/types/core";
 import type { CmsState, ExecutionMode, TaskStatus } from "@/types/fixes";
@@ -50,32 +49,4 @@ export function dueInfo(dueAt: string | null, status: TaskStatus): { text: strin
   if (!dueAt) return { text: "No due date", overdue: false };
   const overdue = isTaskOpen(status) && status !== "verification_pending" && Date.parse(dueAt) < Date.parse(DEMO_NOW);
   return { text: formatShortDate(dueAt), overdue };
-}
-
-function initialsOf(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-export function Person({ name, muted }: { name: string | null; muted?: boolean }) {
-  if (!name) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-fg-subtle">
-        <Icon name="user" size={14} />
-        Unassigned
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
-      <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[10px] font-semibold text-accent-text">
-        {initialsOf(name)}
-      </span>
-      <span className={muted ? "truncate text-fg-muted" : "truncate"}>{name}</span>
-    </span>
-  );
 }

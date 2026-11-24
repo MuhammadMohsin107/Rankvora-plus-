@@ -15,6 +15,7 @@ import { STATUS } from "@/lib/status";
 import type { WebsiteTask } from "@/services/dashboard";
 import type { AlertHeadline, Store, StoreStatus } from "@/types/core";
 
+import { DeleteWebsiteDialog, useDeleteWebsite } from "./delete-website";
 import { WebsiteCard } from "./website-card";
 
 const STATUS_ORDER = Object.keys(STATUS.store);
@@ -29,6 +30,8 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
   const [status, setStatus] = useState("");
   const [siteType, setSiteType] = useState("");
   const [market, setMarket] = useState("");
+  const [deleting, setDeleting] = useState<Store | null>(null);
+  const deleteWebsite = useDeleteWebsite();
 
   const counts = useMemo(() => {
     const out = new Map<string, { unreadAlerts: number; pendingTasks: number }>();
@@ -88,7 +91,7 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
       ) : (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filtered.map((site) => (
-            <WebsiteCard key={site.id} store={site} counts={counts.get(site.id)} />
+            <WebsiteCard key={site.id} store={site} counts={counts.get(site.id)} onDelete={site.status === "archived" ? () => setDeleting(site) : undefined} />
           ))}
           <Link
             href="/stores/new"
@@ -101,6 +104,15 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
           </Link>
         </div>
       )}
+      <DeleteWebsiteDialog
+        key={deleting?.id ?? "none"}
+        website={deleting}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting) deleteWebsite(deleting);
+          setDeleting(null);
+        }}
+      />
     </div>
   );
 }

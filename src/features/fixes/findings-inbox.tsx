@@ -9,7 +9,7 @@ import { Menu } from "@/components/ui/menu";
 import { DataTable, type Column } from "@/components/ui/table";
 import { formatRelative } from "@/lib/format";
 import { STATUS } from "@/lib/status";
-import type { AssigneeOption, FindingRow, TaskSummary } from "@/types/fixes";
+import type { FindingRow, TaskSummary } from "@/types/fixes";
 
 import { canCreateTask, isTaskOpen } from "./fixes-logic";
 import { CATEGORY_LABEL } from "./fixes-shared";
@@ -51,12 +51,12 @@ function matches(row: FindingRow, values: Record<string, string>): boolean {
   return true;
 }
 
-type Props = { storeId: string; rows: FindingRow[]; tasks: TaskSummary[]; assignees: AssigneeOption[]; actorName: string };
+type Props = { storeId: string; rows: FindingRow[]; tasks: TaskSummary[]; actorName: string };
 
 /** Findings inbox: six columns, four filters (the rest under "More filters"), review actions and Create task per row. */
-export function FindingsInbox({ storeId, rows, tasks, assignees, actorName }: Props) {
+export function FindingsInbox({ storeId, rows, tasks, actorName }: Props) {
   const fix = useFixData(storeId, tasks, rows, actorName);
-  const actions = useFindingActions(fix, assignees);
+  const actions = useFindingActions(fix);
   const [query, setQuery] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const base = `/stores/${storeId}/fixes`;

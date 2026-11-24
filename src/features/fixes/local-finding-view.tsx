@@ -12,7 +12,7 @@ import { EmptyState, Skeleton } from "@/components/ui/feedback";
 import { Menu } from "@/components/ui/menu";
 import { useDemoCollection } from "@/demo-state";
 import { EvidenceTrace } from "@/features/evidence/evidence-trace";
-import type { AssigneeOption, FindingRow, TaskSummary } from "@/types/fixes";
+import type { FindingRow, TaskSummary } from "@/types/fixes";
 
 import { canCreateTask } from "./fixes-logic";
 import { CATEGORY_LABEL } from "./fixes-shared";
@@ -24,13 +24,13 @@ const idOf = (row: FindingState) => row.id;
 const subscribe = () => () => {};
 
 type Loose = FindingState & { expected?: string; actual?: string; affectedUrls?: string[]; auditId?: string };
-type Props = { storeId: string; findingId: string; tasks: TaskSummary[]; assignees: AssigneeOption[]; actorName: string };
+type Props = { storeId: string; findingId: string; tasks: TaskSummary[]; actorName: string };
 
 /** Finding detail for an id that is not in the static data: a finding created in this browser (for example by a simulated audit). */
-export function LocalFindingView({ storeId, findingId, tasks, assignees, actorName }: Props) {
+export function LocalFindingView({ storeId, findingId, tasks, actorName }: Props) {
   const hydrated = useSyncExternalStore(subscribe, () => true, () => false);
   const fix = useFixData(storeId, tasks, NONE, actorName);
-  const actions = useFindingActions(fix, assignees);
+  const actions = useFindingActions(fix);
   const raw = useDemoCollection<FindingState>("findings", NONE, idOf).rows.find((r) => r.id === findingId) as Loose | undefined;
   const row: FindingRow | undefined = fix.findings.find((f) => f.id === findingId);
 

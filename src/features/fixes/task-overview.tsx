@@ -1,34 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
 import { Status } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader, KeyValue } from "@/components/ui/card";
-import { Field, Select } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
-import { Dialog } from "@/components/ui/overlay";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
-import type { AssigneeOption, TaskDetailData } from "@/types/fixes";
+import type { TaskDetailData } from "@/types/fixes";
 
-import { dueInfo, MODE_HINT, MODE_LABEL, Person } from "./fixes-shared";
+import { dueInfo, MODE_HINT, MODE_LABEL } from "./fixes-shared";
 import type { TaskView } from "./task-view";
 
 type Props = {
   storeId: string;
   detail: TaskDetailData;
   view: TaskView;
-  assignees: AssigneeOption[];
-  onAssign: (name: string) => void;
 };
 
-export function TaskOverviewTab({ storeId, detail, view, assignees, onAssign }: Props) {
+export function TaskOverviewTab({ storeId, detail, view }: Props) {
   const { task } = detail;
-  const { status, assignee } = view;
-  const [assigning, setAssigning] = useState(false);
-  const [choice, setChoice] = useState(assignee ?? assignees[0]?.name ?? "");
+  const { status } = view;
   const due = dueInfo(task.dueAt, status);
   const base = `/stores/${storeId}/fixes`;
   const met = detail.dependencies.filter((d) => d.met).length;
@@ -41,24 +33,6 @@ export function TaskOverviewTab({ storeId, detail, view, assignees, onAssign }: 
           <KeyValue
             columns={2}
             items={[
-              {
-                label: "Assignee",
-                value: (
-                  <span className="flex flex-wrap items-center gap-2">
-                    <Person name={assignee} />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setChoice(assignee ?? assignees[0]?.name ?? "");
-                        setAssigning(true);
-                      }}
-                    >
-                      {assignee ? "Change" : "Assign"}
-                    </Button>
-                  </span>
-                ),
-              },
               { label: "Due", value: <span className={cn("tnum", due.overdue && "font-medium text-danger-text")}>{task.dueAt ? formatDate(task.dueAt) : "No due date"}{due.overdue ? " · overdue" : ""}</span> },
               { label: "Execution mode", value: <span title={MODE_HINT[task.mode]}>{MODE_LABEL[task.mode]}</span> },
               { label: "Risk", value: <Status kind="risk" value={task.risk} /> },
@@ -142,39 +116,6 @@ export function TaskOverviewTab({ storeId, detail, view, assignees, onAssign }: 
           </CardBody>
         </Card>
       </div>
-
-      <Dialog
-        open={assigning}
-        onClose={() => setAssigning(false)}
-        title="Assign task"
-        size="sm"
-        footer={
-          <>
-            <Button onClick={() => setAssigning(false)}>Cancel</Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                onAssign(choice);
-                setAssigning(false);
-              }}
-            >
-              Assign
-            </Button>
-          </>
-        }
-      >
-        <Field label="Assignee" hint="Viewers cannot be assigned.">
-          {({ id, describedBy }) => (
-            <Select id={id} aria-describedby={describedBy} value={choice} onChange={(event) => setChoice(event.target.value)}>
-              {assignees.map((a) => (
-                <option key={a.id} value={a.name}>
-                  {a.name} · {a.role}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-      </Dialog>
     </div>
   );
 }

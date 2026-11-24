@@ -31,6 +31,7 @@ import { settingKey } from "./keys";
 import { NotificationsTab, type StoreNotifState } from "./notifications-tab";
 import { ProductsTab } from "./products-tab";
 import { ProfileTab, type ProfileValues } from "./profile-tab";
+import { DeleteWebsiteDialog, useDeleteWebsite } from "../delete-website";
 import { nextId, type TabId } from "./util";
 
 export type WebsiteSettingsData = {
@@ -102,6 +103,8 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
   const notif = notifDraft ?? savedNotif;
 
   const [pending, setPending] = useState<StoreStatus | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const deleteWebsite = useDeleteWebsite();
   const [jump, setJump] = useState<{ id: TabId; n: number }>({ id: "profile", n: 0 });
   const readOnly = status === "archived";
   const goTab = (tab: TabId) => setJump((current) => ({ id: tab, n: current.n + 1 }));
@@ -299,7 +302,7 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
       ),
     },
     { id: "activity", label: "Activity", content: <ActivityTab entries={activity.value.entries} timezone={store.timezone} /> },
-    { id: "danger", label: "Danger zone", content: <DangerTab status={status} websiteName={store.name} reactivateBlocked={reactivateBlocked} onStatus={setPending} /> },
+    { id: "danger", label: "Danger zone", content: <DangerTab status={status} websiteName={store.name} reactivateBlocked={reactivateBlocked} onStatus={setPending} onDelete={() => setDeleting(true)} /> },
   ];
 
   return (
@@ -375,6 +378,7 @@ export function WebsiteSettings({ data }: { data: WebsiteSettingsData }) {
       >
         {pendingCopy?.effect}
       </ConfirmDialog>
+      <DeleteWebsiteDialog key={id} website={deleting ? { name: store.name } : null} onClose={() => setDeleting(false)} onConfirm={() => deleteWebsite({ id, name: store.name })} />
     </>
   );
 }

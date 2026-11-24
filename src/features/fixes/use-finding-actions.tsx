@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 import type { MenuItem } from "@/components/ui/menu";
-import type { AssigneeOption, FindingRow, Recommendation } from "@/types/fixes";
+import type { FindingRow, Recommendation } from "@/types/fixes";
 
 import { CreateTaskDialog, ReasonDialog, REASONS } from "./fix-dialogs";
 import { canCreateTask, findingReviewActions, isTaskOpen, REVIEW_LABEL, type FindingReviewAction } from "./fixes-logic";
@@ -22,7 +22,7 @@ const ICON: Record<FindingReviewAction, "check-circle" | "x-circle" | "shield" |
  * Review actions on a finding (confirm, false positive, accept risk, reopen) and task creation, shared by the inbox
  * rows and the finding page. Returns the menu items for one finding and the dialogs to render once.
  */
-export function useFindingActions(fix: FixData, assignees: AssigneeOption[]) {
+export function useFindingActions(fix: FixData) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const close = () => setDialog(null);
 
@@ -87,9 +87,8 @@ export function useFindingActions(fix: FixData, assignees: AssigneeOption[]) {
         open={dialog?.type === "task"}
         onClose={close}
         recommendation={dialog?.recommendation ?? null}
-        assignees={assignees}
         openTasks={(target?.tasks ?? []).filter((t) => isTaskOpen(t.status)).map((t) => ({ id: t.id, title: t.title }))}
-        onCreate={({ mode, assignee, dueAt }) => {
+        onCreate={({ mode, dueAt }) => {
           if (target) {
             fix.createTask({
               finding: {
@@ -105,7 +104,7 @@ export function useFindingActions(fix: FixData, assignees: AssigneeOption[]) {
               },
               recommendation: dialog?.recommendation ?? null,
               mode,
-              assignee,
+              assignee: null,
               dueAt,
             });
           }

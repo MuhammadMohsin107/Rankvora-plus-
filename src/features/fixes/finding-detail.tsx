@@ -21,7 +21,7 @@ import { ResponseButton } from "@/features/responses/response-inspector";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { SEARCH_MODE_LABEL } from "@/lib/labels";
 import type { Role } from "@/types/core";
-import type { AssigneeOption, FindingDetailData, FindingRow, RecommendationStatus, ResolvedEvidence, TaskSummary } from "@/types/fixes";
+import type { FindingDetailData, FindingRow, RecommendationStatus, ResolvedEvidence, TaskSummary } from "@/types/fixes";
 
 import { REASONS, ReasonDialog } from "./fix-dialogs";
 import { canCreateTask, isTaskOpen } from "./fixes-logic";
@@ -50,17 +50,17 @@ const NO_DECISIONS: RecState = {};
 
 const METRIC_FOR_CATEGORY: Partial<Record<string, string>> = { ai_visibility: "mention-rate", technical: "technical-pass-rate", content: "content-pass-rate" };
 
-type Props = { storeId: string; data: FindingDetailData; row: FindingRow; tasks: TaskSummary[]; role: Role; assignees: AssigneeOption[]; actorName: string };
+type Props = { storeId: string; data: FindingDetailData; row: FindingRow; tasks: TaskSummary[]; role: Role; actorName: string };
 type Dialogs = { type: "approve" | "edit" | "reject"; recId: string } | null;
 
 /** Finding detail: review, recommendations (approve, edit, reject), evidence, history. Everything is saved locally. */
-export function FindingDetail({ storeId, data, row, tasks, role, assignees, actorName }: Props) {
+export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Props) {
   const { finding, extras, evidence, prompts, recommendations } = data;
   const base = `/stores/${storeId}`;
   const approver = canApprove(role);
 
   const fix = useFixData(storeId, tasks, [row], actorName);
-  const actions = useFindingActions(fix, assignees);
+  const actions = useFindingActions(fix);
   const current = fix.findings.find((f) => f.id === finding.id) ?? row;
   const status = current.status;
   const decisions = useDemoSettings<RecState>(`fixes.${storeId}.recommendations`, NO_DECISIONS);

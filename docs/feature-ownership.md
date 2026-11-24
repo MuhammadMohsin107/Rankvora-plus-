@@ -10,7 +10,7 @@ Routes keep the internal name `/stores/[storeId]`; everything a person reads say
 | Module | Owns | Does not own (links instead) |
 |---|---|---|
 | **Audit** `/audits` | Audit creation wizard (initial, full, focused and verification audits; recurring runs belong to Monitoring), configuration and scope, progress, history, snapshot results, AI visibility and website readiness lanes (kept separate), response and page inspection, finding evidence, audit report preview | Fix workflow (a finding links to Fixes), prompt editing (Prompt Library) |
-| **Fixes** `/fixes` | Findings inbox, recommendations, task board and list, draft, approval, simulated execution, verification, rollback, fix history | Evidence capture (links back to the Audit response or page), trend measurement (Monitoring, Comparison) |
+| **Fixes** `/fixes` | Findings inbox, recommendations, task list, draft, approval, simulated execution, verification, rollback, fix history | Evidence capture (links back to the Audit response or page), trend measurement (Monitoring, Comparison) |
 | **Monitoring** `/monitoring` | Schedules (daily, weekly, monthly), simulated runs and jobs, observations, visibility trends, competitor observations, alerts, usage and caps | Prompt text and groups (Prompt Library), notification settings (Website settings) |
 | **Comparison** `/comparisons` | New comparison wizard, history, snapshot, period, audit-to-monitoring and before-and-after-fix comparisons, compatibility and data quality, matched, unmatched and excluded rows, fixes timeline, export | Raw audit and run records (it reads them) |
 
@@ -23,13 +23,13 @@ Workflow: **Audit → Findings → Fixes → Monitoring → Comparison**. A find
 | Dashboard | Summary only: headline metrics, biggest problem, next action, trend, recent activity |
 | Prompt Library `/prompts` | Prompts, groups, versions, templates, import, AI suggestions, per-prompt results history |
 | Reports `/reports` | Generated report history and export for audit, monitoring and comparison sources |
-| Website settings `/settings` | Profile and site type, brand and knowledge, domains, competitors, products and services (optional), **Connections** (publishing connector and Search Console of this website), notifications (which events notify the team and on which channels; the only place they are set), activity, pause and archive |
+| Website settings `/settings` | Profile and site type, brand and knowledge, domains, competitors, products and services (optional), **Connections** (publishing connector and Search Console of this website), notifications (which events notify the team and on which channels; the only place they are set), activity, pause, archive and delete |
 
 ## Organization level
 
 | Section | Owns |
 |---|---|
-| Websites & Brands `/stores` | Website list, add website wizard, status changes |
+| Websites & Brands `/stores` | Website list, add website wizard, delete an archived website |
 | Integrations `/integrations` | AI platform connections (shared by all websites). Website connectors and Search Console are not here; they are in Website settings |
 | Billing `/settings/billing` | Plan and plan change, usage by website and by AI provider against the plan limits, demo invoices. No payment method, add-on packs or cancellation: nothing is really charged |
 | Help & Support `/help` | Help center |

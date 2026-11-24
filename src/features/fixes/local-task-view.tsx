@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Skeleton } from "@/components/ui/feedback";
 import { useDemoCollection } from "@/demo-state";
 import type { Role } from "@/types/core";
-import type { AssigneeOption, FindingRow, TaskRow, TaskSummary } from "@/types/fixes";
+import type { FindingRow, TaskRow, TaskSummary } from "@/types/fixes";
 
 import { detailFromRow } from "./local-task";
 import { TaskWorkspace } from "./task-workspace";
@@ -17,7 +17,7 @@ const NONE: TaskRow[] = [];
 const idOf = (row: TaskRow) => row.id;
 const subscribe = () => () => {};
 
-type Props = { storeId: string; taskId: string; tasks: TaskSummary[]; findings: FindingRow[]; role: Role; actorName: string; assignees: AssigneeOption[]; links: FixLinks };
+type Props = { storeId: string; taskId: string; tasks: TaskSummary[]; findings: FindingRow[]; role: Role; actorName: string; links: FixLinks };
 
 /** Task detail for an id that is not in the static data: a task created in this browser. */
 export function LocalTaskView(props: Props) {
@@ -58,5 +58,5 @@ export function LocalTaskView(props: Props) {
 function LocalBody({ row, findings, ...rest }: Props & { row: TaskRow }) {
   // Frozen once: the seeded parts of a created task never change, live fields come from the overlay.
   const [detail] = useState(() => detailFromRow(row, findings.find((f) => f.id === row.findingId)?.status ?? "in_remediation"));
-  return <TaskWorkspace storeId={rest.storeId} detail={detail} tasks={rest.tasks} role={rest.role} actorName={rest.actorName} assignees={rest.assignees} links={rest.links} />;
+  return <TaskWorkspace storeId={rest.storeId} detail={detail} tasks={rest.tasks} role={rest.role} actorName={rest.actorName} links={rest.links} />;
 }
