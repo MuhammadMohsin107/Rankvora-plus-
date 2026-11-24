@@ -17,7 +17,7 @@ const control =
 
 /** Borderless look for controls that sit inside a toolbar (FilterBar): the bar draws the border. Text colour is set by the caller. */
 const bare =
-  "h-8 w-full rounded-control border-0 bg-transparent text-base transition-colors duration-[var(--dur-fast)] placeholder:text-fg-subtle hover:bg-surface-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:text-body";
+  "h-8 w-full rounded-full border-0 bg-transparent text-base transition-colors duration-[var(--dur-fast)] placeholder:text-fg-subtle hover:bg-surface-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:text-body";
 
 type FieldProps = {
   label: string;

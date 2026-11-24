@@ -6,7 +6,8 @@ import { cn } from "@/lib/cn";
 
 import { Button } from "./button";
 import { Chip } from "./badge";
-import { SearchField, Select } from "./form";
+import { SearchField } from "./form";
+import { Icon } from "./icon";
 
 export type FilterBarFilter = {
   id: string;
@@ -57,7 +58,7 @@ export function FilterBar({ label, search, filters = [], children, chips = false
   return (
     <div role="group" aria-label={label} className={cn("flex min-w-0 flex-col gap-2", className)}>
       {/* One bar: the search and every filter sit inside it, separated by thin dividers. */}
-      <div className="flex min-w-0 flex-wrap items-center gap-1 rounded-card border border-line bg-surface p-1 shadow-card">
+      <div className="flex min-w-0 flex-wrap items-center gap-1 rounded-card border border-line bg-surface p-1 shadow-card sm:rounded-full">
         {search ? (
           <SearchField
             bare
@@ -65,22 +66,39 @@ export function FilterBar({ label, search, filters = [], children, chips = false
             placeholder={search.placeholder ?? "Search"}
             value={search.value}
             onChange={search.onChange}
-            className="w-full sm:w-72"
+            className="w-full sm:w-64"
           />
         ) : null}
-        {filters.map((filter, index) => (
-          <div key={filter.id} className="flex w-[calc(50%-0.125rem)] items-center sm:w-[12rem] sm:flex-none">
-            {index > 0 || search ? <span aria-hidden="true" className="mr-1 hidden h-5 w-px shrink-0 bg-line sm:block" /> : null}
-            <Select bare aria-label={filter.label} value={filter.value} className={filter.value ? "font-medium text-accent-text" : "text-fg"} onChange={(event) => filter.onChange(event.target.value)}>
-              <option value="">{filter.label}: all</option>
-              {filter.options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        ))}
+        {search && filters.length > 0 ? <span aria-hidden="true" className="mx-1 hidden h-5 w-px shrink-0 bg-line sm:block" /> : null}
+        {filters.map((filter) => {
+          const selected = filter.options.find((option) => option.value === filter.value);
+          return (
+            // The pill's width follows the text it shows; the real <select> sits invisibly on top so it stays native and accessible.
+            <div
+              key={filter.id}
+              className={cn(
+                "relative inline-flex h-8 max-w-[14rem] items-center gap-1.5 rounded-full px-3 text-body-sm transition-colors duration-[var(--dur-fast)] focus-within:outline-2 focus-within:outline-ring",
+                filter.value ? "bg-accent-soft font-medium text-accent-text" : "text-fg-muted hover:bg-surface-2 hover:text-fg",
+              )}
+            >
+              <span className="truncate">{filter.value ? `${filter.label}: ${selected?.label ?? filter.value}` : filter.label}</span>
+              <Icon name="chevron-down" size={14} className="shrink-0" />
+              <select
+                aria-label={filter.label}
+                value={filter.value}
+                onChange={(event) => filter.onChange(event.target.value)}
+                className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+              >
+                <option value="">{filter.label}: all</option>
+                {filter.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          );
+        })}
         {children}
         {active && onClearAll ? (
           <Button variant="ghost" size="sm" icon="undo" onClick={onClearAll}>
