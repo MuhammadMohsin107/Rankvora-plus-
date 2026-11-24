@@ -28,7 +28,7 @@ type FilterBarProps = {
   children?: ReactNode;
   /** Show a removable chip for each active filter. Useful when filters live in a popover; off by default because the select already shows its value. */
   chips?: boolean;
-  /** Called by "Reset". The button only shows while a search or filter is active. */
+  /** Called by "Reset". The button is always shown and is disabled until a search or filter is active. */
   onClearAll?: () => void;
   /** "Showing x of y". Announced politely when it changes. Shown only while filters are active unless `alwaysShowCount`. */
   resultCount?: { shown: number; total: number; noun?: string };
@@ -58,7 +58,7 @@ export function FilterBar({ label, search, filters = [], children, chips = false
   return (
     <div role="group" aria-label={label} className={cn("flex min-w-0 flex-col gap-2", className)}>
       {/* One bar: the search and every filter sit inside it, separated by thin dividers. */}
-      <div className="flex min-w-0 flex-wrap items-center gap-1 rounded-card border border-line bg-surface p-1 shadow-card sm:rounded-full">
+      <div className={cn("flex min-w-0 max-w-full flex-wrap items-center gap-1 self-start rounded-card border border-line bg-surface p-1 shadow-card max-sm:w-full sm:rounded-full", actions && "sm:w-full")}>
         {search ? (
           <SearchField
             bare
@@ -77,8 +77,8 @@ export function FilterBar({ label, search, filters = [], children, chips = false
             <div
               key={filter.id}
               className={cn(
-                "relative inline-flex h-8 max-w-[14rem] items-center gap-1.5 rounded-full px-3 text-body-sm transition-colors duration-[var(--dur-fast)] focus-within:outline-2 focus-within:outline-ring",
-                filter.value ? "bg-accent-soft font-medium text-accent-text" : "text-fg-muted hover:bg-surface-2 hover:text-fg",
+                "relative inline-flex h-8 max-w-[14rem] items-center gap-1.5 rounded-full border px-3 text-body-sm transition-colors duration-[var(--dur-fast)] focus-within:outline-2 focus-within:outline-ring",
+                filter.value ? "border-accent/40 bg-accent-soft font-medium text-accent-text" : "border-line-strong text-fg-muted hover:border-fg-faint hover:bg-surface-2 hover:text-fg",
               )}
             >
               <span className="truncate">{filter.value ? `${filter.label}: ${selected?.label ?? filter.value}` : filter.label}</span>
@@ -100,13 +100,13 @@ export function FilterBar({ label, search, filters = [], children, chips = false
           );
         })}
         {children}
-        {active && onClearAll ? (
-          <Button variant="ghost" size="sm" icon="undo" onClick={onClearAll}>
+        {onClearAll ? (
+          <Button variant="ghost" size="sm" icon="undo" disabled={!active} onClick={onClearAll}>
             Reset
           </Button>
         ) : null}
         {showCount || actions ? (
-          <div className="ml-auto flex items-center gap-3">
+          <div className={cn("flex items-center gap-3 pl-1 pr-3", actions && "ml-auto")}>
             {showCount ? (
               <p className="tnum text-xs text-fg-muted" aria-live="polite" aria-atomic="true">
                 Showing {resultCount.shown} of {resultCount.total}
