@@ -10,6 +10,7 @@ import {
   findingReviewActions,
   findingStatusForTask,
   needsReason,
+  nextStepForFinding,
   reachableStatuses,
   simulateApply,
 } from "./fixes-logic";
@@ -160,5 +161,41 @@ describe("simulated verification", () => {
     const o = deriveVerification({ ...base, result: "failed" });
     expect(o.checks.every((c) => c.after.status === "fail")).toBe(true);
     expect(o.findingEffect).toMatch(/reopened/i);
+  });
+});
+
+describe("next step for a finding", () => {
+  it("asks to confirm a new or under-review finding", () => {
+    expect(nextStepForFinding("new", false, false)).toBe("confirm");
+    expect(nextStepForFinding("under_review", true, true)).toBe("confirm");
+  });
+
+  it("asks for a task on a confirmed finding that has none open", () => {
+    expect(nextStepForFinding("confirmed", false, false)).toBe("create_task");
+  });
+
+  it("asks for a new task when a reopened finding's earlier task is finished", () => {
+    expect(nextStepForFinding("reopened", false, true)).toBe("create_new_task");
+    expect(nextStepForFinding("reopened", false, false)).toBe("create_task");
+  });
+
+  it("points at the open task instead of asking for another", () => {
+    expect(nextStepForFinding("confirmed", true, true)).toBe("continue_task");
+    expect(nextStepForFinding("reopened", true, true)).toBe("continue_task");
+    expect(nextStepForFinding("in_remediation", true, true)).toBe("continue_task");
+    expect(nextStepForFinding("awaiting_verification", true, true)).toBe("verify_task");
+  });
+
+  it("says nothing for closed findings or when no task fits", () => {
+    for (const closed of ["verified_resolved", "false_positive", "accepted_risk"] as const) expect(nextStepForFinding(closed, false, true)).toBeNull();
+    expect(nextStepForFinding("in_remediation", false, true)).toBeNull();
+    expect(nextStepForFinding("awaiting_verification", false, true)).toBeNull();
+  });
+
+  it("only asks for a task while the finding can take one", () => {
+    for (const status of ["new", "under_review", "confirmed", "reopened", "in_remediation", "awaiting_verification", "verified_resolved", "false_positive", "accepted_risk"] as const) {
+      const step = nextStepForFinding(status, false, true);
+      if (step === "create_task" || step === "create_new_task") expect(canCreateTask(status)).toBe(true);
+    }
   });
 });

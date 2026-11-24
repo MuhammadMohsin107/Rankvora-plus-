@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { HeaderAction } from "@/components/shell/page-chrome";
 import { PageHeader } from "@/components/shell/page-header";
 import { Badge, Status } from "@/components/ui/badge";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button, ButtonLink, IconButton } from "@/components/ui/button";
 import { Callout, Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { Field, Textarea } from "@/components/ui/form";
@@ -24,7 +24,7 @@ import type { Role } from "@/types/core";
 import type { FindingDetailData, FindingRow, RecommendationStatus, ResolvedEvidence, TaskSummary } from "@/types/fixes";
 
 import { REASONS, ReasonDialog } from "./fix-dialogs";
-import { canCreateTask, isTaskOpen } from "./fixes-logic";
+import { canCreateTask, isTaskOpen, nextStepForFinding } from "./fixes-logic";
 import { canApprove, CATEGORY_LABEL } from "./fixes-shared";
 import { splitLabel } from "./history";
 import { RecommendationCard, type RecLocal } from "./recommendation-card";
@@ -84,7 +84,9 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
   const localOf = (recId: string): RecLocal => {
     const rec = recommendations.find((r) => r.id === recId);
     const d = decisions.value[recId] ?? {};
-    const linked = rec?.taskId ?? fix.tasks.find((t) => t.seed?.recommendationId === recId && isTaskOpen(t.status))?.id ?? null;
+    // An open task for this recommendation wins over a finished one, so a new task shows up after the old one closed.
+    const linked = fix.tasks.find((t) => t.seed?.recommendationId === recId && isTaskOpen(t.status))?.id ?? rec?.taskId ?? null;
+    const linkedStatus = fix.tasks.find((t) => t.id === linked)?.status ?? null;
     return {
       status: d.status ?? rec?.status ?? "proposed",
       action: d.action ?? rec?.action ?? "",
@@ -92,6 +94,8 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
       decidedBy: d.decidedBy ?? rec?.decidedBy,
       edited: d.edited ?? false,
       taskId: linked,
+      taskStatus: linkedStatus,
+      canRetask: canCreateTask(status) && linkedStatus !== null && !isTaskOpen(linkedStatus),
     };
   };
   const decide = (recId: string, next: RecDecision, label: string, detail?: string) => {
@@ -124,6 +128,33 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
   let primary: React.ReactNode = null;
   if (status === "new" || status === "under_review") primary = <Button variant="primary" icon="check" onClick={() => fix.reviewFinding(finding.id, "confirm")}>Confirm</Button>;
   else if (canCreateTask(status) && !openTask) primary = <Button variant="primary" icon="plus" onClick={() => actions.openCreate(findingRow, firstOpen)}>Create task</Button>;
+
+  // "Where do I fix this?": one line that says what to do next for the finding's status, with the button for it.
+  const workingTask = linkedTasks.find((t) => isTaskOpen(t.status));
+  const lastTask = linkedTasks[linkedTasks.length - 1];
+  const createButton = (
+    <Button size="sm" variant="primary" icon="plus" onClick={() => actions.openCreate(findingRow, firstOpen)}>
+      Create task
+    </Button>
+  );
+  const openTaskButton = workingTask ? (
+    <ButtonLink size="sm" variant="primary" href={`${base}/fixes/tasks/${workingTask.id}`} trailingIcon="arrow-right">
+      Open {workingTask.id}
+    </ButtonLink>
+  ) : null;
+  const step = nextStepForFinding(status, Boolean(workingTask), linkedTasks.length > 0);
+  const nextStep: { tone: "info" | "warning"; title: string; text: string; action: React.ReactNode } | null =
+    step === "confirm"
+      ? { tone: "info", title: "Next step: confirm this finding", text: "Check the evidence below. Once it is confirmed you can create a task to fix it.", action: <Button size="sm" variant="primary" icon="check" onClick={() => fix.reviewFinding(finding.id, "confirm")}>Confirm</Button> }
+      : step === "create_task"
+        ? { tone: "info", title: "Next step: create a task to fix it", text: "A task carries the fix from draft and approval to applying and verification.", action: createButton }
+        : step === "create_new_task"
+          ? { tone: "warning", title: "This finding is open again", text: `${lastTask ? `The last task, ${lastTask.id}, did not hold. ` : ""}Create a new task to fix it, then verify the result.`, action: createButton }
+          : step === "continue_task" && workingTask
+            ? { tone: "info", title: "Fix in progress", text: `${workingTask.id} is the open task for this finding. Continue it from the task page.`, action: openTaskButton }
+            : step === "verify_task" && workingTask
+              ? { tone: "info", title: "Waiting for verification", text: `${workingTask.id} is applied. Run its checks on the task page to close the finding.`, action: openTaskButton }
+              : null;
 
   const history = [
     ...extras.observations.map((o, index) => ({
@@ -199,6 +230,11 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
           </CardBody>
         </Card>
 
+        {nextStep ? (
+          <Callout tone={nextStep.tone} title={nextStep.title} actions={nextStep.action}>
+            {nextStep.text}
+          </Callout>
+        ) : null}
         {current.review ? (
           <Callout tone="neutral" title={current.review.kind === "false_positive" ? "Marked false positive" : "Risk accepted"}>
             {current.review.reason}

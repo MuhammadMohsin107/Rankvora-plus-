@@ -130,6 +130,24 @@ export function canCreateTask(status: FindingStatus): boolean {
   return !FINDING_CLOSED.has(status);
 }
 
+/** What a person should do next on a finding. Null when nothing is needed (closed, or no task fits). */
+export type FindingNextStep = "confirm" | "create_task" | "create_new_task" | "continue_task" | "verify_task";
+
+/**
+ * The single next step for a finding, from its status and its tasks. "create_new_task" is a reopened finding whose
+ * earlier task is finished (it did not hold); "continue_task" and "verify_task" point at the task that is already open.
+ */
+export function nextStepForFinding(status: FindingStatus, hasOpenTask: boolean, hasEarlierTask: boolean): FindingNextStep | null {
+  if (status === "new" || status === "under_review") return "confirm";
+  if (status === "awaiting_verification") return hasOpenTask ? "verify_task" : null;
+  if (status === "confirmed" || status === "reopened" || status === "in_remediation") {
+    if (hasOpenTask) return "continue_task";
+    if (status === "in_remediation") return null;
+    return status === "reopened" && hasEarlierTask ? "create_new_task" : "create_task";
+  }
+  return null;
+}
+
 type SyncInput = {
   finding: FindingStatus;
   task: TaskStatus;

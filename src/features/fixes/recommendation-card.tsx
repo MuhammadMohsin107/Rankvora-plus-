@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import type { Confidence } from "@/types/shared-records";
-import type { CauseClassification, Effort, Recommendation, RecommendationStatus } from "@/types/fixes";
+import type { CauseClassification, Effort, Recommendation, RecommendationStatus, TaskStatus } from "@/types/fixes";
 
 import { MODE_LABEL } from "./fixes-shared";
 
@@ -17,8 +17,12 @@ export type RecLocal = {
   decisionNote?: string;
   decidedBy?: string;
   edited: boolean;
-  /** Task created from this recommendation (seeded or local). */
+  /** Task created from this recommendation (seeded or local). An open task is preferred over a finished one. */
   taskId: string | null;
+  /** Status of that task. */
+  taskStatus: TaskStatus | null;
+  /** The linked task is finished but the finding is open again, so a new task is the way to fix it. */
+  canRetask: boolean;
 };
 
 const EFFORT_LABEL: Record<Effort, string> = { small: "Small effort", medium: "Medium effort", large: "Large effort" };
@@ -162,10 +166,18 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
         {local.status === "approved" ? (
           <>
             {local.taskId ? (
-              <Link href={`/stores/${storeId}/fixes/tasks/${local.taskId}`} className="inline-flex items-center gap-1.5 text-label font-medium text-accent-text hover:underline">
-                <Icon name="fixes" size={14} />
-                Open {local.taskId}
-              </Link>
+              <>
+                <Link href={`/stores/${storeId}/fixes/tasks/${local.taskId}`} className="inline-flex items-center gap-1.5 text-label font-medium text-accent-text hover:underline">
+                  <Icon name="fixes" size={14} />
+                  Open {local.taskId}
+                </Link>
+                {local.taskStatus ? <Status kind="task" value={local.taskStatus} compact /> : null}
+                {local.canRetask ? (
+                  <Button size="sm" icon="plus" onClick={onCreateTask} title="The last task is finished, but the finding is open again. Create a new task to fix it.">
+                    Create new task
+                  </Button>
+                ) : null}
+              </>
             ) : (
               <>
                 <Button size="sm" icon="plus" onClick={onCreateTask}>
