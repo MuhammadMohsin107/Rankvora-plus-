@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
 import { Field, Input, SearchField, Select, Textarea } from "@/components/ui/form";
+import { ErrorSummary } from "@/components/ui/error-summary";
 import { Icon } from "@/components/ui/icon";
 import { useToast } from "@/components/ui/toast";
 import { simulatedToast } from "@/demo-state";
@@ -83,6 +84,8 @@ function FaqList({ items }: { items: Faq[] }) {
 type FormValues = { name: string; email: string; topic: string; message: string };
 type FormErrors = Partial<Record<keyof FormValues, string>>;
 
+const FIELD_LABEL: Record<keyof FormValues, string> = { name: "Name", email: "Email", topic: "Topic", message: "Message" };
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validate(values: FormValues): FormErrors {
@@ -155,25 +158,10 @@ function ContactForm() {
   return (
     <form noValidate onSubmit={onSubmit} className="flex flex-col gap-3">
       {submitted && errorList.length > 0 ? (
-        <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-control border border-danger/30 bg-danger-soft p-3 text-body-sm text-danger-text outline-none">
-          <p className="font-medium">Fix {errorList.length === 1 ? "1 field" : `${errorList.length} fields`} to continue.</p>
-          <ul className="mt-1 list-disc pl-5">
-            {errorList.map(([key, message]) => (
-              <li key={key}>
-                <a
-                  href={`#${fieldId(key)}`}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    document.getElementById(fieldId(key))?.focus();
-                  }}
-                  className="rounded underline underline-offset-2 hover:decoration-2"
-                >
-                  {message}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ErrorSummary
+          ref={summaryRef}
+          items={errorList.map(([key, message]) => ({ label: FIELD_LABEL[key], detail: message, targetId: fieldId(key) }))}
+        />
       ) : null}
       <Field id={fieldId("name")} label="Name" required error={shown("name")}>
         {({ id, describedBy, invalid }) => (

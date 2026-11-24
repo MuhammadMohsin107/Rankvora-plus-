@@ -4,6 +4,8 @@ Direction (from the ui-ux-pro-max skill, filtered through the brief): **Minimali
 
 Read first: `docs/ui-screen-inventory.md` (what to build, vocabulary, spec rules).
 
+**Every UI change, however small, starts with the `ui-ux-pro-max` skill**: invoke it and run its searches (`python <skill>/scripts/search.py "<query>" --domain ux`, `--stack nextjs`) before editing, then apply the result through the rules below.
+
 ## 1. Hard rules
 
 1. **Minimal text.** Short headings and labels. No explanatory paragraphs. Secondary info → tooltip (`CardHeader info`, `Metric info`), drawer, or expandable section. One subtitle line max.
@@ -56,7 +58,7 @@ Motion: 120-180ms on colour, transform and opacity only; buttons press at `scale
 | Forms | `Field` (render-prop gives `id`, `describedBy`, `invalid`), `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Segmented`, `RadioCards`, `SearchField` |
 | Tables | `DataTable` (search, filters, sort, selection, pagination, empty state). Columns: `{id, header, cell, sort?, align?, width?, hideBelow?}` |
 | Overlays | `Dialog`, `ConfirmDialog` (destructive / external writes), `Drawer`, `Menu`, `Tooltip`, `useToast()` |
-| Feedback | `EmptyState` (one next action), `ErrorState`, `Skeleton*`, `Progress`, `Stepper`, `Spinner` |
+| Feedback | `EmptyState` (one next action), `ErrorState`, `ErrorSummary` (failed-submit summary: one line + a chip per field that focuses it; inline messages stay at the field), `Skeleton*`, `Progress`, `Stepper`, `Spinner` |
 | Multi-step flow | `WizardFrame` (`@/components/ui/wizard`) |
 | Misc | `Breadcrumb`, `Timeline`, `DiffView`, `HighlightedText`, `Mono` |
 | Charts (`@/components/charts/*`) | `LineChart` (one y axis from 0, legend + direct labels, sample counts under the x axis, tooltip with n/d, arrow-key points, data table), `BarCompare` (0-100% axis, baseline hatched, pp change), `StackedBar`, `HeatStrip` (glyph + tone), `Sparkline`; states `ChartEmpty`, `ChartSkeleton`, `ChartError` (`chart-states.tsx`) |

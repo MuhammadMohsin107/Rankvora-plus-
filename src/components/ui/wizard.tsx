@@ -5,11 +5,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 import { Button } from "./button";
-import { Icon } from "./icon";
+import { ErrorSummary } from "./error-summary";
 import { Progress, Stepper } from "./feedback";
 
 export type WizardIssue = {
   message: string;
+  /** Short name shown in the summary chip (the field's label). Defaults to the message. */
+  label?: string;
   /** Id of the field to focus when the message is chosen. */
   fieldId?: string;
   /** Or the `name` attribute of the control, when its id is generated. */
@@ -114,35 +116,16 @@ export function WizardFrame({
           </div>
           <div className="px-4 py-4">
             {list.length > 0 ? (
-              <div
+              <ErrorSummary
                 ref={summaryRef}
-                role="alert"
-                tabIndex={-1}
-                aria-labelledby="wizard-issues-title"
-                className="mb-4 rounded-control border border-danger/40 bg-danger-soft px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-danger"
-              >
-                <p id="wizard-issues-title" className="flex items-center gap-1.5 text-[13px] font-semibold text-danger-text">
-                  <Icon name="alert-circle" size={16} />
-                  {list.length === 1 ? "Fix 1 thing to continue" : `Fix ${list.length} things to continue`}
-                </p>
-                <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5 text-[13px] text-fg">
-                  {list.map((issue) => (
-                    <li key={`${issue.fieldId ?? issue.fieldName ?? ""}${issue.message}`}>
-                      {issue.fieldId || issue.fieldName ? (
-                        <button
-                          type="button"
-                          onClick={() => focusField(issue)}
-                          className="cursor-pointer text-left underline decoration-fg-muted underline-offset-2 hover:decoration-fg"
-                        >
-                          {issue.message}
-                        </button>
-                      ) : (
-                        issue.message
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                noun="thing"
+                className="mb-4"
+                items={list.map((issue) => ({
+                  label: issue.label ?? issue.message,
+                  detail: issue.label ? issue.message : undefined,
+                  ...(issue.fieldId ? { targetId: issue.fieldId } : issue.fieldName ? { onSelect: () => focusField(issue) } : {}),
+                }))}
+              />
             ) : null}
             {summarySlot}
             {children}
