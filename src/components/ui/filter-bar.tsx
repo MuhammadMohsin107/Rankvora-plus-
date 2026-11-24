@@ -69,7 +69,7 @@ export function FilterBar({ label, search, filters = [], children, chips = false
           />
         ) : null}
         {filters.map((filter, index) => (
-          <div key={filter.id} className="flex w-[calc(50%-0.125rem)] items-center sm:w-auto sm:min-w-36">
+          <div key={filter.id} className="flex w-[calc(50%-0.125rem)] items-center sm:w-[12rem] sm:flex-none">
             {index > 0 || search ? <span aria-hidden="true" className="mr-1 hidden h-5 w-px shrink-0 bg-line sm:block" /> : null}
             <Select bare aria-label={filter.label} value={filter.value} className={filter.value ? "font-medium text-accent-text" : "text-fg"} onChange={(event) => filter.onChange(event.target.value)}>
               <option value="">{filter.label}: all</option>
