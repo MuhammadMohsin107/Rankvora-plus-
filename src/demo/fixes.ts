@@ -1,8 +1,8 @@
 /**
  * DEMONSTRATION DATA — not real.
  * Fixes module detail around the shared findings and registry tasks of each store:
- * runpro-pk (fnd-001…011, task-001…008), runpro-ae (fnd-ae-001…006, task-ae-001…006)
- * and nutrition (fnd-nu-001…008, task-nu-001…008).
+ * runpro-pk (fnd-001…011, task-001…008), runpro-ae (fnd-ae-001…006, task-ae-001…006),
+ * nutrition (fnd-nu-001…008, task-nu-001…008) and threadly (fnd-th-001…008, task-th-001…008).
  * Fixed timestamps only. Read through src/services/fixes.ts.
  *
  * Wording rules honoured here: no causal claims, "Applied" is never "verified",
@@ -2876,6 +2876,1057 @@ const NU_TASK_DETAILS: Record<string, TaskDetailSeed> = {
   },
 };
 
+// ===========================================================================
+// threadly (Threadly · threadly.example) — fictional Shopify fashion store, United Kingdom
+// fnd-th-001…008 and task-th-001…008. Task statuses agree with REGISTRY_TH_TASKS.
+// The connector is the Shopify connector (theme and product access). Times follow London (UTC in November).
+// ===========================================================================
+
+const TH_URL = "https://threadly.example";
+
+/** Demo connector (Shopify). Shopify scope names; connected. */
+const TH_CONNECTOR = (required: string[], note?: string) => ({
+  label: "Shopify connector",
+  site: "threadly.example",
+  state: "connected" as const,
+  scopesGranted: ["read_content", "write_content", "read_products", "write_products", "read_themes", "write_themes"],
+  scopesRequired: required,
+  note,
+});
+
+const TH_FINDING_EXTRAS: Record<string, FindingExtras> = {
+  "fnd-th-001": {
+    severityRationale: "Medium: the guide shows six questions and answers that machines cannot read as FAQ data. Nothing visible to shoppers is broken.",
+    priorityRationale: "P2: one guide, a small and reviewable markup change; it is the page that answers the sizing questions behind the tracked linen prompt.",
+    verificationCriteria: [
+      "FAQPage JSON-LD present on /pages/size-and-fit-guide",
+      "The 6 marked-up questions and answers equal the visible text",
+      "Markup validates without errors",
+    ],
+    evidence: [
+      { id: "e1", kind: "page", url: `${TH_URL}/pages/size-and-fit-guide`, note: "6 visible questions and answers; Article markup only, no FAQPage", auditId: "aud-th-001" },
+      { id: "e2", kind: "page", url: `${TH_URL}/pages/size-and-fit-guide`, note: "Still no FAQPage markup", auditId: "aud-th-003" },
+      { id: "e3", kind: "prompt", promptId: "p-th-002", note: "Linen shirt prompt this guide supports. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T09:30:00Z", source: "Initial audit", sourceHref: "audits/aud-th-001", note: "FAQPage markup missing" },
+      { id: "o2", at: "2026-11-09T10:38:00Z", source: "Full audit — November", sourceHref: "audits/aud-th-003", note: "Unchanged" },
+    ],
+  },
+  "fnd-th-002": {
+    severityRationale: "High: a wrong price or stock status in structured data can mislead shopping systems and shoppers, and can make the product ineligible for shopping listings. The visible page itself is correct.",
+    priorityRationale: "P1: three of the best-selling linen shirt pages are affected and the fix changes live price data, so an owner or admin needs to approve the exact change.",
+    verificationCriteria: [
+      "Schema price equals the visible price on each of the 3 pages",
+      "Schema availability equals the stock status shown on each page",
+      "Price and availability are output from live product data, not typed into the theme",
+    ],
+    evidence: [
+      { id: "e1", kind: "page", url: `${TH_URL}/products/everyday-linen-shirt`, note: "Schema price £65.00; visible price £49.00", auditId: "aud-th-001" },
+      { id: "e2", kind: "page", url: `${TH_URL}/products/relaxed-linen-shirt`, note: "Schema price £65.00; visible price £49.00", auditId: "aud-th-001" },
+      { id: "e3", kind: "page", url: `${TH_URL}/products/short-sleeve-linen-shirt`, note: "Schema availability InStock; every size shown as sold out", auditId: "aud-th-001" },
+      { id: "e4", kind: "prompt", promptId: "p-th-001", note: "Sustainable-brands prompt. Context only." },
+      { id: "e5", kind: "prompt", promptId: "p-th-007", note: "Shirt-sizing prompt. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T09:31:00Z", source: "Initial audit", sourceHref: "audits/aud-th-001", note: "3 of 8 sampled linen shirt pages have a schema price or availability that differs from the page" },
+      { id: "o2", at: "2026-11-09T10:39:00Z", source: "Full audit — November", sourceHref: "audits/aud-th-003", note: "Unchanged on the same 3 pages" },
+    ],
+  },
+  "fnd-th-003": {
+    severityRationale: "Critical: a noindex directive keeps the page out of search indexes, so the Summer Linen collection cannot be found through search.",
+    priorityRationale: "P0: raised on 9 Nov when the third audit still found the tag. One rule in the theme, easy to reverse, and the collection is the main landing page for linen shirts.",
+    verificationCriteria: [
+      "No noindex directive in the meta robots tag or the X-Robots-Tag header",
+      "Canonical points to the page itself",
+      "Verification audit re-assesses the page and finds it indexable",
+    ],
+    evidence: [
+      { id: "e1", kind: "page", url: `${TH_URL}/collections/summer-linen`, note: "meta robots: noindex, follow", auditId: "aud-th-001" },
+      { id: "e2", kind: "page", url: `${TH_URL}/collections/summer-linen`, note: "meta robots: noindex, follow (third audit in a row)", auditId: "aud-th-003" },
+      { id: "e3", kind: "page", url: `${TH_URL}/collections/summer-linen`, note: "meta robots: index, follow; self canonical", auditId: "aud-th-004" },
+      { id: "e4", kind: "prompt", promptId: "p-th-006", note: "Merino knitwear prompt tracked for the same store. Context only." },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T09:29:00Z", source: "Initial audit", sourceHref: "audits/aud-th-001", note: "noindex found" },
+      { id: "o2", at: "2026-10-22T08:33:00Z", source: "Scheduled audit — October", sourceHref: "audits/aud-th-002", note: "Still present" },
+      { id: "o3", at: "2026-11-09T10:36:00Z", source: "Full audit — November", sourceHref: "audits/aud-th-003", note: "Still present" },
+      { id: "o4", at: "2026-11-16T11:10:00Z", source: "Verification — Summer Linen collection indexing", sourceHref: "audits/aud-th-004", note: "No noindex directive" },
+    ],
+  },
+  "fnd-th-004": {
+    severityRationale: "Low: duplicated titles and descriptions make collection pages harder to tell apart in listings. Nothing is broken on the pages.",
+    priorityRationale: "P2: six pages, a content-only change staged in the connector; two pages still need a second look.",
+    verificationCriteria: ["Each of the 6 collection pages has a unique title", "Each page has a unique meta description", "No collection page repeats the store-wide collection title"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${TH_URL}/collections/new-in`, note: "Title “Collections | Threadly” shared with 5 other pages", auditId: "aud-th-001" },
+      { id: "e2", kind: "page", url: `${TH_URL}/collections/linen-shirts`, note: "Same title and meta description as /collections/new-in", auditId: "aud-th-003" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-08T09:33:00Z", source: "Initial audit", sourceHref: "audits/aud-th-001", note: "6 pages share one title" },
+      { id: "o2", at: "2026-11-09T10:37:00Z", source: "Full audit — November", sourceHref: "audits/aud-th-003", note: "Unchanged" },
+      { id: "o3", at: "2026-11-16T11:10:00Z", source: "Targeted re-check of 6 collection pages", note: "4 of 6 unique; 2 still repeat the store-wide title" },
+    ],
+  },
+  "fnd-th-005": {
+    severityRationale: "Low: the Organization markup is valid but does not link the brand to its official profiles. No visible impact.",
+    priorityRationale: "P3: one markup block in the theme; the change was made and awaits verification.",
+    verificationCriteria: ["Organization JSON-LD lists the official profiles in sameAs", "Every sameAs URL is an official profile", "Markup validates"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${TH_URL}/`, note: "Organization markup: name and logo; sameAs is empty", auditId: "aud-th-002" },
+      { id: "e2", kind: "page", url: `${TH_URL}/`, note: "Unchanged: sameAs still empty", auditId: "aud-th-003" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-10-22T08:30:00Z", source: "Scheduled audit — October", sourceHref: "audits/aud-th-002", note: "sameAs empty" },
+      { id: "o2", at: "2026-11-09T10:40:00Z", source: "Full audit — November", sourceHref: "audits/aud-th-003", note: "Unchanged" },
+      { id: "o3", at: "2026-11-17T10:30:00Z", source: "Publish check", note: "3 profiles in the live markup; not yet re-assessed by an audit" },
+    ],
+  },
+  "fnd-th-006": {
+    severityRationale: "Medium: a competitor domain is cited more often than the owned domain on two linen and denim prompts. Citation-capable responses only; the cause is not established.",
+    priorityRationale: "P2: two prompts, the same split in the November audit and the 16 Nov weekly run. Confidence is medium.",
+    verificationCriteria: [
+      "Owned-domain citations counted on p-th-003 and p-th-004 with n / d",
+      "Same channels, models and search modes as the baseline",
+      "Failed requests excluded and reported separately",
+    ],
+    evidence: [
+      { id: "e1", kind: "response", responseId: "resp-aud-th-003-19", note: "OpenAI · p-th-004 · sample 1 · cites maisonalder.example" },
+      { id: "e2", kind: "response", responseId: "resp-aud-th-003-21", note: "Gemini · p-th-004 · sample 1 · cites maisonalder.example" },
+      { id: "e3", kind: "response", responseId: "resp-aud-th-003-23", note: "Perplexity · p-th-004 · sample 1 · cites maisonalder.example" },
+      { id: "e4", kind: "response", responseId: "resp-aud-th-003-13", note: "OpenAI · p-th-003 · sample 1 · one of the 3 responses citing threadly.example (all on p-th-003)" },
+      { id: "e5", kind: "prompt", promptId: "p-th-003", note: "Head-to-head prompt for linen shirts in warm weather (version 2)" },
+      { id: "e6", kind: "prompt", promptId: "p-th-004", note: "Organic cotton denim prompt" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-11-09T10:30:00Z", source: "Full audit — November", sourceHref: "audits/aud-th-003", note: "maisonalder.example 4 of 10, threadly.example 3 of 10 (responses that returned citations); all 4 Maison Alder citations are on p-th-004" },
+      { id: "o2", at: "2026-11-16T09:44:00Z", source: "Weekly monitoring — 16 Nov", sourceHref: "monitoring/runs/run-th-006", note: "maisonalder.example 4 of 10, threadly.example 3 of 10" },
+    ],
+  },
+  "fnd-th-007": {
+    severityRationale: "Medium: lab LCP is 3.4 s on mobile against a 2.5 s target. There is no field data, so real-shopper impact is unknown.",
+    priorityRationale: "P2: one product template that several collections link to; the fix is applied but not yet published, so it cannot be verified.",
+    verificationCriteria: ["Lab LCP on mobile is 2.5 s or lower", "Hero image is served under 200 KB", "Lab CLS stays at or below 0.1"],
+    evidence: [
+      { id: "e1", kind: "page", url: `${TH_URL}/products/waxed-cotton-trench`, note: "Lab LCP 3.4 s on mobile; hero image 1.9 MB, loaded late", auditId: "aud-th-003" },
+      { id: "e2", kind: "page", url: `${TH_URL}/products/waxed-cotton-trench`, note: "Lab LCP 3.4 s on mobile, re-measured before the change", auditId: "aud-th-004" },
+    ],
+    observations: [
+      { id: "o1", at: "2026-11-09T10:35:00Z", source: "Full audit — November", sourceHref: "audits/aud-th-003", note: "Lab LCP 3.4 s" },
+      { id: "o2", at: "2026-11-16T11:09:00Z", source: "Verification — Summer Linen collection indexing", sourceHref: "audits/aud-th-004", note: "Lab LCP 3.4 s, before the change" },
+    ],
+  },
+  "fnd-th-008": {
+    severityRationale: "Informational: one neutral prompt, brand absent from all 4 successful samples. Answers vary between runs, so this is recorded for awareness.",
+    priorityRationale: "P3: single informational prompt with low confidence. Accepted by the owner on 18 Nov; revisit in January.",
+    verificationCriteria: ["Re-run p-th-007 on the same channels with 3 samples each", "Report brand mentions with numerator and denominator", "Failed requests reported separately"],
+    evidence: [
+      { id: "e1", kind: "response", responseId: "resp-aud-th-005-08", note: "OpenAI · sample 2 · brand absent; cites maisonalder.example" },
+      { id: "e2", kind: "response", responseId: "resp-aud-th-005-09", note: "Gemini · sample 1 · brand absent; cites maisonalder.example" },
+      { id: "e3", kind: "response", responseId: "resp-aud-th-005-12", note: "Perplexity · sample 2 · brand absent; cites maisonalder.example" },
+      { id: "e4", kind: "response", responseId: "resp-aud-th-005-07", note: "OpenAI · sample 1 · request failed. Excluded, not counted as absent." },
+      { id: "e5", kind: "prompt", promptId: "p-th-007", note: "Neutral shirt-sizing prompt" },
+    ],
+    observations: [{ id: "o1", at: "2026-11-18T13:08:00Z", source: "Triggered audit — new competitor suggested", sourceHref: "audits/aud-th-005", note: "Absent in 4 of 4 successful responses; 2 failed requests excluded" }],
+  },
+};
+
+const TH_RECOMMENDATIONS: Recommendation[] = [
+  rec({
+    id: "rec-fnd-th-001-a",
+    findingId: "fnd-th-001",
+    title: "Add FAQPage markup for the six questions on the size and fit guide",
+    problem: "The guide shows six questions and answers, but its markup describes the article only.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "confirmed", basis: "Markup read directly from the page in the 8 Oct and 9 Nov audits: Article only, no FAQPage." },
+    action: "Add one FAQPage block with the six visible questions and answers, word for word, to the JSON-LD of /pages/size-and-fit-guide.",
+    why: "Marked-up questions let systems read the answers as a list. This does not guarantee rich results, rankings or AI citations.",
+    expectedOutcome: "The page carries valid FAQPage markup that equals the visible text.",
+    effort: "small",
+    risk: "medium",
+    suggestedMode: "ai_draft",
+    dependencies: ["Editor review of the draft"],
+    limitations: ["Markup must equal the visible text; any later edit to the Q&A needs the markup updated", "A person adds the markup in the theme; no write by Rankvora AI"],
+    verificationPlan: ["Re-crawl /pages/size-and-fit-guide", "Compare the marked-up text with the visible text", "Validate the markup"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T17:00:00Z",
+    taskId: "task-th-001",
+  }),
+  rec({
+    id: "rec-fnd-th-002-a",
+    findingId: "fnd-th-002",
+    title: "Output live price and availability in the Product schema of three linen shirt pages",
+    problem: "Two pages declare £65.00 in the Product schema while the page shows £49.00, and one declares InStock while every size is sold out.",
+    evidenceIds: ["e1", "e2", "e3"],
+    cause: { classification: "confirmed", basis: "Schema read from the three pages in the 8 Oct and 9 Nov audits; the product schema snippet in the theme has the price and availability typed in." },
+    action: "Replace the typed-in offer values in the product schema snippet with Liquid output of the live price and stock status for /products/everyday-linen-shirt, /products/relaxed-linen-shirt and /products/short-sleeve-linen-shirt.",
+    why: "Structured data that matches the page is a trust signal for shopping systems and shoppers. It does not guarantee shopping listings, rankings or AI citations.",
+    expectedOutcome: "Each page declares the same price, currency and availability as the visible page, and keeps them in step when the price changes.",
+    effort: "medium",
+    risk: "high",
+    suggestedMode: "approved_apply",
+    dependencies: ["Live price and stock data confirmed", "Owner or admin approval of the exact wording"],
+    limitations: ["Only values from the live product data may be output", "Writes to the live theme, affecting three product pages", "Sale prices change; the schema must follow the live price"],
+    verificationPlan: ["Re-crawl the three product pages", "Compare schema price and availability with the visible page", "Validate the markup"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T17:10:00Z",
+    taskId: "task-th-002",
+  }),
+  rec({
+    id: "rec-fnd-th-003-a",
+    findingId: "fnd-th-003",
+    title: "Remove the noindex tag from the Summer Linen collection page",
+    problem: "The collection page carries meta robots “noindex, follow”, so it is kept out of search indexes.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "confirmed", basis: "The tag is present in the page head on every audit from 8 Oct to 9 Nov; the theme still renders it for this collection handle, a rule left over from the launch preview." },
+    action: "Remove the robots rule for the summer-linen handle from the theme so the page renders “index, follow”. No content changes.",
+    why: "A page with noindex cannot appear in search results. Removing it makes the page eligible; it does not guarantee indexing speed, rankings or AI citations.",
+    expectedOutcome: "The page is indexable, with a self-referencing canonical.",
+    effort: "small",
+    risk: "medium",
+    suggestedMode: "approved_apply",
+    dependencies: ["Owner or admin approval of the exact diff", "Connector with write access to the theme"],
+    limitations: ["Writes to the live theme", "Search engines index at their own pace"],
+    verificationPlan: ["Re-crawl the collection page in a verification audit", "Check meta robots and the X-Robots-Tag header", "Check the canonical"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-09T15:30:00Z",
+    taskId: "task-th-003",
+  }),
+  rec({
+    id: "rec-fnd-th-004-a",
+    findingId: "fnd-th-004",
+    title: "Give six collection pages unique titles and meta descriptions",
+    problem: "Six collection pages share the title “Collections | Threadly” and one meta description.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "likely", basis: "The collection template falls back to one store-wide title when a collection's search listing title is empty." },
+    action: "Write one distinct title and meta description per collection page and stage them through the connector, then apply and publish in a separate step.",
+    why: "Distinct titles help shoppers and crawlers tell the pages apart in listings. No ranking effect is claimed.",
+    expectedOutcome: "Six unique titles and descriptions, none equal to the store-wide collection title.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "cms_staged",
+    dependencies: ["Staged-change approval"],
+    limitations: ["Collections that use a custom template may ignore the search listing title field", "Cached copies may show the old title for a short time"],
+    verificationPlan: ["Re-check all 6 pages", "Confirm each title and description is unique", "Confirm none equals the store-wide collection title"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-09T15:40:00Z",
+    taskId: "task-th-004",
+  }),
+  rec({
+    id: "rec-fnd-th-005-a",
+    findingId: "fnd-th-005",
+    title: "List the three official profiles in Organization sameAs",
+    problem: "Organization markup has a name and logo but an empty sameAs list.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "confirmed", basis: "Markup read directly from the home page in the 22 Oct and 9 Nov audits." },
+    action: "Add the three official profile URLs to sameAs in the Organization JSON-LD of the home page.",
+    why: "Explicit identity links help systems tell which profiles belong to the brand. No mention or ranking is guaranteed.",
+    expectedOutcome: "sameAs lists three official profiles and the markup validates.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "ai_draft",
+    dependencies: ["Official profile URLs confirmed"],
+    limitations: ["Only profiles confirmed as official by the owner are listed", "A person edits the markup in the theme code editor"],
+    verificationPlan: ["Re-crawl the home page", "Validate the markup"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T17:20:00Z",
+    taskId: "task-th-005",
+  }),
+  rec({
+    id: "rec-fnd-th-006-a",
+    findingId: "fnd-th-006",
+    title: "Review the linen and denim prompt citations against Maison Alder",
+    problem: "maisonalder.example is cited in 4 of 10 responses that returned citations; threadly.example in 3 of 10. All 4 Maison Alder citations are on the denim prompt p-th-004, where threadly.example is cited in 0 of 5.",
+    evidenceIds: ["e1", "e2", "e3", "e4"],
+    cause: { classification: "hypothesis", basis: "Maison Alder may have a clearer denim page for the same question. Not established; answers vary between runs." },
+    action: "Read the cited Maison Alder pages and the threadly.example pages that could answer the same questions, then write a note on whether the gap is content, structure or neither.",
+    why: "A consistent split on two prompts deserves a look before any content is changed. Two audits are not a trend.",
+    expectedOutcome: "A short note that names the gap or records normal variation.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "guidance",
+    limitations: ["p-th-003 changed wording on 27 Oct; compare only slots of the same prompt version", "2 of 12 responses returned no citations and are not counted"],
+    verificationPlan: ["Re-run p-th-003 and p-th-004 on the same channels with 3 samples", "Report owned-domain citations as n / d"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-17T16:30:00Z",
+    taskId: "task-th-006",
+  }),
+  rec({
+    id: "rec-fnd-th-006-b",
+    findingId: "fnd-th-006",
+    title: "Add a plain-language denim fit and care section to the organic denim collection",
+    problem: "No page on threadly.example opens with a short plain-language explanation of organic cotton denim.",
+    evidenceIds: ["e5", "e6"],
+    cause: { classification: "hypothesis", basis: "Untested. No evidence that a denim section changes which sources are cited." },
+    action: "Draft a short section for /collections/organic-denim that explains organic cotton, rigid and stretch denim and how to care for it in one sentence each, with a link to the size and fit guide.",
+    why: "An owned page that answers the denim question gives channels something to cite. Citations are not guaranteed.",
+    expectedOutcome: "A section whose statements are supported by the product details themselves.",
+    effort: "medium",
+    risk: "low",
+    suggestedMode: "ai_draft",
+    dependencies: ["Review of the task-th-006 note first"],
+    limitations: ["Hypothesis only", "Indexing time is outside our control"],
+    verificationPlan: ["Check the section renders", "Re-run p-th-004 as context only"],
+  }),
+  rec({
+    id: "rec-fnd-th-007-a",
+    findingId: "fnd-th-007",
+    title: "Shrink and preload the product hero image; defer the gallery script",
+    problem: "The page loads a 1.9 MB hero image late and a blocking script before it. Lab LCP is 3.4 s on mobile.",
+    evidenceIds: ["e1", "e2"],
+    cause: { classification: "likely", basis: "The lab trace shows the hero image as the LCP element, loaded after the blocking script." },
+    action: "Serve a 140 KB WebP hero with high fetch priority and load the gallery script with defer on the product template used by /products/waxed-cotton-trench.",
+    why: "Faster loading of the largest element improves the lab LCP. Real-shopper impact is unknown without field data.",
+    expectedOutcome: "Lab LCP of 2.5 s or lower on mobile, with no new layout shift.",
+    effort: "medium",
+    risk: "medium",
+    suggestedMode: "approved_apply",
+    dependencies: ["Owner or admin approval of the exact diff", "Connector with write access to the theme"],
+    limitations: ["Lab measurement only", "Writes to the live theme when published"],
+    verificationPlan: ["Re-measure lab LCP on mobile", "Check image size and CLS", "Run after the change is published"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-10T17:30:00Z",
+    taskId: "task-th-007",
+  }),
+  rec({
+    id: "rec-fnd-th-008-a",
+    findingId: "fnd-th-008",
+    title: "Add a short sizing answer block to the homepage",
+    problem: "The brand is absent from all 4 successful answers to the shirt-sizing prompt.",
+    evidenceIds: ["e1", "e2", "e3", "e5"],
+    cause: { classification: "hypothesis", basis: "The homepage may not state a sizing answer. One neutral prompt; 2 of 6 requests failed; answers vary between runs." },
+    action: "Propose a two-sentence general answer on the homepage that links to /pages/size-and-fit-guide, using only facts from that guide.",
+    why: "A page that states the answer gives shoppers and channels an owned source. No mention is guaranteed.",
+    expectedOutcome: "A short, factual answer block linking to the guide.",
+    effort: "small",
+    risk: "low",
+    suggestedMode: "guidance",
+    limitations: ["Hypothesis only", "Based on one prompt and 4 successful samples"],
+    verificationPlan: ["Re-run p-th-007 on the same channels with 3 samples"],
+    status: "approved",
+    decidedBy: "Sana Iqbal",
+    decidedAt: "2026-11-18T14:30:00Z",
+    decisionNote: "Task cancelled on 18 Nov: accepted risk, revisit in January.",
+    taskId: "task-th-008",
+  }),
+];
+
+// ---- Task details ----------------------------------------------------------
+
+const TH_QA: [string, string][] = [
+  ["How should a linen shirt fit?", "Linen is cut slightly relaxed. Choose your usual size for a relaxed fit, or one size down for a closer fit."],
+  ["How do I measure my chest?", "Wrap a soft tape around the fullest part of your chest, under the arms, keeping it level and snug but not tight."],
+  ["Will linen shrink in the wash?", "Our linen is pre-washed. Wash at 30°C and dry flat to keep the fit; expect little further shrinkage."],
+  ["What if I am between sizes?", "Size up for a relaxed fit or down for a closer one. If the fit is not right, you can return it within 30 days."],
+  ["Do your sizes follow UK sizing?", "Yes. Sizes are given in UK sizes, with a chest measurement in centimetres for each size."],
+  ["Can I exchange for a different size?", "Yes. Exchanges are free within 30 days of delivery; the returns page explains how to start one."],
+];
+
+const TH_ARTICLE = {
+  "@type": "Article",
+  headline: "Size and fit guide",
+  author: { "@type": "Person", name: "Imogen Hart" },
+  url: `${TH_URL}/pages/size-and-fit-guide`,
+};
+const TH_FAQ_BEFORE = JSON.stringify({ "@context": "https://schema.org", ...TH_ARTICLE }, null, 2);
+const TH_FAQ_AFTER = JSON.stringify(
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      TH_ARTICLE,
+      {
+        "@type": "FAQPage",
+        mainEntity: TH_QA.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+      },
+    ],
+  },
+  null,
+  2,
+);
+
+const TH_OFFER_BEFORE = `"offers": {
+  "@type": "Offer",
+  "price": "65.00",
+  "priceCurrency": "GBP",
+  "availability": "https://schema.org/InStock"
+}`;
+const TH_OFFER_AFTER = `"offers": {
+  "@type": "Offer",
+  "price": "49.00",
+  "priceCurrency": "GBP",
+  "availability": "https://schema.org/InStock",
+  "priceValidUntil": "2026-12-31",
+  "hasMerchantReturnPolicy": "Free 30-day returns on all UK orders"
+}`;
+const TH_OFFER_ALT = `"offers": {
+  "@type": "Offer",
+  "price": "49.00",
+  "priceCurrency": "GBP",
+  "availability": "https://schema.org/InStock"
+}`;
+
+const TH_ROBOTS_BEFORE = `<head>
+  <title>Summer Linen: shirts, trousers and dresses | Threadly</title>
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="${TH_URL}/collections/summer-linen">
+</head>`;
+const TH_ROBOTS_AFTER = TH_ROBOTS_BEFORE.replace("noindex, follow", "index, follow");
+
+const TH_COLLECTIONS: { slug: string; title: string; ok: boolean; reason?: string }[] = [
+  { slug: "new-in", title: "New in: this season's arrivals | Threadly", ok: false, reason: "Live title still “Collections | Threadly” at the re-check. This collection uses a custom template that ignores the search listing title field." },
+  { slug: "linen-shirts", title: "Linen shirts for warm weather | Threadly", ok: false, reason: "Live title unchanged at the re-check. A cached copy is the likely cause; re-check after the cache clears." },
+  { slug: "organic-denim", title: "Organic cotton denim, made to last | Threadly", ok: true },
+  { slug: "merino-knitwear", title: "Ethically made merino knitwear | Threadly", ok: true },
+  { slug: "waxed-outerwear", title: "Waxed cotton jackets and trench coats | Threadly", ok: true },
+  { slug: "smart-casual-shirts", title: "Smart casual shirts for every day | Threadly", ok: true },
+];
+const TH_CATEGORY_TITLE = "Collections | Threadly";
+
+const TH_ORG_BEFORE = `{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Threadly",
+  "url": "${TH_URL}/",
+  "logo": "${TH_URL}/cdn/shop/files/threadly-logo.png",
+  "sameAs": []
+}`;
+const TH_ORG_AFTER = `{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Threadly",
+  "url": "${TH_URL}/",
+  "logo": "${TH_URL}/cdn/shop/files/threadly-logo.png",
+  "sameAs": [
+    "https://www.instagram.example/threadly",
+    "https://www.pinterest.example/threadly",
+    "https://www.tiktok.example/@threadly"
+  ]
+}`;
+
+const TH_PERF_BEFORE = `hero_image: trench-hero.png      # 1.9 MB
+hero_fetch_priority: auto
+hero_preload: off
+gallery_script: blocking        # loaded in the head`;
+const TH_PERF_AFTER = `hero_image: trench-hero.webp     # 140 KB
+hero_fetch_priority: high
+hero_preload: on
+gallery_script: defer           # loaded after the page`;
+
+const TH_TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = {
+  "task-th-001": { blockers: [] },
+  "task-th-002": { blockers: [] },
+  "task-th-003": { blockers: [] },
+  "task-th-004": { blockers: [] },
+  "task-th-005": { blockers: [] },
+  "task-th-006": { blockers: [] },
+  "task-th-007": { blockers: ["Applied on 17 Nov but not published yet. Verification cannot start until it is live."] },
+  "task-th-008": { blockers: [] },
+};
+
+const TH_TASK_DETAILS: Record<string, TaskDetailSeed> = {
+  // AI draft of FAQPage markup, ready for an editor. Nothing applied.
+  "task-th-001": {
+    recommendationId: "rec-fnd-th-001-a",
+    createdAt: "2026-11-10T17:00:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["FAQPage JSON-LD present on /pages/size-and-fit-guide", "The 6 marked-up questions and answers equal the visible text", "Markup validates without errors"],
+    dependencies: [
+      { label: "Visible questions and answers captured (crawl 9 Nov)", met: true },
+      { label: "Editor review of the draft", met: false },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Guide page · /pages/size-and-fit-guide · JSON-LD",
+      language: "json-ld",
+      before: TH_FAQ_BEFORE,
+      after: TH_FAQ_AFTER,
+      sourceFacts: [
+        { label: "Questions and answers", value: "6 visible, copied word for word", source: "Crawl 9 Nov, /pages/size-and-fit-guide" },
+        { label: "Article", value: "Headline, author and URL already in the markup", source: "Audit aud-th-003" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-17T12:30:00Z",
+      version: 1,
+    },
+    approval: { state: "not_required", notRequiredReason: "AI draft only. Nothing is written to the store; a person adds the markup.", diffHash: demoDigest("task-th-001-faq"), writes: [] },
+    execution: {
+      connector: TH_CONNECTOR(["read_content"], "Only read access is needed to compare the page. An AI draft makes no write."),
+      cmsState: "draft",
+      remote: {
+        resource: "Page pages/size-and-fit-guide · JSON-LD",
+        versionAtDraft: "rev 18",
+        versionNow: "rev 18",
+        hashAtDraft: demoDigest("th-sizeguide-jsonld-18"),
+        hashNow: demoDigest("th-sizeguide-jsonld-18"),
+        checkedAt: "2026-11-19T08:48:00Z",
+        changed: false,
+      },
+      fields: [{ field: "FAQPage markup", before: "(none)", after: "6 questions", outcome: "pending", note: "Added by a person after review" }],
+      completedAt: "2026-11-18T15:20:00Z",
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing has been applied." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "FAQPage markup present", expect: "Present" },
+        { id: "c2", label: "Marked-up text equals visible text", expect: "6 of 6 equal" },
+        { id: "c3", label: "Markup validates", expect: "No errors" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T09:30:00Z", actor: "Audit aud-th-001", kind: "created", title: "Finding fnd-th-001 detected" },
+      { id: "h2", at: "2026-11-10T17:00:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-17T12:30:00Z", actor: "Drafting model", kind: "draft", title: "Draft v1 generated", detail: "6 questions marked up, 0 unsupported claims" },
+      { id: "h4", at: "2026-11-18T15:20:00Z", actor: "Hira Malik", kind: "status", title: "Marked draft ready" },
+    ],
+  },
+
+  // High-risk write to three linen shirt pages, waiting for owner or admin approval of the exact diff.
+  "task-th-002": {
+    recommendationId: "rec-fnd-th-002-a",
+    createdAt: "2026-11-10T17:10:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Schema price on each of the 3 pages equals the visible price", "Schema availability on each page equals the stock status shown", "Markup validates without errors"],
+    dependencies: [
+      { label: "Live price and stock data confirmed (12 Nov)", met: true },
+      { label: "Owner or admin approval of the exact diff", met: false },
+      { label: "Connector with write access to the theme", met: true },
+    ],
+    draft: {
+      kind: "text",
+      resource: "Linen shirt pages · Product schema offer (/products/everyday-linen-shirt shown)",
+      field: "Offer price and availability",
+      before: TH_OFFER_BEFORE,
+      after: TH_OFFER_AFTER,
+      alternate: { after: TH_OFFER_ALT, unsupportedClaims: [] },
+      sourceFacts: [
+        { label: "Visible price", value: "£49.00 sale price on 2 pages", source: "Shopify product data, read 12 Nov" },
+        { label: "Stock status", value: "short-sleeve-linen-shirt: every size sold out", source: "Shopify inventory, read 12 Nov" },
+        { label: "Schema source", value: "Price and availability typed into the product schema snippet", source: "Theme code read, 14 Nov" },
+        { label: "Pages", value: "3: everyday-linen-shirt, relaxed-linen-shirt, short-sleeve-linen-shirt", source: "Audit aud-th-001" },
+      ],
+      unsupportedClaims: [
+        { text: "\"priceValidUntil\": \"2026-12-31\"", reason: "No source fact gives an end date for the sale price." },
+        { text: "Free 30-day returns on all UK orders", reason: "No source fact states the returns terms for these pages." },
+      ],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-14T13:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "pending",
+      diffHash: demoDigest("task-th-002-offer"),
+      writes: [
+        "3 product pages: Product schema price and availability output from live product data",
+        "Offer price, currency and availability only; visible page content not changed",
+        "Live on each product page after the theme publish",
+      ],
+      requestedBy: "Omar Farooq",
+      requestedAt: "2026-11-18T17:15:00Z",
+    },
+    execution: {
+      connector: TH_CONNECTOR(["read_products", "read_themes", "write_themes"]),
+      cmsState: "draft",
+      remote: {
+        resource: "Theme snippets/product-schema.liquid · offer block",
+        versionAtDraft: "rev 44",
+        versionNow: "rev 44",
+        hashAtDraft: demoDigest("th-product-schema-44"),
+        hashNow: demoDigest("th-product-schema-44"),
+        checkedAt: "2026-11-19T08:52:00Z",
+        changed: false,
+      },
+      fields: [
+        { field: "/products/everyday-linen-shirt · offer price", before: "£65.00 in schema · £49.00 on page", after: "Price output from live product data", outcome: "pending" },
+        { field: "/products/relaxed-linen-shirt · offer price", before: "£65.00 in schema · £49.00 on page", after: "Price output from live product data", outcome: "pending" },
+        { field: "/products/short-sleeve-linen-shirt · availability", before: "InStock in schema · sold out on page", after: "Availability output from live stock status", outcome: "pending" },
+      ],
+      completedAt: "2026-11-14T13:30:00Z",
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Nothing has been applied." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Schema price equals visible price on all 3 pages", expect: "3 of 3" },
+        { id: "c2", label: "Schema availability equals stock status on all 3 pages", expect: "3 of 3" },
+        { id: "c3", label: "Markup validates", expect: "No errors" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T09:31:00Z", actor: "Audit aud-th-001", kind: "created", title: "Finding fnd-th-002 detected" },
+      { id: "h2", at: "2026-11-10T17:10:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Omar Farooq" },
+      { id: "h3", at: "2026-11-14T13:00:00Z", actor: "Drafting model", kind: "draft", title: "Draft v1 generated", detail: "2 unsupported claims flagged" },
+      { id: "h4", at: "2026-11-18T17:15:00Z", actor: "Omar Farooq", kind: "approval", title: "Approval requested", detail: "Owner or admin must approve the exact diff" },
+    ],
+  },
+
+  // Applied, published and verified by the verification audit.
+  "task-th-003": {
+    recommendationId: "rec-fnd-th-003-a",
+    createdAt: "2026-11-09T15:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["No noindex directive in the meta robots tag or the X-Robots-Tag header", "Canonical points to the page itself", "Verification audit finds the page indexable"],
+    dependencies: [
+      { label: "Owner or admin approval of the exact diff", met: true },
+      { label: "Connector with write access to the theme (at the time)", met: true },
+      { label: "Live value unchanged since draft", met: true },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Collection · /collections/summer-linen · robots meta",
+      language: "html",
+      before: TH_ROBOTS_BEFORE,
+      after: TH_ROBOTS_AFTER,
+      sourceFacts: [
+        { label: "Current value", value: "robots: noindex, follow", source: "Crawl 9 Nov, audit aud-th-003" },
+        { label: "Theme rule", value: "layout/theme.liquid renders noindex for the summer-linen handle, left from the launch preview", source: "Theme code read, 9 Nov" },
+        { label: "Canonical", value: "Self-referencing; unchanged", source: "Crawl 9 Nov" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-09T16:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-th-003-robots"),
+      writes: ["Collection /collections/summer-linen · robots meta rule in the theme", "1 line changed: noindex, follow → index, follow", "No content change; live after the theme publish step"],
+      requestedBy: "Omar Farooq",
+      requestedAt: "2026-11-10T10:00:00Z",
+      decidedBy: "Sana Iqbal",
+      decidedAt: "2026-11-10T14:45:00Z",
+    },
+    execution: {
+      connector: TH_CONNECTOR(["read_themes", "write_themes"]),
+      cmsState: "published",
+      remote: {
+        resource: "Theme layout/theme.liquid · robots meta",
+        versionAtDraft: "rev 9",
+        versionNow: "rev 9",
+        hashAtDraft: demoDigest("th-summer-robots-9"),
+        hashNow: demoDigest("th-summer-robots-9"),
+        checkedAt: "2026-11-11T10:09:00Z",
+        changed: false,
+        note: "Checked just before the write.",
+      },
+      fields: [{ field: "robots meta", before: "noindex, follow", after: "index, follow", outcome: "written", note: "Applied to the draft theme 11 Nov, theme published 12 Nov" }],
+      completedAt: "2026-11-09T16:30:00Z",
+      stagedAt: null,
+      appliedAt: "2026-11-11T10:10:00Z",
+      publishedAt: "2026-11-12T09:30:00Z",
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Verified on 16 Nov. Reverting the rule would be a new task." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "No noindex in the meta robots tag", expect: "Absent" },
+        { id: "c2", label: "No noindex in the X-Robots-Tag header", expect: "Absent" },
+        { id: "c3", label: "Canonical points to the page itself", expect: "Self" },
+        { id: "c4", label: "Page reached by the verification audit", expect: "Assessed" },
+      ],
+      outcome: {
+        result: "verified_success",
+        ranAt: "2026-11-16T11:10:00Z",
+        sourceLabel: "Verification — Summer Linen collection indexing",
+        sourceHref: "audits/aud-th-004",
+        findingEffect: "Finding fnd-th-003 set to Verified resolved.",
+        checks: [
+          { id: "c1", label: "No noindex in the meta robots tag", before: { status: "fail", detail: "noindex, follow (9 Nov)" }, after: { status: "pass", detail: "index, follow" } },
+          { id: "c2", label: "No noindex in the X-Robots-Tag header", before: { status: "pass", detail: "Header absent" }, after: { status: "pass", detail: "Header absent" } },
+          { id: "c3", label: "Canonical points to the page itself", before: { status: "pass", detail: "Self canonical" }, after: { status: "pass", detail: "Self canonical" } },
+          { id: "c4", label: "Page reached by the verification audit", before: { status: "pass", detail: "Assessed in aud-th-003" }, after: { status: "pass", detail: "Assessed: 5 of 5 pages (aud-th-004)" } },
+        ],
+      },
+      simulated: null,
+      context: { label: "Brand mention rate on the knitwear prompt p-th-006 (context only)", n: 1, d: 3, basis: "3 responses, 1 sample each, verification audit. Directional." },
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T09:29:00Z", actor: "Audit aud-th-001", kind: "created", title: "Finding fnd-th-003 detected" },
+      { id: "h2", at: "2026-11-09T10:36:00Z", actor: "Audit aud-th-003", kind: "status", title: "Finding observed again", detail: "Third audit with the tag present; priority raised to P0" },
+      { id: "h3", at: "2026-11-09T15:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Omar Farooq" },
+      { id: "h4", at: "2026-11-09T16:00:00Z", actor: "Drafting model", kind: "draft", title: "Patch drafted", detail: "1 line changed" },
+      { id: "h5", at: "2026-11-10T10:00:00Z", actor: "Omar Farooq", kind: "approval", title: "Approval requested", detail: "Owner or admin must approve the exact diff" },
+      { id: "h6", at: "2026-11-10T14:45:00Z", actor: "Sana Iqbal", kind: "approval", title: "Approved exact diff" },
+      { id: "h7", at: "2026-11-11T10:10:00Z", actor: "System", kind: "execution", title: "Applied", detail: "Remote check passed; 1 of 1 written to the draft theme. Not live yet." },
+      { id: "h8", at: "2026-11-12T09:30:00Z", actor: "Omar Farooq", kind: "execution", title: "Published", detail: "Theme published; storefront refreshed" },
+      { id: "h9", at: "2026-11-16T11:10:00Z", actor: "Audit aud-th-004", kind: "verification", title: "Verified success", detail: "4 of 4 checks passed" },
+    ],
+  },
+
+  // Staged, applied and published; 4 of 6 pages verified.
+  "task-th-004": {
+    recommendationId: "rec-fnd-th-004-a",
+    createdAt: "2026-11-09T15:40:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Each of the 6 collection pages has a unique title", "Each page has a unique meta description", "No collection page repeats the store-wide collection title"],
+    dependencies: [
+      { label: "Staged-change approval", met: true },
+      { label: "Connector with write access to collections (at the time)", met: true },
+      { label: "Re-check of the 2 pages that still repeat the title", met: false },
+    ],
+    draft: {
+      kind: "batch",
+      resource: "Collection pages · title and meta description (6 resources)",
+      items: TH_COLLECTIONS.map((r, i) => ({
+        id: `b${i + 1}`,
+        pageUrl: `${TH_URL}/collections/${r.slug}`,
+        linkText: "Title and meta description",
+        from: TH_CATEGORY_TITLE,
+        to: r.title,
+        result: "applied" as const,
+        reason: r.ok ? undefined : r.reason,
+      })),
+      sourceFacts: [
+        { label: "Duplicated title", value: `“${TH_CATEGORY_TITLE}” on 6 collection pages`, source: "Audit aud-th-001, crawl 8 Oct" },
+        { label: "Duplicated description", value: "One meta description on 6 collection pages", source: "Audit aud-th-003, crawl 9 Nov" },
+        { label: "Rule", value: "Every indexable page has a unique title and description", source: "Website readiness criteria 2.3" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-10T12:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-th-004-collections"),
+      writes: ["6 collection pages: title and meta description staged through the Shopify connector", "Collection products and layout not changed", "Not live until the apply and publish steps"],
+      requestedBy: "Hira Malik",
+      requestedAt: "2026-11-11T16:00:00Z",
+      decidedBy: "Omar Farooq",
+      decidedAt: "2026-11-11T17:20:00Z",
+      note: "Staged change only. Publishing needs a separate action.",
+    },
+    execution: {
+      connector: TH_CONNECTOR(["read_products", "write_products"]),
+      cmsState: "published",
+      remote: {
+        resource: "Collection pages · 6 titles and descriptions",
+        versionAtDraft: "rev 31",
+        versionNow: "rev 31",
+        hashAtDraft: demoDigest("th-collections-31"),
+        hashNow: demoDigest("th-collections-31"),
+        checkedAt: "2026-11-12T10:19:00Z",
+        changed: false,
+        note: "Checked just before staging.",
+      },
+      fields: TH_COLLECTIONS.map((r) => ({
+        field: `/collections/${r.slug} · title and description`,
+        before: TH_CATEGORY_TITLE,
+        after: r.title,
+        outcome: "written" as const,
+        note: r.ok ? undefined : "Written; live title unchanged at the 16 Nov re-check",
+      })),
+      completedAt: "2026-11-10T12:30:00Z",
+      stagedAt: "2026-11-12T10:20:00Z",
+      appliedAt: "2026-11-13T10:05:00Z",
+      publishedAt: "2026-11-13T10:10:00Z",
+      rollback: { ...EMPTY_ROLLBACK, available: true },
+    },
+    verification: {
+      plannedChecks: TH_COLLECTIONS.map((r, i) => ({ id: `c${i + 1}`, label: `Unique title and description on /collections/${r.slug}`, expect: "Unique, not the store-wide title" })),
+      outcome: {
+        result: "partially_verified",
+        ranAt: "2026-11-16T11:10:00Z",
+        sourceLabel: "Targeted re-check of 6 collection pages",
+        findingEffect: "Finding fnd-th-004 stays In remediation: 4 of 6 pages fixed, 2 still repeat the store-wide title.",
+        checks: TH_COLLECTIONS.map((r, i) => ({
+          id: `c${i + 1}`,
+          label: `Unique title and description on /collections/${r.slug}`,
+          before: { status: "fail" as const, detail: `Title “${TH_CATEGORY_TITLE}” shared with the other collection pages (9 Nov)` },
+          after: r.ok
+            ? { status: "pass" as const, detail: `Title “${r.title}”; description unique` }
+            : { status: "fail" as const, detail: r.reason ?? "Title unchanged" },
+        })),
+      },
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-08T09:33:00Z", actor: "Audit aud-th-001", kind: "created", title: "Finding fnd-th-004 detected" },
+      { id: "h2", at: "2026-11-09T15:40:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-10T12:00:00Z", actor: "Drafting model", kind: "draft", title: "Batch drafted", detail: "6 resources" },
+      { id: "h4", at: "2026-11-11T16:00:00Z", actor: "Hira Malik", kind: "approval", title: "Staging approval requested" },
+      { id: "h5", at: "2026-11-11T17:20:00Z", actor: "Omar Farooq", kind: "approval", title: "Staged change approved", detail: "Staged change only. Publishing needs a separate action." },
+      { id: "h6", at: "2026-11-12T10:20:00Z", actor: "System", kind: "execution", title: "Staged through the Shopify connector", detail: "Remote check passed; 6 of 6 staged. Not live." },
+      { id: "h7", at: "2026-11-13T10:05:00Z", actor: "Hira Malik", kind: "execution", title: "Applied", detail: "6 of 6 written as collection updates" },
+      { id: "h8", at: "2026-11-13T10:10:00Z", actor: "Hira Malik", kind: "execution", title: "Published", detail: "Storefront refreshed" },
+      { id: "h9", at: "2026-11-16T11:10:00Z", actor: "System", kind: "verification", title: "Partially verified", detail: "4 of 6 pages fixed; 2 still repeat the store-wide title" },
+    ],
+  },
+
+  // Applied by hand and published; waiting for verification.
+  "task-th-005": {
+    recommendationId: "rec-fnd-th-005-a",
+    createdAt: "2026-11-10T17:20:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Organization JSON-LD lists the official profiles in sameAs", "Every sameAs URL is an official profile", "Markup validates"],
+    dependencies: [{ label: "Official profile URLs confirmed by the owner", met: true }],
+    draft: {
+      kind: "patch",
+      resource: "Home page · Organization JSON-LD",
+      language: "json-ld",
+      before: TH_ORG_BEFORE,
+      after: TH_ORG_AFTER,
+      sourceFacts: [
+        { label: "Official profiles", value: "Instagram, Pinterest and TikTok", source: "Store settings, brand profile" },
+        { label: "Current markup", value: "Name and logo present; sameAs empty", source: "Audit aud-th-003" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-12T11:00:00Z",
+      version: 1,
+    },
+    approval: { state: "not_required", notRequiredReason: "AI draft only. The snippet was applied by hand by Omar Farooq.", diffHash: demoDigest("task-th-005-org"), writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "published",
+      remote: null,
+      fields: [{ field: "sameAs", before: "(empty)", after: "3 profiles", outcome: "written", note: "Applied by hand in the theme code editor; theme published" }],
+      completedAt: "2026-11-12T16:00:00Z",
+      stagedAt: null,
+      appliedAt: "2026-11-17T10:20:00Z",
+      publishedAt: "2026-11-17T10:25:00Z",
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Applied outside Rankvora AI. Revert in the theme code editor." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "sameAs lists 3 official profiles", expect: "3 profiles" },
+        { id: "c2", label: "Every sameAs URL is an official profile", expect: "No unknown URL" },
+        { id: "c3", label: "Markup validates", expect: "No errors" },
+      ],
+      outcome: null,
+      simulated: {
+        result: "verified_success",
+        ranAt: "2026-11-19T09:00:00Z",
+        sourceLabel: "Verification audit (demo)",
+        findingEffect: "Finding fnd-th-005 set to Verified resolved.",
+        checks: [
+          { id: "c1", label: "sameAs lists 3 official profiles", before: { status: "fail", detail: "sameAs empty (9 Nov)" }, after: { status: "pass", detail: "3 profiles" } },
+          { id: "c2", label: "Every sameAs URL is an official profile", before: { status: "not_applicable", detail: "No URLs" }, after: { status: "pass", detail: "3 of 3 match the brand profile" } },
+          { id: "c3", label: "Markup validates", before: { status: "pass", detail: "Valid" }, after: { status: "pass", detail: "Valid" } },
+        ],
+      },
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-10-22T08:30:00Z", actor: "Audit aud-th-002", kind: "created", title: "Finding fnd-th-005 detected" },
+      { id: "h2", at: "2026-11-10T17:20:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Omar Farooq" },
+      { id: "h3", at: "2026-11-12T11:00:00Z", actor: "Drafting model", kind: "draft", title: "Patch drafted" },
+      { id: "h4", at: "2026-11-12T16:00:00Z", actor: "Omar Farooq", kind: "status", title: "Marked draft ready" },
+      { id: "h5", at: "2026-11-17T10:20:00Z", actor: "Omar Farooq", kind: "execution", title: "Marked applied", detail: "Snippet edited in the theme code editor" },
+      { id: "h6", at: "2026-11-17T10:25:00Z", actor: "Omar Farooq", kind: "execution", title: "Marked published", detail: "Theme published; 3 profiles in the live markup" },
+      { id: "h7", at: "2026-11-17T10:26:00Z", actor: "System", kind: "status", title: "Awaiting verification", detail: "Not yet re-assessed by an audit" },
+    ],
+  },
+
+  // Guidance only, unassigned.
+  "task-th-006": {
+    recommendationId: "rec-fnd-th-006-a",
+    createdAt: "2026-11-17T16:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["The cited Maison Alder and threadly.example pages are compared", "A short note records whether the gap is content, structure or neither"],
+    dependencies: [],
+    draft: {
+      kind: "guidance",
+      owner: "Unassigned",
+      steps: [
+        { title: "Open the cited responses", detail: "Read samples resp-aud-th-003-19, -21, -23 and -24, which cite maisonalder.example, and -13, -16 and -18, which cite threadly.example." },
+        { title: "List the cited Maison Alder pages", detail: "Note which page each answer cites and which linen or denim question it answers." },
+        { title: "Compare with threadly.example", detail: "Find the page that could answer the same question, such as /collections/organic-denim, and note what it opens with." },
+        { title: "Respect the prompt versions", detail: "p-th-003 changed wording on 27 Oct. Compare only slots of the same prompt version." },
+        { title: "Write a note", detail: "Content gap, structure gap or neither. Do not change pages on the evidence of two audits." },
+      ],
+      sourceFacts: [
+        { label: "November audit", value: "maisonalder.example cited in 4 of 10 · threadly.example in 3 of 10 (responses that returned citations)", source: "Audit aud-th-003, prompts p-th-003 and p-th-004" },
+        { label: "Per prompt", value: "p-th-004: maisonalder.example 4 of 5, threadly.example 0 of 5 · p-th-003: threadly.example 3 of 5, maisonalder.example 0 of 5", source: "Audit aud-th-003" },
+        { label: "Weekly run", value: "maisonalder.example 4 of 10 · threadly.example 3 of 10", source: "Monitoring run-th-006" },
+        { label: "Failed requests", value: "0 of 12 failed; 2 responses returned no citations and are not counted", source: "Audit aud-th-003" },
+      ],
+    },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "guidance",
+      remote: null,
+      fields: [],
+      completedAt: null,
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Guidance only." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Re-run p-th-003 and p-th-004 with the same channels and 3 samples", expect: "Counts reported as n / d" },
+        { id: "c2", label: "Failed requests reported separately", expect: "Not counted as absent" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-09T10:30:00Z", actor: "Audit aud-th-003", kind: "created", title: "Finding fnd-th-006 detected" },
+      { id: "h2", at: "2026-11-16T09:44:00Z", actor: "Monitoring run-th-006", kind: "status", title: "Finding observed again", detail: "Same split: 4 of 10 vs 3 of 10" },
+      { id: "h3", at: "2026-11-17T16:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved" },
+      { id: "h4", at: "2026-11-17T16:31:00Z", actor: "System", kind: "status", title: "Task suggested", detail: "No assignee yet" },
+    ],
+  },
+
+  // Applied as a saved theme revision; not published and not verified.
+  "task-th-007": {
+    recommendationId: "rec-fnd-th-007-a",
+    createdAt: "2026-11-10T17:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["Lab LCP on mobile is 2.5 s or lower", "Hero image is served under 200 KB", "Lab CLS stays at or below 0.1"],
+    dependencies: [
+      { label: "Owner or admin approval of the exact diff", met: true },
+      { label: "Connector with write access to the theme", met: true },
+      { label: "Mobile layout check before publishing", met: false },
+    ],
+    draft: {
+      kind: "patch",
+      resource: "Product template · /products/waxed-cotton-trench · performance settings",
+      language: "yaml",
+      before: TH_PERF_BEFORE,
+      after: TH_PERF_AFTER,
+      sourceFacts: [
+        { label: "Lab LCP", value: "3.4 s on mobile; LCP element is the hero image", source: "Audit aud-th-004, lab trace 16 Nov" },
+        { label: "Hero image", value: "1.9 MB PNG, loaded after a blocking script", source: "Audit aud-th-003, crawl 9 Nov" },
+        { label: "Replacement", value: "140 KB WebP, same dimensions", source: "Shopify Files, upload 12 Nov" },
+      ],
+      unsupportedClaims: [],
+      modelLabel: "Drafting model demo-model-a",
+      generatedAt: "2026-11-12T14:00:00Z",
+      version: 1,
+    },
+    approval: {
+      state: "approved",
+      diffHash: demoDigest("task-th-007-perf"),
+      writes: ["Product template · 3 performance settings", "Saved as a theme revision on apply", "Live only after the separate theme publish step"],
+      requestedBy: "Hira Malik",
+      requestedAt: "2026-11-14T16:00:00Z",
+      decidedBy: "Omar Farooq",
+      decidedAt: "2026-11-14T18:30:00Z",
+    },
+    execution: {
+      connector: TH_CONNECTOR(["read_themes", "write_themes"]),
+      cmsState: "applied",
+      remote: {
+        resource: "Theme templates/product.json · performance settings",
+        versionAtDraft: "rev 57",
+        versionNow: "rev 57",
+        hashAtDraft: demoDigest("th-product-perf-57"),
+        hashNow: demoDigest("th-product-perf-57"),
+        checkedAt: "2026-11-19T08:45:00Z",
+        changed: false,
+        note: "The live theme is still rev 57 with the old settings. The applied revision 58 is saved to the draft theme but not published.",
+      },
+      fields: [
+        { field: "Hero image", before: "trench-hero.png (1.9 MB)", after: "trench-hero.webp (140 KB)", outcome: "written", note: "Saved as a revision. Not live until published." },
+        { field: "Hero fetch priority and preload", before: "auto, preload off", after: "high, preload on", outcome: "written", note: "Saved as a revision. Not live until published." },
+        { field: "Gallery script", before: "Blocking, in the head", after: "defer", outcome: "written", note: "Saved as a revision. Not live until published." },
+      ],
+      completedAt: "2026-11-12T14:30:00Z",
+      stagedAt: null,
+      appliedAt: "2026-11-17T11:15:00Z",
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, available: true },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Lab LCP on mobile", expect: "2.5 s or lower" },
+        { id: "c2", label: "Hero image transfer size", expect: "Under 200 KB" },
+        { id: "c3", label: "Lab CLS on mobile", expect: "0.1 or lower" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-09T10:35:00Z", actor: "Audit aud-th-003", kind: "created", title: "Finding fnd-th-007 detected" },
+      { id: "h2", at: "2026-11-10T17:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-12T14:00:00Z", actor: "Drafting model", kind: "draft", title: "Patch drafted", detail: "3 settings changed" },
+      { id: "h4", at: "2026-11-14T16:00:00Z", actor: "Hira Malik", kind: "approval", title: "Approval requested", detail: "Owner or admin must approve the exact diff" },
+      { id: "h5", at: "2026-11-14T18:30:00Z", actor: "Omar Farooq", kind: "approval", title: "Approved exact diff" },
+      { id: "h6", at: "2026-11-14T19:00:00Z", actor: "Hira Malik", kind: "status", title: "Apply scheduled", detail: "Quiet-hours window 17 Nov 11:00 UK time" },
+      { id: "h7", at: "2026-11-16T11:09:00Z", actor: "Audit aud-th-004", kind: "status", title: "Baseline re-measured", detail: "Lab LCP 3.4 s on mobile, before the change" },
+      { id: "h8", at: "2026-11-17T11:14:00Z", actor: "System", kind: "execution", title: "Remote check passed", detail: "rev 57, unchanged since draft" },
+      { id: "h9", at: "2026-11-17T11:15:00Z", actor: "System", kind: "execution", title: "Applied", detail: "3 of 3 settings written as revision 58. Not published." },
+      { id: "h10", at: "2026-11-19T08:45:00Z", actor: "System", kind: "execution", title: "Remote check: revision unchanged", detail: "Not live. Publish to start verification." },
+    ],
+  },
+
+  // Cancelled before any work: finding accepted as a risk.
+  "task-th-008": {
+    recommendationId: "rec-fnd-th-008-a",
+    createdAt: "2026-11-18T14:30:00Z",
+    createdBy: "Sana Iqbal",
+    successCriteria: ["The homepage states a short sizing answer using supported facts only", "p-th-007 re-run on the same channels with 3 samples"],
+    dependencies: [],
+    cancellation: {
+      by: "Sana Iqbal",
+      at: "2026-11-18T19:00:00Z",
+      reason: "Not pursued now. One neutral prompt, 2 of 6 requests failed and only 4 samples are usable. Accepted as a risk; revisit in January if the brand is still absent.",
+    },
+    draft: {
+      kind: "guidance",
+      owner: "Hira Malik",
+      steps: [
+        { title: "Review the homepage", detail: "Note whether the homepage answers a basic sizing question." },
+        { title: "List supported facts", detail: "Use only facts from /pages/size-and-fit-guide." },
+        { title: "Propose a short answer block", detail: "Two sentences at most, linking to the guide. Do not claim a result in answers." },
+      ],
+      sourceFacts: [
+        { label: "Prompt p-th-007", value: "Brand absent in 4 of 4 successful responses; 2 of 6 requests failed", source: "Audit aud-th-005" },
+        { label: "Cited source", value: "maisonalder.example in 4 of 4 successful responses", source: "Responses resp-aud-th-005-08, -09, -10 and -12" },
+      ],
+    },
+    approval: { state: "not_required", notRequiredReason: "Guidance only. No write is made by Rankvora AI.", diffHash: null, writes: [] },
+    execution: {
+      connector: null,
+      cmsState: "guidance",
+      remote: null,
+      fields: [],
+      completedAt: null,
+      stagedAt: null,
+      appliedAt: null,
+      publishedAt: null,
+      rollback: { ...EMPTY_ROLLBACK, unavailableReason: "Cancelled before any change." },
+    },
+    verification: {
+      plannedChecks: [
+        { id: "c1", label: "Homepage states a short sizing answer", expect: "Present" },
+        { id: "c2", label: "p-th-007 re-run with 3 samples per channel", expect: "Counts reported as n / d" },
+      ],
+      outcome: null,
+      simulated: null,
+      context: null,
+    },
+    history: [
+      { id: "h1", at: "2026-11-18T13:08:00Z", actor: "Audit aud-th-005", kind: "created", title: "Finding fnd-th-008 detected" },
+      { id: "h2", at: "2026-11-18T14:30:00Z", actor: "Sana Iqbal", kind: "approval", title: "Recommendation approved", detail: "Task created and assigned to Hira Malik" },
+      { id: "h3", at: "2026-11-18T19:00:00Z", actor: "Sana Iqbal", kind: "status", title: "Task cancelled", detail: "Accepted risk; revisit in January. Finding set to Accepted risk." },
+    ],
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Merged exports (all stores). Ids never collide between stores.
 // ---------------------------------------------------------------------------
@@ -2985,10 +4036,10 @@ const EXTRA_TASK_DETAILS: Record<string, TaskDetailSeed> = {
   },
 };
 
-export const FINDING_EXTRAS: Record<string, FindingExtras> = { ...PK_FINDING_EXTRAS, ...AE_FINDING_EXTRAS, ...NU_FINDING_EXTRAS };
-export const RECOMMENDATIONS: Recommendation[] = [...PK_RECOMMENDATIONS, ...AE_RECOMMENDATIONS, ...NU_RECOMMENDATIONS];
-export const TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = { ...PK_TASK_SUMMARY_EXTRAS, ...AE_TASK_SUMMARY_EXTRAS, ...NU_TASK_SUMMARY_EXTRAS, "task-009": { blockers: [] }, "task-010": { blockers: [] } };
-export const TASK_DETAILS: Record<string, TaskDetailSeed> = { ...PK_TASK_DETAILS, ...AE_TASK_DETAILS, ...NU_TASK_DETAILS, ...EXTRA_TASK_DETAILS };
+export const FINDING_EXTRAS: Record<string, FindingExtras> = { ...PK_FINDING_EXTRAS, ...AE_FINDING_EXTRAS, ...NU_FINDING_EXTRAS, ...TH_FINDING_EXTRAS };
+export const RECOMMENDATIONS: Recommendation[] = [...PK_RECOMMENDATIONS, ...AE_RECOMMENDATIONS, ...NU_RECOMMENDATIONS, ...TH_RECOMMENDATIONS];
+export const TASK_SUMMARY_EXTRAS: Record<string, { blockers: string[] }> = { ...PK_TASK_SUMMARY_EXTRAS, ...AE_TASK_SUMMARY_EXTRAS, ...NU_TASK_SUMMARY_EXTRAS, ...TH_TASK_SUMMARY_EXTRAS, "task-009": { blockers: [] }, "task-010": { blockers: [] } };
+export const TASK_DETAILS: Record<string, TaskDetailSeed> = { ...PK_TASK_DETAILS, ...AE_TASK_DETAILS, ...NU_TASK_DETAILS, ...TH_TASK_DETAILS, ...EXTRA_TASK_DETAILS };
 
 /** Wording-only title fixes for registry tasks that name a platform (the registry itself is owned by Reports and records). */
 export const TASK_TITLE_OVERRIDES: Record<string, string> = {

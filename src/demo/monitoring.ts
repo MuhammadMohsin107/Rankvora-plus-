@@ -3,7 +3,8 @@
  *
  * Schedules and runs of every store come from src/demo/registry.ts (ids, statuses,
  * headline numbers): runpro-pk sch-001…003 / run-001…008, runpro-ae
- * sch-ae-001…002 / run-ae-001…006 and nutrition sch-nu-001…003 / run-nu-001…006.
+ * sch-ae-001…002 / run-ae-001…006, nutrition sch-nu-001…003 / run-nu-001…006 and threadly
+ * sch-th-001…003 / run-th-001…006.
  * Everything here adds detail around them:
  * schedule configuration + version history, event/alert specs, usage caps and
  * usage periods. Job-level data is NOT authored here: it is derived by
@@ -274,6 +275,95 @@ const schNu003Config: ScheduleConfig = {
   notify: { inApp: true, email: [], webhook: null },
 };
 
+// ---------------------------------------------------------------------------
+// threadly (Shopify fashion store, United Kingdom, Europe/London). Weekly run Monday 09:00 London = 08:00 UTC in BST (to 25 Oct), 09:00 UTC after.
+// Same shapes and numbers as nutrition: failures in the generated runs always use 3 attempts, so every version keeps retry at 3 attempts.
+// ---------------------------------------------------------------------------
+
+const TH_PROMPTS = ["p-th-001", "p-th-002", "p-th-003", "p-th-004", "p-th-005", "p-th-006", "p-th-007"];
+const TH_ALL_CHANNELS = ["ch-openai", "ch-gemini", "ch-perplexity"];
+const TH_SANA_EMAIL = "sana@northstar.example";
+const TH_HIRA_EMAIL = "hira@northstar.example";
+
+/** Version 2 (28 Oct) confirms a repeat before alerting and mutes the night hours in London. */
+const rulesThV2: AlertRules = {
+  categories: ALL_EVENT_TYPES,
+  threshold: "Any change in a ≥ 2-sample prompt",
+  persistence: { required: 2, window: 3 },
+  cooldownHours: 24,
+  quietHours: { enabled: true, from: "22:00", to: "07:00" },
+};
+
+/** sch-th-001 version 1 (9 Oct): 7 prompts × 3 providers × 2 samples = 42 jobs per run. */
+const schThBase: ScheduleConfig = {
+  promptMode: "latest",
+  promptIds: TH_PROMPTS,
+  promptCount: 7,
+  pinnedVersions: {},
+  channelIds: TH_ALL_CHANNELS,
+  market: "GB",
+  language: "en",
+  frequency: { kind: "weekly", weekday: 1, runsPerMonth: 4.33 },
+  timezone: "Europe/London",
+  localTime: "09:00",
+  samples: 2,
+  windowMinutes: 45,
+  maxConcurrency: 2,
+  retry: { maxAttempts: 3, backoffSeconds: 30 },
+  usageCap: { jobsPerMonth: 220, costUsd: 15 },
+  alerts: rulesV1,
+  notify: { inApp: true, email: [TH_SANA_EMAIL], webhook: null },
+};
+
+const schThV2: ScheduleConfig = { ...schThBase, windowMinutes: 60, alerts: rulesThV2, notify: { inApp: true, email: [TH_SANA_EMAIL, TH_HIRA_EMAIL], webhook: null } };
+
+const schThVersions: ScheduleVersion[] = [
+  { version: 2, createdAt: "2026-10-28T08:15:00Z", createdBy: OMAR, changes: ["Run window 45 → 60 min", "Alert persistence: confirm repeat 2 of 3 runs (was 1 of 1)", "Cooldown 12 → 24 h", "Quiet hours 22:00–07:00 on", "Added hira@northstar.example to email alerts"], config: schThV2 },
+  { version: 1, createdAt: "2026-10-09T09:10:00Z", createdBy: SANA, changes: ["Created: 7 prompts × 3 providers × 2 samples", "Weekly · Mon 09:00 Europe/London"], config: schThBase },
+];
+
+/** sch-th-002: three linen, denim and sizing prompts, OpenAI only, daily. Paused before its first run. */
+const schTh002Config: ScheduleConfig = {
+  promptMode: "latest",
+  promptIds: ["p-th-002", "p-th-004", "p-th-007"],
+  promptCount: 3,
+  pinnedVersions: {},
+  channelIds: ["ch-openai"],
+  market: "GB",
+  language: "en",
+  frequency: { kind: "daily", runsPerMonth: 30 },
+  timezone: "Europe/London",
+  localTime: "08:00",
+  samples: 1,
+  windowMinutes: 30,
+  maxConcurrency: 2,
+  retry: { maxAttempts: 2, backoffSeconds: 20 },
+  usageCap: { jobsPerMonth: 100, costUsd: 6 },
+  alerts: { ...rulesThV2, categories: ["new_mention", "lost_mention", "owned_citation_gained", "owned_citation_lost", "provider_error_spike", "run_incomplete"] },
+  notify: { inApp: true, email: [TH_HIRA_EMAIL], webhook: null },
+};
+
+/** sch-th-003: monthly competitor prompts on Gemini + Perplexity, pinned to the prompt versions of 26 Oct (p-th-003 v1). */
+const schTh003Config: ScheduleConfig = {
+  promptMode: "pinned",
+  promptIds: ["p-th-003", "p-th-005"],
+  promptCount: 2,
+  pinnedVersions: { "p-th-003": 1, "p-th-005": 1 },
+  channelIds: ["ch-gemini", "ch-perplexity"],
+  market: "GB",
+  language: "en",
+  frequency: { kind: "monthly", dayOfMonth: 1, runsPerMonth: 1 },
+  timezone: "Europe/London",
+  localTime: "10:00",
+  samples: 1,
+  windowMinutes: 45,
+  maxConcurrency: 2,
+  retry: { maxAttempts: 3, backoffSeconds: 30 },
+  usageCap: { jobsPerMonth: 12, costUsd: 1 },
+  alerts: { ...rulesThV2, persistence: { required: 1, window: 1 }, categories: ["new_mention", "lost_mention", "competitor_mention_change", "provider_error_spike", "run_incomplete"] },
+  notify: { inApp: true, email: [], webhook: null },
+};
+
 /** Per-schedule fields not held in the registry (config, versions). Merged with REGISTRY_SCHEDULES by the service. */
 export const SCHEDULE_DETAILS: Record<string, { createdAt: string; createdBy: string; statusReason: string | null; versions: ScheduleVersion[] }> = {
   "sch-001": { createdAt: "2026-09-22T10:05:00Z", createdBy: SANA, statusReason: null, versions: sch001Versions },
@@ -309,6 +399,19 @@ export const SCHEDULE_DETAILS: Record<string, { createdAt: string; createdBy: st
     statusReason: "Prompt p-nu-003 is pinned at v1, but it was reworded on 27 Oct and is now v2. The 1 Dec run would use the old wording. Update the pin, or keep v1 on purpose.",
     versions: [{ version: 1, createdAt: "2026-10-26T09:20:00Z", createdBy: OMAR, changes: ["Created: 2 competitor prompts × Gemini + Perplexity × 1 sample", "Monthly · 1st 10:00 Asia/Singapore, first run 1 Dec", "Prompt versions pinned (p-nu-003 v1, p-nu-005 v1)"], config: schNu003Config }],
   },
+  "sch-th-001": { createdAt: "2026-10-09T09:10:00Z", createdBy: SANA, statusReason: null, versions: schThVersions },
+  "sch-th-002": {
+    createdAt: "2026-11-11T07:20:00Z",
+    createdBy: HIRA,
+    statusReason: "Paused by Omar Farooq on 13 Nov, before the first run, to keep plan requests for the weekly check.",
+    versions: [{ version: 1, createdAt: "2026-11-11T07:20:00Z", createdBy: HIRA, changes: ["Created: 3 linen, denim and sizing prompts × OpenAI × 1 sample", "Daily · 08:00 Europe/London"], config: schTh002Config }],
+  },
+  "sch-th-003": {
+    createdAt: "2026-10-26T09:20:00Z",
+    createdBy: OMAR,
+    statusReason: "Prompt p-th-003 is pinned at v1, but it was reworded on 27 Oct and is now v2. The 1 Dec run would use the old wording. Update the pin, or keep v1 on purpose.",
+    versions: [{ version: 1, createdAt: "2026-10-26T09:20:00Z", createdBy: OMAR, changes: ["Created: 2 competitor prompts × Gemini + Perplexity × 1 sample", "Monthly · 1st 10:00 Europe/London, first run 1 Dec", "Prompt versions pinned (p-th-003 v1, p-th-005 v1)"], config: schTh003Config }],
+  },
 };
 
 /** Which schedule version produced a run, by schedule id and run time. */
@@ -316,6 +419,7 @@ export function scheduleVersionAt(scheduleId: string, iso: string): number {
   if (scheduleId === "sch-001") return Date.parse(iso) >= Date.parse("2026-10-15T08:20:00Z") ? 2 : 1;
   if (scheduleId === "sch-ae-001") return Date.parse(iso) >= Date.parse("2026-10-30T07:45:00Z") ? 2 : 1;
   if (scheduleId === "sch-nu-001") return Date.parse(iso) >= Date.parse("2026-10-28T08:15:00Z") ? 2 : 1;
+  if (scheduleId === "sch-th-001") return Date.parse(iso) >= Date.parse("2026-10-28T08:15:00Z") ? 2 : 1;
   return 1;
 }
 
@@ -325,6 +429,8 @@ export const USAGE_CAPS: Record<string, UsageCaps & { providerRequests: number }
   "runpro-ae": { requests: 300, samples: 240, searchCalls: 160, tokens: 80_000, costUsd: 12, providerRequests: 150 },
   // Monitoring budget inside the website's plan cap of 300 requests a month (the rest is for audits).
   nutrition: { requests: 240, samples: 220, searchCalls: 300, tokens: 110_000, costUsd: 16, providerRequests: 90 },
+  // Same monitoring budget as the nutrition website, inside the same plan cap of 300 requests a month.
+  threadly: { requests: 240, samples: 220, searchCalls: 300, tokens: 110_000, costUsd: 16, providerRequests: 90 },
 };
 
 /** Calendar periods used on the Usage tab, per store. Run ids per period (pk runs Tuesday, ae runs Wednesday). The first period is the current month. */
@@ -343,6 +449,11 @@ export const USAGE_PERIODS: Record<string, { id: string; label: string; runIds: 
     { id: "2026-11", label: "Nov 2026 (to 19 Nov)", runIds: ["run-nu-004", "run-nu-005", "run-nu-006"] },
     { id: "2026-10", label: "Oct 2026", runIds: ["run-nu-001", "run-nu-002", "run-nu-003"] },
   ],
+  // Weekly runs on Monday. Monitoring only: the plan total of 198 requests in Nov also counts three audits and retries (see DEMO_USAGE).
+  threadly: [
+    { id: "2026-11", label: "Nov 2026 (to 19 Nov)", runIds: ["run-th-004", "run-th-005", "run-th-006"] },
+    { id: "2026-10", label: "Oct 2026", runIds: ["run-th-001", "run-th-002", "run-th-003"] },
+  ],
 };
 
 /** Monitoring-relevant timeline markers on the trend chart (x = run date label is resolved by the service). */
@@ -353,6 +464,8 @@ export const TIMELINE_MARKERS: { runId: string; label: string }[] = [
   { runId: "run-ae-004", label: "Schedule v2 in use" },
   { runId: "run-nu-003", label: "5 jobs failed" },
   { runId: "run-nu-004", label: "p-nu-003 v2, schedule v2 in use" },
+  { runId: "run-th-003", label: "5 jobs failed" },
+  { runId: "run-th-004", label: "p-th-003 v2, schedule v2 in use" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1539,6 +1652,380 @@ export const EVENT_SPECS: EventSpec[] = [
       severity: "info",
       status: "resolved",
       delivery: [inApp("sent", "01:41 UTC")],
+      cooldown: "1 per run.",
+      persistence: null,
+      handledBy: "Auto-resolved: failures below the 15% threshold",
+    },
+  },
+  // ---------------------------------------------------------------------------
+  // threadly. Same slots, counts and rates as the nutrition events above (the generator PROFILE for threadly keeps the same numbers),
+  // so every slot was checked the same way against buildRunResponses("run-th-00N"). Failed jobs per run: 4, 2, 5, 1, 2, 0
+  // (OpenAI/Gemini/Perplexity: 1/2/1, 1/0/1, 2/1/2, 0/1/0, 1/0/1, 0/0/0). Times are London run times: 08:00 UTC for runs 001–002, 09:00 UTC after.
+  // ---------------------------------------------------------------------------
+  {
+    id: "ev-th-003",
+    storeId: "threadly",
+    type: "brand_fact_error",
+    runId: "run-th-006",
+    at: "2026-11-16T09:49:00Z",
+    headlineId: "al-034",
+    metric: "brand_fact",
+    promptId: "p-th-006",
+    channelId: "ch-gemini",
+    findingId: "fnd-th-003",
+    fact: {
+      verified: "Returns on the Summer Linen collection are free to UK addresses",
+      claim: "States returns on the collection cost £4.95",
+      source: "threadly.example/collections/summer-linen (collection page: free UK returns)",
+      quote: "…Threadly ships its Summer Linen collection free, but returns cost £4.95 per parcel, so check the policy before you order…",
+    },
+    currentTone: "danger",
+    summary: "An answer says returns on the Summer Linen collection are charged. The collection page states UK returns are free. The linked finding is the earlier noindex tag on that page, fixed on 12 Nov.",
+    note: "Demonstration example. Verify against the page before acting. The answer may rest on older information, not on a cause we can prove.",
+    alert: {
+      severity: "high",
+      status: "new",
+      delivery: [inApp("sent", "09:49 UTC"), email("sent", "09:50 UTC")],
+      cooldown: "24 h per prompt × provider. 0 duplicates suppressed.",
+      persistence: null,
+      handledBy: null,
+    },
+  },
+  {
+    id: "ev-th-001",
+    storeId: "threadly",
+    type: "new_mention",
+    runId: "run-th-006",
+    at: "2026-11-16T09:31:00Z",
+    headlineId: "al-035",
+    previous: { runId: "run-th-005", promptId: "p-th-002", channelId: "ch-openai", sample: 1 },
+    current: { runId: "run-th-006", promptId: "p-th-002", channelId: "ch-openai", sample: 1 },
+    summary: "A previously empty OpenAI sample now names the brand and cites an owned page. Sample 2 already named the brand.",
+    note: SAMPLE_NOTE,
+    alert: {
+      severity: "medium",
+      status: "new",
+      delivery: [inApp("sent", "09:31 UTC"), email("sent", "Digest · 10:00 UTC")],
+      cooldown: "24 h per prompt × provider. 0 duplicates suppressed.",
+      persistence: null,
+      handledBy: null,
+    },
+  },
+  {
+    id: "ev-th-002",
+    storeId: "threadly",
+    type: "owned_citation_gained",
+    runId: "run-th-006",
+    at: "2026-11-16T09:36:00Z",
+    headlineId: "al-036",
+    previous: { runId: "run-th-005", promptId: "p-th-002", channelId: "ch-openai", sample: 1 },
+    current: { runId: "run-th-006", promptId: "p-th-002", channelId: "ch-openai", sample: 1 },
+    summary: "An owned page is cited in an OpenAI sample for the linen shirt prompt.",
+    note: SAMPLE_NOTE,
+    alert: {
+      severity: "low",
+      status: "new",
+      delivery: [inApp("sent", "09:36 UTC"), email("pending", "Queued for the weekly digest")],
+      cooldown: "24 h per prompt × provider. 0 duplicates suppressed.",
+      persistence: null,
+      handledBy: null,
+    },
+  },
+  {
+    id: "ev-th-004",
+    storeId: "threadly",
+    type: "coverage_change",
+    runId: "run-th-006",
+    at: "2026-11-16T09:44:00Z",
+    headlineId: "al-037",
+    metric: "coverage",
+    compare: { previousRunId: "run-th-005" },
+    currentTone: "success",
+    summary: "All 42 jobs succeeded, so every prompt and provider pair has all its samples analysed. The previous run had 2 jobs fail after retries.",
+    alert: {
+      severity: "info",
+      status: "resolved",
+      delivery: [inApp("sent", "09:44 UTC")],
+      cooldown: "1 per run.",
+      persistence: null,
+      handledBy: "Auto-resolved: no failed jobs",
+    },
+  },
+  {
+    id: "ev-th-005",
+    storeId: "threadly",
+    type: "competitor_decrease",
+    runId: "run-th-006",
+    at: "2026-11-16T09:38:00Z",
+    headlineId: null,
+    findingId: "fnd-th-006",
+    title: "Competitor decrease: competitor-domain citations 57.5% → 54.8%",
+    metric: "competitor_citations",
+    compare: { previousRunId: "run-th-005" },
+    currentTone: "success",
+    summary: "The count is flat (23 answers both weeks); the share fell because more answers succeeded. This is context for review, not a cause.",
+    alert: null,
+  },
+  {
+    id: "ev-th-006",
+    storeId: "threadly",
+    type: "rank_movement",
+    runId: "run-th-006",
+    at: "2026-11-16T09:39:00Z",
+    headlineId: null,
+    title: "Rank movement: average list position 2.14 → 2.25",
+    metric: "avg_position",
+    compare: { previousRunId: "run-th-005" },
+    currentTone: "warning",
+    summary: "Average position in ordered lists moved down a little. Only 7 and 8 ordered lists are behind these averages, so treat it as directional.",
+    alert: null,
+  },
+  {
+    id: "ev-th-023",
+    storeId: "threadly",
+    type: "new_recommendation",
+    runId: "run-th-006",
+    at: "2026-11-16T09:32:00Z",
+    headlineId: null,
+    title: "New recommendation: “What are the best sustainable clothing brands in the UK?” on Perplexity (sample 2)",
+    previous: { runId: "run-th-005", promptId: "p-th-001", channelId: "ch-perplexity", sample: 2 },
+    current: { runId: "run-th-006", promptId: "p-th-001", channelId: "ch-perplexity", sample: 2 },
+    summary: "Perplexity sample 2 moved from a plain mention to a recommendation (#3 in the list) and cites an owned page.",
+    note: SAMPLE_NOTE,
+    alert: null,
+  },
+  {
+    id: "ev-th-024",
+    storeId: "threadly",
+    type: "sentiment_shift",
+    runId: "run-th-006",
+    at: "2026-11-16T09:32:00Z",
+    headlineId: null,
+    title: "Sentiment shift: mixed → positive on “What are the best sustainable clothing brands in the UK?” (Perplexity)",
+    previous: { runId: "run-th-005", promptId: "p-th-001", channelId: "ch-perplexity", sample: 2 },
+    current: { runId: "run-th-006", promptId: "p-th-001", channelId: "ch-perplexity", sample: 2 },
+    summary: "Same slot as the new recommendation. Sentiment is classified per answer.",
+    note: SAMPLE_NOTE,
+    alert: null,
+  },
+  {
+    id: "ev-th-007",
+    storeId: "threadly",
+    type: "sentiment_share_change",
+    runId: "run-th-006",
+    at: "2026-11-16T09:40:00Z",
+    headlineId: null,
+    title: "Sentiment change: positive share",
+    metric: "positive_sentiment",
+    compare: { previousRunId: "run-th-005" },
+    currentTone: "success",
+    summary: "One more answer reads as positive about the brand. A change this small is directional.",
+    alert: null,
+  },
+  {
+    id: "ev-th-008",
+    storeId: "threadly",
+    type: "new_recommendation",
+    runId: "run-th-005",
+    at: "2026-11-09T09:30:00Z",
+    headlineId: "al-038",
+    previous: { runId: "run-th-004", promptId: "p-th-002", channelId: "ch-gemini", sample: 1 },
+    current: { runId: "run-th-005", promptId: "p-th-002", channelId: "ch-gemini", sample: 1 },
+    summary: "Gemini sample 1 moved from a plain mention to a recommendation (#3 in the list) for the linen shirt prompt, and cites an owned page.",
+    note: SAMPLE_NOTE,
+    alert: {
+      severity: "medium",
+      status: "resolved",
+      delivery: [inApp("sent", "09:30 UTC"), email("sent", "09:31 UTC")],
+      cooldown: "24 h per prompt × provider. 0 duplicates suppressed.",
+      persistence: null,
+      handledBy: "Resolved by Hira Malik",
+    },
+  },
+  {
+    id: "ev-th-009",
+    storeId: "threadly",
+    type: "sentiment_shift",
+    runId: "run-th-005",
+    at: "2026-11-09T09:30:00Z",
+    headlineId: null,
+    title: "Sentiment shift: mixed → positive on “Which linen shirts stay cool in hot weather?” (Gemini)",
+    previous: { runId: "run-th-004", promptId: "p-th-002", channelId: "ch-gemini", sample: 1 },
+    current: { runId: "run-th-005", promptId: "p-th-002", channelId: "ch-gemini", sample: 1 },
+    summary: "Same slot as the new recommendation. Sentiment is classified per answer.",
+    note: SAMPLE_NOTE,
+    alert: null,
+  },
+  {
+    id: "ev-th-010",
+    storeId: "threadly",
+    type: "new_mention",
+    runId: "run-th-005",
+    at: "2026-11-09T09:20:00Z",
+    headlineId: null,
+    title: "New mention: “What are good alternatives to Ravel & Co for smart casual shirts?” on OpenAI",
+    previous: { runId: "run-th-004", promptId: "p-th-005", channelId: "ch-openai", sample: 1 },
+    current: { runId: "run-th-005", promptId: "p-th-005", channelId: "ch-openai", sample: 1 },
+    summary: "A previously empty OpenAI sample of the alternatives prompt now names the brand and cites an owned page. Sample 2 still does not.",
+    note: SAMPLE_NOTE,
+    alert: null,
+  },
+  {
+    id: "ev-th-011",
+    storeId: "threadly",
+    type: "new_mention",
+    runId: "run-th-005",
+    at: "2026-11-09T09:34:00Z",
+    headlineId: null,
+    title: "New mention: “How do I find my shirt size when ordering online?” on Perplexity",
+    previous: { runId: "run-th-004", promptId: "p-th-007", channelId: "ch-perplexity", sample: 2 },
+    current: { runId: "run-th-005", promptId: "p-th-007", channelId: "ch-perplexity", sample: 2 },
+    summary: "A previously empty Perplexity sample names the brand and cites an owned page. It is the first time the brand is named for this neutral prompt.",
+    note: SAMPLE_NOTE,
+    alert: null,
+  },
+  {
+    id: "ev-th-012",
+    storeId: "threadly",
+    type: "sentiment_share_change",
+    runId: "run-th-004",
+    at: "2026-11-02T09:33:00Z",
+    headlineId: "al-039",
+    metric: "positive_sentiment",
+    compare: { previousRunId: "run-th-003" },
+    currentTone: "success",
+    summary: "Two more answers read as positive about the brand (6 of 41 against 4 of 37). The numbers are small, so read the change as directional. The comparison prompt p-th-003 ran its reworded v2 for the first time, so its slots are not matched with earlier weeks.",
+    alert: {
+      severity: "medium",
+      status: "resolved",
+      delivery: [inApp("sent", "09:33 UTC"), email("sent", "09:34 UTC")],
+      cooldown: "24 h per prompt × provider. 0 duplicates suppressed.",
+      persistence: null,
+      handledBy: "Resolved by Sana Iqbal",
+    },
+  },
+  {
+    id: "ev-th-015",
+    storeId: "threadly",
+    type: "competitor_increase",
+    runId: "run-th-004",
+    at: "2026-11-02T09:45:00Z",
+    headlineId: "al-040",
+    metric: "competitor_named",
+    competitor: "Ravel & Co",
+    compare: { previousRunId: "run-th-003" },
+    summary: "More answers name Ravel & Co (34 of 41 against 29 of 37). The change is about 4.5 points and the denominators differ because jobs failed, so read it as directional.",
+    alert: {
+      severity: "low",
+      status: "resolved",
+      delivery: [inApp("sent", "09:45 UTC")],
+      cooldown: "7 d per competitor.",
+      persistence: null,
+      handledBy: "Resolved by Omar Farooq",
+    },
+  },
+  {
+    id: "ev-th-016",
+    storeId: "threadly",
+    type: "coverage_change",
+    runId: "run-th-004",
+    at: "2026-11-02T09:41:00Z",
+    headlineId: null,
+    title: "Coverage change: more prompt and provider pairs fully analysed",
+    metric: "coverage",
+    compare: { previousRunId: "run-th-003" },
+    currentTone: "success",
+    summary: "One Gemini job for the denim prompt timed out again after retries, which is the only missing sample. Failed samples are not counted as absent.",
+    alert: null,
+  },
+  {
+    id: "ev-th-017",
+    storeId: "threadly",
+    type: "provider_error_spike",
+    runId: "run-th-003",
+    at: "2026-10-26T09:46:00Z",
+    headlineId: "al-041",
+    metric: "run_incomplete",
+    compare: { previousRunId: "run-th-002" },
+    summary: "Failures rose at every provider (2 of 42 jobs the week before): two timeouts, two rate limits and one 503. They are excluded from rates and not treated as brand absent.",
+    alert: {
+      severity: "high",
+      status: "resolved",
+      delivery: [inApp("sent", "09:46 UTC"), email("sent", "09:47 UTC")],
+      cooldown: "12 h per provider. 0 duplicates suppressed.",
+      persistence: null,
+      handledBy: "Resolved by Omar Farooq · failures fell to 1 of 42 in the next run",
+    },
+  },
+  {
+    id: "ev-th-018",
+    storeId: "threadly",
+    type: "new_mention",
+    runId: "run-th-003",
+    at: "2026-10-26T09:34:00Z",
+    headlineId: null,
+    title: "New mention: “Which UK brands make organic cotton denim that lasts?” on OpenAI (sample 2)",
+    previous: { runId: "run-th-002", promptId: "p-th-004", channelId: "ch-openai", sample: 2 },
+    current: { runId: "run-th-003", promptId: "p-th-004", channelId: "ch-openai", sample: 2 },
+    summary: "A previously empty OpenAI sample now names the brand, without an owned citation. Sample 1 still does not. It is named again in every later run.",
+    note: SAMPLE_NOTE,
+    alert: null,
+  },
+  {
+    id: "ev-th-019",
+    storeId: "threadly",
+    type: "new_recommendation",
+    runId: "run-th-003",
+    at: "2026-10-26T09:34:00Z",
+    headlineId: null,
+    title: "New recommendation: “Threadly vs Maison Alder…” on Perplexity (sample 2)",
+    previous: { runId: "run-th-002", promptId: "p-th-003", channelId: "ch-perplexity", sample: 2 },
+    current: { runId: "run-th-003", promptId: "p-th-003", channelId: "ch-perplexity", sample: 2 },
+    summary: "Perplexity sample 2 moved from a plain mention to a recommendation (#3 in the list) on the comparison prompt, and cites an owned page. Both runs used wording v1 of the prompt.",
+    note: SAMPLE_NOTE,
+    alert: null,
+  },
+  {
+    id: "ev-th-020",
+    storeId: "threadly",
+    type: "coverage_change",
+    runId: "run-th-003",
+    at: "2026-10-26T09:47:00Z",
+    headlineId: null,
+    title: "Coverage change: fewer prompt and provider pairs fully analysed",
+    metric: "coverage",
+    compare: { previousRunId: "run-th-002" },
+    summary: "Five jobs failed after retries, so five pairs are missing a sample. Failed samples are not counted as absent.",
+    alert: null,
+  },
+  {
+    id: "ev-th-021",
+    storeId: "threadly",
+    type: "rank_movement",
+    runId: "run-th-002",
+    at: "2026-10-19T08:36:00Z",
+    headlineId: null,
+    title: "Rank movement: average list position 1.67 → 1.50",
+    metric: "avg_position",
+    compare: { previousRunId: "run-th-001" },
+    currentTone: "success",
+    summary: "Average position in ordered lists moved up. Only 3 and 4 ordered lists are behind these averages, so treat it as directional.",
+    alert: null,
+  },
+  {
+    id: "ev-th-022",
+    storeId: "threadly",
+    type: "run_incomplete",
+    runId: "run-th-001",
+    at: "2026-10-12T08:41:00Z",
+    headlineId: "al-042",
+    metric: "run_incomplete",
+    compare: { previousRunId: null },
+    summary: "Four jobs (one OpenAI, two Gemini, one Perplexity) failed after retries. They are excluded from rates and not treated as brand absent. First run of this schedule, so there is nothing to compare with.",
+    alert: {
+      severity: "info",
+      status: "resolved",
+      delivery: [inApp("sent", "08:41 UTC")],
       cooldown: "1 per run.",
       persistence: null,
       handledBy: "Auto-resolved: failures below the 15% threshold",

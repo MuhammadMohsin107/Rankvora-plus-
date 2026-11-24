@@ -135,11 +135,18 @@ const NU_OVERRIDE: NotificationMatrix = {
   competitor_increase: ["in_app", "email"],
 };
 
+/** threadly overrides one setting: email when a competitor gains ground (Maison Alder is named most often). */
+const TH_OVERRIDE: NotificationMatrix = {
+  ...DEMO_ORG_NOTIFICATIONS.matrix,
+  competitor_increase: ["in_app", "email"],
+};
+
 export const DEMO_STORE_NOTIFICATIONS: StoreNotificationOverride[] = [
   { storeId: "runpro-pk", mode: "override", matrix: PK_OVERRIDE },
   { storeId: "runpro-ae", mode: "override", matrix: AE_OVERRIDE },
   { storeId: "homefit-uk", mode: "inherit", matrix: DEMO_ORG_NOTIFICATIONS.matrix },
   { storeId: "nutrition", mode: "override", matrix: NU_OVERRIDE },
+  { storeId: "threadly", mode: "override", matrix: TH_OVERRIDE },
 ];
 
 /* ───────── Billing (demonstration only: no payments, no card data) ───────── */
@@ -179,13 +186,14 @@ export const DEMO_UNIT_COST_USD = { openai: 0.075, gemini: 0.045, perplexity: 0.
 
 /**
  * Requests per website and provider, Nov 2026 to date. Totals equal DEMO_USAGE in src/demo/shared.ts
- * (912 + 142 + 0 + 198 = 1,252). homefit-uk has no AI channel, so 0.
+ * (912 + 142 + 0 + 198 + 198 = 1,450). homefit-uk has no AI channel, so 0.
  */
 export const DEMO_USAGE_SEEDS: WebsiteUsageSeed[] = [
   { websiteId: "runpro-pk", requests: { openai: 320, gemini: 304, perplexity: 288 } },
   { websiteId: "runpro-ae", requests: { openai: 72, gemini: 70 } },
   { websiteId: "homefit-uk", requests: {} },
   { websiteId: "nutrition", requests: { openai: 66, gemini: 66, perplexity: 66 } },
+  { websiteId: "threadly", requests: { openai: 66, gemini: 66, perplexity: 66 } },
 ];
 
 /** Last six months of AI requests. Nothing was tracked before the first website in August, so Jun and Jul have no data. */
@@ -230,6 +238,7 @@ export const DEMO_ARCHIVED_COMPETITORS: Competitor[] = [
   { id: "c-stride", storeId: "runpro-pk", name: "StrideCo", domains: ["strideco.example"], aliases: [], status: "archived", market: "PK" },
   { id: "c-track-ae", storeId: "runpro-ae", name: "TrackHouse", domains: ["trackhouse.example"], aliases: [], status: "archived", market: "AE" },
   { id: "c-fuelnotes-nu", storeId: "nutrition", name: "FuelNotes", domains: ["fuelnotes.example"], aliases: [], status: "archived", market: "SG" },
+  { id: "c-thistle-th", storeId: "threadly", name: "Thistle & Thread", domains: ["thistleandthread.example"], aliases: [], status: "archived", market: "GB" },
 ];
 
 export const DEMO_BRAND_VERSIONS: Record<string, BrandVersion[]> = {
@@ -351,6 +360,38 @@ export const DEMO_BRAND_VERSIONS: Record<string, BrandVersion[]> = {
       description: "Nutrition guides and courses for beginners.",
     },
   ],
+  threadly: [
+    {
+      version: 3,
+      createdAt: "2026-11-04T09:20:00Z",
+      createdBy: "Hira Malik",
+      note: "Added description and differentiators",
+      brandName: "Threadly",
+      aliases: ["Threadly Clothing", "Threadly UK"],
+      differentiators: ["Responsibly sourced linen and organic cotton", "Free UK returns within 30 days", "Made in small batches in Portugal"],
+      description: "A UK online clothing store for linen shirts, organic denim, merino knitwear and outerwear. Responsibly sourced fabrics, true-to-size fits and free UK returns.",
+    },
+    {
+      version: 2,
+      createdAt: "2026-10-20T07:30:00Z",
+      createdBy: "Hira Malik",
+      note: "Added spelling variants",
+      brandName: "Threadly",
+      aliases: ["Threadly Clothing"],
+      differentiators: [],
+      description: "Sustainable everyday clothing for men and women.",
+    },
+    {
+      version: 1,
+      createdAt: "2026-10-06T08:10:00Z",
+      createdBy: "Sana Iqbal",
+      note: "Created at setup",
+      brandName: "Threadly",
+      aliases: [],
+      differentiators: [],
+      description: "Sustainable everyday clothing for men and women.",
+    },
+  ],
 };
 
 export const DEMO_DOMAINS: DomainRecord[] = [
@@ -381,6 +422,15 @@ export const DEMO_DOMAINS: DomainRecord[] = [
       { host: "learn.nutrition.example", kind: "alias" },
     ],
     former: [{ host: "nutrition-guide.example", from: "2025-06-01T00:00:00Z", to: "2026-09-30T00:00:00Z", reason: "Renamed; 301 redirect to nutrition.example" }],
+  },
+  {
+    storeId: "threadly",
+    canonical: "threadly.example",
+    aliases: [
+      { host: "www.threadly.example", kind: "redirect" },
+      { host: "threadly-uk.myshopify.com", kind: "alias" },
+    ],
+    former: [{ host: "threadlyclothing.example", from: "2025-04-01T00:00:00Z", to: "2026-09-25T00:00:00Z", reason: "Rebranded; 301 redirect to threadly.example" }],
   },
 ];
 
@@ -437,6 +487,23 @@ export const DEMO_INTEGRATIONS: IntegrationDetail[] = [
       note: null,
     },
     searchConsole: { state: "connected", property: "sc-domain:nutrition.example", lastVerifiedAt: "2026-11-19T06:00:00Z", note: null },
+  },
+  {
+    storeId: "threadly",
+    commerce: {
+      platform: "shopify",
+      state: "connected",
+      account: "threadly-uk.myshopify.com",
+      scopes: [
+        { scope: "read_products", purpose: "Read the product catalogue", granted: true },
+        { scope: "read_content", purpose: "Read pages and articles", granted: true },
+        { scope: "write_content", purpose: "Stage and publish approved page changes", granted: true },
+        { scope: "read_themes", purpose: "Read theme files for structured data checks", granted: false },
+      ],
+      lastVerifiedAt: "2026-11-17T08:00:00Z",
+      note: null,
+    },
+    searchConsole: { state: "connected", property: "sc-domain:threadly.example", lastVerifiedAt: "2026-11-19T06:00:00Z", note: null },
   },
 ];
 
@@ -498,6 +565,23 @@ export const DEMO_ACTIVITY: ActivityEntry[] = [
   { id: "act-nu-03", storeId: "nutrition", at: "2026-10-06T08:20:00Z", actor: "Sana Iqbal", title: "WordPress connected", detail: "Application password with read and write permission", kind: "integration" },
   { id: "act-nu-02", storeId: "nutrition", at: "2026-10-06T08:10:00Z", actor: "Sana Iqbal", title: "Brand profile saved as v1", kind: "brand" },
   { id: "act-nu-01", storeId: "nutrition", at: "2026-10-06T08:00:00Z", actor: "Sana Iqbal", title: "Website created", kind: "store" },
+  { id: "act-th-17", storeId: "threadly", at: "2026-11-18T12:30:00Z", actor: "System", title: "Competitor suggested: Oakline", detail: "Cited in answers for linen shirt prompts.", kind: "competitor" },
+  { id: "act-th-16", storeId: "threadly", at: "2026-11-17T08:00:00Z", actor: "System", title: "Shopify connection verified", kind: "integration" },
+  { id: "act-th-15", storeId: "threadly", at: "2026-11-04T09:20:00Z", actor: "Hira Malik", title: "Brand profile saved as v3", detail: "Added description and differentiators", kind: "brand" },
+  { id: "act-th-14", storeId: "threadly", at: "2026-10-30T11:00:00Z", actor: "Sana Iqbal", title: "Notification overrides saved", detail: "Email when a competitor increases.", kind: "notification" },
+  { id: "act-th-13", storeId: "threadly", at: "2026-10-29T08:15:00Z", actor: "Omar Farooq", title: "Competitor archived: Thistle & Thread", detail: "Closed down; no longer appears in answers.", kind: "competitor" },
+  { id: "act-th-12", storeId: "threadly", at: "2026-10-20T07:30:00Z", actor: "Hira Malik", title: "Brand profile saved as v2", detail: "Added spelling variants", kind: "brand" },
+  { id: "act-th-11", storeId: "threadly", at: "2026-10-07T06:00:00Z", actor: "Sana Iqbal", title: "Status changed: Ready to Active", kind: "store" },
+  { id: "act-th-10", storeId: "threadly", at: "2026-10-06T09:35:00Z", actor: "Omar Farooq", title: "Search Console connected", detail: "Property sc-domain:threadly.example", kind: "integration" },
+  { id: "act-th-09", storeId: "threadly", at: "2026-10-06T09:10:00Z", actor: "Omar Farooq", title: "Competitor confirmed: Fieldstone Apparel", kind: "competitor" },
+  { id: "act-th-08", storeId: "threadly", at: "2026-10-06T09:05:00Z", actor: "Omar Farooq", title: "Competitor confirmed: Ravel & Co", kind: "competitor" },
+  { id: "act-th-07", storeId: "threadly", at: "2026-10-06T09:00:00Z", actor: "Omar Farooq", title: "Competitor confirmed: Maison Alder", kind: "competitor" },
+  { id: "act-th-06", storeId: "threadly", at: "2026-10-06T08:45:00Z", actor: "Sana Iqbal", title: "4 products imported from Shopify", detail: "Linen shirt, organic denim, merino knit and waxed trench", kind: "product" },
+  { id: "act-th-05", storeId: "threadly", at: "2026-10-06T08:30:00Z", actor: "Sana Iqbal", title: "Former domain recorded: threadlyclothing.example", detail: "301 redirect to threadly.example", kind: "domain" },
+  { id: "act-th-04", storeId: "threadly", at: "2026-10-06T08:25:00Z", actor: "Sana Iqbal", title: "Domain alias added: www.threadly.example", detail: "Redirects to threadly.example", kind: "domain" },
+  { id: "act-th-03", storeId: "threadly", at: "2026-10-06T08:20:00Z", actor: "Sana Iqbal", title: "Shopify connected", detail: "Scopes: read_products, read_content, write_content", kind: "integration" },
+  { id: "act-th-02", storeId: "threadly", at: "2026-10-06T08:10:00Z", actor: "Sana Iqbal", title: "Brand profile saved as v1", kind: "brand" },
+  { id: "act-th-01", storeId: "threadly", at: "2026-10-06T08:00:00Z", actor: "Sana Iqbal", title: "Website created", kind: "store" },
 ];
 
 /* ───────── Add-website sample data ───────── */
@@ -559,5 +643,21 @@ export const DEMO_BRAND_KNOWLEDGE: Record<string, KnowledgeSeed> = {
       { id: "faq-nu-4", question: "How often is the newsletter sent?", answer: "Every week." },
     ],
     contentContext: "Nutrition and wellness information website. Key pages: home, meal-planning and protein guides, recipes, the free Nutrition Basics course, a weekly newsletter, information-only consultations and a calorie calculator.",
+  },
+  threadly: {
+    facts: [
+      { id: "fact-th-1", label: "Returns", value: "Free UK returns within 30 days of delivery", sourceUrl: "https://threadly.example/policies/refund-policy" },
+      { id: "fact-th-2", label: "Delivery", value: "Free standard UK delivery on orders over £60; next-day delivery £4.95", sourceUrl: "https://threadly.example/pages/shipping-and-returns" },
+      { id: "fact-th-3", label: "Flagship shirt", value: "Everyday Linen Shirt, 100% European flax linen, £59", sourceUrl: "https://threadly.example/products/everyday-linen-shirt" },
+      { id: "fact-th-4", label: "Sizing", value: "True to size in XS to XXL; a fit guide with body measurements is on every product page", sourceUrl: "https://threadly.example/pages/size-and-fit-guide" },
+      { id: "fact-th-5", label: "Denim", value: "Straight-Leg Organic Denim is made from GOTS-certified organic cotton (fictional)", sourceUrl: "https://threadly.example/products/straight-leg-organic-denim" },
+    ],
+    faqs: [
+      { id: "faq-th-1", question: "Does Threadly offer free returns?", answer: "Yes. Returns to UK addresses are free within 30 days of delivery." },
+      { id: "faq-th-2", question: "How does the Everyday Linen Shirt fit?", answer: "It is true to size. Check the size and fit guide for body measurements before ordering." },
+      { id: "faq-th-3", question: "Is the Summer Linen collection made from natural fibres?", answer: "Yes. The shirts use 100% European flax linen." },
+      { id: "faq-th-4", question: "How fast is delivery in the UK?", answer: "Standard delivery takes 2 to 4 working days. Next-day delivery is available at checkout." },
+    ],
+    contentContext: "UK fashion store on Shopify. Key pages: home, Summer Linen and Denim collections, product pages with GBP pricing, the size and fit guide, shipping and returns, and the Threadly Journal with care and styling guides.",
   },
 };

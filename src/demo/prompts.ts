@@ -58,6 +58,17 @@ export const PROMPT_META: Record<string, PromptMeta> = {
   "p-uk-006": { createdAt: "2026-11-13T11:20:00Z", createdBy: "Omar Farooq", productIds: ["pr-uk-rower"] },
   "p-uk-007": { createdAt: "2026-11-11T09:10:00Z", createdBy: "Hira Malik", activatedAt: "2026-11-11T09:15:00Z", productIds: ["pr-uk-rack"] },
   "p-uk-008": { createdAt: "2026-11-17T15:00:00Z", createdBy: "Hira Malik" },
+  "p-th-001": { createdAt: "2026-10-06T09:00:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z" },
+  "p-th-002": { createdAt: "2026-10-06T09:02:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z", productIds: ["pr-th-linen"] },
+  "p-th-003": { createdAt: "2026-10-06T09:04:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z" },
+  "p-th-004": { createdAt: "2026-10-06T09:06:00Z", createdBy: "Hira Malik", activatedAt: "2026-10-06T09:30:00Z", productIds: ["pr-th-denim"] },
+  "p-th-005": { createdAt: "2026-10-06T09:08:00Z", createdBy: "Hira Malik", activatedAt: "2026-10-06T09:30:00Z" },
+  "p-th-006": { createdAt: "2026-10-07T07:30:00Z", createdBy: "Omar Farooq", activatedAt: "2026-10-07T07:35:00Z", productIds: ["pr-th-knit"] },
+  "p-th-007": { createdAt: "2026-10-07T07:32:00Z", createdBy: "Omar Farooq", activatedAt: "2026-10-07T07:35:00Z" },
+  "p-th-008": { createdAt: "2026-10-14T10:00:00Z", createdBy: "Hira Malik", activatedAt: "2026-10-14T10:10:00Z", productIds: ["pr-th-linen"] },
+  "p-th-009": { createdAt: "2026-11-12T08:30:00Z", createdBy: "Hira Malik" },
+  "p-th-010": { createdAt: "2026-10-08T11:00:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-08T11:05:00Z" },
+  "p-th-011": { createdAt: "2026-11-17T14:00:00Z", createdBy: "Omar Farooq", productIds: ["pr-th-trench"] },
   "p-nu-001": { createdAt: "2026-10-06T09:00:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z" },
   "p-nu-002": { createdAt: "2026-10-06T09:02:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z", productIds: ["pr-nu-mealplan"] },
   "p-nu-003": { createdAt: "2026-10-06T09:04:00Z", createdBy: "Sana Iqbal", activatedAt: "2026-10-06T09:30:00Z" },
@@ -108,6 +119,18 @@ export const PROMPT_EDITS: Record<string, EarlierVersion[]> = {
     { version: 1, text: "Nutrition or VitaPlate for meal prep ideas?", changedBy: "Sana Iqbal", changedAt: "2026-10-08T11:00:00Z", note: null },
     { version: 2, text: "Nutrition vs VitaPlate for weekly meal prep ideas", changedBy: "Hira Malik", changedAt: "2026-10-20T09:15:00Z", note: "Made the period explicit" },
   ],
+  "p-th-003": [
+    { version: 1, text: "Threadly or Maison Alder for linen shirts?", changedBy: "Sana Iqbal", changedAt: "2026-10-06T09:04:00Z", note: null },
+    { version: 2, text: "Threadly vs Maison Alder: which has better linen shirts for warm weather?", changedBy: "Hira Malik", changedAt: "2026-10-27T09:00:00Z", note: "Added the warm-weather use" },
+  ],
+  "p-th-008": [
+    { version: 1, text: "Is the Threadly linen shirt good?", changedBy: "Hira Malik", changedAt: "2026-10-14T10:00:00Z", note: null },
+    { version: 2, text: "Is the Threadly Everyday Linen Shirt worth buying?", changedBy: "Omar Farooq", changedAt: "2026-11-03T08:30:00Z", note: "Named the product" },
+  ],
+  "p-th-010": [
+    { version: 1, text: "Threadly or Ravel & Co for smart casual shirts?", changedBy: "Sana Iqbal", changedAt: "2026-10-08T11:00:00Z", note: null },
+    { version: 2, text: "Threadly vs Ravel & Co for smart casual shirts", changedBy: "Hira Malik", changedAt: "2026-10-20T09:15:00Z", note: "Shortened" },
+  ],
   "p-uk-007": [
     { version: 1, text: "Are HomeFit racks sturdy?", changedBy: "Hira Malik", changedAt: "2026-11-11T09:10:00Z", note: null },
     { version: 2, text: "Are HomeFit folding racks sturdy enough for heavy lifting?", changedBy: "Omar Farooq", changedAt: "2026-11-12T13:30:00Z", note: "Made the question specific" },
@@ -125,6 +148,8 @@ export const PROMPT_STATUS_EVENTS: Record<string, { at: string; actor: string; t
   "p-uk-007": { at: "2026-11-13T10:00:00Z", actor: "Omar Farooq", title: "Paused" },
   "p-nu-008": { at: "2026-11-05T09:00:00Z", actor: "Hira Malik", title: "Paused" },
   "p-nu-010": { at: "2026-11-04T10:00:00Z", actor: "Sana Iqbal", title: "Archived" },
+  "p-th-008": { at: "2026-11-05T09:00:00Z", actor: "Hira Malik", title: "Paused" },
+  "p-th-010": { at: "2026-11-04T10:00:00Z", actor: "Sana Iqbal", title: "Archived" },
 };
 
 // ---------------------------------------------------------------------------
@@ -143,6 +168,10 @@ export const DEMO_EXTRA_GROUPS: PromptGroup[] = [
   { id: "g-nu-guides", storeId: "nutrition", name: "Guides" },
   { id: "g-nu-comparison", storeId: "nutrition", name: "Comparison" },
   { id: "g-nu-services", storeId: "nutrition", name: "Courses & services" },
+  { id: "g-th-discovery", storeId: "threadly", name: "Discovery" },
+  { id: "g-th-guides", storeId: "threadly", name: "Buying guides" },
+  { id: "g-th-comparison", storeId: "threadly", name: "Comparison" },
+  { id: "g-th-services", storeId: "threadly", name: "Shipping & returns" },
 ];
 
 const make =
@@ -168,6 +197,9 @@ const ae = make("runpro-ae", /runpro/i, "2026-09-14T08:10:00Z", "Running shoes")
 const uk = make("homefit-uk", /homefit/i, "2026-11-10T14:40:00Z", "Home gym");
 // "Nutrition" is also an ordinary word, so a prompt names the brand only when it says "Nutrition vs", "Nutrition Basics" or "Nutrition course".
 const nu = make("nutrition", /Nutrition (vs|or|Basics|course)/, "2026-10-06T09:30:00Z", "Nutrition basics");
+
+// "Threadly" is not an ordinary word, so a prompt names the brand whenever it says it.
+const th = make("threadly", /Threadly/i, "2026-10-06T09:30:00Z", "Sustainable fashion");
 
 export const DEMO_EXTRA_PROMPTS: PromptBase[] = [
   // runpro-ae: five active prompts. They are the only prompts in the generated runs and audits.
@@ -206,6 +238,20 @@ export const DEMO_EXTRA_PROMPTS: PromptBase[] = [
   nu("p-nu-009", "Which nutrition newsletters are worth subscribing to?", "discovery", "g-nu-discovery", { status: "draft", topic: "Newsletters", source: "ai_generated", scope: "audit", updatedAt: "2026-11-12T08:30:00Z" }),
   nu("p-nu-010", "Nutrition vs VitaPlate for weekly meal prep ideas", "comparison", "g-nu-comparison", { status: "archived", version: 2, topic: "Meal prep", updatedAt: "2026-11-04T10:00:00Z" }),
   nu("p-nu-011", "Where can I find a registered dietitian in Singapore?", "local_market", null, { status: "draft", topic: "Buying locally", source: "imported", scope: "monitoring", updatedAt: "2026-11-17T14:00:00Z" }),
+
+  // threadly (demo Shopify fashion store): seven active prompts. They are the only prompts in the generated runs and audits.
+  th("p-th-001", "What are the best sustainable clothing brands in the UK?", "discovery", "g-th-discovery", { isCore: true, topic: "Sustainable fashion" }),
+  th("p-th-002", "Which linen shirts stay cool in hot weather?", "recommendation", "g-th-guides", { isCore: true, topic: "Linen" }),
+  th("p-th-003", "Threadly vs Maison Alder: which has better linen shirts for warm weather?", "comparison", "g-th-comparison", { isCore: true, version: 2, topic: "Linen", updatedAt: "2026-10-27T09:00:00Z" }),
+  th("p-th-004", "Which UK brands make organic cotton denim that lasts?", "recommendation", "g-th-guides", { topic: "Denim" }),
+  th("p-th-005", "What are good alternatives to Ravel & Co for smart casual shirts?", "alternative", "g-th-comparison", { topic: "Alternatives", source: "ai_generated" }),
+  th("p-th-006", "Where can I buy ethically made merino knitwear in the UK?", "product_service", "g-th-services", { topic: "Knitwear", source: "ai_generated", updatedAt: "2026-10-07T07:35:00Z" }),
+  th("p-th-007", "How do I find my shirt size when ordering online?", "informational", "g-th-guides", { topic: "Sizing", source: "imported", updatedAt: "2026-10-07T07:35:00Z" }),
+  // threadly: prompts in other states. None of them ran in an audit or monitoring run since they were paused, archived or created.
+  th("p-th-008", "Is the Threadly Everyday Linen Shirt worth buying?", "product_service", "g-th-services", { status: "paused", version: 2, topic: "Linen", updatedAt: "2026-11-05T09:00:00Z" }),
+  th("p-th-009", "Which UK clothing brands offer free returns?", "discovery", "g-th-discovery", { status: "draft", topic: "Returns", source: "ai_generated", scope: "audit", updatedAt: "2026-11-12T08:30:00Z" }),
+  th("p-th-010", "Threadly vs Ravel & Co for smart casual shirts", "comparison", "g-th-comparison", { status: "archived", version: 2, topic: "Smart casual", updatedAt: "2026-11-04T10:00:00Z" }),
+  th("p-th-011", "Where can I buy sustainable clothing in Manchester?", "local_market", null, { status: "draft", topic: "Buying locally", source: "imported", scope: "monitoring", updatedAt: "2026-11-17T14:00:00Z" }),
 ];
 
 // ---------------------------------------------------------------------------
@@ -219,6 +265,7 @@ export const STORE_PROFILES: Record<string, WebsiteProfile> = {
   "runpro-ae": { category: "running shoes", item: "running shoe", city: "Dubai", need: "hot weather" },
   "homefit-uk": { category: "home gym equipment", item: "home gym machine", city: "London", need: "small spaces" },
   nutrition: { category: "nutrition websites", brands: "nutrition websites and brands", item: "nutrition information", city: "Singapore", need: "meal planning" },
+  threadly: { category: "sustainable clothing", brands: "sustainable clothing brands", item: "garment", city: "London", need: "warm weather" },
 };
 
 const FALLBACK_PROFILE: WebsiteProfile = { category: "offerings", item: "offering", city: "your city", need: "everyday use" };

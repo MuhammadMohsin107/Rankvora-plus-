@@ -1,7 +1,7 @@
 /**
  * DEMONSTRATION DATA — not real.
  * Audit detail around the registry audits (src/demo/registry.ts): configuration,
- * live progress of aud-004, and the website-readiness lane for runpro.pk, runpro.ae and nutrition.example
+ * live progress of aud-004, and the website-readiness lane for runpro.pk, runpro.ae, nutrition.example and threadly.example
  * (crawled pages, checks, AI crawler access). Read it only through src/services/audit.ts.
  *
  * Headline numbers (jobs, mention/recommendation, page coverage) come from the registry
@@ -1064,6 +1064,413 @@ export const NU_BASE_CRAWLERS: CrawlerAccess[] = [
   },
 ];
 
+// ===========================================================================
+// threadly (fashion store, Shopify, https://threadly.example, United Kingdom)
+// Audits aud-th-001 (initial, 8 Oct), aud-th-002 (scheduled, 22 Oct), aud-th-003 (full, 9 Nov),
+// aud-th-004 (verification, 16 Nov, 5 pages, AI + website) and aud-th-005 (triggered, 18 Nov, AI lane only).
+// Headline numbers agree with REGISTRY_TH_AUDITS and findings fnd-th-001 … fnd-th-008
+// (src/demo/shared-records.ts). Pages assessed: 24 / 27 / 29 / 5 of 30 in scope.
+// Same shape and numbers as the block above; only identity, wording and times differ.
+// ===========================================================================
+
+export const TH_SITE = "https://threadly.example";
+
+const TH_CHANNELS = ["ch-openai", "ch-gemini", "ch-perplexity"];
+
+const thBaseConfig: AuditConfig = {
+  promptScope: "all_active",
+  promptIds: [],
+  channelIds: TH_CHANNELS,
+  samples: 2,
+  market: "GB",
+  language: "en",
+  startPoints: ["Homepage", "Sitemap"],
+  maxUrls: 100,
+  maxDepth: 4,
+  pageTypes: ["Home", "Collections", "Products", "Guides", "Pages", "Policies"],
+  excludedPaths: ["/admin", "/cart", "/checkout", "/search"],
+  criteriaVersion: "2.1",
+  analysisVersion: "1.2",
+  integrations: { searchConsole: true, pageSpeed: true, cms: true },
+  limits: { maxRequests: 120, concurrency: 3, budgetUsd: 5 },
+};
+
+export const TH_AUDIT_CONFIGS: Record<string, AuditConfig> = {
+  // Criteria 1.4, Search Console not connected yet.
+  "aud-th-001": { ...thBaseConfig, criteriaVersion: "1.4", integrations: { searchConsole: false, pageSpeed: true, cms: true } },
+  // Monthly scheduled full audit (22nd, 09:00 London time; 08:00 UTC while British Summer Time lasted). Criteria 2.0.
+  "aud-th-002": {
+    ...thBaseConfig,
+    criteriaVersion: "2.0",
+    trigger: { source: "schedule", reason: "Monthly, 22nd at 09:00 London time", cadence: "monthly", nextRunAt: "2026-11-22T09:00:00Z", dedupKey: "schedule:monthly:2026-10-22" },
+  },
+  "aud-th-003": thBaseConfig,
+  // Verification of the noindex fix: 2 prompts × 3 channels × 1 sample = 6 requests, 5 pages.
+  "aud-th-004": {
+    ...thBaseConfig,
+    promptScope: "ids",
+    promptIds: ["p-th-002", "p-th-006"],
+    samples: 1,
+    startPoints: ["URL list (5 URLs)"],
+    maxUrls: 5,
+    maxDepth: 1,
+    pageTypes: ["Collections", "Products", "Pages"],
+    limits: { maxRequests: 20, concurrency: 2, budgetUsd: 1 },
+    verifies: { findingId: "fnd-th-003", taskId: "task-th-003" },
+  },
+  // Triggered, AI lane only: 2 prompts × 3 channels × 2 samples = 12 requests. No website settings apply.
+  "aud-th-005": {
+    ...thBaseConfig,
+    promptScope: "ids",
+    promptIds: ["p-th-001", "p-th-007"],
+    startPoints: [],
+    maxUrls: 0,
+    maxDepth: 0,
+    pageTypes: [],
+    excludedPaths: [],
+    integrations: { searchConsole: false, pageSpeed: false, cms: false },
+    limits: { maxRequests: 24, concurrency: 2, budgetUsd: 1.5 },
+    trigger: { source: "competitor_suggested", reason: "New competitor suggested: Oakline", dedupKey: "competitor_suggested:c-oakline-th:2026-11-18" },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Website lane: pages
+// ---------------------------------------------------------------------------
+
+const TH_PAGE_PROFILE: PageProfile = {
+  idPrefix: "pg-th",
+  site: TH_SITE,
+  brand: "Threadly",
+  lcp: (n) => 1500 + ((n * 131) % 700),
+  deliveryText: "Free UK delivery on orders over £60.",
+};
+
+const pth = (n: number, path: string, type: PageType, title: string | null, seed: PageSeed = {}) => makePage(TH_PAGE_PROFILE, n, path, type, title, seed);
+
+const TH_NO_META: PageSeed = { metaDescription: null };
+const TH_PRODUCT_ISSUE = ["Product offers.price and availability differ from the visible price and stock"];
+const TH_COLLECTION_TITLE = "Shop clothing | Threadly";
+const TH_COLLECTION_META = "Sustainable everyday clothing in linen, denim and merino.";
+const TH_COLLECTION: PageSeed = { metaDescription: TH_COLLECTION_META, schemaTypes: ["CollectionPage", "BreadcrumbList"], words: 420 };
+
+export const TH_BASE_PAGES: CrawledPage[] = [
+  pth(1, "/", "home", "Threadly — Sustainable linen, denim and knitwear", {
+    schemaTypes: ["Organization", "WebSite"],
+    schemaIssues: ["Organization sameAs is empty"],
+    h2: ["Shop by collection", "Everyday Linen Shirt", "Threadly Journal newsletter"],
+    words: 580,
+    inlinks: 132,
+    outInternal: 38,
+  }),
+  pth(2, "/collections", "collection", "All collections | Threadly", { schemaTypes: ["CollectionPage", "BreadcrumbList"], h2: ["Shirts", "Denim", "Knitwear"] }),
+  pth(3, "/pages/size-and-fit-guide", "guide", "Size and fit guide | Threadly", {
+    schemaTypes: ["WebPage", "BreadcrumbList"],
+    schemaIssues: ["No FAQPage markup for the 6 visible questions and answers"],
+    h2: ["How to measure yourself", "Shirts and tops", "Denim and trousers", "Common questions"],
+    words: 1640,
+    metaDescription: "How to measure yourself and choose your size in Threadly shirts, denim and knitwear, with a size chart in cm.",
+  }),
+  pth(4, "/products/everyday-linen-shirt", "product", "Everyday Linen Shirt | Threadly", {
+    schemaTypes: ["Product", "BreadcrumbList"],
+    schemaIssues: TH_PRODUCT_ISSUE,
+    h2: ["Fit and fabric", "Sizing", "Delivery and returns", "Care"],
+    words: 640,
+  }),
+  pth(5, "/products/relaxed-linen-shirt", "product", "Relaxed Linen Shirt | Threadly", {
+    schemaTypes: ["Product", "BreadcrumbList"],
+    schemaIssues: TH_PRODUCT_ISSUE,
+    h2: ["Fit and fabric", "Sizing", "Care"],
+    words: 580,
+  }),
+  pth(6, "/blogs/journal/how-to-care-for-linen", "guide", "How to care for linen: washing, drying and ironing | Threadly", { schemaTypes: ["Article", "BreadcrumbList"], h2: ["Washing", "Drying", "Ironing or not"], words: 960 }),
+  pth(7, "/blogs/journal/linen-vs-cotton", "guide", "Linen vs cotton shirts: which is cooler? | Threadly", { schemaTypes: ["Article", "BreadcrumbList"], words: 870 }),
+  pth(8, "/collections/linen", "collection", "Linen | Threadly", { schemaTypes: ["CollectionPage", "BreadcrumbList"], h2: ["Linen shirts"] }),
+  pth(9, "/collections/summer-linen", "collection", "Summer Linen | Threadly", {
+    // Carries a noindex tag in aud-th-001 to aud-th-003; removed before aud-th-004 (see the variant page overrides).
+    indexable: false,
+    metaRobots: "noindex, follow",
+    schemaTypes: ["CollectionPage", "BreadcrumbList"],
+    h2: ["Shirts", "Shorts and trousers", "Summer layers"],
+    words: 540,
+    metaDescription: "Summer Linen is Threadly's edit of cool, breathable linen shirts, shorts and trousers for warm weather.",
+  }),
+  pth(10, "/products/short-sleeve-linen-shirt", "product", "Short-Sleeve Linen Shirt | Threadly", {
+    schemaTypes: ["Product", "BreadcrumbList"],
+    schemaIssues: TH_PRODUCT_ISSUE,
+    words: 560,
+  }),
+  pth(11, "/pages/free-fit-advice", "page", "Free fit-advice chat | Threadly", { schemaTypes: ["WebPage", "BreadcrumbList"], h2: ["What we can help with", "What we cannot help with"], words: 430 }),
+  pth(12, "/pages/about-us", "page", "About Threadly", { schemaTypes: ["AboutPage", "BreadcrumbList"], words: 480 }),
+  pth(13, "/pages/shipping-and-returns", "page", "Shipping and returns | Threadly", { schemaTypes: ["WebPage", "BreadcrumbList"], h2: ["UK delivery", "Free returns", "Refunds"], words: 350 }),
+  pth(14, "/collections/all", "collection", TH_COLLECTION_TITLE, { schemaTypes: ["CollectionPage", "BreadcrumbList"], h2: ["Shirts", "Denim", "Knitwear"], metaDescription: TH_COLLECTION_META }),
+  // Six collection pages repeat the category title and meta description until the November fix (fnd-th-004).
+  pth(15, "/collections/new-in", "collection", TH_COLLECTION_TITLE, { ...TH_COLLECTION, h1: ["New in"] }),
+  pth(16, "/collections/linen-shirts", "collection", TH_COLLECTION_TITLE, { ...TH_COLLECTION, h1: ["Linen shirts"] }),
+  pth(17, "/collections/organic-denim", "collection", TH_COLLECTION_TITLE, { ...TH_COLLECTION, h1: ["Organic denim"] }),
+  pth(18, "/collections/knitwear", "collection", TH_COLLECTION_TITLE, { ...TH_COLLECTION, h1: ["Merino knitwear"] }),
+  pth(19, "/collections/trousers", "collection", TH_COLLECTION_TITLE, { ...TH_COLLECTION, h1: ["Linen trousers and shorts"] }),
+  pth(20, "/collections/accessories", "collection", TH_COLLECTION_TITLE, { ...TH_COLLECTION, h1: ["Accessories"] }),
+  pth(21, "/products/waxed-cotton-trench", "product", "Waxed Cotton Trench | Threadly", {
+    schemaTypes: ["Product", "BreadcrumbList"],
+    h2: ["Fit and fabric", "Sizing", "Care"],
+    words: 390,
+    lab: { lcpMs: 3400, cls: 0.09, tbtMs: 310 },
+  }),
+  pth(22, "/blogs/journal", "collection", "Threadly Journal | Threadly", { schemaTypes: ["Blog", "BreadcrumbList"], h2: ["Latest articles"], lab: { lcpMs: 2300, cls: 0.06, tbtMs: 200 } }),
+  pth(23, "/blogs/journal/how-organic-denim-is-made", "guide", "How organic cotton denim is made | Threadly", {
+    schemaTypes: ["Article", "BreadcrumbList"],
+    h2: ["Growing the cotton", "Weaving and dyeing", "Finishing"],
+    words: 780,
+  }),
+  pth(24, "/blogs/journal/measuring-for-a-shirt", "guide", "Measuring yourself for a shirt: a five-minute guide | Threadly", { schemaTypes: ["Article", "BreadcrumbList"], words: 910 }),
+  pth(25, "/blogs/journal/summer-capsule-wardrobe", "guide", "A ten-piece summer capsule wardrobe | Threadly", { schemaTypes: ["Article", "BreadcrumbList"], words: 840 }),
+  pth(26, "/pages/faq", "page", "Frequently asked questions | Threadly", { ...TH_NO_META, schemaTypes: ["FAQPage", "BreadcrumbList"] }),
+  pth(27, "/pages/contact", "page", "Contact Threadly", { schemaTypes: ["ContactPage", "BreadcrumbList"] }),
+  pth(28, "/policies/privacy-policy", "policy", "Privacy policy | Threadly", { ...TH_NO_META }),
+  pth(29, "/policies/refund-policy", "policy", "Refund policy | Threadly"),
+  pth(30, "/blogs/journal/caring-for-merino-knitwear", "guide", "Caring for merino knitwear so it lasts | Threadly", { schemaTypes: ["Article", "BreadcrumbList"], words: 1050 }),
+];
+
+const TH_PATH = (n: number) => TH_BASE_PAGES[n - 1].path;
+const TH_ALL_PAGE_IDS = TH_BASE_PAGES.map((p) => p.id);
+const thPageId = (n: number) => TH_BASE_PAGES[n - 1].id;
+const thAssessed = (leftOut: number[]) => TH_ALL_PAGE_IDS.filter((id) => !leftOut.map(thPageId).includes(id));
+
+/** Pages assessed per audit. aud-th-001: 24 of 30; aud-th-002: 27 of 30; aud-th-003: 29 of 30. */
+const TH_PAGES_001 = thAssessed([30, 29, 25, 7, 11, 13]);
+const TH_PAGES_002 = thAssessed([30, 29, 25]);
+const TH_PAGES_003 = thAssessed([30]);
+/** aud-th-004 re-assesses the 5 pages behind the verified findings: the Summer Linen collection, the trench coat product page and 3 collection pages. */
+const TH_PAGES_004 = [9, 21, 15, 16, 19].map(thPageId);
+
+const TH_COLLECTION_PATHS = [15, 16, 17, 18, 19, 20].map(TH_PATH);
+const TH_LINEN_PRODUCT_PATHS = [4, 5, 10].map(TH_PATH);
+const TH_NO_META_PATHS = [26, 28].map(TH_PATH);
+const TH_NO_ALT_PATHS = [14, 22, 18].map(TH_PATH);
+
+/** Count-dependent evidence for a variant, derived from the pages it assessed. */
+function thCounts(ids: string[]) {
+  const pages = TH_BASE_PAGES.filter((p) => ids.includes(p.id));
+  const n = pages.length;
+  const noindex = pages.filter((p) => p.id === thPageId(9)).length;
+  const articles = pages.filter((p) => p.schemaTypes.includes("Article")).length;
+  const products = pages.filter((p) => p.type === "product").length;
+  const crumbs = pages.filter((p) => p.schemaTypes.includes("BreadcrumbList")).length;
+  const indexable = n - noindex;
+  return { n, noindex, articles, products, crumbs, indexable };
+}
+
+// ---------------------------------------------------------------------------
+// Website lane: checks (state as of aud-th-003; earlier audits and the verification override)
+// ---------------------------------------------------------------------------
+
+const TH_ROBOTS = "User-agent: *\nDisallow: /admin\nDisallow: /cart\nDisallow: /checkout\nDisallow: /account\nSitemap: https://threadly.example/sitemap.xml";
+const TH_C003 = thCounts(TH_PAGES_003);
+
+const thProductSnippet = (products: number) =>
+  `${products} product pages compared with their Product JSON-LD:\n${TH_PATH(4)}  availability InStock, every size sold out on the page\n${TH_PATH(5)}  offers.price "65.00", page shows £49.00\n${TH_PATH(10)}  offers.price "65.00", page shows £49.00\n${products - 3} of ${products} product pages match their markup`;
+
+const thCollectionLines = TH_COLLECTION_PATHS.map((p) => `${p}  title "${TH_COLLECTION_TITLE}"`).join("\n");
+
+export const TH_BASE_CHECKS: WebsiteCheck[] = [
+  ck("chk-th-01", "reachability", "Homepage responds with 200", "pass", "Request", "GET https://threadly.example/  →  200 OK · 446 ms"),
+  ck("chk-th-02", "reachability", "No server errors (5xx) on assessed pages", "pass", "Crawl result", `0 of ${TH_C003.n} assessed pages returned a 5xx status`, { affected: 0 }),
+  ck("chk-th-03", "indexing", "robots.txt is reachable and parseable", "pass", "Request", "GET https://threadly.example/robots.txt  →  200 OK · text/plain · 6 lines"),
+  ck("chk-th-04", "indexing", "AI crawler rules reviewed per user-agent", "pass", "robots.txt", "No group for OAI-SearchBot, GPTBot, ChatGPT-User, PerplexityBot or Google-Extended; the default group applies (allowed)."),
+  ck("chk-th-05", "indexing", "No unintended noindex on key pages", "fail", "Crawl result", `<meta name="robots" content="noindex, follow">\nfound on ${TH_PATH(9)}`, {
+    affected: 1,
+    paths: [TH_PATH(9)],
+    findingId: "fnd-th-003",
+  }),
+  ck("chk-th-06", "indexing", "Search Console indexing coverage", "warning", "Search Console API", `Coverage report fetched for 30 URLs: 29 indexed, 1 excluded by noindex (${TH_PATH(9)})`, {
+    affected: 1,
+    paths: [TH_PATH(9)],
+    findingId: "fnd-th-003",
+  }),
+  ck("chk-th-07", "canonical", "Indexable pages declare a self-referencing canonical", "pass", "Crawl result", `${TH_C003.indexable} of ${TH_C003.indexable} assessed indexable pages carry rel=canonical to themselves`, { affected: 0 }),
+  ck("chk-th-08", "canonical", "Canonical targets return 200", "pass", "Crawl result", "All canonical targets resolved with status 200", { affected: 0 }),
+  ck("chk-th-09", "sitemaps", "Sitemap is declared in robots.txt", "pass", "robots.txt", "Sitemap: https://threadly.example/sitemap.xml"),
+  ck("chk-th-10", "sitemaps", "Sitemap URLs return 200", "pass", "Sitemap audit", "0 of 30 sitemap URLs return a non-200 status", { affected: 0 }),
+  ck("chk-th-11", "linking", "Internal links resolve (no 404 or redirect)", "pass", "Link extraction", `0 internal links return 404 or redirect on ${TH_C003.n} assessed pages`, { affected: 0 }),
+  ck("chk-th-12", "rendering", "Core content is present in raw HTML", "pass", "Raw vs rendered", "Title, H1, price and product text present before JavaScript runs on 6 of 6 sampled pages", { affected: 0 }),
+  ck("chk-th-13", "url_quality", "Clean URLs without session or tracking parameters", "pass", "Crawl result", "0 of 30 in-scope URLs contain session or tracking parameters", { affected: 0 }),
+  ck("chk-th-14", "url_quality", "Hreflang annotations", "not_applicable", "Scope", "Single-language site (English, United Kingdom market). No other language versions exist."),
+  ck("chk-th-15", "metadata", "Each indexable page has a unique title and meta description", "fail", "Crawl result", `6 collection pages share the title "${TH_COLLECTION_TITLE}" and one meta description:\n${thCollectionLines}`, {
+    affected: 6,
+    paths: TH_COLLECTION_PATHS,
+    findingId: "fnd-th-004",
+  }),
+  ck("chk-th-16", "metadata", "Meta description present (up to 160 characters)", "warning", "Crawl result", `2 of ${TH_C003.n} assessed pages have no meta description`, { affected: 2, paths: TH_NO_META_PATHS }),
+  ck("chk-th-17", "mobile_a11y", "Images have alternative text", "warning", "Crawl result", `3 of ${TH_C003.n} assessed pages contain <img> elements without alt text`, { affected: 3, paths: TH_NO_ALT_PATHS }),
+  ck("chk-th-18", "mobile_a11y", "Largest Contentful Paint up to 2.5 s (lab, mobile)", "warning", "PageSpeed lab data", `Lab LCP above 2.5 s (simulated mobile) on 1 page:\n${TH_PATH(21)}  3.4 s`, {
+    affected: 1,
+    paths: [TH_PATH(21)],
+    findingId: "fnd-th-007",
+  }),
+  ck("chk-th-19", "mobile_a11y", "Field performance (CrUX)", "inconclusive", "CrUX", `No field data at origin or URL level (low traffic). ${TH_C003.n} of ${TH_C003.n} assessed URLs have lab data only.`),
+  ck("chk-th-20", "structured_data", "Fit guides with question-and-answer sections have FAQPage markup", "fail", "JSON-LD vs page", `${TH_PATH(3)}: 6 visible questions and answers\nJSON-LD types found: WebPage, BreadcrumbList\n// FAQPage is missing`, {
+    affected: 1,
+    paths: [TH_PATH(3)],
+    findingId: "fnd-th-001",
+  }),
+  ck("chk-th-21", "structured_data", "Organization schema includes sameAs", "fail", "JSON-LD", '{ "@type": "Organization", "name": "Threadly", "logo": "…", "sameAs": [] }\n// sameAs is empty', { affected: 1, paths: ["/"], findingId: "fnd-th-005" }),
+  ck("chk-th-22", "structured_data", "Article markup has headline, author and dates", "pass", "JSON-LD", `Article markup complete on ${TH_C003.articles} of ${TH_C003.articles} assessed journal articles`, { affected: 0 }),
+  ck("chk-th-23", "structured_data", "BreadcrumbList on collections, products and journal articles", "pass", "JSON-LD", `BreadcrumbList found on ${TH_C003.crumbs} of ${TH_C003.crumbs} assessed pages that carry breadcrumbs`, { affected: 0 }),
+  ck("chk-th-24", "content_entity", "Linen shirt pages show the same price and availability in Product schema", "fail", "JSON-LD vs page", thProductSnippet(TH_C003.products), {
+    affected: 3,
+    paths: TH_LINEN_PRODUCT_PATHS,
+    findingId: "fnd-th-002",
+  }),
+  ck("chk-th-25", "content_entity", "The Summer Linen collection page lists its products with prices and stock", "pass", "Page content", `${TH_PATH(9)}: 12 products listed with £ prices and "In stock" or "Sold out" labels; CollectionPage JSON-LD has numberOfItems: 12`, { affected: 0 }),
+  ck("chk-th-26", "content_entity", "Brand name is spelled consistently", "pass", "Text scan", 'Official spelling "Threadly" on all 6 core pages', { affected: 0 }),
+  ck("chk-th-27", "content_entity", "Delivery and returns terms are shown on product pages", "pass", "Page content", "“Free UK returns within 30 days · Free delivery over £60” is shown under the add-to-basket button on every assessed product page", { affected: 0 }),
+];
+
+/** Evidence that depends on how many pages an audit assessed, for audits other than aud-th-003. */
+function thCountOverrides(ids: string[]): Record<string, CheckOverride> {
+  const c = thCounts(ids);
+  return {
+    "chk-th-02": { snippet: `0 of ${c.n} assessed pages returned a 5xx status` },
+    "chk-th-07": { snippet: `${c.indexable} of ${c.indexable} assessed indexable pages carry rel=canonical to themselves` },
+    "chk-th-11": { snippet: `0 internal links return 404 or redirect on ${c.n} assessed pages` },
+    "chk-th-16": { snippet: `2 of ${c.n} assessed pages have no meta description` },
+    "chk-th-17": { snippet: `3 of ${c.n} assessed pages contain <img> elements without alt text` },
+    "chk-th-19": { snippet: `No field data at origin or URL level (low traffic). ${c.n} of ${c.n} assessed URLs have lab data only.` },
+    "chk-th-22": { snippet: `Article markup complete on ${c.articles} of ${c.articles} assessed journal articles` },
+    "chk-th-23": { snippet: `BreadcrumbList found on ${c.crumbs} of ${c.crumbs} assessed pages that carry breadcrumbs` },
+    "chk-th-24": { snippet: thProductSnippet(c.products) },
+  };
+}
+
+/** Before 9 Nov the trench coat product page loaded in about 2.3 s; the larger, unoptimised photo gallery arrived in the first week of November. */
+const TH_PRODUCT_FAST: Partial<CrawledPage> = { lab: { lcpMs: 2300, cls: 0.05, tbtMs: 180 } };
+const TH_LCP_PASS: CheckOverride = { status: "pass", affected: 0, affectedPaths: [], findingId: null, snippet: "0 assessed pages above 2.5 s (lab, simulated mobile). Slowest: /blogs/journal  2.3 s" };
+
+export const TH_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = {
+  "aud-th-001": {
+    coverage: { inScope: 30, assessed: TH_PAGES_001.length, excluded: 5, blocked: 2, unvisited: 4 },
+    pageIds: TH_PAGES_001,
+    // Criteria 1.4 has no Organization sameAs check.
+    checkIds: TH_BASE_CHECKS.filter((c) => c.id !== "chk-th-21").map((c) => c.id),
+    overrides: {
+      ...thCountOverrides(TH_PAGES_001),
+      "chk-th-06": { status: "not_assessed", affected: null, affectedPaths: [], findingId: null, label: "Scope", snippet: "Search Console was not connected at audit time. Indexing coverage was not assessed." },
+      "chk-th-18": TH_LCP_PASS,
+      "chk-th-20": { snippet: `${TH_PATH(3)}: 6 visible questions and answers\nJSON-LD types found: WebPage, BreadcrumbList\n// FAQPage is missing` },
+    },
+    pageOverrides: { [thPageId(1)]: { schemaIssues: [] }, [thPageId(21)]: TH_PRODUCT_FAST },
+    crawlerOverrides: {},
+    notice: "Criteria 1.4: the Organization sameAs check did not exist yet. It first runs in the October scheduled audit.",
+  },
+  "aud-th-002": {
+    coverage: { inScope: 30, assessed: TH_PAGES_002.length, excluded: 5, blocked: 1, unvisited: 2 },
+    pageIds: TH_PAGES_002,
+    checkIds: "all",
+    overrides: {
+      ...thCountOverrides(TH_PAGES_002),
+      "chk-th-18": TH_LCP_PASS,
+    },
+    pageOverrides: { [thPageId(21)]: TH_PRODUCT_FAST },
+    crawlerOverrides: {},
+    notice: null,
+  },
+  "aud-th-003": {
+    coverage: { inScope: 30, assessed: TH_PAGES_003.length, excluded: 5, blocked: 0, unvisited: 1 },
+    pageIds: TH_PAGES_003,
+    checkIds: "all",
+    overrides: {},
+    pageOverrides: {},
+    crawlerOverrides: {},
+    notice: null,
+  },
+  "aud-th-004": {
+    coverage: { inScope: 5, assessed: 5, excluded: 0, blocked: 0, unvisited: 0 },
+    pageIds: TH_PAGES_004,
+    checkIds: ["chk-th-01", "chk-th-05", "chk-th-06", "chk-th-07", "chk-th-15", "chk-th-18", "chk-th-25"],
+    overrides: {
+      "chk-th-05": {
+        status: "pass",
+        affected: 0,
+        affectedPaths: [],
+        findingId: null,
+        snippet: `${TH_PATH(9)}: meta robots is now "index, follow". No noindex directive on 5 of 5 assessed pages.`,
+      },
+      "chk-th-06": { status: "pass", affected: 0, affectedPaths: [], findingId: null, snippet: `Coverage report fetched for 5 URLs: 5 indexed (${TH_PATH(9)} re-indexed after the tag was removed)` },
+      "chk-th-07": { snippet: "5 of 5 assessed indexable pages carry rel=canonical to themselves" },
+      "chk-th-15": {
+        status: "warning",
+        affected: 1,
+        affectedPaths: [TH_PATH(19)],
+        findingId: "fnd-th-004",
+        snippet: `Re-crawled 3 of the 6 collection pages that shared a title:\n${TH_PATH(15)}  unique title\n${TH_PATH(16)}  unique title\n${TH_PATH(19)}  still "${TH_COLLECTION_TITLE}"\nThe Shopify theme change log shows 4 of 6 pages updated. The other 3 pages were not re-crawled in this audit.`,
+      },
+      "chk-th-18": { snippet: `Lab LCP above 2.5 s (simulated mobile) on 1 of 5 assessed pages:\n${TH_PATH(21)}  3.4 s` },
+    },
+    pageOverrides: {
+      [thPageId(9)]: { indexable: true, metaRobots: "index, follow" },
+      [thPageId(15)]: { title: "New in | Threadly", metaDescription: "The latest linen, denim and merino arrivals, with sizes and stock updated daily." },
+      [thPageId(16)]: { title: "Linen shirts | Threadly", metaDescription: "Everyday, relaxed and short-sleeve linen shirts in European flax, with fit and care notes." },
+    },
+    crawlerOverrides: {},
+    notice: `Scoped to 5 URLs and 7 of ${TH_BASE_CHECKS.length} checks. Not comparable with a full audit.`,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// AI crawler access (reported separately per crawler, never merged)
+// ---------------------------------------------------------------------------
+
+const TH_DEFAULT_RULE = `(no group for this crawler)\n${TH_ROBOTS}`;
+
+export const TH_BASE_CRAWLERS: CrawlerAccess[] = [
+  {
+    id: "oai-searchbot",
+    name: "OAI-SearchBot",
+    purpose: "ChatGPT search",
+    allowed: true,
+    rule: TH_DEFAULT_RULE.replace("this crawler", "OAI-SearchBot"),
+    consequence: "Covered by the default rule, except /admin, /cart, /checkout and /account. Pages can be crawled for ChatGPT search.",
+    findingId: null,
+  },
+  {
+    id: "gptbot",
+    name: "GPTBot",
+    purpose: "Model training",
+    allowed: true,
+    rule: TH_DEFAULT_RULE.replace("this crawler", "GPTBot"),
+    consequence: "Covered by the default rule. Training access is separate from ChatGPT search.",
+    findingId: null,
+  },
+  {
+    id: "chatgpt-user",
+    name: "ChatGPT-User",
+    purpose: "User-requested visits",
+    allowed: true,
+    rule: TH_DEFAULT_RULE.replace("this crawler", "ChatGPT-User"),
+    consequence: "Covered by the default rule. A ChatGPT user can have a page fetched on request.",
+    findingId: null,
+  },
+  {
+    id: "perplexitybot",
+    name: "PerplexityBot",
+    purpose: "Perplexity search",
+    allowed: true,
+    rule: TH_DEFAULT_RULE.replace("this crawler", "PerplexityBot"),
+    consequence: "Covered by the default rule. Pages can be crawled for Perplexity answers.",
+    findingId: null,
+  },
+  {
+    id: "google-extended",
+    name: "Google-Extended",
+    purpose: "Gemini model training",
+    allowed: true,
+    rule: TH_DEFAULT_RULE.replace("this crawler", "Google-Extended"),
+    consequence: "Covered by the default rule. This control affects Gemini training only, not Google Search.",
+    findingId: null,
+  },
+];
+
 // ---------------------------------------------------------------------------
 // Per-store lookup used by src/services/audit.ts
 // ---------------------------------------------------------------------------
@@ -1074,13 +1481,14 @@ export const WEBSITE_BASES: Record<string, WebsiteBase> = {
   "runpro-pk": { pages: BASE_PAGES, checks: BASE_CHECKS, crawlers: BASE_CRAWLERS },
   "runpro-ae": { pages: AE_BASE_PAGES, checks: AE_BASE_CHECKS, crawlers: AE_BASE_CRAWLERS },
   nutrition: { pages: NU_BASE_PAGES, checks: NU_BASE_CHECKS, crawlers: NU_BASE_CRAWLERS },
+  threadly: { pages: TH_BASE_PAGES, checks: TH_BASE_CHECKS, crawlers: TH_BASE_CRAWLERS },
 };
 
 /** Configuration of every audit of every store, keyed by audit id (ids never collide across stores). */
-export const ALL_AUDIT_CONFIGS: Record<string, AuditConfig> = { ...AUDIT_CONFIGS, ...AE_AUDIT_CONFIGS, ...NU_AUDIT_CONFIGS };
+export const ALL_AUDIT_CONFIGS: Record<string, AuditConfig> = { ...AUDIT_CONFIGS, ...AE_AUDIT_CONFIGS, ...NU_AUDIT_CONFIGS, ...TH_AUDIT_CONFIGS };
 
 /** Website-lane variant of every audit that has a website lane. */
-export const ALL_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = { ...WEBSITE_VARIANTS, ...AE_WEBSITE_VARIANTS, ...NU_WEBSITE_VARIANTS };
+export const ALL_WEBSITE_VARIANTS: Record<string, WebsiteVariant> = { ...WEBSITE_VARIANTS, ...AE_WEBSITE_VARIANTS, ...NU_WEBSITE_VARIANTS, ...TH_WEBSITE_VARIANTS };
 
 // ---------------------------------------------------------------------------
 // Extra demonstration audits: the origin types and end states the registry audits do not cover.

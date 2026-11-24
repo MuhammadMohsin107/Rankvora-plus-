@@ -87,7 +87,7 @@ export default async function Page(props: PageProps<"/stores/[storeId]/prompts">
 ```
 Interactive parts live in `src/features/<module>/*.tsx` marked `"use client"`, receive serializable props, and never import from `src/demo`. Detail routes (`…/[auditId]`) need `generateStaticParams` returning `{storeId, auditId}` pairs, and `notFound()` for unknown ids.
 
-Stores without data (`runpro-ae`, `homefit-uk`) must show a designed `EmptyState` with one clear next action, not an error. Full data exists for `runpro-pk` only.
+Websites without data (a website created in the browser, or `homefit-uk`, which has no AI channel yet) must show a designed `EmptyState` with one clear next action, not an error. Full demo data exists for `runpro-pk`, `runpro-ae`, `nutrition` (a WordPress information site) and `threadly` (a Shopify fashion store).
 
 ## 5. File ownership (avoid collisions)
 

@@ -26,17 +26,18 @@ const sites = [
   { id: "runpro-ae", name: "RunPro UAE" },
   { id: "homefit-uk", name: "HomeFit UK" },
   { id: "nutrition", name: "Nutrition" },
+  { id: "threadly", name: "Threadly" },
   { id: "demo-websites-1", name: "New site" },
 ];
 const period = { start: DEMO_BILLING.period.start, renewsOn: DEMO_BILLING.period.renewsOn };
 
 describe("usage totals", () => {
-  const rows = websiteUsageRows(sites, DEMO_USAGE_SEEDS, DEMO_UNIT_COST_USD, { "runpro-pk": 9, "runpro-ae": 5, nutrition: 7 });
+  const rows = websiteUsageRows(sites, DEMO_USAGE_SEEDS, DEMO_UNIT_COST_USD, { "runpro-pk": 9, "runpro-ae": 5, nutrition: 7, threadly: 7 });
   const total = sumUsage(rows);
 
   it("adds per-website requests up to the organization total, including a locally created website with no usage", () => {
-    expect(rows.map((r) => r.requests)).toEqual([912, 142, 0, 198, 0]);
-    expect(total.requests).toBe(1252);
+    expect(rows.map((r) => r.requests)).toEqual([912, 142, 0, 198, 198, 0]);
+    expect(total.requests).toBe(1450);
     expect(total.requests).toBe(DEMO_USAGE.requests);
     expect(rows.reduce((s, r) => s + r.requests, 0)).toBe(total.requests);
   });
@@ -47,12 +48,12 @@ describe("usage totals", () => {
 
   it("adds cost in whole cents so rows equal the total", () => {
     expect(rows.reduce((s, r) => s + r.costCents, 0)).toBe(total.costCents);
-    expect(total.costCents).toBe(7185);
+    expect(total.costCents).toBe(8307);
   });
 
   it("splits requests and cost by provider and the providers add up to the same totals", () => {
     const byProvider = providerUsageRows(rows, DEMO_UNIT_COST_USD);
-    expect(byProvider.map((p) => [p.provider, p.requests])).toEqual([["openai", 458], ["gemini", 440], ["perplexity", 354]]);
+    expect(byProvider.map((p) => [p.provider, p.requests])).toEqual([["openai", 524], ["gemini", 506], ["perplexity", 420]]);
     expect(byProvider.reduce((s, p) => s + p.requests, 0)).toBe(total.requests);
     expect(byProvider.reduce((s, p) => s + p.costCents, 0)).toBe(total.costCents);
     for (const row of rows) expect(row.byProvider.openai + row.byProvider.gemini + row.byProvider.perplexity).toBe(row.requests);

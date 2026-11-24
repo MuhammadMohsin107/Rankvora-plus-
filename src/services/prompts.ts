@@ -46,6 +46,8 @@ const AUDIT_IDS: Record<string, string[]> = {
   "runpro-ae": ["aud-ae-001", "aud-ae-002", "aud-ae-003"],
   // nutrition leaves out the 6-response verification audit (aud-nu-004), like runpro-pk.
   nutrition: ["aud-nu-001", "aud-nu-002", "aud-nu-003", "aud-nu-005"],
+  // threadly leaves out the 6-response verification audit (aud-th-004), like nutrition.
+  threadly: ["aud-th-001", "aud-th-002", "aud-th-003", "aud-th-005"],
 };
 
 const auditIdsFor = (storeId: string): string[] => AUDIT_IDS[storeId] ?? registry.audits(storeId).filter((a) => a.status !== "in_progress").map((a) => a.id);

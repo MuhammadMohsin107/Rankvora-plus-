@@ -5,7 +5,7 @@ import { reportToCsv, reportToHtml, reportToJson } from "@/features/reports/expo
 import { getEvidenceLinks } from "./records";
 import { getReport, getReportDocument, getReportDocuments, listReportSources, listReports } from "./reports";
 
-const STORES = ["runpro-pk", "runpro-ae", "nutrition"] as const;
+const STORES = ["runpro-pk", "runpro-ae", "nutrition", "threadly"] as const;
 
 describe("report documents", () => {
   it("build for every report that is not still generating, and export without error", async () => {

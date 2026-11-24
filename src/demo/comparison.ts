@@ -99,7 +99,28 @@ const EMPTY_CONFIG: StoreComparisonConfig = {
   windows: [],
 };
 
-const COMPARISON_CONFIG: Record<string, StoreComparisonConfig> = { "runpro-pk": PK_CONFIG, "runpro-ae": AE_CONFIG, nutrition: NU_CONFIG };
+/**
+ * Threadly (Shopify fashion store). Same shape as Nutrition: prompt p-th-003 changed wording on 27 Oct (v1 → v2), so any
+ * comparison that spans that date leaves its slots unmatched (version_changed) instead of merging them.
+ */
+const TH_CONFIG: StoreComparisonConfig = {
+  ownedDomains: ["threadly.example"],
+  competitorDomains: ["maisonalder.example", "ravelandco.example", "fieldstoneapparel.example"],
+  presets: {
+    snapshot_vs_snapshot: { baseline: "snap-aud-th-002", current: "snap-aud-th-003" },
+    period_vs_period: { baseline: "2026-10-01 – 2026-10-31", current: "2026-11-01 – 2026-11-19" },
+    initial_vs_latest: { baseline: "snap-aud-th-001", current: "snap-mon-th-006" },
+    before_after_fixes: { baseline: "snap-aud-th-003", current: "snap-aud-th-004" },
+    platform: { baseline: "snap-aud-th-001", current: "snap-mon-th-006" },
+  },
+  windows: [
+    { id: "oct", label: "October 2026", from: "2026-10-01", to: "2026-10-31" },
+    { id: "nov", label: "November 2026 (to 19 Nov)", from: "2026-11-01", to: "2026-11-19" },
+    { id: "mid-oct", label: "12 – 26 Oct", from: "2026-10-12", to: "2026-10-26" },
+  ],
+};
+
+const COMPARISON_CONFIG: Record<string, StoreComparisonConfig> = { "runpro-pk": PK_CONFIG, "runpro-ae": AE_CONFIG, nutrition: NU_CONFIG, threadly: TH_CONFIG };
 
 export function comparisonConfigFor(storeId: string): StoreComparisonConfig {
   return COMPARISON_CONFIG[storeId] ?? EMPTY_CONFIG;

@@ -181,6 +181,38 @@ export const DEMO_STORES: Store[] = [
       activePrompts: 7,
     },
   },
+  // Fictional Shopify fashion store ("Threadly", threadly.example, UK). 7 active prompts × 3 channels × 2 samples = 42 planned
+  // jobs per full run. Headline numbers are recomputed from the registry.
+  {
+    id: "threadly",
+    name: "Threadly",
+    brandName: "Threadly",
+    domain: "threadly.example",
+    platform: "shopify",
+    market: "GB",
+    marketName: "United Kingdom",
+    language: "en",
+    timezone: "Europe/London",
+    status: "active",
+    industry: "Fashion & Apparel",
+    integrations: { commerce: "connected", searchConsole: "connected" },
+    channelIds: ["ch-openai", "ch-gemini", "ch-perplexity"],
+    createdAt: "2026-10-06T08:00:00Z",
+    summary: {
+      mention: { n: 18, d: 42 },
+      mentionPrevious: { n: 16, d: 40 },
+      recommendation: { n: 8, d: 42 },
+      recommendationPrevious: { n: 7, d: 40 },
+      ownedCitation: { n: 0, d: 0 },
+      ownedCitationPrevious: { n: 0, d: 0 },
+      openFindings: 0,
+      pendingTasks: 0,
+      openAlerts: 0,
+      lastRunAt: "2026-11-16T09:00:00Z",
+      nextRunAt: "2026-11-23T09:00:00Z",
+      activePrompts: 7,
+    },
+  },
 ];
 
 export const DEMO_COMPETITORS: Competitor[] = [
@@ -199,6 +231,10 @@ export const DEMO_COMPETITORS: Competitor[] = [
   { id: "c-balancedbite-nu", storeId: "nutrition", name: "BalancedBite", domains: ["balancedbite.example"], aliases: ["Balanced Bite"], status: "confirmed", market: "SG" },
   { id: "c-vitaplate-nu", storeId: "nutrition", name: "VitaPlate", domains: ["vitaplate.example"], aliases: [], status: "confirmed", market: null },
   { id: "c-greenfork-nu", storeId: "nutrition", name: "GreenFork Guide", domains: ["greenfork.example"], aliases: ["GreenFork"], status: "suggested", market: "SG" },
+  { id: "c-alder-th", storeId: "threadly", name: "Maison Alder", domains: ["maisonalder.example"], aliases: ["Alder"], status: "confirmed", market: "GB" },
+  { id: "c-ravel-th", storeId: "threadly", name: "Ravel & Co", domains: ["ravelandco.example"], aliases: ["Ravel and Co"], status: "confirmed", market: "GB" },
+  { id: "c-fieldstone-th", storeId: "threadly", name: "Fieldstone Apparel", domains: ["fieldstoneapparel.example"], aliases: ["Fieldstone"], status: "confirmed", market: null },
+  { id: "c-oakline-th", storeId: "threadly", name: "Oakline", domains: ["oakline.example"], aliases: [], status: "suggested", market: "GB" },
 ];
 
 export const DEMO_GROUPS: PromptGroup[] = [
@@ -269,6 +305,10 @@ export const DEMO_PRODUCTS: ProductService[] = [
   { id: "pr-nu-basics", storeId: "nutrition", title: "Nutrition Basics course", category: "Courses", url: "https://nutrition.example/courses/nutrition-basics" },
   { id: "pr-nu-newsletter", storeId: "nutrition", title: "Weekly Wellness newsletter", category: "Newsletter", url: "https://nutrition.example/newsletter" },
   { id: "pr-nu-consult", storeId: "nutrition", title: "Nutrition information consultation", category: "Services", url: "https://nutrition.example/consultations" },
+  { id: "pr-th-linen", storeId: "threadly", title: "Everyday Linen Shirt", category: "Shirts", url: "https://threadly.example/products/everyday-linen-shirt" },
+  { id: "pr-th-denim", storeId: "threadly", title: "Straight-Leg Organic Denim", category: "Denim", url: "https://threadly.example/products/straight-leg-organic-denim" },
+  { id: "pr-th-knit", storeId: "threadly", title: "Merino Crew Knit", category: "Knitwear", url: "https://threadly.example/products/merino-crew-knit" },
+  { id: "pr-th-trench", storeId: "threadly", title: "Waxed Cotton Trench", category: "Outerwear", url: "https://threadly.example/products/waxed-cotton-trench" },
 ];
 
 export const DEMO_ALERTS: AlertHeadline[] = [
@@ -309,12 +349,23 @@ export const DEMO_ALERTS: AlertHeadline[] = [
   { id: "al-031", storeId: "nutrition", severity: "low", title: "Competitor increase: BalancedBite named in 78% → 83% of answers", at: "2026-11-02T01:45:00Z", read: true },
   { id: "al-032", storeId: "nutrition", severity: "high", title: "Provider errors up: 5 of 42 jobs failed in the 26 Oct run (OpenAI 2, Perplexity 2, Gemini 1)", at: "2026-10-26T01:46:00Z", read: true },
   { id: "al-033", storeId: "nutrition", severity: "info", title: "Weekly monitoring run completed with warnings (4 of 42 jobs failed)", at: "2026-10-12T01:41:00Z", read: true },
+  // threadly: same shape as nutrition (al-034…042 ↔ al-025…033). unread = open (al-034…036). Times follow Europe/London run times
+  // (08:00 UTC for runs 001–002, 09:00 UTC afterwards). Monitoring events (src/demo/monitoring.ts) reuse these ids.
+  { id: "al-034", storeId: "threadly", severity: "high", title: "Brand fact error: Gemini says returns on the Summer Linen collection are not free", at: "2026-11-16T09:49:00Z", read: false },
+  { id: "al-035", storeId: "threadly", severity: "medium", title: "New mention: “Which linen shirts stay cool in hot weather?” on OpenAI", at: "2026-11-16T09:31:00Z", read: false },
+  { id: "al-036", storeId: "threadly", severity: "low", title: "Owned citation gained on OpenAI for the linen shirt prompt", at: "2026-11-16T09:36:00Z", read: false },
+  { id: "al-037", storeId: "threadly", severity: "info", title: "Weekly monitoring run completed (42 of 42 jobs succeeded)", at: "2026-11-16T09:44:00Z", read: true },
+  { id: "al-038", storeId: "threadly", severity: "medium", title: "New recommendation: “Which linen shirts stay cool in hot weather?” on Gemini", at: "2026-11-09T09:30:00Z", read: true },
+  { id: "al-039", storeId: "threadly", severity: "medium", title: "Sentiment change: positive share of answers 11% → 15%", at: "2026-11-02T09:33:00Z", read: true },
+  { id: "al-040", storeId: "threadly", severity: "low", title: "Competitor increase: Ravel & Co named in 78% → 83% of answers", at: "2026-11-02T09:45:00Z", read: true },
+  { id: "al-041", storeId: "threadly", severity: "high", title: "Provider errors up: 5 of 42 jobs failed in the 26 Oct run (OpenAI 2, Perplexity 2, Gemini 1)", at: "2026-10-26T09:46:00Z", read: true },
+  { id: "al-042", storeId: "threadly", severity: "info", title: "Weekly monitoring run completed with warnings (4 of 42 jobs failed)", at: "2026-10-12T08:41:00Z", read: true },
 ];
 
 export const DEMO_USAGE: OrgUsage = {
   periodLabel: "Nov 2026",
   requestCap: 2400,
-  requests: 1252,
+  requests: 1450,
   perStore: [
     { storeId: "runpro-pk", requests: 912, cap: 1500 },
     // 3 weekly runs (4, 11, 18 Nov) x 30 requests, the 5 Nov full audit (30) and the 14 Nov focused audit (12),
@@ -324,5 +375,8 @@ export const DEMO_USAGE: OrgUsage = {
     // 3 weekly runs (2, 9, 16 Nov) x 42 requests, the 9 Nov full audit (42), the 16 Nov verification audit (6) and the 18 Nov
     // triggered audit (12), plus 12 retry requests for the 6 failed jobs in that period (1 in run-nu-004, 2 in run-nu-005, 3 in aud-nu-005).
     { storeId: "nutrition", requests: 198, cap: 450 },
+    // Same shape as nutrition: 3 weekly runs (2, 9, 16 Nov) x 42, the 9 Nov full audit (42), the 16 Nov verification audit (6) and the
+    // 18 Nov triggered audit (12), plus 12 retry requests (1 in run-th-004, 2 in run-th-005, 3 in aud-th-005).
+    { storeId: "threadly", requests: 198, cap: 450 },
   ],
 };

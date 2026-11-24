@@ -544,6 +544,174 @@ export const REGISTRY_NU_REPORTS: RegistryReport[] = [
   { id: "rep-aud-nu-001", type: "audit", title: "Initial audit", sourceId: "aud-nu-001", period: "8 Oct 2026", createdAt: "2026-10-08T02:40:00Z", version: "Criteria 1.4", status: "ready" },
 ];
 
+// ===========================================================================
+// Store "threadly" (Threadly, a fictional Shopify fashion store, threadly.example, United Kingdom).
+// Same shapes and rules as above, and the same numbers as the nutrition store so the response generator stays in agreement.
+// 7 active prompts × 3 channels × 2 samples = 42 planned jobs per full run. Ids are infixed "-th-".
+// Prompt p-th-003 changed wording on 27 Oct 2026 (v1 → v2): runs and audits before that date used v1, so those slots cannot be matched.
+// Weekly runs start Monday 09:00 Europe/London: 08:00 UTC while British Summer Time lasted (to 25 Oct), 09:00 UTC after.
+// ===========================================================================
+
+export const TH = "threadly";
+export const PLANNED_JOBS_PER_RUN_TH = 42;
+
+export const REGISTRY_TH_AUDITS: RegistryAudit[] = [
+  {
+    id: "aud-th-005",
+    title: "Triggered audit — new competitor suggested",
+    type: "triggered",
+    lanes: ["ai_visibility"],
+    status: "partially_completed",
+    startedAt: "2026-11-18T13:00:00Z",
+    completedAt: "2026-11-18T13:09:00Z",
+    snapshotId: "snap-aud-th-005",
+    mention: { n: 3, d: 9 },
+    recommendation: { n: 1, d: 9 },
+    plannedJobs: 12,
+    succeededJobs: 9,
+    failedJobs: 3,
+    findingsCreated: 1,
+    pages: null,
+    createdBy: "System",
+  },
+  {
+    id: "aud-th-004",
+    title: "Verification — Summer Linen collection indexing",
+    type: "verification",
+    lanes: ["ai_visibility", "website_readiness"],
+    status: "completed",
+    startedAt: "2026-11-16T11:00:00Z",
+    completedAt: "2026-11-16T11:11:00Z",
+    snapshotId: "snap-aud-th-004",
+    mention: { n: 4, d: 6 },
+    recommendation: { n: 2, d: 6 },
+    plannedJobs: 6,
+    succeededJobs: 6,
+    failedJobs: 0,
+    findingsCreated: 0,
+    pages: { n: 5, d: 5 },
+    createdBy: "Omar Farooq",
+  },
+  {
+    id: "aud-th-003",
+    title: "Full audit — November",
+    type: "full",
+    lanes: ["ai_visibility", "website_readiness"],
+    status: "completed",
+    startedAt: "2026-11-09T10:00:00Z",
+    completedAt: "2026-11-09T10:41:00Z",
+    snapshotId: "snap-aud-th-003",
+    mention: { n: 17, d: 42 },
+    recommendation: { n: 8, d: 42 },
+    plannedJobs: 42,
+    succeededJobs: 42,
+    failedJobs: 0,
+    findingsCreated: 2,
+    pages: { n: 29, d: 30 },
+    createdBy: "Sana Iqbal",
+  },
+  {
+    id: "aud-th-002",
+    title: "Scheduled audit — October",
+    type: "scheduled",
+    lanes: ["ai_visibility", "website_readiness"],
+    status: "completed",
+    startedAt: "2026-10-22T08:00:00Z",
+    completedAt: "2026-10-22T08:34:00Z",
+    snapshotId: "snap-aud-th-002",
+    mention: { n: 13, d: 42 },
+    recommendation: { n: 5, d: 42 },
+    plannedJobs: 42,
+    succeededJobs: 42,
+    failedJobs: 0,
+    findingsCreated: 1,
+    pages: { n: 27, d: 30 },
+    createdBy: "Schedule",
+  },
+  {
+    id: "aud-th-001",
+    title: "Initial audit",
+    type: "initial",
+    lanes: ["ai_visibility", "website_readiness"],
+    status: "completed_with_warnings",
+    startedAt: "2026-10-08T09:00:00Z",
+    completedAt: "2026-10-08T09:36:00Z",
+    snapshotId: "snap-aud-th-001",
+    mention: { n: 11, d: 38 },
+    recommendation: { n: 4, d: 38 },
+    plannedJobs: 42,
+    succeededJobs: 38,
+    failedJobs: 4,
+    findingsCreated: 4,
+    pages: { n: 24, d: 30 },
+    createdBy: "Sana Iqbal",
+  },
+];
+
+const thRun = (n: number, date: string, time: string, mention: Rate, rec: Rate, failed: number, cost: number): RegistryRun => ({
+  id: `run-th-00${n}`,
+  scheduleId: "sch-th-001",
+  scheduledFor: `${date}T${time}:00Z`,
+  status: failed > 0 ? "completed_with_warnings" : "completed",
+  mention,
+  recommendation: rec,
+  plannedJobs: 42,
+  succeededJobs: 42 - failed,
+  failedJobs: failed,
+  snapshotId: `snap-mon-th-00${n}`,
+  costUsd: cost,
+});
+
+/** Weekly runs of schedule sch-th-001 (Mondays 09:00 London), oldest → newest. run-th-006 is the latest. */
+export const REGISTRY_TH_RUNS: RegistryRun[] = [
+  thRun(1, "2026-10-12", "08:00", { n: 10, d: 38 }, { n: 3, d: 38 }, 4, 2.6),
+  thRun(2, "2026-10-19", "08:00", { n: 11, d: 40 }, { n: 4, d: 40 }, 2, 2.7),
+  thRun(3, "2026-10-26", "09:00", { n: 12, d: 37 }, { n: 4, d: 37 }, 5, 2.6),
+  thRun(4, "2026-11-02", "09:00", { n: 14, d: 41 }, { n: 6, d: 41 }, 1, 2.8),
+  thRun(5, "2026-11-09", "09:00", { n: 16, d: 40 }, { n: 7, d: 40 }, 2, 2.8),
+  thRun(6, "2026-11-16", "09:00", { n: 18, d: 42 }, { n: 8, d: 42 }, 0, 2.9),
+];
+
+export const REGISTRY_TH_SCHEDULES: typeof REGISTRY_SCHEDULES = [
+  { id: "sch-th-001", name: "Threadly weekly visibility check", frequency: "Weekly · Mon 09:00", timezone: "Europe/London", status: "active", promptCount: 7, channelIds: ["ch-openai", "ch-gemini", "ch-perplexity"], samples: 2, nextRunAt: "2026-11-23T09:00:00Z" },
+  { id: "sch-th-002", name: "Linen and denim prompts — daily OpenAI", frequency: "Daily · 08:00", timezone: "Europe/London", status: "paused", promptCount: 3, channelIds: ["ch-openai"], samples: 1, nextRunAt: null },
+  { id: "sch-th-003", name: "Competitor prompts — monthly", frequency: "Monthly · 1st 10:00", timezone: "Europe/London", status: "needs_attention", promptCount: 2, channelIds: ["ch-gemini", "ch-perplexity"], samples: 1, nextRunAt: "2026-12-01T10:00:00Z" },
+];
+
+export const REGISTRY_TH_COMPARISONS: RegistryComparison[] = [
+  { id: "cmp-th-001", title: "Initial audit vs latest monitoring", type: "initial_vs_latest", baseline: "snap-aud-th-001", current: "snap-mon-th-006", status: "completed_with_warnings", comparability: "partially_comparable", createdAt: "2026-11-17T11:00:00Z", createdBy: "Sana Iqbal", methodologyVersion: "1.0" },
+  { id: "cmp-th-002", title: "October vs November (monitoring)", type: "period_vs_period", baseline: "2026-10-01 – 2026-10-31", current: "2026-11-01 – 2026-11-19", status: "completed", comparability: "comparable", createdAt: "2026-11-18T09:30:00Z", createdBy: "Hira Malik", methodologyVersion: "1.0" },
+  { id: "cmp-th-003", title: "Before vs after: Summer Linen indexing fix", type: "before_after_fixes", baseline: "snap-aud-th-003", current: "snap-aud-th-004", status: "insufficient_data", comparability: "insufficient_data", createdAt: "2026-11-16T11:30:00Z", createdBy: "Omar Farooq", methodologyVersion: "1.0" },
+  { id: "cmp-th-004", title: "Scheduled October audit vs full November audit", type: "snapshot_vs_snapshot", baseline: "snap-aud-th-002", current: "snap-aud-th-003", status: "completed", comparability: "comparable", createdAt: "2026-11-10T12:00:00Z", createdBy: "Sana Iqbal", methodologyVersion: "1.0" },
+];
+
+/** 6 of these are open → matches the website summary "pending tasks". */
+export const REGISTRY_TH_TASKS: RegistryTask[] = [
+  { id: "task-th-001", title: "Add FAQ structured data to the size and fit guide", findingId: "fnd-th-001", status: "draft_ready", assignee: "Hira Malik", dueAt: "2026-11-24T00:00:00Z", mode: "ai_draft", risk: "medium", priority: "P2" },
+  { id: "task-th-002", title: "Correct price and availability in the Product schema on linen shirt pages", findingId: "fnd-th-002", status: "pending_approval", assignee: "Omar Farooq", dueAt: "2026-11-23T00:00:00Z", mode: "approved_apply", risk: "high", priority: "P1" },
+  { id: "task-th-003", title: "Remove the noindex tag from the Summer Linen collection page", findingId: "fnd-th-003", status: "verified_success", assignee: "Omar Farooq", dueAt: "2026-11-12T00:00:00Z", mode: "approved_apply", risk: "medium", priority: "P0" },
+  { id: "task-th-004", title: "Rewrite duplicated titles and meta descriptions on collection pages", findingId: "fnd-th-004", status: "partially_verified", assignee: "Hira Malik", dueAt: "2026-11-14T00:00:00Z", mode: "cms_staged", risk: "low", priority: "P2" },
+  { id: "task-th-005", title: "Add sameAs profiles to Organization schema", findingId: "fnd-th-005", status: "verification_pending", assignee: "Omar Farooq", dueAt: "2026-11-17T00:00:00Z", mode: "ai_draft", risk: "low", priority: "P3" },
+  { id: "task-th-006", title: "Review why Maison Alder is cited ahead of threadly.example", findingId: "fnd-th-006", status: "suggested", assignee: null, dueAt: null, mode: "guidance", risk: "low", priority: "P2" },
+  { id: "task-th-007", title: "Reduce product page load time from unoptimised images", findingId: "fnd-th-007", status: "applied", assignee: "Hira Malik", dueAt: "2026-11-20T00:00:00Z", mode: "approved_apply", risk: "medium", priority: "P2" },
+  { id: "task-th-008", title: "Add a sizing answer block to the homepage", findingId: "fnd-th-008", status: "cancelled", assignee: "Hira Malik", dueAt: null, mode: "guidance", risk: "low", priority: "P3" },
+];
+
+export const REGISTRY_TH_REPORTS: RegistryReport[] = [
+  { id: "rep-cmp-th-004", type: "comparison", title: "Scheduled October audit vs full November audit", sourceId: "cmp-th-004", period: "22 Oct – 9 Nov 2026", createdAt: "2026-11-19T08:50:00Z", version: "Methodology 1.0", status: "generating" },
+  { id: "rep-cmp-th-002", type: "comparison", title: "October vs November (monitoring)", sourceId: "cmp-th-002", period: "1 Oct – 19 Nov 2026", createdAt: "2026-11-18T09:40:00Z", version: "Methodology 1.0", status: "ready" },
+  { id: "rep-cmp-th-001", type: "comparison", title: "Initial audit vs latest monitoring", sourceId: "cmp-th-001", period: "8 Oct – 16 Nov 2026", createdAt: "2026-11-17T11:10:00Z", version: "Methodology 1.0", status: "ready" },
+  { id: "rep-cmp-th-003", type: "comparison", title: "Before vs after: Summer Linen indexing fix", sourceId: "cmp-th-003", period: "9 – 16 Nov 2026", createdAt: "2026-11-16T11:40:00Z", version: "Methodology 1.0", status: "ready" },
+  { id: "rep-mon-th-006", type: "monitoring", title: "Weekly monitoring — 16 Nov", sourceId: "run-th-006", period: "16 Nov 2026", createdAt: "2026-11-16T09:50:00Z", version: "Analysis 1.2", status: "ready" },
+  { id: "rep-mon-th-005", type: "monitoring", title: "Weekly monitoring — 9 Nov", sourceId: "run-th-005", period: "9 Nov 2026", createdAt: "2026-11-09T09:50:00Z", version: "Analysis 1.2", status: "ready" },
+  { id: "rep-mon-th-003", type: "monitoring", title: "Weekly monitoring — 26 Oct", sourceId: "run-th-003", period: "26 Oct 2026", createdAt: "2026-10-26T09:50:00Z", version: "Analysis 1.2", status: "failed" },
+  { id: "rep-aud-th-005", type: "audit", title: "Triggered audit — new competitor suggested", sourceId: "aud-th-005", period: "18 Nov 2026", createdAt: "2026-11-18T13:10:00Z", version: "Criteria 2.1", status: "ready" },
+  { id: "rep-aud-th-004", type: "audit", title: "Verification — Summer Linen collection indexing", sourceId: "aud-th-004", period: "16 Nov 2026", createdAt: "2026-11-16T11:12:00Z", version: "Criteria 2.1", status: "ready" },
+  { id: "rep-aud-th-003", type: "audit", title: "Full audit — November", sourceId: "aud-th-003", period: "9 Nov 2026", createdAt: "2026-11-09T10:45:00Z", version: "Criteria 2.1", status: "ready" },
+  { id: "rep-aud-th-002", type: "audit", title: "Scheduled audit — October", sourceId: "aud-th-002", period: "22 Oct 2026", createdAt: "2026-10-22T08:38:00Z", version: "Criteria 2.0", status: "ready" },
+  { id: "rep-aud-th-001", type: "audit", title: "Initial audit", sourceId: "aud-th-001", period: "8 Oct 2026", createdAt: "2026-10-08T09:40:00Z", version: "Criteria 1.4", status: "ready" },
+];
+
 export type StoreRegistry = {
   audits: RegistryAudit[];
   runs: RegistryRun[];
@@ -560,6 +728,7 @@ const REGISTRIES: Record<string, StoreRegistry> = {
   [RP]: { audits: REGISTRY_AUDITS, runs: REGISTRY_RUNS, schedules: REGISTRY_SCHEDULES, comparisons: REGISTRY_COMPARISONS, tasks: REGISTRY_TASKS, reports: REGISTRY_REPORTS, plannedJobsPerRun: PLANNED_JOBS_PER_RUN },
   [AE]: { audits: REGISTRY_AE_AUDITS, runs: REGISTRY_AE_RUNS, schedules: REGISTRY_AE_SCHEDULES, comparisons: REGISTRY_AE_COMPARISONS, tasks: REGISTRY_AE_TASKS, reports: REGISTRY_AE_REPORTS, plannedJobsPerRun: PLANNED_JOBS_PER_RUN_AE },
   [NU]: { audits: REGISTRY_NU_AUDITS, runs: REGISTRY_NU_RUNS, schedules: REGISTRY_NU_SCHEDULES, comparisons: REGISTRY_NU_COMPARISONS, tasks: REGISTRY_NU_TASKS, reports: REGISTRY_NU_REPORTS, plannedJobsPerRun: PLANNED_JOBS_PER_RUN_NU },
+  [TH]: { audits: REGISTRY_TH_AUDITS, runs: REGISTRY_TH_RUNS, schedules: REGISTRY_TH_SCHEDULES, comparisons: REGISTRY_TH_COMPARISONS, tasks: REGISTRY_TH_TASKS, reports: REGISTRY_TH_REPORTS, plannedJobsPerRun: PLANNED_JOBS_PER_RUN_TH },
 };
 
 /** Registry of one website; websites without run history (e.g. homefit-uk) get empty lists. */

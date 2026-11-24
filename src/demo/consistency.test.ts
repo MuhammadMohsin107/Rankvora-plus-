@@ -17,12 +17,12 @@ import { ALL_GROUPS, ALL_PROMPTS, DEMO_ALERTS, DEMO_COMPETITORS, DEMO_PRODUCTS, 
 import { DEMO_FINDINGS, buildRunResponses } from "./shared-records";
 import { DEMO_USAGE_SEEDS } from "./settings";
 
-const STORES = ["runpro-pk", "runpro-ae", "homefit-uk", "nutrition"] as const;
+const STORES = ["runpro-pk", "runpro-ae", "homefit-uk", "nutrition", "threadly"] as const;
 const rateOk = (r: Rate | null | undefined) => r == null || (Number.isInteger(r.n) && Number.isInteger(r.d) && r.n >= 0 && r.n <= r.d);
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
 describe("websites", () => {
-  it("are the four demonstration websites", () => {
+  it("are the five demonstration websites", () => {
     expect(DEMO_STORES.map((s) => s.id).sort()).toEqual([...STORES].sort());
   });
 
@@ -274,6 +274,33 @@ describe("nutrition dashboard", () => {
     expect(d!.activity).toHaveLength(5);
     expect(d!.comparison).not.toBeNull();
     expect(d!.lastRun).toMatchObject({ id: "run-nu-006", succeededJobs: 42, plannedJobs: 42 });
+    expect(d!.channelCount).toBe(3);
+    expect(d!.prompts.filter((p) => p.status === "active")).toHaveLength(7);
+    const times = d!.activity.map((a) => a.at);
+    expect([...times].sort().reverse()).toEqual(times);
+  });
+});
+
+describe("threadly coverage guard", () => {
+  it("really checks the threadly website", () => {
+    const reg = registryFor("threadly");
+    expect(reg.runs).toHaveLength(6);
+    expect(reg.audits).toHaveLength(5);
+    expect(buildRunResponses("run-th-006").length).toBe(42);
+    expect(buildRunResponses("aud-th-005").filter((r) => r.status === "failed")).toHaveLength(3);
+  });
+});
+
+describe("threadly dashboard", () => {
+  it("has every part the Dashboard needs", async () => {
+    const d = await getDashboardData("threadly");
+    expect(d).not.toBeNull();
+    expect(d!.trend).toHaveLength(6);
+    expect(d!.competitors.map((c) => c.name).sort()).toEqual(["Fieldstone Apparel", "Maison Alder", "Oakline", "Ravel & Co"]);
+    expect(d!.alerts).toHaveLength(9);
+    expect(d!.activity).toHaveLength(5);
+    expect(d!.comparison).not.toBeNull();
+    expect(d!.lastRun).toMatchObject({ id: "run-th-006", succeededJobs: 42, plannedJobs: 42 });
     expect(d!.channelCount).toBe(3);
     expect(d!.prompts.filter((p) => p.status === "active")).toHaveLength(7);
     const times = d!.activity.map((a) => a.at);

@@ -58,6 +58,13 @@ const ACTIVITY: Record<string, Authored[]> = {
     { id: "act-nu-4", title: "Verification audit completed", detail: "aud-nu-004 · Course page indexing", at: "2026-11-16T03:11:00Z", tone: "success", icon: "check-circle" },
     { id: "act-nu-5", title: "Weekly run completed", detail: "run-nu-006 · 42 / 42 requests succeeded", at: "2026-11-16T01:44:00Z", tone: "success", icon: "monitoring" },
   ],
+  threadly: [
+    { id: "act-th-1", title: "Triggered audit partially completed", detail: "aud-th-005 · 3 of 12 requests failed", at: "2026-11-18T13:09:00Z", tone: "warning", icon: "audit" },
+    { id: "act-th-2", title: "Fix published, verification pending", detail: "task-th-005 · Organization schema sameAs added", at: "2026-11-17T12:10:00Z", tone: "info", icon: "fixes" },
+    { id: "act-th-3", title: "Task verified", detail: "task-th-003 · Noindex tag removed from the Summer Linen collection page", at: "2026-11-16T11:12:00Z", tone: "success", icon: "fixes" },
+    { id: "act-th-4", title: "Verification audit completed", detail: "aud-th-004 · Summer Linen collection indexing", at: "2026-11-16T11:11:00Z", tone: "success", icon: "check-circle" },
+    { id: "act-th-5", title: "Weekly run completed", detail: "run-th-006 · 42 / 42 requests succeeded", at: "2026-11-16T09:44:00Z", tone: "success", icon: "monitoring" },
+  ],
   "homefit-uk": [
     { id: "act-uk-1", title: "Website added", detail: "Setup in progress · no AI channel selected", at: "2026-11-10T14:00:00Z", tone: "neutral", icon: "globe" },
   ],

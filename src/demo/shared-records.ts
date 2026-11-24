@@ -4,7 +4,7 @@
  * Generated deterministically from src/demo/registry.ts so headline numbers always agree.
  */
 import { ALL_PROMPTS, DEMO_CHANNELS, DEMO_COMPETITORS, DEMO_STORES } from "@/demo/shared";
-import { AE, NU, REGISTRY_STORE_IDS, RP, registryFor } from "@/demo/registry";
+import { AE, NU, REGISTRY_STORE_IDS, RP, TH, registryFor } from "@/demo/registry";
 import type { Finding, ResponseCitation, ResponseSample } from "@/types/shared-records";
 
 // ---------------------------------------------------------------------------
@@ -511,7 +511,177 @@ const NU_FINDINGS: Finding[] = [
   }),
 ];
 
-export const DEMO_FINDINGS: Finding[] = [...PK_FINDINGS, ...AE_FINDINGS, ...NU_FINDINGS];
+// ---------------------------------------------------------------------------
+// threadly findings (8). Statuses match REGISTRY_TH_TASKS: 6 open, 2 closed.
+// Website URLs are fictional (threadly.example). First detection follows REGISTRY_TH_AUDITS.findingsCreated:
+// aud-th-001 → 001…004, aud-th-002 → 005, aud-th-003 → 006 and 007, aud-th-005 → 008.
+// ---------------------------------------------------------------------------
+
+const ft = (x: Omit<Finding, "storeId" | "recurrenceCount" | "taskIds"> & { recurrenceCount?: number; taskIds?: string[] }): Finding => ({
+  storeId: TH,
+  recurrenceCount: 1,
+  taskIds: [],
+  ...x,
+});
+
+const TH_FINDINGS: Finding[] = [
+  ft({
+    id: "fnd-th-001",
+    title: "Size and fit guide has no FAQ structured data",
+    category: "schema",
+    severity: "medium",
+    priority: "P2",
+    confidence: "high",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T09:30:00Z",
+    lastObservedAt: "2026-11-09T10:38:00Z",
+    auditId: "aud-th-001",
+    affectedUrls: ["https://threadly.example/pages/size-and-fit-guide"],
+    affectedPromptIds: ["p-th-002"],
+    expected: "Question-and-answer sections on guides are marked up as FAQPage structured data.",
+    actual: "The size and fit guide shows 6 visible questions and answers, but the page has no FAQPage markup.",
+    recurrenceCount: 2,
+    taskIds: ["task-th-001"],
+  }),
+  ft({
+    id: "fnd-th-002",
+    title: "Linen shirt pages show the wrong price and availability in Product schema",
+    category: "entity",
+    severity: "high",
+    priority: "P1",
+    confidence: "high",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T09:31:00Z",
+    lastObservedAt: "2026-11-09T10:39:00Z",
+    auditId: "aud-th-001",
+    affectedUrls: [
+      "https://threadly.example/products/everyday-linen-shirt",
+      "https://threadly.example/products/relaxed-linen-shirt",
+      "https://threadly.example/products/short-sleeve-linen-shirt",
+    ],
+    affectedPromptIds: ["p-th-001", "p-th-007"],
+    expected: "Product structured data on each product page states the same price and stock status as the visible page.",
+    actual: "3 of 8 sampled linen shirt pages declare a Product schema price or availability that differs from the visible page: 2 show £65.00 in the schema against £49.00 on the page, and 1 declares InStock while every size is sold out.",
+    recurrenceCount: 3,
+    taskIds: ["task-th-002"],
+  }),
+  ft({
+    id: "fnd-th-003",
+    title: "Summer Linen collection page carries a noindex tag",
+    category: "technical",
+    severity: "critical",
+    priority: "P0",
+    confidence: "high",
+    status: "verified_resolved",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T09:29:00Z",
+    lastObservedAt: "2026-11-16T11:10:00Z",
+    auditId: "aud-th-001",
+    affectedUrls: ["https://threadly.example/collections/summer-linen"],
+    affectedPromptIds: ["p-th-006"],
+    expected: "The collection page can be indexed (no noindex directive).",
+    actual: "Resolved: the verification audit on 16 Nov found no noindex directive on the Summer Linen collection page.",
+    recurrenceCount: 4,
+    taskIds: ["task-th-003"],
+  }),
+  ft({
+    id: "fnd-th-004",
+    title: "Six collection pages share duplicated titles and meta descriptions",
+    category: "content",
+    severity: "low",
+    priority: "P2",
+    confidence: "high",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-08T09:33:00Z",
+    lastObservedAt: "2026-11-16T11:10:00Z",
+    auditId: "aud-th-001",
+    affectedUrls: ["https://threadly.example/collections/new-in", "https://threadly.example/collections/linen-shirts"],
+    affectedPromptIds: [],
+    expected: "Every indexable page has a unique title and meta description.",
+    actual: "After the change, 4 of 6 collection pages are unique; 2 still repeat the store-wide collection title.",
+    recurrenceCount: 2,
+    taskIds: ["task-th-004"],
+  }),
+  ft({
+    id: "fnd-th-005",
+    title: "Organization schema has no sameAs profile links",
+    category: "schema",
+    severity: "low",
+    priority: "P3",
+    confidence: "high",
+    status: "awaiting_verification",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-10-22T08:30:00Z",
+    lastObservedAt: "2026-11-09T10:40:00Z",
+    auditId: "aud-th-002",
+    affectedUrls: ["https://threadly.example/"],
+    affectedPromptIds: [],
+    expected: "Organization structured data lists the brand's official profiles in sameAs.",
+    actual: "Organization markup has a name and logo but an empty sameAs list. A fix was published on 17 Nov and awaits verification.",
+    recurrenceCount: 2,
+    taskIds: ["task-th-005"],
+  }),
+  ft({
+    id: "fnd-th-006",
+    title: "Maison Alder is cited more often than threadly.example on linen and denim prompts",
+    category: "ai_visibility",
+    severity: "medium",
+    priority: "P2",
+    confidence: "medium",
+    status: "new",
+    lane: "ai_visibility",
+    firstDetectedAt: "2026-11-09T10:30:00Z",
+    lastObservedAt: "2026-11-16T09:44:00Z",
+    auditId: "aud-th-003",
+    affectedUrls: ["https://threadly.example/collections/organic-denim"],
+    affectedPromptIds: ["p-th-003", "p-th-004"],
+    expected: "Owned pages are cited at least as often as a single competitor on linen and denim prompts.",
+    actual: "In the November audit, citation-capable responses to the two prompts cite maisonalder.example in 4 of 10 and threadly.example in 3 of 10; all 4 Maison Alder citations are on the denim prompt p-th-004, where threadly.example is cited in 0 of 5. Failed requests are not counted.",
+    taskIds: ["task-th-006"],
+  }),
+  ft({
+    id: "fnd-th-007",
+    title: "Product pages with unoptimised images load slowly on mobile",
+    category: "technical",
+    severity: "medium",
+    priority: "P2",
+    confidence: "medium",
+    status: "in_remediation",
+    lane: "website_readiness",
+    firstDetectedAt: "2026-11-09T10:35:00Z",
+    lastObservedAt: "2026-11-16T11:09:00Z",
+    auditId: "aud-th-003",
+    affectedUrls: ["https://threadly.example/products/waxed-cotton-trench"],
+    affectedPromptIds: [],
+    expected: "Lab LCP ≤ 2.5 s (lab measurement, no field data available).",
+    actual: "Lab LCP 3.4 s on mobile before the change. A fix was applied on 17 Nov; verification has not run yet.",
+    recurrenceCount: 2,
+    taskIds: ["task-th-007"],
+  }),
+  ft({
+    id: "fnd-th-008",
+    title: "Brand not named in answers about finding your shirt size",
+    category: "ai_visibility",
+    severity: "informational",
+    priority: "P3",
+    confidence: "low",
+    status: "accepted_risk",
+    lane: "ai_visibility",
+    firstDetectedAt: "2026-11-18T13:08:00Z",
+    lastObservedAt: "2026-11-18T13:09:00Z",
+    auditId: "aud-th-005",
+    affectedUrls: ["https://threadly.example/pages/size-and-fit-guide"],
+    affectedPromptIds: ["p-th-007"],
+    expected: "The brand appears for general sizing questions.",
+    actual: "The brand is absent from the successful samples for the shirt-sizing prompt in the triggered audit. The prompt is a neutral informational question. Accepted by the owner for now.",
+    taskIds: ["task-th-008"],
+  }),
+];
+
+export const DEMO_FINDINGS: Finding[] = [...PK_FINDINGS, ...AE_FINDINGS, ...NU_FINDINGS, ...TH_FINDINGS];
 
 // ---------------------------------------------------------------------------
 // AI response samples
@@ -649,6 +819,40 @@ const PROFILES: Record<string, GenProfile> = {
       absentTip: " Check that the advice is reviewed by a registered dietitian and compare more than one source before changing your diet.",
     },
   },
+  [TH]: {
+    storeId: TH,
+    market: "GB",
+    product: "Threadly Everyday Linen Shirt",
+    ownedUrl: "https://threadly.example/products/everyday-linen-shirt",
+    ownedDomain: "threadly.example",
+    shipsPhrase: "Threadly ships across the UK with free returns",
+    soldPhrase: "Threadly is also sold direct at threadly.example",
+    optionSets: [
+      ["Maison Alder Linen Overshirt", "Ravel & Co Classic Oxford", "Fieldstone Weekend Tee"],
+      ["Ravel & Co Classic Oxford", "Maison Alder Linen Overshirt"],
+      ["Fieldstone Weekend Tee", "Maison Alder Linen Overshirt", "Ravel & Co Classic Oxford"],
+      ["Maison Alder Linen Overshirt", "Fieldstone Weekend Tee"],
+      ["Ravel & Co Classic Oxford", "Fieldstone Weekend Tee"],
+      ["Maison Alder Linen Overshirt", "Ravel & Co Classic Oxford"],
+    ],
+    competitorCitation: { url: "https://maisonalder.example/linen-overshirt", title: "Maison Alder Linen Overshirt", domain: "maisonalder.example", source: "competitor" },
+    thirdParty: [
+      { url: "https://stylereview.example/best-linen-shirts", title: "Best linen shirts for summer", domain: "stylereview.example", source: "third_party" },
+      { url: "https://ukfashionguide.example/sustainable-denim-brands", title: "Sustainable denim brands in the UK", domain: "ukfashionguide.example", source: "third_party" },
+      { url: "https://sizeguide.example/how-to-find-your-shirt-size", title: "How to find your shirt size", domain: "sizeguide.example", source: "third_party" },
+    ],
+    samples: 2,
+    channelBonus: { "ch-openai": 0.5, "ch-gemini": 0.3, "ch-perplexity": 0.4 },
+    brand: "Threadly",
+    copy: {
+      recommendBlurb: "breathable European flax linen in true-to-size cuts, with free UK returns",
+      optionBlurb: "a commonly cited option for this style",
+      closing: (product) => `For warm weather, the ${product} is a dependable pick.`,
+      mentionCaveat: ", though some reviewers say the colour range is narrow.",
+      mentionTail: " Check the size guide before ordering.",
+      absentTip: " Check the fabric composition and the return policy, and compare at least two retailers before buying.",
+    },
+  },
 };
 
 const profileForStore = (storeId: string): GenProfile => PROFILES[storeId] ?? PROFILES[RP];
@@ -662,6 +866,7 @@ export function promptVersionAt(promptId: string, isoDate: string): number {
   if (promptId === "p-001") return t < Date.parse("2026-10-02T09:00:00Z") ? 1 : 2;
   if (promptId === "p-003") return t < Date.parse("2026-09-05T00:00:00Z") ? 1 : t < Date.parse("2026-10-15T00:00:00Z") ? 2 : 3;
   if (promptId === "p-nu-003") return t < Date.parse("2026-10-27T09:00:00Z") ? 1 : 2;
+  if (promptId === "p-th-003") return t < Date.parse("2026-10-27T09:00:00Z") ? 1 : 2;
   return 1;
 }
 
@@ -698,6 +903,12 @@ function configFor(runId: string): RunConfig | null {
       }
       if (audit.id === "aud-nu-005") {
         return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 12, failed: audit.failedJobs, mention: audit.mention?.n ?? 0, recommended: audit.recommendation?.n ?? 0, promptIds: ["p-nu-001", "p-nu-007"], samples };
+      }
+      if (audit.id === "aud-th-004") {
+        return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 6, failed: 0, mention: audit.mention?.n ?? 0, recommended: audit.recommendation?.n ?? 0, promptIds: ["p-th-002", "p-th-006"], samples: 1 };
+      }
+      if (audit.id === "aud-th-005") {
+        return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 12, failed: audit.failedJobs, mention: audit.mention?.n ?? 0, recommended: audit.recommendation?.n ?? 0, promptIds: ["p-th-001", "p-th-007"], samples };
       }
       if (audit.id === "aud-ae-003") {
         return { storeId, kind: "audit", startedAt: audit.startedAt, planned: 12, failed: audit.failedJobs, mention: audit.mention?.n ?? 0, recommended: audit.recommendation?.n ?? 0, promptIds: ["p-ae-002", "p-ae-005"], samples };
