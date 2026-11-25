@@ -1,7 +1,13 @@
 # Rankvora Plus
 
 Next.js (App Router) + React + TypeScript + Tailwind CSS 4, deployed to Cloudflare Workers with OpenNext.
-The app is a frontend-only demo: demo data, simulated actions, optional saving of demo state to Cloudflare D1.
+The screens are still a demo: demo data, simulated actions, optional saving of demo state to Cloudflare D1.
+
+A real backend on D1 is being built under `src/server` and `/api/v1`. In Phase 1, accounts,
+organizations and team passed a live test against a test database; **websites and domains are not yet
+tested**. It is not deployed, and the screens do not use it yet. Start with
+[docs/backend/status.md](docs/backend/status.md); read
+[docs/backend/runbook.md](docs/backend/runbook.md) before deploying it.
 
 ## Requirements
 

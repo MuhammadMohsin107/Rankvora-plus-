@@ -1,0 +1,2 @@
+CREATE INDEX `invitations_recipient_sends_idx` ON `invitations` (`email`,`last_sent_at`);--> statement-breakpoint
+CREATE INDEX `invitations_sender_sends_idx` ON `invitations` (`invited_by_user_id`,`last_sent_at`);
