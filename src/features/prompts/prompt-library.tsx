@@ -216,7 +216,6 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
         <EmptyState
           icon="globe"
           title="Website not found"
-          description="This website is not in this browser's demo data."
           action={
             <ButtonLink href="/stores" variant="primary">
               Websites & Brands
@@ -235,7 +234,6 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
         <EmptyState
           icon="prompts"
           title="No prompts yet"
-          description="Prompts are the questions people ask AI."
           action={
             <ButtonLink href={newPromptHref} variant="primary" icon="plus">
               New prompt
@@ -291,7 +289,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
   ];
 
   const emptyFiltered = (
-    <EmptyState icon="filter" title="No prompts match" description="Try another search or clear the filters." action={<Button size="sm" onClick={clearAll}>Reset filters</Button>} />
+    <EmptyState icon="filter" title="No prompts match" action={<Button size="sm" onClick={clearAll}>Reset filters</Button>} />
   );
 
   const shownCards = filtered.slice(0, cardLimit);
@@ -334,7 +332,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
           <span className="flex items-center gap-1.5 text-label font-medium text-fg-muted">
             Neutral coverage
             <Tooltip content="Neutral prompts do not name the brand. They test whether AI brings it up on its own.">
-              <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label="What is neutral coverage?">
+              <span className="flex cursor-help text-fg-subtle" role="img" tabIndex={0} aria-label="What is neutral coverage?">
                 <Icon name="info" size={13} />
               </span>
             </Tooltip>
@@ -365,7 +363,7 @@ export function PromptLibrary({ data }: { data: LibraryData }) {
             </ButtonLink>
           }
         >
-          Prompts are saved. Results show N/A until a provider is selected.
+          Results are N/A until a provider is selected.
         </Callout>
       ) : null}
 

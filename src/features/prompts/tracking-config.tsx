@@ -52,7 +52,7 @@ export function TrackingConfig({ prompt, brand, groups, products, channels, sche
                   <ul className="flex flex-col gap-0.5">
                     {schedules.map((s) => (
                       <li key={s.id} className="text-body-sm">
-                        <Link href={`/stores/${storeId}/monitoring/schedules/${s.id}`} className="text-accent-text hover:underline">{s.frequency}</Link>
+                        <Link href={`/stores/${storeId}/monitoring/schedules/${s.id}`} className="inline-flex min-h-target items-center text-accent-text underline underline-offset-2">{s.frequency}</Link>
                         {s.status !== "active" ? <span className="text-fg-muted"> · {s.status.replace(/_/g, " ")}</span> : null}
                       </li>
                     ))}

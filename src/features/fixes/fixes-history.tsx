@@ -76,13 +76,13 @@ export function FixesHistory({ storeId, seeded, actorName }: { storeId: string; 
                     {i.taskId ? (
                       <>
                         {" · "}
-                        <Link href={`${base}/tasks/${i.taskId}`} className="text-accent-text hover:underline">{i.taskId}</Link>
+                        <Link href={`${base}/tasks/${i.taskId}`} className="text-accent-text underline underline-offset-2">{i.taskId}</Link>
                       </>
                     ) : null}
                     {i.findingId ? (
                       <>
                         {" · "}
-                        <Link href={`${base}/findings/${i.findingId}`} className="text-accent-text hover:underline">{i.findingId}</Link>
+                        <Link href={`${base}/findings/${i.findingId}`} className="text-accent-text underline underline-offset-2">{i.findingId}</Link>
                       </>
                     ) : null}
                     {i.local ? " · Simulated" : ""}

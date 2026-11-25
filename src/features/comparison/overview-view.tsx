@@ -52,7 +52,7 @@ function MoreMetrics({ metrics }: { metrics: MetricResult[] }) {
         More metrics
         <span className="text-helper font-normal text-fg-subtle">{metrics.length}</span>
       </summary>
-      <div className="ui-scroll overflow-x-auto px-card pb-card">
+      <div className="ui-scroll overflow-x-auto px-card pb-card" tabIndex={0} role="group" aria-label="Other metrics, scrollable table">
         <table className="tnum w-full min-w-[34rem] border-collapse text-body-sm">
           <caption className="sr-only">Other metrics, baseline and current</caption>
           <thead>
@@ -118,7 +118,7 @@ export function OverviewView({ detail, base }: { detail: ComparisonDetail; base:
       <Card>
         <CardHeader
           title="Headline"
-          subtitle={countsOnly ? "Counts only. Fewer than 20 matched pairs." : averaged ? `Rates are averages of ${cohort} matched slots. Counts are whole responses.` : `Rates over ${cohort} matched slots.`}
+          subtitle={countsOnly ? "Counts only. Fewer than 20 matched pairs." : averaged ? `Averages of ${cohort} matched slots.` : `Rates over ${cohort} matched slots.`}
           actions={countsOnly ? <Badge tone="warning" icon="alert-triangle">Directional</Badge> : undefined}
         />
         <CardBody>{countsOnly ? <CountsOnly metrics={hero} /> : <RateBars rows={hero.map((m) => metricBarRow(m))} />}</CardBody>
@@ -154,7 +154,7 @@ export function OverviewView({ detail, base }: { detail: ComparisonDetail; base:
 
       {trend ? (
         <Card>
-          <CardHeader title="Trend by run" subtitle="Matched slots only. Sample size under each date." />
+          <CardHeader title="Trend by run" subtitle="Matched slots only" />
           <CardBody className="flex flex-col gap-3">
             <TrendChart
               points={trend.points.map((p) => ({ x: p.x, mention: p.mention, recommendation: p.recommendation }))}

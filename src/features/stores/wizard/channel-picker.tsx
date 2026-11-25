@@ -54,7 +54,7 @@ export function ChannelPicker({ channels, selected, onChange, trackingMode, onTr
               </li>
             );
           })}
-          <li className="flex items-start justify-between gap-3 rounded-control border border-line bg-surface-2/50 p-3 opacity-70">
+          <li className="flex items-start justify-between gap-3 rounded-control border border-line bg-surface-2/50 p-3">
             <Checkbox disabled label="Claude" description="Messages API · web search" />
             <Badge tone="neutral" className="mt-0.5">Later</Badge>
           </li>

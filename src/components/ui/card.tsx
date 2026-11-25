@@ -64,7 +64,7 @@ export function CardHeader({ title, subtitle, info, actions, className, as: Head
           <Heading className="truncate text-card-title font-semibold text-fg">{title}</Heading>
           {info ? (
             <Tooltip content={info}>
-              <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label={info}>
+              <span className="flex cursor-help text-fg-subtle" role="img" tabIndex={0} aria-label={info}>
                 <Icon name="info" size={14} />
               </span>
             </Tooltip>
@@ -121,9 +121,9 @@ export function Callout({ tone = "info", title, children, actions, className }: 
   return (
     <div
       role={tone === "danger" || tone === "warning" ? "alert" : "status"}
-      className={cn("flex items-start gap-3 rounded-control border px-3.5 py-2.5 text-body-sm", toneClass[tone], className)}
+      className={cn("flex gap-3 rounded-control border px-3.5 py-2.5 text-body-sm", children ? "items-start" : "items-center", toneClass[tone], className)}
     >
-      <Icon name={calloutIcon[tone]} size={16} className={cn("mt-0.5 shrink-0", toneIconClass[tone])} />
+      <Icon name={calloutIcon[tone]} size={16} className={cn(Boolean(children) && "mt-0.5", "shrink-0", toneIconClass[tone])} />
       <div className="min-w-0 flex-1 text-fg">
         {title ? <p className="font-medium">{title}</p> : null}
         {children ? <div className={cn(title && "mt-0.5 text-fg-muted")}>{children}</div> : null}
@@ -195,7 +195,7 @@ export function Metric({ label, numerator, denominator, unit = "responses", valu
         <span className="truncate">{label}</span>
         {info ? (
           <Tooltip content={info}>
-            <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label={info}>
+            <span className="flex cursor-help text-fg-subtle" role="img" tabIndex={0} aria-label={info}>
               <Icon name="info" size={13} />
             </span>
           </Tooltip>
@@ -218,8 +218,10 @@ export function Metric({ label, numerator, denominator, unit = "responses", valu
   );
 }
 
-export function MetricGrid({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-card border border-line bg-line shadow-card sm:grid-cols-2 xl:grid-cols-4", className)}>{children}</div>;
+/** Set `columns` to match the number of cells: an unfilled cell shows as a grey block. (`cn` cannot override a grid class.) */
+export function MetricGrid({ children, className, columns = 4 }: { children: ReactNode; className?: string; columns?: 3 | 4 }) {
+  const grid = columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-4";
+  return <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-card border border-line bg-line shadow-card", grid, className)}>{children}</div>;
 }
 
 /** A cell for MetricGrid. */
@@ -253,7 +255,7 @@ export function ChartCard({
             <h2 className="truncate text-card-title font-semibold text-fg">{title}</h2>
             {info ? (
               <Tooltip content={info}>
-                <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label={info}>
+                <span className="flex cursor-help text-fg-subtle" role="img" tabIndex={0} aria-label={info}>
                   <Icon name="info" size={14} />
                 </span>
               </Tooltip>

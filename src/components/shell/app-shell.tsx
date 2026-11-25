@@ -52,14 +52,14 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
   const routeId = storeIdFromPath(pathname);
   const routeWebsite = routeId ? (allWebsites.find((w) => w.id === routeId) ?? null) : null;
   // Organization pages have no website in context: the header and the sidebar show the organization only.
-  // Website pages show the website from the URL.
+  // Website pages show the website from the URL, once it is known to exist. An unknown address gets no website
+  // menu, so nothing links to pages that are not there. (A website made in this browser appears after it is read.)
   const contextWebsite = routeWebsite;
-  const navWebsiteId = routeId;
+  const navWebsiteId = routeWebsite?.id ?? null;
 
-  const routeWebsiteId = routeWebsite?.id ?? null;
   useEffect(() => {
-    if (routeWebsiteId && ui.lastWebsiteId !== routeWebsiteId) setLastWebsite(routeWebsiteId);
-  }, [routeWebsiteId, ui.lastWebsiteId, setLastWebsite]);
+    if (navWebsiteId && ui.lastWebsiteId !== navWebsiteId) setLastWebsite(navWebsiteId);
+  }, [navWebsiteId, ui.lastWebsiteId, setLastWebsite]);
 
   const groups = useMemo(() => navGroups(navWebsiteId), [navWebsiteId]);
   const unreadAlerts = useUnreadAlertCount(alerts, navWebsiteId ?? undefined);
@@ -163,13 +163,13 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              aria-label="Search"
+              aria-label="Search, Ctrl K"
               title="Search (Ctrl K)"
               aria-keyshortcuts="Control+K Meta+K"
               className="inline-flex h-btn cursor-pointer items-center gap-2 rounded-full px-2.5 text-body-sm text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg md:w-60 md:border md:border-line-strong md:bg-surface md:px-4 md:hover:border-fg-subtle md:hover:bg-surface"
             >
               <Icon name="search" size={16} className="shrink-0" />
-              <span className="hidden text-fg-subtle md:inline">Search</span>
+              <span className="hidden text-fg-subtle md:inline">Search</span>{" "}
               <span aria-hidden="true" className="tnum ml-auto hidden text-helper text-fg-subtle lg:inline">Ctrl K</span>
             </button>
             <Link href="/help" className="hidden h-btn items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg sm:inline-flex">

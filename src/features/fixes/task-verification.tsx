@@ -60,7 +60,7 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
               <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
                 <span className="tnum">Run {formatDateTime(outcome.ranAt)} UTC</span>
                 {outcome.sourceHref ? (
-                  <Link href={`/stores/${storeId}/${outcome.sourceHref}`} className="text-accent-text hover:underline">{outcome.sourceLabel}</Link>
+                  <Link href={`/stores/${storeId}/${outcome.sourceHref}`} className="text-accent-text underline underline-offset-2">{outcome.sourceLabel}</Link>
                 ) : (
                   <span>{outcome.sourceLabel}</span>
                 )}
@@ -93,7 +93,7 @@ export function TaskVerificationTab({ storeId, record, outcome, status, verifyin
           <Card>
             <CardHeader title="Checks re-run" />
             <CardBody className="pt-2">
-              <div className="ui-scroll overflow-x-auto">
+              <div className="ui-scroll overflow-x-auto" tabIndex={0} role="group" aria-label="Checks re-run, scrollable table">
                 <table className="w-full min-w-[34rem] border-collapse text-[13px]">
                   <caption className="sr-only">Checks re-run, before and after</caption>
                   <thead>

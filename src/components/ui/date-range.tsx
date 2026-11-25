@@ -121,7 +121,7 @@ export function DateRange({ value, onChange, anchorDate, period, presets, min, m
           )}
         >
           <Icon name="calendar" size={16} className="shrink-0 text-fg-muted" />
-          <span className="truncate font-medium">{nameOf(value.preset)}</span>
+          <span className="truncate font-medium">{nameOf(value.preset)}</span>{" "}
           <span className="tnum hidden truncate text-fg-muted sm:inline">{formatRange(value.from, value.to)}</span>
           <Icon name="chevron-down" size={14} className="shrink-0 text-fg-muted" />
         </button>

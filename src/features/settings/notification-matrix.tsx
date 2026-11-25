@@ -58,7 +58,7 @@ export function NotificationMatrixTable({ events, value, onChange, disabled, web
                         {event.label}
                         {event.info ? (
                           <Tooltip content={event.info}>
-                            <span tabIndex={0} aria-label={event.info} className="flex cursor-help text-fg-subtle">
+                            <span role="img" tabIndex={0} aria-label={event.info} className="flex cursor-help text-fg-subtle">
                               <Icon name="info" size={13} />
                             </span>
                           </Tooltip>

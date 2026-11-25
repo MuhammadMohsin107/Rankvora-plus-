@@ -22,10 +22,10 @@ export function WebsiteCard({ store, counts, onDelete }: { store: Store; counts?
         <div className="flex min-w-0 items-center gap-3">
           <WebsiteAvatar name={store.name} size="md" />
           <div className="min-w-0">
-            <h2 className="truncate text-card-title font-semibold text-fg">
+            <h2 className="truncate text-card-title font-semibold text-fg" title={store.name}>
               <Link href={`/stores/${store.id}`} className="rounded after:absolute after:inset-0 after:rounded-card after:content-[''] hover:underline">{store.name}</Link>
             </h2>
-            <p className="truncate text-helper text-fg-muted">{store.domain}</p>
+            <p className="truncate text-helper text-fg-muted" title={store.domain}>{store.domain}</p>
           </div>
         </div>
         <Status kind="store" value={store.status} />
@@ -48,7 +48,7 @@ export function WebsiteCard({ store, counts, onDelete }: { store: Store; counts?
       )}
 
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-line pt-2.5">
-        <p className="min-w-0 truncate text-helper text-fg-muted">{action.reason}</p>
+        <p className="min-w-0 text-helper text-fg-muted">{action.reason}</p>
         <div className="flex shrink-0 items-center gap-1.5">
           {onDelete ? (
             <Button variant="danger-ghost" size="sm" icon="trash" onClick={onDelete} className="relative z-10">

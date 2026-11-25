@@ -72,7 +72,7 @@ export function TaskOverviewTab({ storeId, detail, view }: Props) {
             {(view.supersession?.successorId ?? task.supersededBy) ? (
               <p className="mt-1">
                 Replaced by{" "}
-                <Link href={`${base}/tasks/${view.supersession?.successorId ?? task.supersededBy}`} className="text-accent-text hover:underline">
+                <Link href={`${base}/tasks/${view.supersession?.successorId ?? task.supersededBy}`} className="text-accent-text underline underline-offset-2">
                   {view.supersession?.successorId ?? task.supersededBy}
                 </Link>
               </p>

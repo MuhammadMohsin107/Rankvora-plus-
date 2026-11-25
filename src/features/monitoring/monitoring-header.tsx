@@ -59,10 +59,9 @@ export function MonitoringHeader() {
       {action ? <HeaderAction>{action}</HeaderAction> : null}
       <PageHeader
         title="Monitoring"
-        subtitle="Scheduled AI answer checks"
         meta={
           <Tooltip content={HOW_IT_WORKS}>
-            <span className="inline-flex cursor-help text-fg-subtle" tabIndex={0} aria-label={HOW_IT_WORKS}>
+            <span className="inline-flex cursor-help text-fg-subtle" role="img" tabIndex={0} aria-label={HOW_IT_WORKS}>
               <Icon name="info" size={16} />
             </span>
           </Tooltip>

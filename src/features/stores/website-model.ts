@@ -24,7 +24,7 @@ export function nextWebsiteAction(store: Store, counts: { unreadAlerts?: number;
   if (store.status === "archived") return { label: "Restore", href: `${base}/settings`, reason: "Archived" };
   if (store.status === "paused") return { label: "Resume", href: `${base}/settings`, reason: "Paused" };
   if (!store.summary) {
-    const reason = store.channelIds.length === 0 ? "Choose AI channels to start tracking" : "Run a first audit";
+    const reason = store.channelIds.length === 0 ? "Choose AI channels" : "Run a first audit";
     return { label: store.channelIds.length === 0 ? "Finish setup" : "Start audit", href: store.channelIds.length === 0 ? `${base}/settings` : `${base}/audits/new`, reason };
   }
   const alerts = counts.unreadAlerts ?? store.summary.openAlerts;

@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 
-import { UserAvatar } from "@/components/ui/avatar";
+import { initialsOf, UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { ConfirmDialog } from "@/components/ui/overlay";
@@ -75,7 +75,7 @@ export function UserMenu({ user }: { user: Member }) {
         trigger={
           <button
             type="button"
-            aria-label={`Account menu, ${user.name}`}
+            aria-label={`Account menu, ${user.name}, ${initialsOf(user.name)}`}
             className="flex size-btn shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity duration-[var(--dur-fast)] hover:opacity-85 pointer-coarse:size-11"
           >
             <UserAvatar name={user.name} size="md" />

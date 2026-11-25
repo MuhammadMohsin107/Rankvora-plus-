@@ -116,7 +116,7 @@ export function FindingsInbox({ storeId, rows, tasks, actorName }: Props) {
         r.tasks.length ? (
           <div className="flex flex-col items-start gap-1">
             {r.tasks.slice(0, 2).map((t) => (
-              <Link key={t.id} href={`${base}/tasks/${t.id}`} className="inline-flex items-center gap-1.5 text-label text-accent-text hover:underline">
+              <Link key={t.id} href={`${base}/tasks/${t.id}`} className="inline-flex min-h-target items-center gap-1.5 text-label text-accent-text hover:underline">
                 {t.id}
                 <Status kind="task" value={t.status} compact />
               </Link>

@@ -86,7 +86,7 @@ export function OverviewView({ data }: { data: MonitoringOverview }) {
           <CardBody className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-body-sm font-medium text-fg">
-                <Link href={`${base}/runs/${active.id}`} className="text-accent-text hover:underline">{active.id}</Link>{" "}
+                <Link href={`${base}/runs/${active.id}`} className="text-accent-text underline underline-offset-2">{active.id}</Link>{" "}
                 <span className="text-fg-muted">{statusMeta("run", active.status).label.toLowerCase()}</span>
               </p>
               <SimulatedBadge />

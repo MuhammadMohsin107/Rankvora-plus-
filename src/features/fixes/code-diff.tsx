@@ -55,7 +55,7 @@ export function CodeDiff({ before, after, label }: { before: string; after: stri
           <span className="text-success-text">+{added}</span> <span className="text-danger-text">−{removed}</span>
         </span>
       </figcaption>
-      <div className="ui-scroll overflow-x-auto">
+      <div className="ui-scroll overflow-x-auto" tabIndex={0} role="group" aria-label={`${label}, scrollable table`}>
         <table className="w-full border-collapse font-mono text-xs leading-5">
           <caption className="sr-only">{label}</caption>
           <tbody>

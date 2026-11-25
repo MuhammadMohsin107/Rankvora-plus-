@@ -65,7 +65,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
     return (
       <>
         <PageHeader title="Run" />
-        <EmptyState icon="search" title="Run not found" headingAs="h1" description="It may have been created in another browser." action={<ButtonLink href={`${base}/runs`}>All runs</ButtonLink>} />
+        <EmptyState icon="search" title="Run not found" headingAs="h1" action={<ButtonLink href={`${base}/runs`}>All runs</ButtonLink>} />
       </>
     );
   }
@@ -94,7 +94,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
               <Button size="sm" onClick={() => cancelRun(simRec.id)}>Cancel run</Button>
             </div>
             <Progress value={simRec.doneJobs} max={simRec.planned} label="Run progress" />
-            <p className="tnum text-helper text-fg-muted">{simRec.planned - simRec.doneJobs} waiting · totals are provisional until the run completes</p>
+            <p className="tnum text-helper text-fg-muted">{simRec.planned - simRec.doneJobs} waiting · totals are provisional</p>
           </CardBody>
         </Card>
       ) : null}
@@ -144,7 +144,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
           <CardBody className="flex flex-col gap-3">
             <BarCompare baselineLabel="Prev" currentLabel="This" rows={detail.providers.map((p) => ({ id: p.channelId, label: p.short, baseline: p.previousMention, current: p.mention }))} />
             <ProviderSplitTable providers={detail.providers} />
-            <p className="text-helper text-fg-muted">Cost is an estimate allocated by provider usage. Retries count as requests.</p>
+            <p className="text-helper text-fg-muted">Cost is an estimate. Retries count as requests.</p>
           </CardBody>
         </Card>
       ) : null}
@@ -240,7 +240,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
         meta={
           <>
             <Tooltip content={STATUS_HELP}>
-              <span className="inline-flex cursor-help" tabIndex={0} aria-label={`${statusMeta("run", run.status).label}. ${STATUS_HELP}`}>
+              <span className="inline-flex cursor-help" role="img" tabIndex={0} aria-label={`${statusMeta("run", run.status).label}. ${STATUS_HELP}`}>
                 <Status kind="run" value={run.status} />
               </span>
             </Tooltip>
@@ -261,7 +261,7 @@ export function RunDetailView({ runId, detail: serverDetail }: { runId: string; 
       {simRec && simRec.purpose === "verification" && simRec.taskId ? (
         <div className="mb-4">
           <Callout tone="info" title="Verification run">
-            Observed after task <Link href={`/stores/${data.storeId}/fixes/tasks/${simRec.taskId}`} className="font-medium text-accent-text hover:underline">{simRec.taskId}</Link>. These results do not prove the task caused a change.
+            Observed after task <Link href={`/stores/${data.storeId}/fixes/tasks/${simRec.taskId}`} className="font-medium text-accent-text hover:underline">{simRec.taskId}</Link>. Not proof of cause.
           </Callout>
         </div>
       ) : null}

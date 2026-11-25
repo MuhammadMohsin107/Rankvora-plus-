@@ -48,7 +48,7 @@ function NavLink({ item, pathname, count }: { item: NavItem; pathname: string; c
       <Icon name={item.icon} size={18} className={cn("shrink-0", active ? "text-accent-text" : "text-sidebar-fg-muted group-hover:text-sidebar-fg")} />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
       {count > 0 ? (
-        <span aria-label={countLabel} className="tnum rounded-full bg-accent-soft px-1.5 text-2xs font-semibold leading-5 text-accent-text">
+        <span role="img" aria-label={countLabel} className="tnum rounded-full bg-accent-soft px-1.5 text-2xs font-semibold leading-5 text-accent-text">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}

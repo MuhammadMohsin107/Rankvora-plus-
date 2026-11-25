@@ -27,9 +27,9 @@ const NO_ROWS: Store[] = [];
 const SECTIONS: Record<string, { title: string; icon: "prompts" | "audit" | "fixes" | "monitoring" | "compare" | "reports"; text: string; action?: { label: string; path: string } }> = {
   prompts: { title: "Prompt Library", icon: "prompts", text: "No prompts yet." },
   audits: { title: "Audit", icon: "audit", text: "No audits yet. Choose an AI channel first.", action: { label: "Open website settings", path: "/settings" } },
-  fixes: { title: "Fixes", icon: "fixes", text: "No findings yet. Findings come from audits." },
+  fixes: { title: "Fixes", icon: "fixes", text: "No findings yet." },
   monitoring: { title: "Monitoring", icon: "monitoring", text: "No schedules or runs yet." },
-  comparisons: { title: "Comparison", icon: "compare", text: "Nothing to compare yet. Comparisons need at least one run." },
+  comparisons: { title: "Comparison", icon: "compare", text: "Nothing to compare yet." },
   reports: { title: "Reports", icon: "reports", text: "No reports yet." },
 };
 
@@ -81,7 +81,7 @@ export function LocalWebsiteGate({ storeId, bundle, children }: { storeId: strin
     return (
       <>
         <PageHeader title="Website not found" />
-        <EmptyState icon="globe" title="This website is not in this browser" description="Websites you add are stored in this browser only." action={<ButtonLink href="/stores" variant="primary">Open Websites & Brands</ButtonLink>} />
+        <EmptyState icon="globe" title="This website is not in this browser" action={<ButtonLink href="/stores" variant="primary">Open Websites & Brands</ButtonLink>} />
       </>
     );
   }
@@ -120,8 +120,8 @@ export function UntrackedDashboard({ store: seeded }: { store: Store }) {
         <ButtonLink href={action.href} variant="primary" size="sm" trailingIcon="arrow-right">{action.label}</ButtonLink>
       </HeaderAction>
       <div className="flex flex-col gap-3">
-        <Callout tone="info" title="No tracking data yet">{action.reason}. Rates stay N/A until the first run.</Callout>
-        <MetricGrid className="xl:grid-cols-3">
+        <Callout tone="info" title="No tracking data yet">{action.reason}.</Callout>
+        <MetricGrid columns={3}>
           <MetricCell><Metric label="Brand mention rate" naReason="No runs yet" /></MetricCell>
           <MetricCell><Metric label="Recommendation rate" naReason="No runs yet" /></MetricCell>
           <MetricCell><Metric label="Owned citation rate" naReason="No runs yet" /></MetricCell>

@@ -64,7 +64,7 @@ export function BreakdownCards({ providers, groups, compareTitle }: Props) {
           <div className="flex items-center gap-1.5">
             <h2 className="text-sm font-semibold text-fg">Breakdown</h2>
             <Tooltip content={info}>
-              <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label={info}>
+              <span className="flex cursor-help text-fg-subtle" role="img" tabIndex={0} aria-label={info}>
                 <Icon name="info" size={14} />
               </span>
             </Tooltip>

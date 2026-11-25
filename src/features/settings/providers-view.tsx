@@ -48,7 +48,7 @@ export function ProvidersView({ providers }: { providers: ProviderConnection[] }
                     <span className="flex items-center gap-1.5 text-body text-fg">
                       Use your own key
                       <Tooltip content="Requests use your provider account instead of the platform key. The demo sets a masked key.">
-                        <span tabIndex={0} aria-label="Requests use your provider account instead of the platform key. The demo sets a masked key." className="flex cursor-help text-fg-subtle">
+                        <span role="img" tabIndex={0} aria-label="Requests use your provider account instead of the platform key. The demo sets a masked key." className="flex cursor-help text-fg-subtle">
                           <Icon name="info" size={13} />
                         </span>
                       </Tooltip>

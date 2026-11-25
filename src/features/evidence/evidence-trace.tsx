@@ -47,19 +47,23 @@ function Chip({ node, compact, responseId, onOpenResponse }: { node: EvidenceNod
     <>
       <Icon name={KIND_ICON[node.kind]} size={compact ? 12 : 14} className="shrink-0 text-fg-subtle" />
       {compact ? null : <span className="shrink-0 font-medium">{kind}</span>}
+      {/* The space keeps the two words apart in the chip's name; the layout gap is unchanged. */}
+      {compact ? null : " "}
       {showId || compact ? <span className={cn("truncate text-fg-muted", "max-w-40")}>{node.label}</span> : null}
     </>
   );
+  // A full chip is named by the text it shows. A compact one shows only the id, so its name adds the kind.
   const title = `${kind}: ${node.label}`;
+  const name = compact ? title : undefined;
   if (opensDrawer) {
     return (
-      <button type="button" className={cn(classes, "cursor-pointer")} title={title} aria-label={title} onClick={() => onOpenResponse(responseId)}>
+      <button type="button" className={cn(classes, "cursor-pointer")} title={title} aria-label={name} onClick={() => onOpenResponse(responseId)}>
         {body}
       </button>
     );
   }
   return (
-    <Link href={node.href} className={classes} title={title} aria-label={title}>
+    <Link href={node.href} className={classes} title={title} aria-label={name}>
       {body}
     </Link>
   );
@@ -77,8 +81,9 @@ export function EvidenceTrace({ ids, variant = "full", live = true, onOpenRespon
   const nodes = useMemo(() => buildEvidenceChain(live ? mergeEvidenceEvents(ids, events).ids : ids), [ids, events, live]);
   if (nodes.length === 0) return null;
   const compact = variant === "compact";
+  // A named group, not a <nav>: a page can hold many trails, and each would be one more landmark with the same name.
   return (
-    <nav aria-label={label} className={cn("min-w-0", className)}>
+    <div role="group" aria-label={label} className={cn("min-w-0", className)}>
       <ol className={cn("flex min-w-0 flex-wrap items-center", compact ? "gap-x-0.5 gap-y-1" : "gap-x-1 gap-y-1.5")}>
         {nodes.map((node, index) => (
           <li key={node.kind} className="flex min-w-0 items-center">
@@ -87,6 +92,6 @@ export function EvidenceTrace({ ids, variant = "full", live = true, onOpenRespon
           </li>
         ))}
       </ol>
-    </nav>
+    </div>
   );
 }

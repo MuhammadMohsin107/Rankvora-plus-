@@ -237,10 +237,10 @@ export function ScheduleForm({ mode, scheduleId }: Props) {
   const ctx = data.ctx;
 
   if (!ctx) {
-    return <EmptyState icon="plug" title="Connect an AI provider first" description="Schedules need at least one provider." action={<ButtonLink href={`/stores/${data.storeId}/settings`} variant="primary">Open website settings</ButtonLink>} />;
+    return <EmptyState icon="plug" title="Connect an AI provider first" action={<ButtonLink href={`/stores/${data.storeId}/settings`} variant="primary">Open website settings</ButtonLink>} />;
   }
   if (mode === "edit" && !rec) {
-    return <EmptyState icon="search" title="Schedule not found" headingAs="h1" description="It may have been created in another browser." action={<ButtonLink href={`${base}/schedules`}>All schedules</ButtonLink>} />;
+    return <EmptyState icon="search" title="Schedule not found" headingAs="h1" action={<ButtonLink href={`${base}/schedules`}>All schedules</ButtonLink>} />;
   }
   if (mode === "edit" && rec?.status === "cancelled") {
     return <EmptyState icon="lock" title="Cancelled schedules are read-only" action={<ButtonLink href={`${base}/schedules/${rec.id}`}>Back to schedule</ButtonLink>} />;
@@ -442,7 +442,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
             <Icon name="clock" size={14} className="text-fg-subtle" />
             <span className="tnum">{utc ? `= ${utc} UTC` : "Unknown time zone"}</span>
             <Tooltip content={observesDst(s.timezone) ? "Runs at the same local time all year, so the UTC time shifts by an hour when clocks change." : "This zone has no daylight saving, so the UTC time never shifts."}>
-              <span className="flex cursor-help text-fg-subtle" tabIndex={0} aria-label="Daylight saving note"><Icon name="info" size={14} /></span>
+              <span className="flex cursor-help text-fg-subtle" role="img" tabIndex={0} aria-label="Daylight saving note"><Icon name="info" size={14} /></span>
             </Tooltip>
           </p>
         </Block>
@@ -481,7 +481,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
               )}
             </Field>
           </div>
-          <p className="text-helper text-fg-muted">Runs never overlap. A missed run is caught up once within 24 hours.</p>
+          <p className="text-helper text-fg-muted">A missed run is caught up once within 24 hours.</p>
         </Advanced>
 
         <Advanced title="Alerts" summary={s.preset === "custom" ? "Custom" : PRESETS[s.preset].label}>
@@ -565,7 +565,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
                 <Checkbox key={email} checked={s.emails.includes(email)} onChange={() => set("emails", toggle(s.emails, email))} label={<span className="text-body-sm">{email}</span>} />
               ))}
             </div>
-            <Field label="Webhook URL" hint="Optional. Verify it before it can receive alerts.">
+            <Field label="Webhook URL" hint="Optional. Verify before use.">
               {({ id, describedBy }) => (
                 <div className="flex flex-wrap items-center gap-2">
                   <Input id={id} aria-describedby={describedBy} type="url" value={s.webhook} onChange={(event) => setS((c) => ({ ...c, webhook: event.target.value, webhookVerified: false }))} placeholder="https://" className="min-w-0 flex-1" />
@@ -587,7 +587,7 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
             <NumberField label="Jobs cap" value={s.capJobs} onChange={(n) => set("capJobs", n)} min={1} max={5000} suffix="per month" />
             <NumberField label="Cost cap (estimate)" value={s.capCost} onChange={(n) => set("capCost", n)} min={1} max={500} suffix="USD per month" />
           </div>
-          <p className="tnum text-helper text-fg-muted">Website budget: {formatNumber(ctx.budget.requests)} requests · {formatUsd(ctx.budget.costUsd)} estimate per month. Runs stop at a cap and finish as partial.</p>
+          <p className="tnum text-helper text-fg-muted">Website budget: {formatNumber(ctx.budget.requests)} requests · {formatUsd(ctx.budget.costUsd)} estimate per month.</p>
         </Advanced>
       </div>
 
@@ -635,7 +635,6 @@ function FormBody({ mode, rec, ctx, base, prompts, schedules, api, router, toast
             <Button variant="secondary" disabled={!nameOk || failing.length > 0} onClick={() => submit("active", true)}>Save and activate</Button>
           ) : null}
           <ButtonLink href={mode === "edit" && rec ? `${base}/schedules/${rec.id}` : `${base}/schedules`} variant="ghost">Cancel</ButtonLink>
-          {mode === "edit" && rec && dirty ? <p className="text-helper text-fg-muted">Earlier runs keep the settings they ran with.</p> : null}
         </div>
       </div>
     </div>

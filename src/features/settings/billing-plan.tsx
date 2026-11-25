@@ -133,7 +133,7 @@ function PlanComparison({ b }: { b: Billing }) {
   return (
     <Card>
       <CardHeader title="Compare plans" />
-      <div className="ui-scroll mt-3 overflow-x-auto">
+      <div className="ui-scroll mt-3 overflow-x-auto" tabIndex={0} role="group" aria-label="Plan limits and prices, scrollable table">
         <table className="w-full min-w-[36rem] table-fixed border-collapse text-body-sm">
           <caption className="sr-only">Plan limits and prices</caption>
           <colgroup>

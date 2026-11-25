@@ -335,7 +335,7 @@ export function LineChart({
 
       <details className="text-helper text-fg-muted">
         <summary className="inline-flex min-h-6 cursor-pointer items-center gap-1 rounded px-1 py-0.5 hover:text-fg focus-visible:outline-2 focus-visible:outline-ring">View data table</summary>
-        <div className="ui-scroll mt-2 overflow-x-auto">
+        <div className="ui-scroll mt-2 overflow-x-auto" tabIndex={0} role="group" aria-label={`${summary} Scrollable table.`}>
           <table className="tnum w-full min-w-max border-collapse text-helper">
             <caption className="sr-only">{summary}</caption>
             <thead>

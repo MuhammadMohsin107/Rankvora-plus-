@@ -36,7 +36,7 @@ export function Notifications({ alerts, websites, contextWebsiteId }: Props) {
       trigger={
         <IconButton
           icon="bell"
-          label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
+          label={unreadCount ? `Notifications, ${unreadCount} unread${unreadCount > 9 ? ", shown as 9+" : ""}` : "Notifications"}
           className="pointer-coarse:size-11"
           badge={
             unreadCount ? (
