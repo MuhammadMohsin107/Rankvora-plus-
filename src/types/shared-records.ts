@@ -188,8 +188,10 @@ export type ReportDocument = {
   /** Criteria, analysis or methodology version. */
   version: string;
   source: { id: string; label: string; href: string; snapshotIds: string[] };
-  /** At most three short lines. */
+  /** At most three short lines. Used by the exports. */
   summary: string[];
+  /** The page shows this instead of the summary: only what the metrics and coverage do not already say. */
+  note?: string;
   /** Comparison only: whether the two sides may be compared. */
   verdict?: { label: string; tone: "success" | "warning" | "danger" | "neutral" };
   metrics: ReportMetric[];

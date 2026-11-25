@@ -77,6 +77,7 @@ export function auditDocument(args: {
       `${ofText("Recommended", audit.recommendation, "successful responses")}.`,
       `${audit.succeededJobs} of ${audit.plannedJobs} planned requests succeeded${failedNote}.`,
     ],
+    note: audit.failedJobs > 0 ? `${audit.failedJobs} failed ${audit.failedJobs === 1 ? "request is" : "requests are"} excluded from rates.` : undefined,
     metrics: [
       rateMetric("mention-rate", "Brand mention rate", audit.mention, undefined, { basis: "Successful responses", naReason: audit.mention ? undefined : "No completed analysis" }),
       rateMetric("recommendation-rate", "Recommendation rate", audit.recommendation, undefined, { basis: "Successful responses", naReason: audit.recommendation ? undefined : "No completed analysis" }),
@@ -156,6 +157,8 @@ export function monitoringDocument(args: {
   ];
 
   const previousText = data.previousRunId ? `Compared with ${data.previousRunId} on matching slots only.` : "No previous run to compare with.";
+  const changeText = data.previousRunId ? `${gained} gained and ${lost} lost mentions or recommendations since ${data.previousRunId}.` : previousText;
+  const failedText = run.failedJobs > 0 ? ` ${run.failedJobs} failed ${run.failedJobs === 1 ? "request is" : "requests are"} excluded from rates.` : "";
   return {
     type: "monitoring",
     title: report.title,
@@ -166,9 +169,10 @@ export function monitoringDocument(args: {
     source: { id: run.id, label: "Monitoring run", href: report.sourceHref, snapshotIds: [run.snapshotId] },
     summary: [
       `${ofText("Brand mentioned", data.mention.current, "successful responses")}.`,
-      data.previousRunId ? `${gained} gained and ${lost} lost mentions or recommendations since ${data.previousRunId}.` : previousText,
+      changeText,
       `${run.succeededJobs} of ${run.plannedJobs} planned requests succeeded${run.failedJobs > 0 ? `; ${run.failedJobs} failed and are excluded from rates` : ""}.`,
     ],
+    note: `${changeText}${failedText}`,
     metrics: [
       rateMetric("mention-rate", "Brand mention rate", data.mention.current, data.mention.previous, { basis: "Successful responses" }),
       rateMetric("recommendation-rate", "Recommendation rate", data.recommendation.current, data.recommendation.previous, { basis: "Successful responses" }),
@@ -288,6 +292,8 @@ export function comparisonDocument(args: {
     version: report.version,
     source: { id: record.id, label: "Comparison", href: report.sourceHref, snapshotIds: [baseline.reference, current.reference] },
     summary,
+    // The snapshot references are listed under Scope.
+    note: [`${baseline.label} against ${current.label}.`, blocked ? summary[1] : countsOnly ? "Counts only: no trend is concluded." : ""].filter(Boolean).join(" "),
     verdict: { label: verdict.label, tone: verdict.tone === "info" || verdict.tone === "accent" ? "neutral" : verdict.tone },
     metrics: blocked ? [] : result.headline.map(comparisonMetric),
     tables,
