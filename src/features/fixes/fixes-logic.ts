@@ -79,6 +79,43 @@ export function reachableStatuses(start: TaskStatus = "suggested"): Set<TaskStat
 
 export const isTaskOpen = (status: TaskStatus): boolean => OPEN_TASK_STATUSES.has(status);
 
+/**
+ * The task a finding is being fixed by now: the newest open one, or the newest of all when none is open.
+ * Pass the tasks in creation order (seeded tasks first, then the ones made here).
+ */
+export function currentTask<T extends { status: TaskStatus }>(tasks: readonly T[]): T | undefined {
+  return [...tasks].reverse().find((t) => isTaskOpen(t.status)) ?? tasks[tasks.length - 1];
+}
+
+/**
+ * The header button of a drafted fix that is in progress. "Mark draft ready" shows where the draft is in view
+ * (the Draft tab), and everywhere once a draft was saved here. Otherwise the button leads to the draft.
+ */
+export function draftHeaderAction(onDraftTab: boolean, savedHere: boolean): "open_draft" | "mark_ready" {
+  return onDraftTab || savedHere ? "mark_ready" : "open_draft";
+}
+
+/** Why a draft cannot be marked ready yet, or null when it can. */
+export function draftReadyBlocker({ generating, dirty, hasContent }: { generating: boolean; dirty: boolean; hasContent: boolean }): string | null {
+  if (generating) return "The draft is still being written.";
+  if (dirty) return "Save the draft first.";
+  if (!hasContent) return "There is nothing in the draft yet.";
+  return null;
+}
+
+/**
+ * Readable id for a task made here: task-new-1, task-new-2 and so on. Pass every id that was ever used
+ * (current and removed rows, and ids named in history), so a number is never given out twice.
+ */
+export function nextLocalTaskId(usedIds: Iterable<string>): string {
+  let highest = 0;
+  for (const id of usedIds) {
+    const n = /^task-new-(\d+)$/.exec(id)?.[1];
+    if (n) highest = Math.max(highest, Number(n));
+  }
+  return `task-new-${highest + 1}`;
+}
+
 /** Task statuses where a change has been written or done by a person: it cannot be cancelled, only rolled back. */
 export const WRITTEN_STATUSES: ReadonlySet<TaskStatus> = new Set(["applied", "published", "verification_pending", "verified_success", "partially_verified"]);
 

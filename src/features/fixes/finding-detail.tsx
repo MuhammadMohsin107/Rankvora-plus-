@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { HeaderAction } from "@/components/shell/page-chrome";
 import { PageHeader } from "@/components/shell/page-header";
@@ -24,7 +24,7 @@ import type { Role } from "@/types/core";
 import type { FindingDetailData, FindingRow, RecommendationStatus, ResolvedEvidence, TaskSummary } from "@/types/fixes";
 
 import { REASONS, ReasonDialog } from "./fix-dialogs";
-import { canCreateTask, isTaskOpen, nextStepForFinding } from "./fixes-logic";
+import { canCreateTask, currentTask, isTaskOpen, nextStepForFinding } from "./fixes-logic";
 import { canApprove, CATEGORY_LABEL } from "./fixes-shared";
 import { splitLabel } from "./history";
 import { RecommendationCard, type RecLocal } from "./recommendation-card";
@@ -35,7 +35,10 @@ const LANE_LABEL = { ai_visibility: "AI visibility", website_readiness: "Website
 const evidenceIcon: Record<ResolvedEvidence["kind"], IconName> = { response: "prompts", page: "globe", prompt: "search" };
 
 /** The severity / priority value is already in the header; drop the leading "High:" / "P1:" label from the rationale. */
-const rationaleText = (text: string) => text.replace(/^(Critical|High|Medium|Low|Informational|P[0-3]):\s*/, "");
+const rationaleText = (text: string) => {
+  const rest = text.replace(/^(Critical|High|Medium|Low|Informational|P[0-3]):\s*/, "");
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+};
 
 function evidenceLabel(e: ResolvedEvidence): string {
   if (e.kind === "response") return `${e.response.providerLabel} · sample ${e.response.sample}`;
@@ -84,9 +87,11 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
   const localOf = (recId: string): RecLocal => {
     const rec = recommendations.find((r) => r.id === recId);
     const d = decisions.value[recId] ?? {};
-    // An open task for this recommendation wins over a finished one, so a new task shows up after the old one closed.
-    const linked = fix.tasks.find((t) => t.seed?.recommendationId === recId && isTaskOpen(t.status))?.id ?? rec?.taskId ?? null;
-    const linkedStatus = fix.tasks.find((t) => t.id === linked)?.status ?? null;
+    // This recommendation's tasks, seeded and made here. A finished one stays linked until a newer one replaces it.
+    const own = fix.tasks.filter((t) => t.id === rec?.taskId || t.seed?.recommendationId === recId);
+    const task = currentTask(own);
+    const linked = task?.id ?? rec?.taskId ?? null;
+    const linkedStatus = task?.status ?? null;
     return {
       status: d.status ?? rec?.status ?? "proposed",
       action: d.action ?? rec?.action ?? "",
@@ -104,33 +109,31 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
 
   const findingRow: FindingRow = { ...current, tasks: fix.tasks.filter((t) => t.findingId === finding.id).map((t) => ({ id: t.id, title: t.title, status: t.status })), context: { expected: finding.expected, actual: finding.actual, affectedUrls: finding.affectedUrls, verificationCriteria: extras.verificationCriteria, recommendation: recommendations.find((r) => localOf(r.id).status !== "rejected") ?? null } };
   const linkedTasks = findingRow.tasks;
-  const openTask = linkedTasks.some((t) => isTaskOpen(t.status));
+  const latestTask = currentTask(linkedTasks);
+  const workingTask = latestTask && isTaskOpen(latestTask.status) ? latestTask : undefined;
+  const tracedTaskId = latestTask?.id;
 
   const evidenceLabels = Object.fromEntries(evidence.map((e) => [e.id, evidenceLabel(e)]));
   const firstResponse = evidence.find((e) => e.kind === "response");
 
-  const traceIds = useMemo(
-    () => ({
-      storeId,
-      metricId: METRIC_FOR_CATEGORY[finding.category],
-      sourceId: finding.auditId,
-      promptId: prompts[0]?.id,
-      responseId: firstResponse?.kind === "response" ? firstResponse.response.id : undefined,
-      findingId: finding.id,
-      taskId: data.tasks[0]?.id,
-    }),
-    [storeId, finding.category, finding.auditId, finding.id, prompts, firstResponse, data.tasks],
-  );
+  const traceIds = {
+    storeId,
+    metricId: METRIC_FOR_CATEGORY[finding.category],
+    sourceId: finding.auditId,
+    promptId: prompts[0]?.id,
+    responseId: firstResponse?.kind === "response" ? firstResponse.response.id : undefined,
+    findingId: finding.id,
+    taskId: tracedTaskId,
+  };
 
   const firstOpen = recommendations.find((r) => localOf(r.id).status === "approved" && !localOf(r.id).taskId) ?? recommendations.find((r) => localOf(r.id).status !== "rejected") ?? null;
   const reviewItems = actions.menuItems(findingRow);
 
   let primary: React.ReactNode = null;
   if (status === "new" || status === "under_review") primary = <Button variant="primary" icon="check" onClick={() => fix.reviewFinding(finding.id, "confirm")}>Confirm</Button>;
-  else if (canCreateTask(status) && !openTask) primary = <Button variant="primary" icon="plus" onClick={() => actions.openCreate(findingRow, firstOpen)}>Create task</Button>;
+  else if (canCreateTask(status) && !workingTask) primary = <Button variant="primary" icon="plus" onClick={() => actions.openCreate(findingRow, firstOpen)}>Create task</Button>;
 
   // "Where do I fix this?": one line that says what to do next for the finding's status, with the button for it.
-  const workingTask = linkedTasks.find((t) => isTaskOpen(t.status));
   const createButton = (
     <Button size="sm" variant="primary" icon="plus" onClick={() => actions.openCreate(findingRow, firstOpen)}>
       Create task
@@ -168,7 +171,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
       ),
       meta: (
         <>
-          {o.sourceHref ? <Link href={`${base}/${o.sourceHref}`} className="text-accent-text hover:underline">{o.source}</Link> : o.source}
+          {o.sourceHref ? <Link href={`${base}/${o.sourceHref}`} className="text-accent-text underline underline-offset-2">{o.source}</Link> : o.source}
           {o.note ? <span> · {o.note}</span> : null}
         </>
       ),
@@ -240,7 +243,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
         ) : null}
         {extras.duplicate ? (
           <Callout tone="neutral" title="Possible duplicate">
-            <Link href={`${base}/fixes/findings/${extras.duplicate.ofId}`} className="text-accent-text hover:underline">{extras.duplicate.ofId}</Link> · {extras.duplicate.reason}
+            <Link href={`${base}/fixes/findings/${extras.duplicate.ofId}`} className="text-accent-text underline underline-offset-2">{extras.duplicate.ofId}</Link> · {extras.duplicate.reason}
           </Callout>
         ) : null}
 
@@ -268,6 +271,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
                         confidence={finding.confidence}
                         evidenceLabels={evidenceLabels}
                         canApprove={approver}
+                        canCreate={canCreateTask(status)}
                         onApprove={() => setDialog({ type: "approve", recId: rec.id })}
                         onEdit={() => {
                           setEditText(localOf(rec.id).action);
@@ -430,7 +434,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
         }}
       >
         <p>{active?.title}</p>
-        <p className="mt-2">Approving makes it eligible for a task. It does not change the site.</p>
+        <p className="mt-2">Approving does not change the site.</p>
       </ConfirmDialog>
 
       <Dialog

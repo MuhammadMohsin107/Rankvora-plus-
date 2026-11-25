@@ -67,6 +67,8 @@ type Props = {
   confidence: Confidence;
   evidenceLabels: Record<string, string>;
   canApprove: boolean;
+  /** False once the finding is closed (resolved, false positive, accepted risk): no task can be started then. */
+  canCreate: boolean;
   onApprove: () => void;
   onEdit: () => void;
   onReject: () => void;
@@ -81,7 +83,7 @@ type Props = {
  * (why, expected result, cause, confidence, evidence, dependencies, limitations, verification plan, the decision note)
  * sits under "Details".
  */
-export function RecommendationCard({ storeId, rec, local, confidence, evidenceLabels, canApprove, onApprove, onEdit, onReject, onReopen, onCreateTask, onOpenEvidence }: Props) {
+export function RecommendationCard({ storeId, rec, local, confidence, evidenceLabels, canApprove, canCreate, onApprove, onEdit, onReject, onReopen, onCreateTask, onOpenEvidence }: Props) {
   const statusBadge =
     local.status === "approved" ? (
       <Badge tone="success" icon="check-circle">Approved</Badge>
@@ -180,9 +182,11 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
               </>
             ) : (
               <>
-                <Button size="sm" icon="plus" onClick={onCreateTask}>
-                  Create task
-                </Button>
+                {canCreate ? (
+                  <Button size="sm" icon="plus" onClick={onCreateTask}>
+                    Create task
+                  </Button>
+                ) : null}
                 <Button size="sm" variant="ghost" icon="pencil" onClick={onEdit}>
                   Edit
                 </Button>

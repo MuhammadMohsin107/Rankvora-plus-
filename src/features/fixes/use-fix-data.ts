@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import { useToast } from "@/components/ui/toast";
-import { demoNow, simulatedToast, useDemoCollection, type DemoEventInput, type DemoEventKind, type DemoEventRefs, type SimulatedTone } from "@/demo-state";
+import { demoNow, demoStore, simulatedToast, useDemoCollection, type DemoEventInput, type DemoEventKind, type DemoEventRefs, type SimulatedTone } from "@/demo-state";
 import { statusMeta } from "@/lib/status";
 import type { FindingReview, FindingRow, TaskLocal, TaskRow, TaskStatus, TaskSummary } from "@/types/fixes";
 import type { FindingStatus } from "@/types/shared-records";
@@ -20,6 +20,7 @@ import {
   FINDING_CLOSED,
   findingStatusForTask,
   isTaskOpen,
+  nextLocalTaskId,
   REVIEW_LABEL,
   type FindingReviewAction,
 } from "./fixes-logic";
@@ -193,8 +194,15 @@ export function useFixData(storeId: string, baseTasks: readonly TaskSummary[], b
   /** Creates a Suggested task from a finding and moves the finding to In remediation. */
   const createTask = useCallback(
     (input: Omit<NewTaskInput, "storeId" | "actorName" | "now">) => {
+      // Read the live store, not this render's rows: bulk create calls this several times in a row.
+      const saved = demoStore.getSnapshot();
+      const id = nextLocalTaskId([
+        ...saved.tasks.created.map((r) => r.id),
+        ...saved.tasks.removed,
+        ...saved.events.flatMap((e) => (e.refs.taskId ? [e.refs.taskId] : [])),
+      ]);
       const row = buildTaskRow({ ...input, storeId, actorName, now: demoNow() });
-      const created = createTaskRow(row, (r) => ({
+      const created = createTaskRow({ ...row, id }, (r) => ({
         kind: "task.created",
         label: eventLabel("Task created", `from ${input.finding.id}`),
         refs: { taskId: r.id, findingId: input.finding.id, websiteId: storeId },

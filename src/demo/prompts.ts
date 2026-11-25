@@ -261,8 +261,8 @@ export const DEMO_EXTRA_PROMPTS: PromptBase[] = [
 export type WebsiteProfile = { category: string; item: string; city: string; need: string; /** Phrase for the brands of the category. Defaults to "<category> brands". */ brands?: string };
 
 export const STORE_PROFILES: Record<string, WebsiteProfile> = {
-  "runpro-pk": { category: "running shoes", item: "running shoe", city: "Lahore", need: "flat feet" },
-  "runpro-ae": { category: "running shoes", item: "running shoe", city: "Dubai", need: "hot weather" },
+  "runpro-pk": { category: "running shoes", brands: "running shoe brands", item: "running shoe", city: "Lahore", need: "flat feet" },
+  "runpro-ae": { category: "running shoes", brands: "running shoe brands", item: "running shoe", city: "Dubai", need: "hot weather" },
   "homefit-uk": { category: "home gym equipment", item: "home gym machine", city: "London", need: "small spaces" },
   nutrition: { category: "nutrition websites", brands: "nutrition websites and brands", item: "nutrition information", city: "Singapore", need: "meal planning" },
   threadly: { category: "sustainable clothing", brands: "sustainable clothing brands", item: "garment", city: "London", need: "warm weather" },

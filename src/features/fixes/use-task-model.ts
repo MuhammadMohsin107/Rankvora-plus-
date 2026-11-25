@@ -69,7 +69,7 @@ export function useTaskModel({ storeId, detail, tasks: baseTasks, actorName, lin
     },
     requestApproval: () => {
       patchTask(row, { status: "pending_approval", approvalState: "pending", requestedAt: demoNow() }, { title: "Approval requested", detail: "Owner or admin must approve the exact diff" });
-      notify("Approval requested", "Owner or admin must approve the exact diff.");
+      notify("Approval requested", "Waiting for an owner or admin.");
     },
     approve: () => {
       patchTask(
@@ -77,11 +77,15 @@ export function useTaskModel({ storeId, detail, tasks: baseTasks, actorName, lin
         { approvalState: "approved", approvedText: view.text, decision: { by: actorName, at: demoNow(), note: "Only this exact diff can be written." }, status: view.status === "pending_approval" ? "approved" : view.status },
         { title: "Approved exact diff", kind: "task.approved" },
       );
-      notify("Diff approved", "Status Approved. Nothing is written yet.");
+      notify("Diff approved", "Nothing is written yet.");
     },
     rejectApproval: (reason: string) => {
       patchTask(row, { approvalState: "rejected", decision: { by: actorName, at: demoNow(), note: reason }, status: "in_progress" }, { title: "Approval rejected", detail: reason, kind: "task.rejected" });
       notify("Approval rejected", "The task is back in progress.", "info");
+    },
+    /** Same move as "Move to Draft ready" in the task list, so history and the finding follow in the same way. */
+    markDraftReady: () => {
+      fix.moveTask(row, "draft_ready");
     },
     setText: (value: string) => setEdit(value),
     resetDraft: () => {
@@ -94,7 +98,7 @@ export function useTaskModel({ storeId, detail, tasks: baseTasks, actorName, lin
       const reapprove = patch.approvalState === "not_requested";
       patchTask(row, patch, { title: `Draft v${version} saved`, detail: reapprove ? "Approval needs to be requested again" : undefined });
       setEdit(null);
-      notify(`Draft v${version} saved`, reapprove ? "The diff changed, so approval is needed again." : undefined, reapprove ? "warning" : "success");
+      notify(`Draft v${version} saved`, reapprove ? "Approval is needed again." : undefined, reapprove ? "warning" : "success");
     },
     regenerate: () => {
       setGenerating(true);
@@ -108,11 +112,11 @@ export function useTaskModel({ storeId, detail, tasks: baseTasks, actorName, lin
           const claims = alt ? draft.alternate.unsupportedClaims : draft.unsupportedClaims;
           patchTask(row, { draftText: nextText, draftClaims: claims, draftGen: gen, draftVersion: version, ...invalidateApproval(nextText) }, { title: `Draft v${version} regenerated`, detail: `${claims.length} unsupported ${claims.length === 1 ? "claim" : "claims"} flagged` });
           setEdit(null);
-          notify(`Draft v${version} regenerated`, `${claims.length} unsupported ${claims.length === 1 ? "claim" : "claims"} flagged. No model was called.`, claims.length ? "warning" : "success");
+          notify(`Draft v${version} regenerated`, `${claims.length} unsupported ${claims.length === 1 ? "claim" : "claims"} flagged.`, claims.length ? "warning" : "success");
         } else {
           patchTask(row, { draftGen: gen, draftVersion: version }, { title: `Patch v${version} regenerated`, detail: "Output matches the previous patch" });
           setEdit(null);
-          notify("Patch regenerated", "Output matches the previous patch. No model was called.", "info");
+          notify("Patch regenerated", "Same as the previous patch.", "info");
         }
       }, 1100);
     },
@@ -161,19 +165,19 @@ export function useTaskModel({ storeId, detail, tasks: baseTasks, actorName, lin
           return;
         }
         patchTask(row, { ...movePatch(row, "applied", actorName, now), batch: sim.results, applyAttempts: attempt + 1, failure: null }, { title: attempt > 0 ? "Retry applied the failed items" : label, detail: `${sim.applied.length} items applied`, kind: "task.applied" });
-        notify("Applied", "Not verified yet. Simulated: nothing was written.", "info");
+        notify("Applied", "Not verified yet.", "info");
         return;
       }
       patchTask(row, { ...movePatch(row, target, actorName, now), failure: null }, { title: label, detail: "Remote check passed" });
-      notify(`${label}: ${statusMeta("task", target).label}`, "Not verified yet. Simulated: nothing was written.", "info");
+      notify(`${label}: ${statusMeta("task", target).label}`, "Not verified yet.", "info");
     },
     rollback: (reason: string) => {
       patchTask(row, movePatch(row, "rolled_back", actorName, demoNow(), { reason }), { title: "Rolled back", detail: reason });
-      notify("Rolled back", "Simulated: the previous version is restored in this demo only.", "info");
+      notify("Rolled back", "Previous version restored.", "info");
     },
     markApplied: () => {
       patchTask(row, movePatch(row, "applied", actorName, demoNow()), { title: "Marked applied", detail: "Applied outside Rankvora AI" });
-      notify("Marked applied", "Applied is not verified. Queue verification next.", "info");
+      notify("Marked applied", "Queue verification next.", "info");
     },
     queueVerification: () => {
       patchTask(row, { status: "verification_pending" }, { title: "Queued for verification", detail: "Applied is not verified" });

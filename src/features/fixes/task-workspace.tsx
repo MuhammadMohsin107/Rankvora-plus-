@@ -6,6 +6,7 @@ import { HeaderAction } from "@/components/shell/page-chrome";
 import { PageHeader } from "@/components/shell/page-header";
 import { Status } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
+import type { IconName } from "@/components/ui/icon";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { ConfirmDialog } from "@/components/ui/overlay";
 import { Tabs } from "@/components/ui/tabs";
@@ -15,7 +16,7 @@ import type { Role } from "@/types/core";
 import type { TaskDetailData, TaskSummary } from "@/types/fixes";
 
 import { ReasonDialog, REASONS, SupersedeDialog } from "./fix-dialogs";
-import { allowedMoves, isTaskOpen } from "./fixes-logic";
+import { allowedMoves, draftHeaderAction, draftReadyBlocker, isTaskOpen } from "./fixes-logic";
 import { LifecycleTracker } from "./lifecycle-tracker";
 import { TaskApprovalTab } from "./task-approval";
 import { TaskDraftTab } from "./task-draft";
@@ -37,9 +38,8 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
   const { task, draft, verification } = detail;
   const status = view.status;
 
-  const [jump, setJump] = useState<{ tab: TabId; n: number }>({ tab: "overview", n: 0 });
+  const [tab, setTab] = useState<TabId>("overview");
   const [dialog, setDialog] = useState<Dialogs>(null);
-  const goTo = (tab: TabId) => setJump((current) => ({ tab, n: current.n + 1 }));
 
   const annotations = useDemoEvents({ taskId: task.id, kinds: ["comparison.annotated"] });
   const annotated = useMemo(() => annotations.map((e) => e.refs.comparisonId).filter((id): id is string => Boolean(id)), [annotations]);
@@ -59,38 +59,53 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
   const moves = allowedMoves(status, task.mode);
   const supersedeCandidates = m.fix.tasks.filter((t) => t.findingId === task.findingId && t.id !== task.id && isTaskOpen(t.status));
 
+  /** A header button that only opens a tab is left out while that tab is open: pressing it would do nothing. */
+  const openTab = (target: TabId, icon: IconName, label: string) =>
+    tab === target ? null : <Button variant="primary" icon={icon} onClick={() => setTab(target)}>{label}</Button>;
+
+  const draftBlocker = draftReadyBlocker({
+    generating: m.generating,
+    dirty: m.dirty,
+    hasContent: draft.kind === "batch" ? draft.items.some((item) => (view.batch[item.id] ?? item.result) === "ready") : m.text.trim().length > 0,
+  });
+
   let primary: React.ReactNode = null;
   switch (status) {
     case "suggested":
       primary = <Button variant="primary" icon="play" onClick={act.startWork}>Start work</Button>;
       break;
     case "pending_approval":
-      primary = <Button variant="primary" icon="check" onClick={() => goTo("approval")}>Review approval</Button>;
+      primary = openTab("approval", "check", "Review approval");
       break;
     case "approved":
     case "queued":
     case "staged":
-      primary = <Button variant="primary" icon="bolt" onClick={() => goTo("execution")}>Open execution</Button>;
+      primary = openTab("execution", "bolt", "Open execution");
       break;
     case "blocked":
       primary = <Button variant="primary" icon="play" onClick={act.startWork}>Resume work</Button>;
       break;
     case "in_progress":
-      primary =
-        task.mode === "guidance" ? (
-          <Button variant="primary" icon="check" onClick={() => setDialog("applied")}>Mark applied</Button>
-        ) : (
-          <Button variant="primary" icon="file-text" onClick={() => goTo("draft")}>Open draft</Button>
+      if (task.mode === "guidance") {
+        primary = <Button variant="primary" icon="check" onClick={() => setDialog("applied")}>Mark applied</Button>;
+      } else if (draftHeaderAction(tab === "draft", m.row.draftVersion !== undefined) === "mark_ready") {
+        primary = (
+          <Button variant="primary" icon="check-circle" disabled={draftBlocker !== null} title={draftBlocker ?? undefined} onClick={act.markDraftReady}>
+            Mark draft ready
+          </Button>
         );
+      } else {
+        primary = openTab("draft", "file-text", "Open draft");
+      }
       break;
     case "draft_ready":
       primary =
         task.mode === "ai_draft" ? (
           <Button variant="primary" icon="check" onClick={() => setDialog("applied")}>Mark applied</Button>
         ) : m.needsApproval && (view.approvalState === "not_requested" || view.approvalState === "rejected") ? (
-          <Button variant="primary" icon="clock" onClick={() => goTo("approval")}>Request approval</Button>
+          openTab("approval", "clock", "Request approval")
         ) : (
-          <Button variant="primary" icon="bolt" onClick={() => goTo("execution")}>Open execution</Button>
+          openTab("execution", "bolt", "Open execution")
         );
       break;
     case "applied":
@@ -101,7 +116,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
           icon="shield-check"
           onClick={() => {
             act.queueVerification();
-            goTo("verification");
+            setTab("verification");
           }}
         >
           Queue verification
@@ -115,7 +130,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
           icon="shield-check"
           loading={m.verifying}
           onClick={() => {
-            goTo("verification");
+            setTab("verification");
             act.runVerification();
           }}
         >
@@ -124,7 +139,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
       );
       break;
     case "failed":
-      primary = view.execution.failure ? <Button variant="primary" icon="alert-triangle" onClick={() => goTo("execution")}>Review failure</Button> : null;
+      primary = view.execution.failure ? openTab("execution", "alert-triangle", "Review failure") : null;
       break;
     case "partially_verified":
     case "rolled_back":
@@ -139,7 +154,7 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
   }
 
   const more: MenuItem[] = [
-    ...(moves.includes("rolled_back") ? [{ label: "Roll back", icon: "undo" as const, onSelect: () => goTo("execution") }] : []),
+    ...(moves.includes("rolled_back") ? [{ label: "Roll back", icon: "undo" as const, onSelect: () => setTab("execution") }] : []),
     ...(moves.includes("rejected") ? [{ label: "Reject", icon: "minus-circle" as const, onSelect: () => setDialog("reject") }] : []),
     ...(moves.includes("superseded") ? [{ label: "Replace with another task", icon: "layers" as const, onSelect: () => setDialog("supersede") }] : []),
     ...(moves.includes("cancelled") ? [{ type: "separator" as const }, { label: "Cancel task", icon: "x-circle" as const, tone: "danger" as const, onSelect: () => setDialog("cancel") }] : []),
@@ -164,9 +179,9 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
         <EvidenceTrace ids={traceIds} label="Evidence trace for this task" />
 
         <Tabs
-          key={`${jump.tab}-${jump.n}`}
           label="Task sections"
-          defaultId={jump.tab}
+          value={tab}
+          onValueChange={(id) => setTab(id as TabId)}
           tabs={[
             { id: "overview", label: "Overview", content: <TaskOverviewTab storeId={storeId} detail={detail} view={view} /> },
             {
@@ -270,13 +285,13 @@ export function TaskWorkspace({ storeId, detail, tasks, role, actorName, links }
           act.markApplied();
         }}
       >
-        <p>This records that a person applied the change outside Rankvora AI. Nothing is written by us. It stays unverified until checks pass.</p>
+        <p>Records a change made outside Rankvora AI. Unverified until checks pass.</p>
       </ConfirmDialog>
       <ReasonDialog
         open={dialog === "cancel"}
         onClose={() => setDialog(null)}
         title="Cancel task"
-        description="Stops the task. Work already done is kept in history."
+        description="Stops the task. History is kept."
         confirmLabel="Cancel task"
         reasons={REASONS.cancel}
         onConfirm={(reason) => {
