@@ -238,7 +238,7 @@ export function CommandPalette({ index, websites, contextWebsiteId, onClose }: P
 
         <div id={listId} role="listbox" aria-label="Results" className="ui-scroll min-h-0 flex-1 overflow-y-auto p-1.5">
           {results.length === 0 ? (
-            <p className="px-3 py-4 text-center text-body-sm text-fg-muted">No results for “{query.trim()}”. Try a website, prompt or page name.</p>
+            <p className="px-3 py-4 text-center text-body-sm text-fg-muted">No results for “{query.trim()}”.</p>
           ) : (
             results.map((entry, i) => {
               const heading = entry.type !== lastType ? entry.type : null;

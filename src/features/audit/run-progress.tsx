@@ -43,7 +43,7 @@ export function RunProgressView({ derived, paused }: { derived: DerivedAudit; pa
 
   return (
     <div className="flex flex-col gap-3">
-      {paused ? <Callout tone="warning" title="Paused">The clock is stopped. Nothing advances until you resume.</Callout> : null}
+      {paused ? <Callout tone="warning" title="Paused" /> : null}
       <SplitLayout
         main={
           <>

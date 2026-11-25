@@ -81,7 +81,7 @@ export function QualityView({ detail, base }: { detail: ComparisonDetail; base: 
         <CardHeader title="Left out" info="Slots outside the matched cohort." />
         <CardBody className="pt-2">
           {reasons.size === 0 ? (
-            <p className="text-body-sm text-fg-muted">Every slot is in the matched cohort.</p>
+            <p className="text-body-sm text-fg-muted">No slots left out.</p>
           ) : (
             <ul className="divide-y divide-line">
               {[...reasons.entries()].map(([reason, count]) => (

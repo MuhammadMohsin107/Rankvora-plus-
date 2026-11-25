@@ -93,7 +93,6 @@ export function AiTab({ context, state, source, onSource, onRegenerate, onAccept
           <EmptyState
             icon="plug"
             title="Search Console is not connected"
-            description="Connect it to see questions people search for."
             action={
               <ButtonLink href={`/stores/${store.id}/settings`} variant="secondary">
                 Open Website settings

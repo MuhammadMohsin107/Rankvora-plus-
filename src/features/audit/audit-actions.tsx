@@ -66,7 +66,7 @@ export function ConfigDrawerButton({ config, channels, lanes }: { config: AuditC
                 ]}
               />
             ) : (
-              <p className="text-[13px] text-fg-muted">Not part of this audit. The site was not crawled.</p>
+              <p className="text-[13px] text-fg-muted">Not part of this audit.</p>
             )}
           </Group>
           <Group title="Criteria and integrations">

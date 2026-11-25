@@ -123,7 +123,7 @@ function JobDetails({ job, detail, storeId, onOpenResponse }: { job: RunJob; det
 
       {failed ? (
         <Callout tone="danger" title={FAILURE_LABEL[job.errorClass ?? "provider_error"]}>
-          {job.errorMessage ?? FAILURE_EXPLAIN[job.errorClass ?? "provider_error"]} Counted as failed, never as the brand being absent.
+          {job.errorMessage ?? FAILURE_EXPLAIN[job.errorClass ?? "provider_error"]} Not counted as absent.
         </Callout>
       ) : null}
 
@@ -151,7 +151,7 @@ function JobDetails({ job, detail, storeId, onOpenResponse }: { job: RunJob; det
             meta: a.latencySeconds === null ? undefined : <span className="tnum">{a.latencySeconds} s</span>,
           }))}
         />
-        <p className="mt-2 text-helper text-fg-muted">Attempt timing is estimated from the request and completion times.</p>
+        <p className="mt-2 text-helper text-fg-muted">Attempt timing is estimated.</p>
       </section>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">

@@ -42,7 +42,6 @@ export function LocalTaskView(props: Props) {
         <EmptyState
           icon="fixes"
           title="This task is not in this browser"
-          description="Tasks created in the demo are stored locally and are gone after a reset."
           action={
             <ButtonLink href={`/stores/${props.storeId}/fixes/tasks`} variant="primary">
               Open tasks

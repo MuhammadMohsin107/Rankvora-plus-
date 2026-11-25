@@ -28,7 +28,7 @@ function RateRow({ name, tag, rate, unit }: { name: string; tag?: string; rate: 
 
 /** Competitor mentions and cited domains for one prompt. Every row shows numerator and denominator. */
 export function EvidenceSection({ evidence }: { evidence: PromptEvidence }) {
-  const { competitors, citations, citationResponses } = evidence;
+  const { competitors, citations } = evidence;
   return (
     <div className="flex flex-col gap-3">
       <Card as="section">
@@ -49,7 +49,7 @@ export function EvidenceSection({ evidence }: { evidence: PromptEvidence }) {
         <CardHeader title="Citations" info="Share of citation-returning responses that cite each domain. Top domains only." />
         <CardBody>
           {citations.length === 0 ? (
-            <EmptyState icon="link" title="No citations yet" description={citationResponses === 0 ? "No response returned sources for this prompt." : undefined} />
+            <EmptyState icon="link" title="No citations yet" />
           ) : (
             <ul className="divide-y divide-line">
               {citations.map((c) => (

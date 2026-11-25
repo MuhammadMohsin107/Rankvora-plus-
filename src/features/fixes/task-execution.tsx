@@ -173,7 +173,7 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
               </>
             ) : (
               <Callout tone="neutral" title="Not connected">
-                {mode === "guidance" ? "A person makes any change." : "Writes are simulated. A connector is optional."}
+                {mode === "guidance" ? "A person makes any change." : "Writes are simulated."}
               </Callout>
             )}
           </CardBody>
@@ -244,7 +244,7 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
                 actions={status === "queued" || status === "approved" || status === "staged" ? <Button size="sm" icon="sparkles" onClick={onRedraft}>Redraft from current</Button> : undefined}
               >
                 {remote.changedBy ? `${remote.changedBy} edited it ${remote.changedAt ? formatDateTime(remote.changedAt) : ""}. ` : ""}
-                {remote.note ?? ""} The write is held until the draft is rebuilt from the current copy.
+                {remote.note ?? ""} Rebuild the draft to continue.
               </Callout>
             ) : (
               <Callout tone="success" title="Remote matches the draft" />
@@ -391,7 +391,7 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
         }}
       >
         <p>
-          Simulated: records this write of the exact diff{connector ? <> to <span className="font-medium text-fg">{connector.site}</span></> : null}. Nothing is sent to a real site. Approved diff <Mono>{shortHash(diffHash)}</Mono> is checked against the remote version first.
+          Simulated: nothing is sent{connector ? <> to <span className="font-medium text-fg">{connector.site}</span></> : null}. Diff <Mono>{shortHash(diffHash)}</Mono> is checked against the remote version first.
         </p>
         <p className="mt-2 text-fg-muted">{changeSummary(draft, fields)}</p>
       </ConfirmDialog>
@@ -421,7 +421,7 @@ export function TaskExecutionTab({ storeId, execution, remote, draft, text, stat
         <div className="flex flex-col gap-3">
           {rollback.laterEdit ? (
             <Callout tone="warning" title="The remote resource was edited after this change">
-              {rollback.laterEdit.by} edited it {formatDateTime(rollback.laterEdit.at)}. {rollback.laterEdit.note} Rollback does not overwrite it automatically, so it needs manual reconciliation.
+              {rollback.laterEdit.by} edited it {formatDateTime(rollback.laterEdit.at)}. {rollback.laterEdit.note} Reconcile it manually; rollback does not overwrite it.
             </Callout>
           ) : null}
           {rollback.laterEdit ? <Checkbox checked={ack} onChange={(event) => setAck(event.target.checked)} label="I will reconcile the later edit manually" /> : null}

@@ -110,13 +110,13 @@ export function BrandTab({ versions, draft, onDraft, readOnly, onSaveVersion, ti
                 </Select>
               )}
             </Field>
-            <ChipInput label="Aliases" hint="Other spellings. Press Enter to add." values={draft.aliases} disabled={readOnly} onChange={(aliases) => onDraft({ ...draft, aliases })} />
+            <ChipInput label="Aliases" hint="Press Enter to add" values={draft.aliases} disabled={readOnly} onChange={(aliases) => onDraft({ ...draft, aliases })} />
             <Field label="Description" error={touched ? (descriptionError ?? undefined) : undefined} hint={`${draft.description.length} / 400`}>
               {({ id, describedBy, invalid }) => (
                 <Textarea id={id} aria-describedby={describedBy} invalid={invalid} rows={3} value={draft.description} disabled={readOnly} placeholder="What the brand offers and who for" onChange={(e) => onDraft({ ...draft, description: e.target.value })} onBlur={() => setTouched(true)} />
               )}
             </Field>
-            <ChipInput label="Differentiators" hint="What sets the brand apart. Press Enter to add." values={draft.differentiators} disabled={readOnly} onChange={(differentiators) => onDraft({ ...draft, differentiators })} />
+            <ChipInput label="Differentiators" hint="Press Enter to add" values={draft.differentiators} disabled={readOnly} onChange={(differentiators) => onDraft({ ...draft, differentiators })} />
             <div className="flex items-center gap-2">
               <Button type="submit" variant="primary" disabled={readOnly || !dirty}>Save as new version</Button>
               <Button variant="ghost" disabled={readOnly || !dirty} onClick={() => { onDraft(base); setTouched(false); }}>Reset</Button>

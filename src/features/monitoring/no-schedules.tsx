@@ -19,7 +19,6 @@ export function NoSchedules() {
       <EmptyState
         icon="monitoring"
         title="Create your first schedule"
-        description="Runs your active prompts on a timetable and tracks changes."
         action={<ButtonLink href={`/stores/${storeId}/monitoring/schedules/new`} variant="primary" icon="plus">New schedule</ButtonLink>}
       />
     );
@@ -37,7 +36,7 @@ export function NoSchedules() {
       <CardBody className="flex flex-col items-start gap-4">
         <div>
           <h2 className="text-section font-semibold text-fg">Connect an AI provider first</h2>
-          <p className="mt-1 text-body-sm text-fg-muted">Monitoring needs one provider before it can run.</p>
+          <p className="mt-1 text-body-sm text-fg-muted">Needs one AI provider.</p>
         </div>
         <ol className="flex flex-col gap-2.5" aria-label="Monitoring setup steps">
           {steps.map((step, index) => (

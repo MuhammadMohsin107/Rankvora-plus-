@@ -34,7 +34,7 @@ type StepProps = { data: WizardData; state: WizardState; set: (patch: Partial<Wi
 const toggle = <T,>(list: T[], value: T): T[] => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
 function Skipped({ lane }: { lane: string }) {
-  return <Callout tone="neutral">{lane} is not selected, so there is nothing to set here.</Callout>;
+  return <Callout tone="neutral">{lane} is not selected.</Callout>;
 }
 
 /** Advanced settings stay closed until asked for. */
@@ -66,7 +66,7 @@ export function StepType({ data, state, set, prompts }: StepProps) {
       <RadioCards label="Audit type" columns={3} value={state.kind} onChange={(kind) => set({ kind, ...(kind === "verification" ? { samples: 1 } : {}) })} options={KIND_OPTIONS} />
 
       {state.kind === "verification" ? (
-        <Field label="Finding to re-check" required hint="Re-checks the prompts and pages the finding affected.">
+        <Field label="Finding to re-check" required>
           {({ id, describedBy }) => (
             <Select id={id} aria-describedby={describedBy} value={state.findingId} onChange={(e) => set(applyFinding(state, data, prompts, e.target.value))}>
               <option value="">Choose a finding</option>
@@ -89,10 +89,9 @@ export function StepLanes({ state, set }: StepProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 rounded-control border border-line p-3">
-        <Checkbox label="AI visibility" description="Ask AI providers your prompts and read the answers" checked={state.ai} onChange={(e) => set({ ai: e.target.checked })} />
-        <Checkbox label="Website readiness" description="Crawl the site and run technical and content checks" checked={state.web} onChange={(e) => set({ web: e.target.checked })} />
+        <Checkbox label="AI visibility" description="Your prompts, asked to AI providers" checked={state.ai} onChange={(e) => set({ ai: e.target.checked })} />
+        <Checkbox label="Website readiness" description="Technical and content checks" checked={state.web} onChange={(e) => set({ web: e.target.checked })} />
       </div>
-      <p className="text-helper text-fg-muted">Reported separately. Never merged into one score.</p>
       {!state.ai && !state.web ? <p role="alert" className="text-helper text-danger-text">Select at least one lane.</p> : null}
     </div>
   );
@@ -331,10 +330,10 @@ export function StepCriteria({ data, state, set }: StepProps) {
             onChange={(searchConsole) => set({ searchConsole })}
             extra={data.integrations.searchConsole ? <Badge tone="success" icon="check-circle">Connected</Badge> : <Link href={websiteConnectionsHref(data.store.id)} className="rv-target text-helper font-medium text-accent-text hover:underline">Connect</Link>}
           />
-          <ToggleRow title="PageSpeed Insights" description="Lab performance. Field data only where it exists." checked={state.pageSpeed} onChange={(pageSpeed) => set({ pageSpeed })} />
+          <ToggleRow title="PageSpeed Insights" description="Page speed measurements" checked={state.pageSpeed} onChange={(pageSpeed) => set({ pageSpeed })} />
           <ToggleRow
             title="Website connector"
-            description="Optional. Page facts from your CMS"
+            description="Page facts from your CMS"
             checked={state.cms}
             disabled={!data.integrations.cms}
             onChange={(cms) => set({ cms })}
@@ -378,7 +377,7 @@ export function StepLimits({ state, set }: StepProps) {
           {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} type="number" min={1} inputMode="decimal" value={state.budgetUsd || ""} onChange={(e) => set({ budgetUsd: Number(e.target.value) })} />}
         </Field>
       </div>
-      <p className="text-helper text-fg-muted">The audit stops at a limit and is marked partially completed.</p>
+      <p className="text-helper text-fg-muted">At a limit, the audit ends as partially completed.</p>
 
       <Advanced>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:max-w-xs">
@@ -392,7 +391,7 @@ export function StepLimits({ state, set }: StepProps) {
             )}
           </Field>
         </div>
-        <Field label="Simulation outcome" hint="Demo control: reach every end state without waiting for one.">
+        <Field label="Simulation outcome" hint="Demo only">
           {({ id, describedBy }) => (
             <Select id={id} aria-describedby={describedBy} value={state.scenario} onChange={(e) => set({ scenario: e.target.value as WizardState["scenario"] })}>
               <option value="normal">Normal</option>
@@ -416,7 +415,7 @@ export function StepEstimate({ state, usage }: StepProps & { usage: Usage }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="info" icon="info">Illustrative estimate</Badge>
-        <p className="text-helper text-fg-muted">From typical per-request pricing. Nothing is charged in this demo.</p>
+        <p className="text-helper text-fg-muted">Estimate only. Nothing is charged.</p>
       </div>
       <KeyValue
         columns={3}
@@ -434,7 +433,7 @@ export function StepEstimate({ state, usage }: StepProps & { usage: Usage }) {
         </div>
         <Progress value={usage.costUsd} max={Math.max(state.budgetUsd, 0.01)} label="Estimated cost against budget cap" tone={usage.overBudget ? "danger" : ratio > 0.85 ? "warning" : "accent"} />
       </div>
-      {usage.overBudget ? <Callout tone="warning">The estimate is above the budget cap. Reduce the scope or raise the cap.</Callout> : null}
+      {usage.overBudget ? <Callout tone="warning">The estimate is above the budget cap.</Callout> : null}
       {usage.overRequests ? <Callout tone="warning">{usage.jobs} requests are above the limit of {state.maxRequests}.</Callout> : null}
     </div>
   );
@@ -476,7 +475,7 @@ export function StepReview({ data, state, usage, prompts, onEdit }: StepProps & 
           ))}
         </div>
       ) : (
-        <p className="text-label text-fg-muted">No limitations beyond the usual API-answer-sample caveat.</p>
+        <p className="text-label text-fg-muted">No extra limitations.</p>
       )}
     </div>
   );

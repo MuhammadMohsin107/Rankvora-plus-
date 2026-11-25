@@ -150,7 +150,7 @@ export function DashboardView({ store: seeded, data }: { store: Store; data: Das
               </ul>
             </>
           ) : (
-            <p className="text-body-sm text-fg-muted">Not enough runs in this range to show a change. Choose a longer range.</p>
+            <p className="text-body-sm text-fg-muted">Not enough runs. Choose a longer range.</p>
           )}
         </Tile>
 

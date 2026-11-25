@@ -125,7 +125,7 @@ export function FindingsTable({ findings, storeId, tasks = [] }: { findings: Aud
             <section aria-label="Fix tasks" className="flex flex-col gap-1.5">
               <h3 className="text-helper font-semibold uppercase tracking-wide text-fg-subtle">Fix tasks</h3>
               {tasksFor(open.id).length === 0 ? (
-                <p className="text-body-sm text-fg-muted">No task yet. Create one from the finding in Fixes.</p>
+                <p className="text-body-sm text-fg-muted">No task yet.</p>
               ) : (
                 <ul className="divide-y divide-line rounded-control border border-line">
                   {tasksFor(open.id).map((t) => (

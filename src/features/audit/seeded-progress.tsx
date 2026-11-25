@@ -20,13 +20,13 @@ export function SeededProgress({ storeId, row, audit, channelLabelText }: { stor
     const kept = audit.succeededJobs + audit.failedJobs;
     return (
       <Callout tone="neutral" title="Cancelled">
-        Stopped after {kept} of {audit.plannedJobs} requests and {audit.pages?.n ?? 0} pages. The completed work is kept as a partial result. No snapshot was created.
+        Stopped after {kept} of {audit.plannedJobs} requests and {audit.pages?.n ?? 0} pages. Kept as a partial result.
       </Callout>
     );
   }
   return (
     <div className="flex flex-col gap-3">
-      {current.paused ? <Callout tone="warning" title="Paused">This audit is paused. Resume it from the header.</Callout> : null}
+      {current.paused ? <Callout tone="warning" title="Paused" /> : null}
       <InProgressOverview audit={audit} channelLabelText={channelLabelText} />
     </div>
   );

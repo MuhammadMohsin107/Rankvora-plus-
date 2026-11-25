@@ -159,7 +159,7 @@ export function CompetitorsTab({ storeId, competitors, market, marketName, readO
           <Field label="Website" required error={touched ? (domainError ?? undefined) : undefined} hint={site.host ? `Saved as ${site.host}` : undefined}>
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} inputMode="url" value={domain} placeholder="competitor.com" onChange={(e) => setDomain(e.target.value)} onBlur={() => setTouched(true)} />}
           </Field>
-          <ChipInput label="Aliases" hint="Other spellings. Press Enter to add." values={aliases} onChange={setAliases} />
+          <ChipInput label="Aliases" hint="Press Enter to add" values={aliases} onChange={setAliases} />
           <Field label="Applies to">
             {({ id }) => (
               <Select id={id} value={scope} onChange={(e) => setScope(e.target.value as "all" | "market")}>

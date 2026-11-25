@@ -314,7 +314,7 @@ export function BrandStep({ form, patch, error, blur, sample }: StepProps & { sa
             </Select>
           )}
         </Field>
-        <ChipInput label="Aliases" hint="Other spellings. Press Enter to add." placeholder="North Wind" values={form.aliases} onChange={(aliases) => patch({ aliases })} />
+        <ChipInput label="Aliases" hint="Press Enter to add" placeholder="North Wind" values={form.aliases} onChange={(aliases) => patch({ aliases })} />
         <Field className="md:col-span-2" label="Description" error={error("description")} hint={`${form.description.length} / 400`}>
           {({ id, describedBy, invalid }) => (
             <Textarea id={id} name="description" aria-describedby={describedBy} invalid={invalid} rows={3} value={form.description} placeholder="What the brand offers and who for" onChange={(e) => patch({ description: e.target.value })} onBlur={() => blur("description")} />
@@ -348,7 +348,7 @@ export function ConnectionsStep({ form, patch, channels }: StepProps & { channel
       <div className="flex flex-col gap-2">
         <p className="text-label font-medium text-fg">Publishing connector <span className="font-normal text-fg-muted">Optional</span></p>
         <RadioCards<ConnectorChoice | "none"> label="Publishing connector" value={form.connector} onChange={(connector) => patch({ connector })} options={options} columns={3} />
-        <p className="flex items-center gap-1.5 text-helper text-fg-muted"><Icon name="info" size={13} />Authorization is simulated. No real connection is made.</p>
+        <p className="flex items-center gap-1.5 text-helper text-fg-muted"><Icon name="info" size={13} />Simulated. No real connection is made.</p>
       </div>
 
       <div className="flex items-center justify-between gap-3 rounded-control border border-line p-3.5">
@@ -411,12 +411,12 @@ export function ReviewStep({ form, channels, planNote }: { form: WizardForm; cha
       </ul>
       {planNote ? (
         <Callout tone="warning" title="Over your plan">
-          {planNote.plan} includes {planNote.limit} {planNote.limit === 1 ? "website" : "websites"} and you have {planNote.count}. This one is allowed in the demo and shows over the limit in{" "}
+          {planNote.plan} includes {planNote.limit} {planNote.limit === 1 ? "website" : "websites"} and you have {planNote.count}. See{" "}
           <Link href="/settings/billing" className="font-medium text-accent-text hover:underline">Billing</Link>.
         </Callout>
       ) : null}
       <Callout tone={status === "ready" ? "success" : "info"} title={`Starts as ${STATUS.store[status].label}`}>
-        {form.channelIds.length === 0 ? "Choose an AI channel later in Website settings to start tracking." : "Run an audit to see the first results."} Stored in this browser only.
+        {form.channelIds.length === 0 ? "Choose an AI channel later in Website settings to start tracking." : "Run an audit to see the first results."}
       </Callout>
       {form.aliases.length > 0 ? (
         <p className="flex flex-wrap items-center gap-1.5 text-helper text-fg-muted">Aliases {form.aliases.map((a) => <Chip key={a}>{a}</Chip>)}</p>

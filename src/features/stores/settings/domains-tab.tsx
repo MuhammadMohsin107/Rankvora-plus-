@@ -172,7 +172,7 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
             reviewChange();
           }}
         >
-          <Field label="New domain" error={canonicalError ?? undefined} hint="Saved as the host name only">
+          <Field label="New domain" error={canonicalError ?? undefined}>
             {({ id, describedBy, invalid }) => <Input id={id} aria-describedby={describedBy} invalid={invalid} inputMode="url" value={newCanonical} placeholder="example.com" onChange={(e) => setNewCanonical(e.target.value)} />}
           </Field>
         </form>
@@ -187,7 +187,7 @@ export function DomainsTab({ record, readOnly, since, onChange }: Props) {
         tone="primary"
       >
         <p>{record.canonical} moves to former domains.</p>
-        <p className="mt-2">New runs measure {confirmCanonical}. Past audits and runs keep {record.canonical}, so before and after comparisons may be only partly comparable.</p>
+        <p className="mt-2">New runs measure {confirmCanonical}. Past audits and runs keep {record.canonical}; comparisons across them may be partial.</p>
       </ConfirmDialog>
     </div>
   );

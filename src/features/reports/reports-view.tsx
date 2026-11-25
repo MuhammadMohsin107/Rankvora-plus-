@@ -58,7 +58,7 @@ function GenerateDialog({ open, onClose, sources, onCreate }: { open: boolean; o
             </Select>
           )}
         </Field>
-        <Field label={SOURCE_NOUN[type]} hint={chosen?.hasReport ? "A report exists. This creates a new version." : undefined}>
+        <Field label={SOURCE_NOUN[type]} hint={chosen?.hasReport ? "Creates a new version." : undefined}>
           {(p) => (
             <Select id={p.id} aria-describedby={p.describedBy} value={chosen?.id ?? ""} onChange={(e) => setSourceId(e.target.value)}>
               {options.map((s) => <option key={s.id} value={s.id}>{s.title} · {formatDate(s.date)}</option>)}
@@ -164,7 +164,7 @@ export function ReportsView({ storeId, reports, sources }: { storeId: string; re
         onRowClick={(r) => router.push(href(r.id))}
         mobileCards
         toolbarExtra={archivedCount > 0 ? <Checkbox label={`Show archived (${archivedCount})`} checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> : undefined}
-        empty={<EmptyState icon="search" title="No reports match" description="Clear a filter or change the search." />}
+        empty={<EmptyState icon="search" title="No reports match" />}
       />
       <GenerateDialog open={dialog} onClose={() => setDialog(false)} sources={sources} onCreate={create} />
     </>

@@ -106,7 +106,7 @@ export function ProductsTab({ storeId, products, readOnly, onChange }: Props) {
         searchable={{ placeholder: "Search products and services", text: (p) => `${p.title} ${p.category}` }}
         defaultSort={{ column: "title", dir: "asc" }}
         toolbarExtra={addButton}
-        empty={<EmptyState icon="layers" title="No products or services yet" description="Optional. Add them if prompts should name specific offerings." />}
+        empty={<EmptyState icon="layers" title="No products or services yet" description="Optional" />}
       />
 
       <Dialog

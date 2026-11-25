@@ -10,10 +10,10 @@ export function ComparisonHistory({ comparisonId }: { comparisonId: string }) {
   const events = useDemoEvents({ comparisonId });
   return (
     <Card>
-      <CardHeader title="History" subtitle="Actions in this browser" />
+      <CardHeader title="History" />
       <CardBody className="pt-3">
         {events.length === 0 ? (
-          <p className="text-body-sm text-fg-muted">No local actions yet. Seeded comparisons start without history.</p>
+          <p className="text-body-sm text-fg-muted">No history yet.</p>
         ) : (
           <Timeline
             items={[...events].reverse().map((e) => ({

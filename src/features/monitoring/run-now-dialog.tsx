@@ -60,7 +60,7 @@ function RunNowDialog() {
       open
       onClose={closeRunNow}
       title="Run now"
-      description="One extra run. The next scheduled run does not change."
+      description="One extra run. The schedule stays the same."
       footer={
         <>
           <Button variant="secondary" onClick={closeRunNow}>Cancel</Button>
@@ -99,7 +99,7 @@ function RunNowDialog() {
             )}
           </Field>
         ) : null}
-        <Field label="Reason" required hint="At least 8 characters. Saved on the run.">
+        <Field label="Reason" required hint="At least 8 characters">
           {({ id, describedBy, invalid }) => (
             <Textarea id={id} aria-describedby={describedBy} invalid={invalid} rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="e.g. Check results after the content update" />
           )}
@@ -115,7 +115,7 @@ function RunNowDialog() {
             ]}
           />
         ) : null}
-        {purpose === "verification" ? <p className="text-helper text-fg-muted">Results are shown as observed after the task. They do not prove the task caused a change.</p> : null}
+        {purpose === "verification" ? <p className="text-helper text-fg-muted">Results are not proof of cause.</p> : null}
         {error ? <Callout tone="warning" title="Run not started">{error}</Callout> : null}
       </div>
     </Dialog>

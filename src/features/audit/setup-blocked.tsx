@@ -12,7 +12,7 @@ export function AuditSetupBlocked({ storeId, storeName }: { storeId: string; sto
     <EmptyState
       icon="plug"
       title="Connect an AI platform to run audits"
-      description={`${storeName} has no AI platform connected. Audits ask AI providers your prompts.`}
+      description={`${storeName} has no AI platform connected.`}
       action={
         <ButtonLink href={websiteConnectionsHref(storeId)} variant="primary" icon="plug">
           Connect an AI platform

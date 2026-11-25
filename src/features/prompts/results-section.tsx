@@ -103,7 +103,7 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
       <EmptyState
         icon="monitoring"
         title="Results are N/A"
-        description="No AI provider is selected, so nothing is tracked. This is not 0%."
+        description="No AI provider selected."
         action={
           <ButtonLink href={`/stores/${storeId}/settings`} variant="secondary">
             Choose providers
@@ -171,7 +171,7 @@ export function ResultsSection({ results, channels, versions, status, storeId }:
             <>
               <LineChart series={chart.series} summary={chart.summary} markers={chart.markers} yFormat={(v) => `${v.toFixed(0)}%`} yLabel={metric === "mention" ? "Mention rate" : "Recommendation rate"} />
               <p className="tnum mt-2 text-helper text-fg-muted">
-                {chart.minD === chart.maxD ? chart.minD : `${chart.minD}–${chart.maxD}`} successful responses per point. Markers show new versions.
+                {chart.minD === chart.maxD ? chart.minD : `${chart.minD}–${chart.maxD}`} successful responses per point
               </p>
             </>
           )}

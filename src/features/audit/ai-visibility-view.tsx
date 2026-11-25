@@ -17,7 +17,7 @@ const sourceTone = { owned: "success", competitor: "warning", third_party: "neut
 export function AiVisibilityView({ audit, lane, findings = [] }: { audit: AuditDetail; lane: AiLane | null; findings?: AuditFinding[] }) {
   if (!audit.lanes.includes("ai_visibility")) return <EmptyState icon="prompts" title="AI visibility was not part of this audit" />;
   if (!lane || lane.responses.length === 0) {
-    return <EmptyState icon="prompts" title="No AI responses yet" description={audit.provisional ? "Responses appear here as requests return." : "No request returned for this audit."} />;
+    return <EmptyState icon="prompts" title="No AI responses yet" />;
   }
   const delta = (key: "mention" | "recommendation" | "ownedCitation", now: { n: number; d: number }) =>
     lane.baselinePrevious && !audit.provisional && audit.baseline ? { points: pointChange(lane.baselinePrevious[key], now), versus: `vs ${audit.baseline.title}` } : undefined;
@@ -27,7 +27,7 @@ export function AiVisibilityView({ audit, lane, findings = [] }: { audit: AuditD
 
   return (
     <div className="flex flex-col gap-3">
-      {audit.provisional ? <Callout tone="warning" title="Provisional">Rates change as more responses arrive.</Callout> : null}
+      {audit.provisional ? <Callout tone="warning" title="Provisional" /> : null}
 
       <MetricGrid>
         <MetricCell>

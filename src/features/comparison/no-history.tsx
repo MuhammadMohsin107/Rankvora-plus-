@@ -2,9 +2,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
 
 const COPY = {
-  comparisons: { icon: "compare", title: "No comparisons yet", description: "A comparison needs two snapshots from audits or monitoring runs." },
+  comparisons: { icon: "compare", title: "No comparisons yet", description: "Needs two audits or monitoring runs." },
   snapshots: { icon: "compare", title: "Two snapshots needed", description: "Run an audit or a monitoring run first." },
-  reports: { icon: "reports", title: "No reports yet", description: "Reports are created when an audit, a monitoring run or a comparison completes." },
+  reports: { icon: "reports", title: "No reports yet", description: "Run an audit or a monitoring run first." },
 } as const;
 
 /**
@@ -18,7 +18,7 @@ export function NoHistory({ storeId, kind, hasChannel }: { storeId: string; kind
       <EmptyState
         icon={copy.icon}
         title="Connect an AI platform first"
-        description={`${copy.description} This website has no AI platform connected yet, so it has no audits or runs.`}
+        description={copy.description}
         action={<ButtonLink href={`/stores/${storeId}/settings`} variant="primary" icon="plug">Connect an AI platform</ButtonLink>}
       />
     );

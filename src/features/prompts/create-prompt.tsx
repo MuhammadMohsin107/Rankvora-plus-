@@ -48,7 +48,6 @@ export function CreatePrompt({ data }: { data: NewPromptData }) {
       <EmptyState
         icon="globe"
         title="Website not found"
-        description="This website is not in this browser's demo data."
         action={
           <ButtonLink href="/stores" variant="primary">
             Websites & Brands

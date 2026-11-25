@@ -104,7 +104,6 @@ function SupersedeBody({ open, onClose, candidates, onConfirm }: SupersedeProps)
       open={open}
       onClose={onClose}
       title="Replace with another task"
-      description="This task is closed as Superseded and links to its replacement."
       size="sm"
       footer={
         <>
@@ -174,7 +173,7 @@ function CreateBody({ open, onClose, recommendation, openTasks, onCreate }: Crea
       <div className="flex flex-col gap-3">
         {openTasks.length > 0 ? (
           <Callout tone="warning" title="A task is already open">
-            {openTasks.map((t) => t.id).join(", ")} addresses this finding. Create another only if it is different work.
+            {openTasks.map((t) => t.id).join(", ")} already covers this finding.
           </Callout>
         ) : null}
         <Field label="Execution mode" hint={MODE_HINT[mode]}>

@@ -17,7 +17,7 @@ function StatusNote({ audit }: { audit: AuditDetail }) {
   if (audit.status === "partially_completed") {
     return (
       <Callout tone="warning" title="Partially completed">
-        {coverage.responses.n} of {coverage.responses.d} planned requests returned a usable answer. Rates cover those only; failed requests are not read as the brand being absent.
+        {coverage.responses.n} of {coverage.responses.d} requests succeeded. Failed requests are excluded from rates.
       </Callout>
     );
   }
@@ -26,22 +26,22 @@ function StatusNote({ audit }: { audit: AuditDetail }) {
     return (
       <Callout tone="neutral" title="Cancelled">
         {kept > 0 || (audit.pages?.n ?? 0) > 0
-          ? `Stopped after ${kept} of ${audit.plannedJobs} requests and ${audit.pages?.n ?? 0} pages. The completed work is kept. No snapshot was created.`
-          : "Stopped before any request was sent or page crawled. Nothing was kept and no snapshot was created."}
+          ? `Stopped after ${kept} of ${audit.plannedJobs} requests and ${audit.pages?.n ?? 0} pages. No snapshot.`
+          : "Stopped before anything ran."}
       </Callout>
     );
   }
   if (audit.status === "failed") {
     return (
       <Callout tone="danger" title="Failed">
-        The run stopped because most provider requests failed. {audit.succeededJobs} responses were kept. No snapshot was created.
+        Most provider requests failed. {audit.succeededJobs} responses kept.
       </Callout>
     );
   }
   if (audit.status === "blocked") {
     return (
       <Callout tone="danger" title="Blocked">
-        The audit could not start: validation failed before any request was sent. Fix the blocker in the configuration and run it again.
+        Validation failed. Fix the blocker and run it again.
       </Callout>
     );
   }
@@ -84,7 +84,7 @@ export function OverviewView({ audit, summary, storeId }: { audit: AuditDetail; 
 
       {empty ? null : (
         <Card as="section">
-          <CardHeader title="Coverage" subtitle="Planned versus returned" />
+          <CardHeader title="Coverage" />
           <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             {hasAi ? <Metric label="Responses" numerator={coverage.responses.n} denominator={coverage.responses.d} unit="requests" basis={audit.failedJobs ? `${audit.failedJobs} failed` : undefined} /> : null}
             {hasAi ? <Metric label="Prompts answered" numerator={coverage.prompts.n} denominator={coverage.prompts.d} unit="prompts" /> : null}

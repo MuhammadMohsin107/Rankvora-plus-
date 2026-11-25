@@ -27,7 +27,7 @@ async function ObservationsPageContent(props: PageProps<"/stores/[storeId]/monit
     return (
       <div className="flex flex-col gap-3">
         <HistorySwitch current="prompts" />
-        <EmptyState icon="monitoring" title="No prompt history yet" description="It appears once a run stores answers per prompt and provider." />
+        <EmptyState icon="monitoring" title="No prompt history yet" description="Appears after the first run." />
       </div>
     );
   }

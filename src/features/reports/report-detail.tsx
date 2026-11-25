@@ -56,7 +56,7 @@ export function ReportDetail({ storeId, reportId, seeded, documents, progress }:
     return (
       <>
         <PageHeader title="Report not found" />
-        <EmptyState icon="reports" title="This report is not in this browser" description="Reports you generate are kept in this browser only." action={<ButtonLink href={`/stores/${storeId}/reports`} variant="primary">All reports</ButtonLink>} />
+        <EmptyState icon="reports" title="This report is not in this browser" action={<ButtonLink href={`/stores/${storeId}/reports`} variant="primary">All reports</ButtonLink>} />
       </>
     );
   }

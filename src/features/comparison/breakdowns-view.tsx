@@ -57,7 +57,6 @@ function Platforms({ channels }: { channels: ChannelSegment[] }) {
     <Card>
       <CardHeader
         title="By platform"
-        subtitle="Each provider, model and search mode is its own segment and is never merged."
         actions={
           <Segmented
             label="Metric"
@@ -97,12 +96,12 @@ function NameList({ title, names }: { title: string; names: string[] }) {
 }
 
 function Competitors({ data }: { data: BreakdownData }) {
-  if (data.competitors.length === 0) return <EmptyState icon="users" title="No tracked competitors" description="Confirm competitors in website settings to compare them on the same slots." />;
+  if (data.competitors.length === 0) return <EmptyState icon="users" title="No tracked competitors" description="Confirm competitors in website settings." />;
   const rows = [...(data.brand ? [metricBarRow(data.brand, { label: "Your brand" })] : []), ...data.competitors.map((m) => metricBarRow(m))];
   return (
     <div className="flex flex-col gap-3">
       <Card>
-        <CardHeader title="Mention rate" subtitle={`Brand and tracked competitors, same ${data.brand?.cohort ?? 0} matched slots in every row.`} />
+        <CardHeader title="Mention rate" subtitle={`${data.brand?.cohort ?? 0} matched slots per row`} />
         <CardBody><RateBars rows={rows} /></CardBody>
       </Card>
       <Card>
@@ -124,18 +123,18 @@ function Citations({ data }: { data: BreakdownData }) {
   return (
     <div className="flex flex-col gap-3">
       <Card>
-        <CardHeader title="Owned citation by platform" subtitle="Responses with citation data only. No citation support is N/A, never 0%." />
+        <CardHeader title="Owned citation by platform" subtitle="Responses with citation data only" />
         <CardBody>{providers.length ? <RateBars rows={providers} /> : <p className="text-body-sm text-fg-muted">No matched slots.</p>}</CardBody>
       </Card>
       <Card>
-        <CardHeader title="Cited domains" subtitle="Responses citing each domain out of responses with citation data." />
-        <CardBody>{domains.length ? <RateBars rows={domains} /> : <p className="text-body-sm text-fg-muted">No citations returned in the matched slots.</p>}</CardBody>
+        <CardHeader title="Cited domains" />
+        <CardBody>{domains.length ? <RateBars rows={domains} /> : <p className="text-body-sm text-fg-muted">No citations.</p>}</CardBody>
       </Card>
       <Card>
-        <CardHeader title="Cited URLs" subtitle="Responses citing each URL, baseline to current." />
+        <CardHeader title="Cited URLs" subtitle="Baseline to current" />
         <CardBody className="pt-2">
           {data.urls.length === 0 ? (
-            <p className="text-body-sm text-fg-muted">No URLs returned in the matched slots.</p>
+            <p className="text-body-sm text-fg-muted">No URLs.</p>
           ) : (
             <ul className="divide-y divide-line">
               {data.urls.slice(0, 10).map((u) => (
@@ -176,7 +175,7 @@ function Distribution({ title, counts }: { title: string; counts: SentimentCount
   return (
     <div className="flex min-w-0 flex-col gap-2.5">
       <h3 className="text-label font-medium text-fg-muted">{title}</h3>
-      {counts.total > 0 ? <StackedBar segments={segments(counts)} unit="mentions" /> : <p className="text-body-sm text-fg-muted">The brand is not mentioned, so sentiment is N/A.</p>}
+      {counts.total > 0 ? <StackedBar segments={segments(counts)} unit="mentions" /> : <p className="text-body-sm text-fg-muted">Not mentioned, so sentiment is N/A.</p>}
     </div>
   );
 }
@@ -186,14 +185,14 @@ function Sentiment({ data }: { data: BreakdownData }) {
   return (
     <div className="flex flex-col gap-3">
       <Card>
-        <CardHeader title="Sentiment" subtitle="Responses that mention the brand." />
+        <CardHeader title="Sentiment" />
         <CardBody className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
           <Distribution title="Baseline" counts={sentiment.baseline} />
           <Distribution title="Current" counts={sentiment.current} />
         </CardBody>
       </Card>
       <Card>
-        <CardHeader title="Where it changed" subtitle="Matched slots with a different sentiment label." />
+        <CardHeader title="Where it changed" />
         <CardBody className="pt-2">
           {sentiment.excerpts.length === 0 ? (
             <p className="text-body-sm text-fg-muted">No matched slot changed sentiment.</p>

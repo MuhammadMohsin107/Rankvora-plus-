@@ -45,7 +45,7 @@ async function AuditsPageContent(props: PageProps<"/stores/[storeId]/audits">) {
       <>
         <PageHeader title="Audits" />
         <StartAuditAction storeId={storeId} />
-        <EmptyState icon="audit" title="No audits yet" description="Run an audit to measure AI visibility and website readiness." action={<ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>} />
+        <EmptyState icon="audit" title="No audits yet" action={<ButtonLink href={`/stores/${storeId}/audits/new`} variant="primary" icon="plus">Start audit</ButtonLink>} />
       </>
     );
   }

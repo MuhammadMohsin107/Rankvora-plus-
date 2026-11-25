@@ -183,7 +183,7 @@ export function IntegrationsTab({ detail, host, readOnly, onChange }: Props) {
         }
       >
         {reconnecting ? (
-          <p className="text-[13px] text-fg-muted">You would be asked to grant access again. Existing findings and tasks are kept.</p>
+          <p className="text-[13px] text-fg-muted">Findings and tasks are kept.</p>
         ) : (
           <RadioCards<ConnectorChoice>
             label="Connector"
@@ -233,7 +233,7 @@ export function IntegrationsTab({ detail, host, readOnly, onChange }: Props) {
           <p>Search data stops syncing. Data already imported stays in past audits.</p>
         ) : (
           <>
-            <p>The simulated access for this website is removed. Findings, tasks and history stay.</p>
+            <p>Findings, tasks and history are kept.</p>
             <p className="mt-2 flex items-start gap-1.5"><Icon name="info" size={14} className="mt-0.5 shrink-0" />Fix tasks that need the connection become guidance only.</p>
           </>
         )}

@@ -50,7 +50,7 @@ export function DeleteWebsiteDialog({ website, onClose, onConfirm }: { website: 
     >
       <div className="flex flex-col gap-3">
         <p className="text-body-sm text-fg-muted">
-          This removes the website and its prompts, results, tasks and settings from this browser. It cannot be undone. Nothing real is deleted: this is a demo.
+          Removes the website with its prompts, results, tasks and settings. This cannot be undone.
         </p>
         <Field label={`Type "${name}" to confirm`}>
           {({ id, describedBy }) => <Input id={id} aria-describedby={describedBy} autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />}

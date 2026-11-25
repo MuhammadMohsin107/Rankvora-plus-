@@ -307,7 +307,7 @@ function EventDrawerBody({ event, status, tz, handled, base, storeId, onVerify }
           </details>
         </>
       ) : (
-        <Callout tone="neutral">No alert was sent. The event stays in the log.</Callout>
+        <Callout tone="neutral">No alert was sent.</Callout>
       )}
     </div>
   );

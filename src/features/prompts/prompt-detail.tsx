@@ -58,7 +58,6 @@ export function PromptDetail({ data, promptId }: { data: PromptDetailData; promp
           <EmptyState
             icon="prompts"
             title="Prompt not found"
-            description="It may have been created in another browser."
             action={
               <ButtonLink href={base} variant="secondary">
                 Prompt Library

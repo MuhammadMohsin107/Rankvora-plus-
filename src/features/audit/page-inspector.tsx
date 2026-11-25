@@ -21,7 +21,7 @@ const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 
 /** Short excerpt assembled from what the crawl read: headline, description and section headings. */
 export function contentPreview(page: CrawledPage): string {
-  if (!page.title) return "No HTML content to read on this response.";
+  if (!page.title) return "No HTML content.";
   const parts = [page.h1[0] ?? page.title, page.metaDescription ?? "", page.h2.length > 0 ? `Sections: ${page.h2.join(", ")}.` : "", `About ${page.words} words.`];
   return parts.filter(Boolean).join(" ");
 }
@@ -94,7 +94,7 @@ export function PageInspector({ page, issues, storeId }: { page: CrawledPage; is
                     ]}
                   />
                 ) : (
-                  <p className="text-body-sm text-fg-muted">No HTML content to read on this response.</p>
+                  <p className="text-body-sm text-fg-muted">No HTML content.</p>
                 )}
               </Pane>
             ),
@@ -161,7 +161,7 @@ export function PageInspector({ page, issues, storeId }: { page: CrawledPage; is
                 {page.schemaIssues.map((issue) => (
                   <Callout key={issue} tone="danger">{issue}</Callout>
                 ))}
-                <p className="text-helper text-fg-muted">Valid markup does not guarantee rich results. Check the live page with Google&apos;s Rich Results Test.</p>
+                <p className="text-helper text-fg-muted">Valid markup does not guarantee rich results.</p>
               </Pane>
             ),
           },
@@ -171,10 +171,10 @@ export function PageInspector({ page, issues, storeId }: { page: CrawledPage; is
             content: (
               <Pane>
                 <Group title="Lab · PageSpeed, simulated mobile">
-                  {page.lab ? <KeyValue columns={3} items={[{ label: "LCP", value: <span className="tnum">{seconds(page.lab.lcpMs)}</span> }, { label: "CLS", value: <span className="tnum">{page.lab.cls.toFixed(2)}</span> }, { label: "TBT", value: <span className="tnum">{page.lab.tbtMs} ms</span> }]} /> : <p className="text-body-sm text-fg-muted">No lab measurement for this response.</p>}
+                  {page.lab ? <KeyValue columns={3} items={[{ label: "LCP", value: <span className="tnum">{seconds(page.lab.lcpMs)}</span> }, { label: "CLS", value: <span className="tnum">{page.lab.cls.toFixed(2)}</span> }, { label: "TBT", value: <span className="tnum">{page.lab.tbtMs} ms</span> }]} /> : <p className="text-body-sm text-fg-muted">No lab data.</p>}
                 </Group>
                 <Group title="Field · Chrome UX Report, 28 days">
-                  {page.field ? <KeyValue columns={3} items={[{ label: "LCP", value: <span className="tnum">{seconds(page.field.lcpMs)}</span> }, { label: "CLS", value: <span className="tnum">{page.field.cls.toFixed(2)}</span> }, { label: "INP", value: <span className="tnum">{page.field.inpMs} ms</span> }]} /> : <p className="text-body-sm text-fg-muted">No field data. Too little traffic for this URL.</p>}
+                  {page.field ? <KeyValue columns={3} items={[{ label: "LCP", value: <span className="tnum">{seconds(page.field.lcpMs)}</span> }, { label: "CLS", value: <span className="tnum">{page.field.cls.toFixed(2)}</span> }, { label: "INP", value: <span className="tnum">{page.field.inpMs} ms</span> }]} /> : <p className="text-body-sm text-fg-muted">No field data (low traffic).</p>}
                 </Group>
               </Pane>
             ),
@@ -185,7 +185,7 @@ export function PageInspector({ page, issues, storeId }: { page: CrawledPage; is
             content: (
               <Pane>
                 {issues.length === 0 ? (
-                  <p className="text-body-sm text-fg-muted">No failed or warning checks reference this page.</p>
+                  <p className="text-body-sm text-fg-muted">No issues on this page.</p>
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {issues.map((issue) => (

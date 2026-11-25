@@ -45,7 +45,7 @@ export function ScheduleDetail({ scheduleId }: { scheduleId: string }) {
     return (
       <>
         <PageHeader title="Schedule" />
-        <EmptyState icon="search" title="Schedule not found" headingAs="h1" description="It may have been created in another browser." action={<ButtonLink href={`${base}/schedules`}>All schedules</ButtonLink>} />
+        <EmptyState icon="search" title="Schedule not found" headingAs="h1" action={<ButtonLink href={`${base}/schedules`}>All schedules</ButtonLink>} />
       </>
     );
   }

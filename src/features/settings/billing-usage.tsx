@@ -127,7 +127,7 @@ function History({ b }: { b: Billing }) {
   return (
     <ChartCard
       title="AI requests, last 6 months"
-      footnote={`${b.base.period.label.split(" ")[0]} is to date. Months without data had no tracked websites.`}
+      footnote={`${b.base.period.label.split(" ")[0]} is to date.`}
     >
       <LineChart
         series={[

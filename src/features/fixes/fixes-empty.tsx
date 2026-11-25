@@ -17,7 +17,6 @@ export function FixesEmpty({ storeId, kind, hasAiPlatform, hasFindings }: Props)
       <EmptyState
         icon="fixes"
         title={kind === "findings" ? "No findings yet" : "No tasks yet"}
-        description="Connect an AI platform to run the first audit."
         action={
           <ButtonLink href={`${base}/settings`} variant="primary" icon="plug">
             Connect an AI platform
@@ -45,7 +44,6 @@ export function FixesEmpty({ storeId, kind, hasAiPlatform, hasFindings }: Props)
     <EmptyState
       icon="fixes"
       title={kind === "findings" ? "No findings yet" : "No tasks yet"}
-      description="Run an audit to create the first findings."
       action={
         <ButtonLink href={`${base}/audits/new`} variant="primary" icon="plus">
           Start audit

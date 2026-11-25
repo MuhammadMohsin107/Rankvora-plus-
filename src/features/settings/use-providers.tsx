@@ -81,7 +81,7 @@ export function useProviders(providers: ProviderConnection[]) {
         confirmLabel="Use demo key"
         tone="primary"
       >
-        <p>A masked demo key is set. This demo never asks for a real key.</p>
+        <p>A masked demo key is set.</p>
       </ConfirmDialog>
       <ConfirmDialog
         open={disableFor !== null}
@@ -90,7 +90,7 @@ export function useProviders(providers: ProviderConnection[]) {
         title={disableFor ? `Stop using your ${disableFor.label} key?` : ""}
         confirmLabel="Use platform key"
       >
-        <p>The demo key is removed. Requests use the platform key and count against your plan.</p>
+        <p>Requests will use the platform key and count against your plan.</p>
       </ConfirmDialog>
     </>
   );

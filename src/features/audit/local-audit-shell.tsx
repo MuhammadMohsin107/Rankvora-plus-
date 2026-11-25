@@ -85,7 +85,7 @@ export function LocalAuditShell({ storeId, auditId, basis, seed, channels, other
   else if (status === "draft") {
     content = (
       <Card as="section">
-        <CardHeader title="Saved setup" subtitle="Start it from the header when ready" />
+        <CardHeader title="Saved setup" />
         <CardBody>
           <KeyValue
             columns={2}

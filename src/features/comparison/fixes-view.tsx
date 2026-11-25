@@ -12,8 +12,8 @@ import type { StatusValue } from "@/lib/status";
 import type { ComparisonDetail, FixTimelineItem } from "@/types/comparison";
 
 function Visibility({ item }: { item: FixTimelineItem }) {
-  if (!item.completed) return <p className="mt-1 text-helper text-fg-subtle">Not completed. No visibility change is shown.</p>;
-  if (!item.before || !item.after) return <p className="mt-1 text-helper text-fg-subtle">No monitoring run on both sides of this task.</p>;
+  if (!item.completed) return <p className="mt-1 text-helper text-fg-subtle">Not completed.</p>;
+  if (!item.before || !item.after) return <p className="mt-1 text-helper text-fg-subtle">No runs before and after.</p>;
   const change = pointChange(item.before.rate, item.after.rate);
   return (
     <div className="mt-1.5 flex flex-col gap-0.5 rounded-control border border-line bg-surface-2 px-2.5 py-2">
@@ -41,7 +41,7 @@ export function FixesView({ detail }: { detail: ComparisonDetail }) {
     <div className="flex flex-col gap-3">
       <Callout tone="info" title="Context, not cause. A change after a fix does not show the fix caused it." />
       <Card>
-        <CardHeader title="Fixes" subtitle={`${done} completed of ${fixes.length}, placed by completion date. ${formatDate(rangeFrom)} to ${formatDate(rangeTo)}`} />
+        <CardHeader title="Fixes" subtitle={`${done} of ${fixes.length} completed · ${formatDate(rangeFrom)} to ${formatDate(rangeTo)}`} />
         <CardBody>
           <Timeline
             items={fixes.map((item) => ({

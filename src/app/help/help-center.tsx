@@ -148,7 +148,7 @@ function ContactForm() {
       <div ref={doneRef} tabIndex={-1} role="status" className="flex flex-col items-start gap-3 outline-none">
         <Badge tone="info" icon="layers">Simulated</Badge>
         <p className="text-body font-medium text-fg">Message recorded in this browser.</p>
-        <p className="text-body-sm text-fg-muted">No email was sent. In a live account the team would reply to {values.email.trim()}.</p>
+        <p className="text-body-sm text-fg-muted">Simulated: no email was sent.</p>
         <Button variant="secondary" onClick={reset}>Send another</Button>
       </div>
     );
@@ -208,7 +208,6 @@ export function HelpCenter() {
             {visible.length === 0 ? (
               <EmptyState
                 title="No answers match"
-                description="Try fewer words, or send us a message."
                 action={<a href="#contact" className="inline-flex h-btn items-center rounded-control border border-line-strong bg-surface px-4 text-body font-medium text-fg hover:bg-surface-2">Contact support</a>}
                 className="border-0 px-0"
               />

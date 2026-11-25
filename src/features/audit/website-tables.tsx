@@ -97,7 +97,7 @@ export function ChecksTable({ checks, storeId }: { checks: WebsiteCheck[]; store
               </section>
             ) : null}
             {open.status === "not_assessed" || open.status === "inconclusive" || open.status === "blocked" || open.status === "error" ? (
-              <Callout tone="info">No determinate result, so it counts against check coverage, not toward a pass rate.</Callout>
+              <Callout tone="info">No result: lowers check coverage, not the pass rate.</Callout>
             ) : null}
             {open.findingId ? (
               <Link href={`/stores/${storeId}/fixes/findings/${open.findingId}`} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-text hover:underline">

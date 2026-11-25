@@ -223,7 +223,7 @@ export function ManualTab({ context, form, setForm, onCreate }: Props) {
 
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-helper text-fg-muted">
             {channels.length === 0 ? (
-              "No AI provider selected yet. Results stay N/A."
+              "No AI provider selected."
             ) : (
               <>
                 Runs on {channels.map((c) => c.providerLabel).join(", ")} once active.
@@ -238,7 +238,7 @@ export function ManualTab({ context, form, setForm, onCreate }: Props) {
         </div>
       </form>
 
-      <Dialog open={templatesOpen} onClose={() => setTemplatesOpen(false)} title="Templates" description="Filled with this website's brand and market." size="md">
+      <Dialog open={templatesOpen} onClose={() => setTemplatesOpen(false)} title="Templates" size="md">
         <ul className="flex flex-col gap-2">
           {templates.map((template) => (
             <li key={template.id}>

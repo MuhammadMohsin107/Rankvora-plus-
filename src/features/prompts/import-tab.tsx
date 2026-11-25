@@ -138,7 +138,7 @@ export function ImportTab({ context, csv, setCsv, fileName, setFileName, addMany
       <Card as="section">
         <CardHeader
           title="Paste or upload"
-          subtitle={`Up to ${MAX_IMPORT_ROWS} rows. Nothing is added until you confirm.`}
+          subtitle={`Up to ${MAX_IMPORT_ROWS} rows`}
           actions={
             <>
               <Button size="sm" icon="download" onClick={download}>Template</Button>
@@ -169,7 +169,7 @@ export function ImportTab({ context, csv, setCsv, fileName, setFileName, addMany
               />
             )}
           </Field>
-          <Field label="Or choose a file" hint={fileName ? `Loaded ${fileName}` : "Read in your browser. Not uploaded."}>
+          <Field label="Or choose a file" hint={fileName ? `Loaded ${fileName}` : "Not uploaded"}>
             {({ id, describedBy }) => (
               <input
                 id={id}

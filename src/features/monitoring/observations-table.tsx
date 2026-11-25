@@ -161,7 +161,7 @@ function Evidence({ row }: { row: ObservationRow }) {
 
       {row.eventTypes.length > 0 ? (
         <section aria-label="Events">
-          <h3 className="mb-2 text-helper font-semibold uppercase tracking-wide text-fg-muted">Events on this prompt and provider</h3>
+          <h3 className="mb-2 text-helper font-semibold uppercase tracking-wide text-fg-muted">Events</h3>
           <div className="flex flex-wrap gap-1.5">
             {row.eventTypes.map((t) => (
               <Badge key={t}>{EVENT_LABEL[t]}</Badge>

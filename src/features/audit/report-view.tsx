@@ -33,7 +33,7 @@ export function ReportView({ data, storeId }: { data: AuditReportData; storeId: 
       <EmptyState
         icon="reports"
         title={running ? "The report is created when the audit completes" : "No report for this audit"}
-        description={running ? undefined : `${audit.status === "cancelled" ? "Cancelled" : audit.status === "draft" ? "Draft" : "Blocked or failed"} audits have no snapshot, so there is nothing to export.`}
+        description={running ? undefined : `${audit.status === "cancelled" ? "Cancelled" : audit.status === "draft" ? "Draft" : "Blocked or failed"} audits have no snapshot to export.`}
       />
     );
   }
@@ -53,7 +53,7 @@ export function ReportView({ data, storeId }: { data: AuditReportData; storeId: 
     <div className="flex flex-col gap-3">
       {failed ? (
         <Callout tone="danger" title="The formatted report failed to generate" actions={<Button icon="refresh" loading={generating} onClick={regenerate}>Regenerate</Button>}>
-          The preview and exports below are built from the immutable snapshot, so they are complete.
+          The preview and exports below are complete.
         </Callout>
       ) : null}
       <Card as="section">

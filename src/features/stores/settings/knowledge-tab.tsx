@@ -227,10 +227,10 @@ function ContentSection({ storeId, state, auditId, readOnly, onChange }: Pick<Pr
 function CrawlersSection({ storeId, crawlers, auditId }: Pick<Props, "storeId" | "crawlers" | "auditId">) {
   return (
     <Card>
-      <CardHeader title="AI crawler access" subtitle="From the latest audit. Reported apart from visibility metrics." actions={auditId ? <Link href={`/stores/${storeId}/audits/${auditId}/website`} className="rounded text-body-sm font-medium text-accent-text hover:underline">Open audit</Link> : null} />
+      <CardHeader title="AI crawler access" subtitle="From the latest audit" actions={auditId ? <Link href={`/stores/${storeId}/audits/${auditId}/website`} className="rounded text-body-sm font-medium text-accent-text hover:underline">Open audit</Link> : null} />
       <CardBody>
         {crawlers.length === 0 ? (
-          <EmptyState icon="audit" title="No audit yet" description="Run an audit to see which AI crawlers can reach the site." action={<Link href={`/stores/${storeId}/audits/new`} className="rounded text-body-sm font-medium text-accent-text hover:underline">Start audit</Link>} />
+          <EmptyState icon="audit" title="No audit yet" action={<Link href={`/stores/${storeId}/audits/new`} className="rounded text-body-sm font-medium text-accent-text hover:underline">Start audit</Link>} />
         ) : (
           <ul className="divide-y divide-line">
             {crawlers.map((c) => (

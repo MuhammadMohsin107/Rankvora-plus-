@@ -112,7 +112,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
                 ) : null}
 
                 {state === "approved" && diffChanged ? (
-                  <Callout tone="warning" title="Approved diff no longer matches">The draft was edited after approval. Request approval again.</Callout>
+                  <Callout tone="warning" title="Approved diff no longer matches">Request approval again.</Callout>
                 ) : null}
                 {state === "rejected" ? <Callout tone="danger" title="Reason">{decidedNote ?? approval.note ?? "Edit the draft and request approval again."}</Callout> : null}
 
@@ -159,7 +159,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
         }}
       >
         <p>
-          You approve diff <Mono>{shortHash(approval.diffHash)}</Mono> only. Nothing is written until the execution step, and a changed remote resource holds the write.
+          You approve diff <Mono>{shortHash(approval.diffHash)}</Mono> only. Nothing is written yet.
         </p>
       </ConfirmDialog>
 
@@ -167,7 +167,7 @@ export function TaskApprovalTab({ approval, state, decidedBy, decidedAt, decided
         open={rejecting}
         onClose={() => setRejecting(false)}
         title="Reject approval"
-        description="The task goes back for edits. Nothing is written."
+        description="The task goes back for edits."
         footer={
           <>
             <Button onClick={() => setRejecting(false)}>Cancel</Button>

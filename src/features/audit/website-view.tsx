@@ -17,7 +17,7 @@ export function WebsiteView({ audit, lane, storeId, otherWithWebsite }: { audit:
       <EmptyState
         icon="globe"
         title="Website readiness was not part of this audit"
-        description={`This ${AUDIT_TYPE_LABEL[audit.type].toLowerCase()} audit covered AI visibility only. That is not a score of zero.`}
+        description={`This ${AUDIT_TYPE_LABEL[audit.type].toLowerCase()} audit covered AI visibility only.`}
         action={
           otherWithWebsite ? (
             <ButtonLink href={`/stores/${storeId}/audits/${otherWithWebsite.id}/website`} variant="primary" trailingIcon="arrow-right">

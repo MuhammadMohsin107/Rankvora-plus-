@@ -106,7 +106,7 @@ function AddApiBody({ open, onClose, onAdd }: { open: boolean; onClose: () => vo
       open={open}
       onClose={onClose}
       title="Add API"
-      description="Connect another AI platform. The demo sets a masked key and never asks for a real one."
+      description="Demo: no real key is needed."
       size="sm"
       footer={
         <>
@@ -146,7 +146,7 @@ function AddApiBody({ open, onClose, onAdd }: { open: boolean; onClose: () => vo
             </Select>
           )}
         </Field>
-        <p className="text-helper text-fg-subtle">Demo only: audits and prompts keep using the built-in platforms above.</p>
+        <p className="text-helper text-fg-subtle">Demo only: audits use the built-in platforms.</p>
       </form>
     </Dialog>
   );

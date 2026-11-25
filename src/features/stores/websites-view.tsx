@@ -68,7 +68,7 @@ export function WebsitesView({ stores, alerts, tasks }: { stores: Store[]; alert
   };
 
   const emptyAll = <EmptyState icon="globe" title="No websites yet" action={<ButtonLink href="/stores/new" variant="primary" icon="plus">Add website</ButtonLink>} />;
-  const emptyMatch = <EmptyState icon="filter" title="No matching websites" description="Try a different search or clear the filters." action={<button type="button" onClick={clearFilters} className="cursor-pointer rounded text-body-sm font-medium text-accent-text hover:underline">Reset filters</button>} />;
+  const emptyMatch = <EmptyState icon="filter" title="No matching websites" action={<button type="button" onClick={clearFilters} className="cursor-pointer rounded text-body-sm font-medium text-accent-text hover:underline">Reset filters</button>} />;
 
   if (websites.length === 0) return emptyAll;
 

@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Help & Support" };
 export default function HelpPage() {
   return (
     <>
-      <PageHeader title="Help & Support" subtitle="Answers, guides and a way to reach us." />
+      <PageHeader title="Help & Support" />
       <HelpCenter />
     </>
   );

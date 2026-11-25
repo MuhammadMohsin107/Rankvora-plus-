@@ -232,10 +232,10 @@ export function TaskDraftTab({ draft, status, text, onText, claims, generating, 
 
       {needsReapproval ? (
         <Callout tone="warning" title="This edit changes the approved diff">
-          The approved hash no longer matches. Request approval again before anything is written.
+          Request approval again before anything is written.
         </Callout>
       ) : null}
-      {locked ? <Callout tone="neutral" title="Draft locked">This task is past drafting. Applied content is not edited here.</Callout> : null}
+      {locked ? <Callout tone="neutral" title="Draft locked" /> : null}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
         <Card>

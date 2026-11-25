@@ -63,7 +63,7 @@ function AnswerTab({ response }: { response: ResponseSample }) {
 
       {failed ? (
         <Callout tone="danger" title="Request failed">
-          {response.failure?.message}. Attempts: {response.failure?.attempts}. A technical failure is not counted as the brand being absent.
+          {response.failure?.message}. Attempts: {response.failure?.attempts}. Not counted as absent.
         </Callout>
       ) : (
         <section aria-label="Original answer">
@@ -90,7 +90,7 @@ function AnswerTab({ response }: { response: ResponseSample }) {
           {response.evidenceQuote ? (
             <blockquote className="mt-2 border-l-2 border-accent pl-3 text-body-sm italic text-fg-muted">“{response.evidenceQuote}”</blockquote>
           ) : (
-            <p className="mt-2 text-body-sm text-fg-muted">No sentence in the answer supports a recommendation.</p>
+            <p className="mt-2 text-body-sm text-fg-muted">No supporting sentence.</p>
           )}
         </section>
       ) : null}
@@ -105,7 +105,7 @@ function CitationList({ response }: { response: ResponseSample }) {
   // A link with ?citation=<url> (from the evidence chain) marks that citation in the list.
   const cited = useSyncExternalStore(noSubscribe, citedParam, () => null);
   if (response.citationSupport === "not_supported") return <p className="text-body-sm text-fg-muted">Not supported by this provider (N/A).</p>;
-  if (response.citations.length === 0) return <p className="text-body-sm text-fg-muted">No citation returned in this response.</p>;
+  if (response.citations.length === 0) return <p className="text-body-sm text-fg-muted">No citation returned.</p>;
   return (
     <div className="flex flex-col gap-3">
       {groupCitations(response.citations).map(({ source, items }) =>
@@ -134,7 +134,7 @@ function CitationList({ response }: { response: ResponseSample }) {
 }
 
 function AnalysisTab({ response }: { response: ResponseSample }) {
-  if (response.status === "failed") return <p className="text-body-sm text-fg-muted">No analysis: the request failed, so this sample does not count toward any rate.</p>;
+  if (response.status === "failed") return <p className="text-body-sm text-fg-muted">Request failed. Excluded from rates.</p>;
   const level = confidenceLevel(response.confidence);
   return (
     <div className="flex flex-col gap-4">

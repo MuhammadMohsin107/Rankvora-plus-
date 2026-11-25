@@ -284,7 +284,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
             </div>
           ) : isFix ? (
             <div className="flex flex-col gap-3">
-              <Field label="Completed fix" hint="Baseline is the last snapshot before it was completed. Current is the first one after.">
+              <Field label="Completed fix" hint="Compares the snapshots just before and after it.">
                 {({ id: fid, describedBy }) => (
                   <Select id={fid} aria-describedby={describedBy} value={taskId} onChange={(e) => setTaskId(e.target.value)}>
                     {data.tasks.length === 0 ? <option value="">No completed fixes</option> : null}
@@ -404,7 +404,7 @@ export function NewComparisonWizard({ storeId, data, catalog, prompts: staticPro
                   </Select>
                 )}
               </Field>
-              <Field label="Citation source" hint="Measures citations of this domain instead of your own.">
+              <Field label="Citation source">
                 {({ id: fid, describedBy }) => (
                   <Select id={fid} aria-describedby={describedBy} value={filters.domain ?? ""} onChange={(e) => setFilter("domain", e.target.value)}>
                     <option value="">Own domain</option>
