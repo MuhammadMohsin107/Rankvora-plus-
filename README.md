@@ -5,7 +5,8 @@ The screens are still a demo: demo data, simulated actions, optional saving of d
 
 A real backend on D1 is being built under `src/server` and `/api/v1`. In Phase 1, accounts,
 organizations and team passed a live test against a test database; **websites and domains are not yet
-tested**. It is not deployed, and the screens do not use it yet. Start with
+tested**. The code ships with the live site but is switched off: the new API answers "not configured"
+until its settings are added and its migrations applied. The screens do not use it yet. Start with
 [docs/backend/status.md](docs/backend/status.md); read
 [docs/backend/runbook.md](docs/backend/runbook.md) before deploying it.
 
