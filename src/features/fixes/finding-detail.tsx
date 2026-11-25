@@ -31,7 +31,7 @@ import { RecommendationCard, type RecLocal } from "./recommendation-card";
 import { useFindingActions } from "./use-finding-actions";
 import { useFixData } from "./use-fix-data";
 
-const LANE_LABEL = { ai_visibility: "AI visibility lane", website_readiness: "Website readiness lane" } as const;
+const LANE_LABEL = { ai_visibility: "AI visibility", website_readiness: "Website readiness" } as const;
 const evidenceIcon: Record<ResolvedEvidence["kind"], IconName> = { response: "prompts", page: "globe", prompt: "search" };
 
 /** The severity / priority value is already in the header; drop the leading "High:" / "P1:" label from the rationale. */
@@ -131,7 +131,6 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
 
   // "Where do I fix this?": one line that says what to do next for the finding's status, with the button for it.
   const workingTask = linkedTasks.find((t) => isTaskOpen(t.status));
-  const lastTask = linkedTasks[linkedTasks.length - 1];
   const createButton = (
     <Button size="sm" variant="primary" icon="plus" onClick={() => actions.openCreate(findingRow, firstOpen)}>
       Create task
@@ -143,17 +142,17 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
     </ButtonLink>
   ) : null;
   const step = nextStepForFinding(status, Boolean(workingTask), linkedTasks.length > 0);
-  const nextStep: { tone: "info" | "warning"; title: string; text: string; action: React.ReactNode } | null =
+  const nextStep: { tone: "info" | "warning"; title: string; action: React.ReactNode } | null =
     step === "confirm"
-      ? { tone: "info", title: "Next step: confirm this finding", text: "Check the evidence below. Once it is confirmed you can create a task to fix it.", action: <Button size="sm" variant="primary" icon="check" onClick={() => fix.reviewFinding(finding.id, "confirm")}>Confirm</Button> }
+      ? { tone: "info", title: "Confirm this finding", action: <Button size="sm" variant="primary" icon="check" onClick={() => fix.reviewFinding(finding.id, "confirm")}>Confirm</Button> }
       : step === "create_task"
-        ? { tone: "info", title: "Next step: create a task to fix it", text: "A task carries the fix from draft and approval to applying and verification.", action: createButton }
+        ? { tone: "info", title: "Create a task to fix it", action: createButton }
         : step === "create_new_task"
-          ? { tone: "warning", title: "This finding is open again", text: `${lastTask ? `The last task, ${lastTask.id}, did not hold. ` : ""}Create a new task to fix it, then verify the result.`, action: createButton }
+          ? { tone: "warning", title: "Open again: create a new task", action: createButton }
           : step === "continue_task" && workingTask
-            ? { tone: "info", title: "Fix in progress", text: `${workingTask.id} is the open task for this finding. Continue it from the task page.`, action: openTaskButton }
+            ? { tone: "info", title: "Fix in progress", action: openTaskButton }
             : step === "verify_task" && workingTask
-              ? { tone: "info", title: "Waiting for verification", text: `${workingTask.id} is applied. Run its checks on the task page to close the finding.`, action: openTaskButton }
+              ? { tone: "info", title: "Waiting for verification", action: openTaskButton }
               : null;
 
   const history = [
@@ -184,7 +183,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
     <>
       <PageHeader
         title={finding.title}
-        subtitle={`${CATEGORY_LABEL[finding.category]} · ${LANE_LABEL[finding.lane]}`}
+        subtitle={finding.category === "ai_visibility" ? CATEGORY_LABEL[finding.category] : `${CATEGORY_LABEL[finding.category]} · ${LANE_LABEL[finding.lane]}`}
         meta={
           <>
             <Status kind="finding" value={status} />
@@ -231,9 +230,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
         </Card>
 
         {nextStep ? (
-          <Callout tone={nextStep.tone} title={nextStep.title} actions={nextStep.action}>
-            {nextStep.text}
-          </Callout>
+          <Callout tone={nextStep.tone} title={nextStep.title} actions={nextStep.action} />
         ) : null}
         {current.review ? (
           <Callout tone="neutral" title={current.review.kind === "false_positive" ? "Marked false positive" : "Risk accepted"}>
@@ -349,7 +346,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
                       <div className="min-w-0">
                         <h3 className="mb-1.5 text-helper font-medium text-fg-subtle">URLs</h3>
                         {finding.affectedUrls.length === 0 ? (
-                          <p className="text-body-sm text-fg-subtle">None. This finding comes from AI responses.</p>
+                          <p className="text-body-sm text-fg-subtle">None</p>
                         ) : (
                           <ul className="flex flex-col gap-1">
                             {finding.affectedUrls.map((url) => (
@@ -366,7 +363,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
                       <div className="min-w-0">
                         <h3 className="mb-1.5 text-helper font-medium text-fg-subtle">Prompts</h3>
                         {prompts.length === 0 ? (
-                          <p className="text-body-sm text-fg-subtle">None. This finding comes from a page check.</p>
+                          <p className="text-body-sm text-fg-subtle">None</p>
                         ) : (
                           <ul className="flex flex-col gap-1">
                             {prompts.map((p) => (
@@ -461,7 +458,7 @@ export function FindingDetail({ storeId, data, row, tasks, role, actorName }: Pr
           </>
         }
       >
-        <Field label="Proposed action" hint="Imperative, scoped to one resource." error={editText.trim().length < 10 ? "Write at least 10 characters." : undefined}>
+        <Field label="Proposed action" error={editText.trim().length < 10 ? "Write at least 10 characters." : undefined}>
           {({ id, describedBy, invalid }) => <Textarea id={id} aria-describedby={describedBy} invalid={invalid} rows={4} value={editText} onChange={(event) => setEditText(event.target.value)} />}
         </Field>
       </Dialog>

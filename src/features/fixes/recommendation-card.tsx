@@ -77,8 +77,9 @@ type Props = {
 };
 
 /**
- * One recommendation. Default view: title, proposed action, why, expected result.
- * Cause, confidence, evidence, dependencies, limitations and the verification plan sit under "Details".
+ * One recommendation. Default view: title, badges, the proposed action and the buttons. Everything that explains it
+ * (why, expected result, cause, confidence, evidence, dependencies, limitations, verification plan, the decision note)
+ * sits under "Details".
  */
 export function RecommendationCard({ storeId, rec, local, confidence, evidenceLabels, canApprove, onApprove, onEdit, onReject, onReopen, onCreateTask, onOpenEvidence }: Props) {
   const statusBadge =
@@ -101,19 +102,11 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
           <Status kind="risk" value={rec.risk} />
           <Badge tone="neutral" icon="clock">{EFFORT_LABEL[rec.effort]}</Badge>
           <Badge tone="neutral" icon="layers">{MODE_LABEL[rec.suggestedMode]}</Badge>
+          {local.edited ? <Badge tone="neutral" icon="pencil">Edited</Badge> : null}
         </div>
       </header>
 
-      <div className="rounded-control border border-accent/25 bg-accent-soft/50 px-3 py-2.5">
-        <h4 className="text-helper font-medium text-accent-text">Proposed action</h4>
-        <p className="mt-0.5 text-body-sm font-medium text-fg">{local.action}</p>
-        {local.edited ? <p className="mt-1 text-helper text-fg-muted">Edited by you.</p> : null}
-      </div>
-
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
-        <Block label="Why it matters">{rec.why}</Block>
-        <Block label="Expected result">{rec.expectedOutcome}</Block>
-      </div>
+      <p className="text-body-sm text-fg">{local.action}</p>
 
       <details className="group rounded-control border border-line bg-surface-2">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-label font-medium text-fg-muted hover:text-fg">
@@ -121,6 +114,8 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
           <Icon name="chevron-down" size={14} className="transition-transform group-open:rotate-180" />
         </summary>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-3 pb-3 sm:grid-cols-2">
+          <Block label="Why it matters">{rec.why}</Block>
+          <Block label="Expected result">{rec.expectedOutcome}</Block>
           <Block label="Root cause">
             <span className="flex flex-wrap items-center gap-1.5" title={CAUSE_HINT[rec.cause.classification]}>
               <Status kind="cause" value={rec.cause.classification} />
@@ -145,6 +140,11 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
           <div className="sm:col-span-2">
             <List title="Verification plan" items={rec.verificationPlan} />
           </div>
+          {local.decidedBy || local.decisionNote ? (
+            <div className="sm:col-span-2">
+              <Block label="Decision">{[local.decidedBy ? `by ${local.decidedBy}` : null, local.decisionNote].filter(Boolean).join(" · ")}</Block>
+            </div>
+          ) : null}
         </div>
       </details>
 
@@ -188,9 +188,6 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
                 </Button>
               </>
             )}
-            {local.decidedBy || local.decisionNote ? (
-              <span className="text-helper text-fg-subtle">{[local.decidedBy ? `by ${local.decidedBy}` : null, local.decisionNote].filter(Boolean).join(" · ")}</span>
-            ) : null}
           </>
         ) : null}
 
@@ -199,7 +196,6 @@ export function RecommendationCard({ storeId, rec, local, confidence, evidenceLa
             <Button size="sm" icon="refresh" onClick={onReopen}>
               Reopen
             </Button>
-            {local.decisionNote ? <span className="text-helper text-fg-subtle">{local.decisionNote}</span> : null}
           </>
         ) : null}
       </footer>
