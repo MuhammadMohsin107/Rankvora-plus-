@@ -9,6 +9,7 @@ import { activityStatement, type ActivityEvent } from "../../logs/activity";
 import { recordSecurityEvent } from "../../logs/security";
 import { stillAuthorized, type OrgScope } from "../../tenancy/guard";
 import { canManageRole } from "../../tenancy/permissions";
+import { seatFree } from "../invitations/service";
 
 export const updateMemberSchema = z
   .strictObject({ role: z.enum(ROLES).optional(), status: z.enum(MEMBER_STATUSES).optional() })
@@ -97,16 +98,14 @@ export async function updateMember(context: ApiContext, scope: OrgScope, memberI
   const deactivating = member.status === "active" && status === "deactivated";
   const changeId = newChangeId();
   const guard = appliedClause({ table: "organization_members", id: member.id, changeId });
-  // Reactivation takes a seat, so the limit is checked inside the write.
-  const seatClause = reactivating
-    ? ` and (select count(*) from organization_members where organization_id = ? and status = 'active') < (select max_members from organization_entitlements where organization_id = ?)`
-    : "";
+  // Reactivation takes a seat under the same rule as an invitation, checked inside the write.
+  const seat = reactivating ? seatFree(scope.organizationId, context.now, member.email.toLowerCase()) : null;
 
   const actor = stillAuthorized(scope);
   const statements: Statement[] = [
     raw(
       `update organization_members set role = ?, status = ?, deactivated_at = ?, change_id = ?, updated_at = ?
-        where id = ? and organization_id = ? and role = ? and status = ?${seatClause} and ${actor.sql}`,
+        where id = ? and organization_id = ? and role = ? and status = ?${seat ? ` and ${seat.sql}` : ""} and ${actor.sql}`,
       role,
       status,
       status === "deactivated" ? context.now : null,
@@ -116,7 +115,7 @@ export async function updateMember(context: ApiContext, scope: OrgScope, memberI
       scope.organizationId,
       member.role,
       member.status,
-      ...(reactivating ? [scope.organizationId, scope.organizationId] : []),
+      ...(seat?.params ?? []),
       ...actor.params,
     ),
     activityStatement(
@@ -127,8 +126,9 @@ export async function updateMember(context: ApiContext, scope: OrgScope, memberI
       guard,
     ),
   ];
-  if (deactivating) {
-    // A pending invitation to the same address would otherwise let them straight back in.
+  if (deactivating || reactivating) {
+    // An open invitation to the same address would let a deactivated person straight back in, and
+    // would hold a second seat for one who is a member again.
     statements.push(
       raw(
         `update invitations set status = 'revoked', responded_at = ?, updated_at = ? where organization_id = ? and email = ? and status = 'pending' and ${guard.sql}`,

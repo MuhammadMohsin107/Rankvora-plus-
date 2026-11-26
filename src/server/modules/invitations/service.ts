@@ -69,15 +69,19 @@ const unavailable = () => conflict("invitation_unavailable", "This invitation is
 const memberLimit = () => conflict("member_limit_reached", "The member limit of this organization is reached.");
 const sendQuota = () => new ApiError(429, "invitation_send_limit", "Too many invitation emails in the last 24 hours. Try again later.");
 
-/** Active members plus open invitations are below the member limit. */
-function seatFree(organizationId: string, now: Date): Statement {
+/**
+ * Active members plus open invitations are below the member limit. `exceptEmail` leaves out the
+ * invitations to one address: for someone being reactivated, their own invitation is not a second seat.
+ */
+export function seatFree(organizationId: string, now: Date, exceptEmail = ""): Statement {
   return raw(
     `(select count(*) from organization_members where organization_id = ? and status = 'active')
-       + (select count(*) from invitations where organization_id = ? and status = 'pending' and expires_at > ?)
+       + (select count(*) from invitations where organization_id = ? and status = 'pending' and expires_at > ? and email <> ?)
        < (select max_members from organization_entitlements where organization_id = ?)`,
     organizationId,
     organizationId,
     now,
+    exceptEmail,
     organizationId,
   );
 }
