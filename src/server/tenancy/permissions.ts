@@ -33,8 +33,14 @@ export const PERMISSIONS = {
   "website.domain.manage": ADMINS,
   "website.verify": ADMINS,
 
+  /** Marking a brand fact verified on the owner's own word, without a linked source. */
+  "brand.confirm": ADMINS,
+
   "prompt.read": ALL,
   "prompt.write": CONTRIBUTORS,
+  /** Approve wording. Only approved wording can run. */
+  "prompt.approve": LEADS,
+  "prompt.delete": LEADS,
 
   "audit.read": ALL,
   "audit.create": CONTRIBUTORS,

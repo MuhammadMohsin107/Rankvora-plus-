@@ -32,6 +32,7 @@ type OverviewRow = {
   websites: number;
   members: number;
   pendingInvitations: number;
+  activePrompts: number;
   aiUsed: number;
   searchUsed: number;
   aiReserved: number;
@@ -52,6 +53,8 @@ export async function getUsageOverview(context: ApiContext, scope: OrgScope) {
               (select count(*) from websites w where w.organization_id = e.organization_id and w.status <> 'removed') as websites,
               (select count(*) from organization_members m where m.organization_id = e.organization_id and m.status = 'active') as members,
               (select count(*) from invitations i where i.organization_id = e.organization_id and i.status = 'pending' and i.expires_at > ?) as pendingInvitations,
+              (select count(*) from prompts p join websites pw on pw.id = p.website_id
+                where p.organization_id = e.organization_id and p.status = 'active' and pw.status <> 'removed') as activePrompts,
               ${used("ai_request")} as aiUsed, ${used("search_call")} as searchUsed,
               ${reserved("ai_request")} as aiReserved, ${reserved("search_call")} as searchReserved
          from organization_entitlements e where e.organization_id = ?`,
@@ -70,7 +73,7 @@ export async function getUsageOverview(context: ApiContext, scope: OrgScope) {
     period,
     websites: { used: row.websites, limit: row.maxWebsites },
     members: { used: row.members, pendingInvitations: row.pendingInvitations, limit: row.maxMembers },
-    activePrompts: { limit: row.maxActivePrompts },
+    activePrompts: { used: row.activePrompts, limit: row.maxActivePrompts },
     aiRequests: { used: row.aiUsed, reserved: row.aiReserved, limit: row.monthlyAiRequests },
     searchCalls: { used: row.searchUsed, reserved: row.searchReserved, limit: row.monthlySearchCalls },
   };

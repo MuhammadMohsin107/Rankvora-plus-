@@ -8,7 +8,7 @@
  */
 import { prepare, raw, type Statement } from "../db/atomic";
 import type { OrganizationStatus, Role, WebsiteStatus } from "../db/schema";
-import { forbidden, notFound } from "../http/errors";
+import { conflict, forbidden, notFound } from "../http/errors";
 import type { ApiContext } from "../http/handler";
 import { recordSecurityEvent } from "../logs/security";
 import { can, isReadPermission, type Permission } from "./permissions";
@@ -53,6 +53,22 @@ export function stillAuthorized(scope: OrgScope, organization: "active" | "not_d
     scope.memberId,
     scope.organizationId,
     scope.role,
+  );
+}
+
+const websiteArchived = () => conflict("website_archived", "Restore the website before changing it.");
+
+/** Brand, catalogue and prompt changes stop while a website is archived. */
+export function assertWritableWebsite(scope: WebsiteScope): void {
+  if (scope.websiteStatus === "archived") throw websiteArchived();
+}
+
+/** The same rule inside a write, in case the website was archived or removed after the check above. */
+export function websiteWritable(scope: WebsiteScope): Statement {
+  return raw(
+    `exists (select 1 from websites ww where ww.id = ? and ww.organization_id = ? and ww.status in ('draft', 'active', 'paused'))`,
+    scope.websiteId,
+    scope.organizationId,
   );
 }
 
@@ -131,4 +147,37 @@ export async function requireWebsite(context: ApiContext, websiteId: string, per
   }
   const scope = await authorize(context, row, permission);
   return { ...scope, websiteId, websiteStatus: row.websiteStatus };
+}
+
+/** A further permission for a caller already inside the tenant, when the body decides which one. */
+export async function assertPermission(context: ApiContext, scope: OrgScope, permission: Permission): Promise<void> {
+  if (can(scope.role, permission)) return;
+  await deny(context, scope.organizationId, permission, "role");
+  throw forbidden();
+}
+
+export type PromptAccess = WebsiteScope & { readonly promptId: string };
+
+/** Looks a prompt up through its website and the caller's membership. A deleted prompt is not found. */
+export async function requirePrompt(context: ApiContext, promptId: string, permission: Permission): Promise<PromptAccess> {
+  const row = await prepare(
+    context.d1,
+    raw(
+      `select o.id as organizationId, o.name as organizationName, o.status as organizationStatus, m.id as memberId, m.role as role,
+              w.id as websiteId, w.status as websiteStatus
+         from prompts p
+         join websites w on w.id = p.website_id and w.organization_id = p.organization_id
+         join organizations o on o.id = w.organization_id
+         join organization_members m on m.organization_id = w.organization_id
+        where p.id = ? and p.status <> 'deleted' and m.user_id = ? and m.status = 'active' and o.status <> 'deleted' and w.status <> 'removed'`,
+      promptId,
+      context.user.id,
+    ),
+  ).first<MembershipRow & { websiteId: string; websiteStatus: WebsiteStatus }>();
+  if (!row) {
+    await deny(context, null, permission, "prompt_not_visible");
+    throw notFound();
+  }
+  const scope = await authorize(context, row, permission);
+  return { ...scope, websiteId: row.websiteId, websiteStatus: row.websiteStatus, promptId };
 }

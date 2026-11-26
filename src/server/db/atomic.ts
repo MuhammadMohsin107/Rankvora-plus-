@@ -47,13 +47,36 @@ export async function atomic(d1: D1Database, statements: Statement[]): Promise<n
 }
 
 /** Tables that carry a `change_id` column. A fixed list: the name is placed into SQL text. */
-export type GuardedTable = "organizations" | "organization_members" | "invitations" | "websites" | "website_domains" | "domain_verifications" | "usage_reservations";
+export type GuardedTable =
+  | "organizations"
+  | "organization_members"
+  | "invitations"
+  | "websites"
+  | "website_domains"
+  | "domain_verifications"
+  | "usage_reservations"
+  | "brand_facts"
+  | "brand_fact_sources"
+  | "website_source_pages"
+  | "competitors"
+  | "products_services"
+  | "prompt_groups"
+  | "prompts"
+  | "prompt_versions"
+  | "prompt_assignments";
 
 export type Applied = { table: GuardedTable; id: string; changeId: string };
 
 /** SQL fragment that is true only when the guarded write in this batch applied. */
 export function appliedClause(applied: Applied): Statement {
   return raw(`exists (select 1 from ${applied.table} where id = ? and change_id = ?)`, applied.id, applied.changeId);
+}
+
+/** Tables that are only inserted into: a row with the new id exists only if the insert applied. */
+export type InsertOnlyTable = "brand_profile_versions" | "domain_checks";
+
+export function insertedClause(table: InsertOnlyTable, id: string): Statement {
+  return raw(`exists (select 1 from ${table} where id = ?)`, id);
 }
 
 function errorText(error: unknown): string {
@@ -73,6 +96,9 @@ export function isUniqueViolation(error: unknown, ...columns: string[]): boolean
 }
 
 /** True when a trigger refused the write with `RAISE(ABORT, code)`. */
-export function isTriggerAbort(error: unknown, code: "last_owner" | "append_only" | "immutable_tenant" | "immutable_domain" | "immutable_reservation"): boolean {
+export function isTriggerAbort(
+  error: unknown,
+  code: "last_owner" | "append_only" | "immutable_tenant" | "immutable_domain" | "immutable_reservation" | "immutable_version",
+): boolean {
   return errorText(error).includes(code);
 }

@@ -1,6 +1,9 @@
 /** Identifiers, one-time tokens and hashing. Web Crypto only, so it runs on Workers and in Node. */
 
-export type IdPrefix = "org" | "mem" | "inv" | "web" | "dom" | "dvf" | "act" | "sec" | "urs" | "ule" | "req";
+export type IdPrefix =
+  | "org" | "mem" | "inv" | "web" | "dom" | "dvf" | "dck" | "act" | "sec" | "urs" | "ule" | "req"
+  // Brand knowledge, catalogue and prompt library.
+  | "bpv" | "bfc" | "bfv" | "bfs" | "wsp" | "cmp" | "cmd" | "cmr" | "prd" | "prv" | "pgr" | "prm" | "pmv" | "pas";
 
 export function newId(prefix: IdPrefix): string {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;

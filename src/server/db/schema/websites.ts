@@ -109,6 +109,38 @@ export const websiteDomains = sqliteTable(
   ],
 );
 
+/** The result of one HTTPS and redirect inspection of a domain. Append-only history. */
+export const domainChecks = sqliteTable(
+  "domain_checks",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    websiteId: text("website_id").notNull(),
+    domainId: text("domain_id").notNull(),
+    /** True when https://host/ answered over a valid TLS connection. */
+    httpsOk: integer("https_ok", { mode: "boolean" }).notNull(),
+    /** True when http://host/ leads to https. Null when http did not answer. */
+    httpUpgrades: integer("http_upgrades", { mode: "boolean" }),
+    finalUrl: text("final_url"),
+    finalStatus: integer("final_status"),
+    /** True when the redirects end on a host that is not one of the website's domains. */
+    leavesWebsite: integer("leaves_website", { mode: "boolean" }),
+    /** JSON array of {url, status} for each hop from https://host/. */
+    redirects: text("redirects").notNull(),
+    errorCode: text("error_code"),
+    checkedByUserId: text("checked_by_user_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.domainId, t.websiteId, t.organizationId],
+      foreignColumns: [websiteDomains.id, websiteDomains.websiteId, websiteDomains.organizationId],
+      name: "domain_checks_domain_fk",
+    }),
+    index("domain_checks_domain_idx").on(t.domainId, t.createdAt),
+  ],
+);
+
 export const domainVerifications = sqliteTable(
   "domain_verifications",
   {

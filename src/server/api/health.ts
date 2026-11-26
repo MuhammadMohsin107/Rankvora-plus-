@@ -8,11 +8,14 @@ import { createMailer } from "../mail/mailer";
 export async function backendHealth(deps: Deps): Promise<Response> {
   let migrations = false;
   try {
-    // One table from each migration area; the trigger query proves 0002 ran.
+    // One table from each migration area; the triggers prove the guard migrations (0002, 0005) ran.
     await deps.d1.prepare("select 1 from organizations limit 1").first();
     await deps.d1.prepare("select 1 from website_domains limit 1").first();
-    const trigger = await deps.d1.prepare("select 1 as found from sqlite_master where type = 'trigger' and name = 'organization_members_last_owner_update'").first();
-    migrations = trigger !== null;
+    await deps.d1.prepare("select 1 from prompts limit 1").first();
+    const triggers = await deps.d1
+      .prepare("select count(*) as found from sqlite_master where type = 'trigger' and name in ('organization_members_last_owner_update', 'prompt_versions_content_immutable')")
+      .first<{ found: number }>();
+    migrations = triggers?.found === 2;
   } catch {
     migrations = false;
   }

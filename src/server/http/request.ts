@@ -20,15 +20,15 @@ export function assertSameOrigin(request: Request): void {
 const tooLarge = () => new ApiError(413, "too_large", "The request is too large.");
 
 /** The body as text, size-limited and required to be JSON. */
-export async function readBodyText(request: Request): Promise<string> {
+export async function readBodyText(request: Request, maxBytes: number = MAX_BODY_BYTES): Promise<string> {
   const declared = Number(request.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) throw tooLarge();
+  if (Number.isFinite(declared) && declared > maxBytes) throw tooLarge();
   const body = await request.text();
   if (!body) return "";
   if (!isJsonContentType(request.headers.get("content-type"))) {
     throw new ApiError(415, "unsupported_media_type", "Send the body as application/json.");
   }
-  if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) throw tooLarge();
+  if (new TextEncoder().encode(body).byteLength > maxBytes) throw tooLarge();
   return body;
 }
 

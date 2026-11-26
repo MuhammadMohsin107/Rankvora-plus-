@@ -1,6 +1,8 @@
 /** Server-side input rules shared by the modules. */
 import { z } from "zod";
 
+import { DomainError, normalizeAliases, normalizeHost } from "@/lib/domain";
+
 import { invalid } from "./http/errors";
 
 export function parseInput<T extends z.ZodType>(schema: T, input: unknown): z.output<T> {
@@ -37,6 +39,20 @@ function hasForbiddenCharacter(value: string, lines: Lines): boolean {
     }
   }
   return false;
+}
+
+/** Text kept exactly as written apart from the ends, for example a prompt sent to a provider. */
+export function exactText(label: string, min: number, max: number) {
+  return z
+    .string({ error: `${label} is required.` })
+    .transform((value) => value.trim())
+    .pipe(
+      z
+        .string()
+        .min(min, `${label} must be at least ${min} characters.`)
+        .max(max, `${label} must be ${max} characters or fewer.`)
+        .refine((value) => !hasForbiddenCharacter(value, "multiple"), `${label} contains characters that are not allowed.`),
+    );
 }
 
 const LINK = /:\/\/|www\./i;
@@ -101,6 +117,49 @@ export const email = z
   .string({ error: "Email is required." })
   .transform((value) => value.trim().toLowerCase())
   .pipe(z.email("Enter a valid email address.").max(254, "Email is too long."));
+
+/** A list of short names, trimmed, with case-insensitive duplicates removed. */
+export function nameList(label: string, maxItems: number, maxLength = 80) {
+  return z
+    .array(boundedText(label, 1, maxLength), { error: `${label} must be a list.` })
+    .max(maxItems, `Add up to ${maxItems}.`)
+    .transform(normalizeAliases);
+}
+
+/** Why a page address is refused, or its normalised form. Only public http(s) pages are accepted. */
+export function publicPageUrl(value: string): { url: string; host: string } | { error: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(value.trim());
+  } catch {
+    return { error: "Enter a full address, starting with https://." };
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return { error: "Only http and https pages are accepted." };
+  if (parsed.username || parsed.password) return { error: "The address must not contain a user name or password." };
+  if (parsed.port) return { error: "The address must not contain a port." };
+  let host: string;
+  try {
+    host = normalizeHost(parsed.hostname);
+  } catch (error) {
+    return { error: error instanceof DomainError ? error.message : "The address is not a public website." };
+  }
+  parsed.hostname = host;
+  parsed.hash = "";
+  return { url: parsed.toString(), host };
+}
+
+/** A public page address, stored normalised. */
+export const pageUrl = z
+  .string({ error: "Enter a page address." })
+  .max(500, "The address is too long.")
+  .transform((value, context) => {
+    const result = publicPageUrl(value);
+    if ("error" in result) {
+      context.addIssue({ code: "custom", message: result.error });
+      return z.NEVER;
+    }
+    return result.url;
+  });
 
 /** The version the client read, for optimistic concurrency. */
 export const version = z.number({ error: "version is required." }).int().min(1);

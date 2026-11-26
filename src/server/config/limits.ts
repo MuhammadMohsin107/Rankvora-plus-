@@ -30,3 +30,21 @@ export const VERIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const VERIFICATION_CHECK_COOLDOWN_MS = 10 * 1000;
 
 export const USAGE_RESERVATION_TTL_MS = 60 * 60 * 1000;
+
+export const DOMAIN_CHECK_COOLDOWN_MS = 10 * 1000;
+
+/** Per website. Abuse guards, not plan limits: active prompts are limited by the entitlement above. */
+export const MAX_BRAND_FACTS_PER_WEBSITE = 500;
+export const MAX_SOURCES_PER_FACT = 10;
+export const MAX_SOURCE_PAGES_PER_WEBSITE = 200;
+export const MAX_COMPETITORS_PER_WEBSITE = 50;
+export const MAX_DOMAINS_PER_COMPETITOR = 10;
+export const MAX_PRODUCTS_PER_WEBSITE = 500;
+export const MAX_PROMPT_GROUPS_PER_WEBSITE = 100;
+export const MAX_PROMPTS_PER_WEBSITE = 2_000;
+export const MAX_TAGS_PER_PROMPT = 10;
+export const MAX_PRODUCTS_PER_PROMPT = 20;
+
+export const MAX_BULK_PROMPTS = 100;
+export const MAX_IMPORT_ROWS = 500;
+export const MAX_IMPORT_BODY_BYTES = 512 * 1024;

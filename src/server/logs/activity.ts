@@ -19,6 +19,28 @@ export type ActivityEvent = {
 };
 
 /**
+ * One history row for every id the query returns, in a single statement however many there are.
+ * The query must select one column named `id`.
+ */
+export function activityPerRowStatement(event: Omit<ActivityEvent, "targetId">, ids: Statement): Statement {
+  return raw(
+    `insert into activity_logs (id, organization_id, website_id, actor_type, actor_user_id, actor_name, action, target_type, target_id, metadata, request_id, created_at)
+     select 'act_' || lower(hex(randomblob(16))), ?, ?, ?, ?, ?, ?, ?, t.id, ?, ?, ? from (${ids.sql}) t`,
+    event.organizationId,
+    event.websiteId ?? null,
+    event.actorType ?? "user",
+    event.actorUserId,
+    event.actorName,
+    event.action,
+    event.targetType,
+    event.metadata ? JSON.stringify(event.metadata) : null,
+    event.requestId ?? null,
+    event.at,
+    ...ids.params,
+  );
+}
+
+/**
  * The insert statement. With `guard` (a SQL condition and its parameters) the row is written only
  * when the condition holds:
  *  - after a write: `appliedClause(...)`, true only if that write in the batch took effect

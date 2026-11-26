@@ -29,6 +29,20 @@
       "when": 1795611414247,
       "tag": "0003_invitation_send_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1795676636517,
+      "tag": "0004_website_and_prompt_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795676645266,
+      "tag": "0005_website_and_prompt_guards",
+      "breakpoints": true
     }
   ]
 }

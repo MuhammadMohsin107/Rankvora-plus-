@@ -15,6 +15,7 @@ import {
   updateWebsiteSchema,
   websiteStatusSchema,
 } from "../modules/websites/service";
+import { checkDomain, listDomainChecks } from "../modules/websites/inspect";
 import { checkVerification, startVerification } from "../modules/websites/verification";
 import { requireOrganization, requireWebsite } from "../tenancy/guard";
 import { pageQuery } from "../validation";
@@ -76,6 +77,16 @@ export const domainRetire = apiHandler({ name: "domains.retire" }, async (contex
 export const mainDomainChange = apiHandler({ name: "domains.change_main" }, async (context) => {
   const scope = await requireWebsite(context, context.params.websiteId, "website.domain.manage");
   return { data: await changeMainDomain(context, scope, context.body(changeMainDomainSchema)) };
+});
+
+export const domainChecksList = apiHandler({ name: "domains.checks" }, async (context) => {
+  const scope = await requireWebsite(context, context.params.websiteId, "website.read");
+  return { data: await listDomainChecks(context, scope, context.params.domainId) };
+});
+
+export const domainCheck = apiHandler({ name: "domains.check" }, async (context) => {
+  const scope = await requireWebsite(context, context.params.websiteId, "website.domain.manage");
+  return { status: 201, data: await checkDomain(context, scope, context.params.domainId) };
 });
 
 export const verificationStart = apiHandler({ name: "domains.verification_start" }, async (context) => {

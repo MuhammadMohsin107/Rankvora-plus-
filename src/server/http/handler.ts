@@ -66,7 +66,10 @@ export function errorResponse(error: ApiError, requestId: string, extra?: Header
   return jsonResponse(error.status, JSON.stringify(body), requestId, extra);
 }
 
-export function apiHandler(options: { name: string; idempotent?: boolean }, run: (context: ApiContext) => Promise<ApiResult>): ApiHandler {
+export function apiHandler(
+  options: { name: string; idempotent?: boolean; maxBodyBytes?: number },
+  run: (context: ApiContext) => Promise<ApiResult>,
+): ApiHandler {
   return async (request, deps, params = {}) => {
     const requestId = newId("req");
     const started = Date.now();
@@ -86,7 +89,7 @@ export function apiHandler(options: { name: string; idempotent?: boolean }, run:
       const user = session.response.user;
       if (user.status === "suspended") throw forbidden("account_suspended", "This account is suspended.");
 
-      const bodyText = request.method === "GET" || request.method === "HEAD" ? "" : await readBodyText(request);
+      const bodyText = request.method === "GET" || request.method === "HEAD" ? "" : await readBodyText(request, options.maxBodyBytes);
       const url = new URL(request.url);
       context = {
         request,
