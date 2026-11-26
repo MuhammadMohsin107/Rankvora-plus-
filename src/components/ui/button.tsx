@@ -87,14 +87,17 @@ export function ButtonLink({ variant = "secondary", size = "md", icon, trailingI
   );
 }
 
-type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  icon: IconName;
+type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
   /** Required: icon-only controls need an accessible name. */
   label: string;
   size?: ButtonSize;
   variant?: "ghost" | "secondary" | "primary" | "danger-ghost";
   badge?: ReactNode;
-};
+} & (
+    | { icon: IconName; children?: never }
+    /** Custom glyphs, for a control whose icon is chosen by CSS (see ThemeToggle). */
+    | { icon?: never; children: ReactNode }
+  );
 
 const iconVariants = {
   ghost: variants.ghost,
@@ -105,7 +108,7 @@ const iconVariants = {
 
 const iconSizes: Record<ButtonSize, string> = { sm: "size-btn-sm", md: "size-btn", lg: "size-btn-lg" };
 
-export function IconButton({ icon, label, size = "md", variant = "ghost", className, badge, type = "button", ...rest }: IconButtonProps) {
+export function IconButton({ icon, children, label, size = "md", variant = "ghost", className, badge, type = "button", ...rest }: IconButtonProps) {
   return (
     <button
       type={type}
@@ -114,7 +117,7 @@ export function IconButton({ icon, label, size = "md", variant = "ghost", classN
       className={cn(base, iconVariants[variant], iconSizes[size], "relative", className)}
       {...rest}
     >
-      <Icon name={icon} size={size === "sm" ? 16 : 18} />
+      {icon ? <Icon name={icon} size={size === "sm" ? 16 : 18} /> : children}
       {badge}
     </button>
   );

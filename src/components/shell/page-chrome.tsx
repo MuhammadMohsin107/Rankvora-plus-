@@ -59,11 +59,15 @@ function subscribeNarrow(listener: () => void) {
 }
 const getNarrow = () => window.matchMedia(NARROW_QUERY).matches;
 const getNarrowServer = () => false;
+/** True below `sm`, where the header has less room. False on the server and until React has loaded. */
+export function useIsNarrow() {
+  return useSyncExternalStore(subscribeNarrow, getNarrow, getNarrowServer);
+}
 
 /** The page's single primary action: the global header on wide screens, under the page title on narrow ones. */
 export function HeaderAction({ children, hideWhenNarrow = false }: { children: ReactNode; /** For pages that put the action somewhere else on narrow screens (a long form with its own submit button at the end). */ hideWhenNarrow?: boolean }) {
   const { slot, mobileSlot } = useChrome();
-  const narrow = useSyncExternalStore(subscribeNarrow, getNarrow, getNarrowServer);
+  const narrow = useIsNarrow();
   if (narrow && hideWhenNarrow) return null;
   const target = narrow && mobileSlot ? mobileSlot : slot;
   return target ? createPortal(children, target) : null;

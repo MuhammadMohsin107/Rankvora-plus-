@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
 import { initialsOf, UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,42 +11,27 @@ import { demoStore, simulatedToast, useDemoReset } from "@/demo-state";
 import { downloadFile } from "@/features/settings/invoice-files";
 import type { Member } from "@/types/core";
 
+import { useIsNarrow } from "./page-chrome";
+import { useTheme } from "./theme-toggle";
+
 const ROLE_LABEL = { owner: "Owner", admin: "Admin", editor: "Editor", auditor: "Auditor", viewer: "Viewer" } as const;
 
-type Theme = "light" | "dark";
-
-function subscribeTheme(callback: () => void) {
-  const observer = new MutationObserver(callback);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  return () => observer.disconnect();
-}
-const readTheme = (): Theme => (document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light");
-
-/** Light is the default; only a theme chosen here is stored. */
-function useTheme(): [Theme, () => void] {
-  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as Theme);
-  const toggle = () => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("rv-theme", next);
-    } catch {
-      /* storage unavailable: the theme still applies for this session */
-    }
-  };
-  return [theme, toggle];
-}
-
-/** Account menu: theme, demo data export and the one confirmed reset. Navigation lives in the sidebar. */
+/**
+ * Account menu: demo data export and the one confirmed reset. Navigation lives in the sidebar. The theme switch
+ * is in the header; on phones, where the header has no room for it, it is here instead.
+ */
 export function UserMenu({ user }: { user: Member }) {
   const [theme, toggleTheme] = useTheme();
+  const narrow = useIsNarrow();
   const reset = useDemoReset();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
 
+  const themeItems: MenuItem[] = narrow
+    ? [{ label: theme === "dark" ? "Light theme" : "Dark theme", icon: theme === "dark" ? "sun" : "moon", onSelect: toggleTheme }, { type: "separator" }]
+    : [];
   const items: MenuItem[] = [
-    { label: theme === "dark" ? "Light theme" : "Dark theme", icon: theme === "dark" ? "sun" : "moon", onSelect: toggleTheme },
-    { type: "separator" },
+    ...themeItems,
     {
       label: "Export demo data",
       icon: "download",

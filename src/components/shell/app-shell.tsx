@@ -19,6 +19,7 @@ import { normalizeRoute } from "./route-titles";
 import { buildWebsiteLookup, rowWebsite } from "./row-website";
 import type { SearchIndex, SearchTask } from "./search-types";
 import { Sidebar } from "./sidebar";
+import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { WebsiteSelector } from "./website-selector";
 
@@ -172,12 +173,9 @@ export function AppShell({ user, stores, alerts, searchIndex, children }: ShellP
               <span className="hidden text-fg-subtle md:inline">Search</span>{" "}
               <span aria-hidden="true" className="tnum ml-auto hidden text-helper text-fg-subtle lg:inline">Ctrl K</span>
             </button>
-            <Link href="/help" className="hidden h-btn items-center gap-1.5 rounded-control px-2.5 text-body-sm font-medium text-fg-muted transition-colors duration-[var(--dur-fast)] hover:bg-surface-3 hover:text-fg sm:inline-flex">
-              <Icon name="help" size={16} />
-              Support
-            </Link>
             <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-line sm:block" />
             <div className="flex items-center gap-1">
+              <ThemeToggle />
               <Notifications alerts={alerts} websites={websites} contextWebsiteId={navWebsiteId} />
               <UserMenu user={user} />
             </div>
