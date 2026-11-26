@@ -51,8 +51,22 @@ const ID_LABEL: Record<string, string> = {
 /** Levels with no page of their own: shown as text, never as a link. */
 const NO_PAGE = new Set(["fixes/findings"]);
 
+/** Pages for signing in and joining, drawn without the app frame. */
+const ACCOUNT_ROUTES: Record<string, Crumb[]> = {
+  "/sign-in": [{ label: "Sign in" }],
+  "/sign-up": [{ label: "Create account" }],
+  "/forgot-password": [{ label: "Reset password" }],
+  "/reset-password": [{ label: "New password" }],
+  "/verified": [{ label: "Email confirmed" }],
+  "/welcome": [{ label: "Create organization" }],
+  "/invitations/accept": [{ label: "Invitation" }],
+};
+
+export const isAccountRoute = (pathname: string) => Object.hasOwn(ACCOUNT_ROUTES, pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname);
+
 /** Organization-level routes, fully described. */
 const ORG_CRUMBS: Record<string, Crumb[]> = {
+  ...ACCOUNT_ROUTES,
   "/stores": [{ label: "Websites & Brands" }],
   "/stores/new": [{ label: "Websites & Brands", href: "/stores" }, { label: "Add website" }],
   "/settings/billing": [{ label: "Billing" }],
@@ -97,16 +111,13 @@ export function buildCrumbs(pathname: string, titleOverride?: string | null): Cr
 const STORE_ROUTES: readonly RegExp[] = [
   /^$/,
   /^settings$/,
-  /^prompts(\/new|\/[^/]+)?$/,
-  /^audits(\/new|\/[^/]+(\/(ai-visibility|website|findings|report))?)?$/,
-  /^fixes(\/history)?$/,
-  /^fixes\/tasks(\/[^/]+)?$/,
-  /^fixes\/findings\/[^/]+$/,
-  /^monitoring(\/(alerts|observations|usage))?$/,
-  /^monitoring\/runs(\/[^/]+)?$/,
-  /^monitoring\/schedules(\/new|\/[^/]+(\/edit)?)?$/,
-  /^comparisons(\/new|\/[^/]+(\/(prompts|breakdowns|fixes|quality|export))?)?$/,
-  /^reports(\/[^/]+)?$/,
+  /^prompts(\/new)?$/,
+  /^audits(\/new)?$/,
+  /^fixes(\/(history|tasks))?$/,
+  /^monitoring(\/(alerts|observations|usage|runs))?$/,
+  /^monitoring\/schedules(\/new)?$/,
+  /^comparisons(\/new)?$/,
+  /^reports$/,
 ];
 
 /**

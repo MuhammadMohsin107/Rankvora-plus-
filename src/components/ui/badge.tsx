@@ -77,11 +77,6 @@ export function DemoBadge({ className }: { className?: string }) {
   return <Status kind="demo" value="demo" className={className} />;
 }
 
-/** Marks an action whose result was produced locally, not by a real external operation. */
-export function SimulatedBadge({ className }: { className?: string }) {
-  return <Status kind="demo" value="simulated" className={className} />;
-}
-
 /** Filter chip / removable value. */
 export function Chip({ children, onRemove, removeLabel = "Remove", className }: { children: ReactNode; onRemove?: () => void; removeLabel?: string; className?: string }) {
   return (

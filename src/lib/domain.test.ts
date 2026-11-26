@@ -72,17 +72,17 @@ describe("normalizeAliases", () => {
   it("trims, collapses whitespace and removes case-insensitive duplicates", () => {
     expect(
       normalizeAliases([
-        "  RunPro ",
-        "runpro",
-        "Run   Pro",
+        "  Tetralogicx ",
+        "tetralogicx",
+        "Tetra   Logicx",
         "",
         "   ",
-        "RUNPRO",
+        "TETRALOGICX",
       ]),
-    ).toEqual(["RunPro", "Run Pro"]);
+    ).toEqual(["Tetralogicx", "Tetra Logicx"]);
   });
 
   it("keeps the first spelling", () => {
-    expect(normalizeAliases(["HomeFit", "homefit"])).toEqual(["HomeFit"]);
+    expect(normalizeAliases(["Hazelsoft", "hazelsoft"])).toEqual(["Hazelsoft"]);
   });
 });

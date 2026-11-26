@@ -4,7 +4,7 @@ UI actions mapped to the backend. The UI does not call the API yet. "Perm" is th
 Acceptance tests for Phase 1 are the checklist in the [runbook](runbook.md). Endpoint shapes are in
 [api.md](api.md). For later phases, rows are action groups and the contracts are not designed yet.
 
-## Phase 1 (built, not run)
+## Phase 1 (built and tested through the API; the screens do not call it)
 
 | Page → action | Service (`src/server/modules`) | Records | External | Perm | Failure the user sees |
 | --- | --- | --- | --- | --- | --- |
@@ -21,12 +21,27 @@ Acceptance tests for Phase 1 are the checklist in the [runbook](runbook.md). End
 | Website settings → activity | history | activity_logs | | activity.read | |
 | Billing → usage | usage | entitlements, usage_* | | usage.read | |
 
+## Phase 2 (built and tested through the API; the screens do not call it)
+
+| Page → action | Service (`src/server/modules`) | Records | Perm | Failure the user sees |
+| --- | --- | --- | --- | --- |
+| Settings → brand versions, content summary | brand/profile | brand_profile_versions | website.update | Version conflict, nothing changed |
+| Settings → facts, FAQs | brand/facts | brand_facts, brand_fact_versions, brand_fact_sources | website.update, brand.confirm | Source required, version conflict |
+| Settings → source pages | brand/source-pages | website_source_pages | website.update | Not this website, duplicate |
+| Settings → competitors | competitors | competitors, competitor_domains, competitor_revisions | website.update | Own domain, taken domain or name |
+| Settings → products and services | products | products_services, product_service_versions | website.update | Validation, version conflict |
+| Domains → HTTPS and redirect check (new control) | websites/inspect | domain_checks | website.domain.manage | Unreachable, unsafe address |
+| Prompts → create, versions, approve, status, delete | prompts/service, versions | prompts, prompt_versions, prompt_tags, prompt_products | prompt.write, prompt.approve, prompt.delete | Duplicate, approval needed, active limit |
+| Prompts → groups, bulk, CSV import | prompts/groups, bulk, import | prompt_groups | prompt.write | Skipped rows with reasons |
+| Prompts → tracking: assignments | prompts/assignments | prompt_assignments | audit.create, monitoring.configure | Scope, pin, version conflict |
+
+Not built: prompt templates (the screens' own fill-in texts need no server) and copying prompts to
+another website.
+
 ## Later phases
 
 | Page → actions | Records to add | External | Perm | Phase |
 | --- | --- | --- | --- | :-: |
-| Settings → brand versions, facts, FAQs, source pages, competitors, products | brand_*, competitors, products_services | | website.update, prompt.write | 2 |
-| Prompts → create, versions, groups, templates, bulk, CSV import, copy | prompts, prompt_versions, groups, assignments | | prompt.write | 2 |
 | Prompts → AI suggestions | suggestions | AI provider | prompt.write | 3 |
 | Integrations → connect, replace key, test, disconnect | provider_connections, credentials | AI providers | integration.manage | 3 |
 | Responses drawer → view, request review | responses, citations, analyses, reviews | R2 | audit.read | 3-4 |

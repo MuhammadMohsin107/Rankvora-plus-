@@ -14,7 +14,6 @@
     "db:d1:reset:local": "node scripts/reset-local-d1.mjs && wrangler d1 migrations apply DB --local",
     "test": "vitest run",
     "test:unit": "vitest run --exclude \"**/*.d1.test.ts\"",
-    "test:d1": "vitest run d1.test",
     "preview": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare upload",

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "build/**",
     ".open-next/**",
     ".wrangler/**",
+    // Earlier screen designs, switched off until their backend exists.
+    "design-archive/**",
     "next-env.d.ts",
   ]),
 ]);

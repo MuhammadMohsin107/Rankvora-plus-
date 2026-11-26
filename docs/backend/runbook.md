@@ -6,19 +6,24 @@
    about 32 MB of memory per hash) needs far more, so **sign-up and sign-in are expected to fail**.
    Upgrade to Workers Paid before turning accounts on. Free also limits D1 to 500 MB and 50 queries
    per request. Do not solve this by weakening the password hash.
-2. **No UI pages yet.** The invitation email links to `/invitations/accept` and a password reset needs
-   a page for the new password. Neither exists, so do not send these to real people yet.
-3. **Websites are untested.** The migrations are applied to the test database only; live has `0001` to
-   `0003` pending. Finish the checklist below before using live. History tables are append-only: test
-   rows written to live stay there.
+2. **Account pages exist** (sign-up, sign-in with two-step codes, confirmation, password reset,
+   invitations, new organization). The sign-up weakness in [status.md](status.md#known-limits-that-remain)
+   still needs fixing before real people sign up.
+3. **Live has no backend tables yet.** The migrations are applied to the test database only; live has
+   `0001` to `0005` pending. Finish the open items in the checklist below before using live. History
+   tables are append-only: test rows written to live stay there.
 
-Pushing `main` deploys the code. Without the settings below the new API answers "not configured";
-the existing demo screens are unaffected.
+Pushing `main` deploys the code. **Without the settings below the whole app now shows only "Accounts
+are not set up on this server yet"**: the earlier demo screens were removed. Set up the backend before
+pushing, or do not push.
 
 ## Settings
 
 Names and meanings are in [.dev.vars.example](../../.dev.vars.example). This login has two Cloudflare
 accounts, so set `CLOUDFLARE_ACCOUNT_ID=4a36991256542f145b006329cb04abd3` for wrangler commands.
+
+**Never put a secret in a `.env` file.** The OpenNext build copies `.env*` files into the Worker.
+On a PC, secrets go in `.dev.vars` (ignored by git, not copied by the build).
 
 ```bash
 npx wrangler secret put BETTER_AUTH_SECRET
@@ -44,8 +49,8 @@ Then open `/api/v1/health`. All checks must be `true`.
 ## Test database
 
 `rankvora-plus-test` (id `8c420681-f5e4-4356-9d2a-904918f73f13`, APAC) has all migrations applied and
-holds the test accounts from 2026-11-25. Delete it with `npx wrangler d1 delete rankvora-plus-test`
-when it is no longer needed.
+holds the test data of 2026-11-25 and 2026-11-26, which must never be copied to live. Delete it with
+`npx wrangler d1 delete rankvora-plus-test` when it is no longer needed.
 
 To run the app against it without touching live: copy `wrangler.jsonc` to a file outside the repo,
 change the Worker name and the service binding to `rankvora-plus-test`, use the test database name
@@ -56,26 +61,34 @@ absolute paths, and add vars `APP_URL=http://localhost:8787`, `MAIL_TRANSPORT=co
 
 ## Verification checklist
 
-✔ passed in the live test of 2026-11-25 · ☐ not run. Details in [status.md](status.md#live-test-2026-11-25).
+✔ passed in the live tests of 2026-11-25 and 2026-11-26 · ☐ not run. Details in
+[status.md](status.md#live-tests).
 
 **Authentication.** ✔ Sign up, confirm, sign in, sign out, wrong password, unconfirmed account,
 revoked sessions, reset ends sessions, existing address, two-factor and backup codes, sole owner
-cannot delete the account. ☐ Expired sessions and links.
+cannot delete the account, expired sessions and reset links. ☐ Expired confirmation links.
 
-**Tenant isolation.** ✔ Customer B gets 404 on A's organization, members, invitations, history, logs
-and usage, and cannot add a website to it. ✔ Viewer and admin refusals. ☐ A's websites and domains.
-☐ Every row of the role table in [api.md](api.md).
+**Tenant isolation.** ✔ Customer B gets 404 on A's organization, members, invitations, history, logs,
+usage, websites and domains, and cannot add a website to it. ✔ The role table in [api.md](api.md) on
+every built endpoint.
 
-**Team.** ✔ Invited address only; revoked, rejected and reused links fail; an invitation fails once
-its sender is demoted or removed; the last owner cannot leave or step down; the daily limit per
-recipient holds. ☐ Expired links, member limit, simultaneous requests.
+**Team.** ✔ Invited address only; revoked, rejected, reused and expired links fail; an invitation fails
+once its sender is demoted or removed; the last owner cannot leave or step down; the daily limit per
+recipient holds; the member limit holds, also with simultaneous requests.
 
-☐ **Websites.** Create, edit, stale `version`, website limit, duplicate domain, each lifecycle step and
-each refused one, remove. Domain alias, main-domain change and history. Verify a real domain you own
-with the TXT record; a second organization cannot verify the same one.
+**Websites.** ✔ Create, edit, stale `version`, website limit, duplicate domain, each lifecycle step and
+each refused one, remove, domain alias, main-domain change and history, expired DNS record,
+simultaneous requests. ☐ Verify a real domain you own with the TXT record; a second organization
+cannot verify the same one.
 
 **Logs.** ✔ `activity_logs` and `security_audit_logs` refuse updates and deletes. ☐ `usage_ledger`
 (it has no rows yet).
+
+**Brand, competitors, products, prompts.** ✔ Brand versions and facts with evidence and verification
+rules; competitors with suggestion, confirmation and history; optional products; prompt versions,
+approval, assignments, duplicates, CSV import, bulk actions and the active limit; domain HTTPS and
+redirect checks; roles, other-customer refusals and simultaneous requests; append-only history.
+☐ Runs that use these (Phase 3).
 
 ## Operator actions (no admin screen yet)
 

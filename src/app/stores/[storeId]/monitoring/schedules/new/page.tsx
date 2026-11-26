@@ -1,25 +1,9 @@
-import { Suspense } from "react";
-
 import type { Metadata } from "next";
 
-import { PageFallback } from "@/components/shell/page-fallback";
-import { PageHeader } from "@/components/shell/page-header";
-import { ScheduleForm } from "@/features/monitoring/schedule-form";
-import { storeIds } from "@/services/core";
+import { NotAvailablePage } from "@/components/shell/not-available";
 
 export const metadata: Metadata = { title: "New schedule" };
 
-export async function generateStaticParams() {
-  return storeIds();
-}
-
-export default function NewSchedulePage() {
-  return (
-    <>
-      <PageHeader title="New schedule" />
-      <Suspense fallback={<PageFallback />}>
-        <ScheduleForm mode="create" />
-      </Suspense>
-    </>
-  );
+export default function Page() {
+  return <NotAvailablePage title="New schedule" icon="monitoring" />;
 }
