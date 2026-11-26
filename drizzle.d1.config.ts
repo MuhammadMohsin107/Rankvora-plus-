@@ -8,7 +8,6 @@ import { defineConfig } from "drizzle-kit";
  */
 export default defineConfig({
   dialect: "sqlite",
-  // `db-d1` is the older demo-state table; `server/db` is the application schema.
-  schema: ["./src/db-d1/schema.ts", "./src/server/db/schema/index.ts"],
+  schema: "./src/db-d1/schema.ts",
   out: "./migrations",
 });

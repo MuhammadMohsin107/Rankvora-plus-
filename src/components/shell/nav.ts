@@ -1,11 +1,14 @@
 import type { IconName } from "@/components/ui/icon";
 
+export type NavBadge = "pendingTasks" | "unreadAlerts";
+
 export type NavItem = {
   id: string;
   label: string;
   href: string;
   icon: IconName;
   isActive: (pathname: string) => boolean;
+  badge?: NavBadge;
 };
 
 export type NavGroup = {
@@ -43,8 +46,8 @@ export function navGroups(websiteId: string | null): NavGroup[] {
         { id: "dashboard", label: "Dashboard", href: base, icon: "dashboard", isActive: exact(base) },
         { id: "prompts", label: "Prompt Library", href: `${base}/prompts`, icon: "prompts", isActive: prefix(`${base}/prompts`) },
         { id: "audit", label: "Audit", href: `${base}/audits`, icon: "audit", isActive: prefix(`${base}/audits`) },
-        { id: "fixes", label: "Fixes", href: `${base}/fixes`, icon: "fixes", isActive: prefix(`${base}/fixes`) },
-        { id: "monitoring", label: "Monitoring", href: `${base}/monitoring`, icon: "monitoring", isActive: prefix(`${base}/monitoring`) },
+        { id: "fixes", label: "Fixes", href: `${base}/fixes`, icon: "fixes", isActive: prefix(`${base}/fixes`), badge: "pendingTasks" },
+        { id: "monitoring", label: "Monitoring", href: `${base}/monitoring`, icon: "monitoring", isActive: prefix(`${base}/monitoring`), badge: "unreadAlerts" },
         { id: "comparison", label: "Comparison", href: `${base}/comparisons`, icon: "compare", isActive: prefix(`${base}/comparisons`) },
         { id: "reports", label: "Reports", href: `${base}/reports`, icon: "reports", isActive: prefix(`${base}/reports`) },
         { id: "website-settings", label: "Website settings", href: `${base}/settings`, icon: "settings", isActive: prefix(`${base}/settings`) },

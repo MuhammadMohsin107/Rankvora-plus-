@@ -4,11 +4,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { Icon, type IconName } from "@/components/ui/icon";
+import { useDemoCollection, useDemoEvents } from "@/demo-state";
 import { cn } from "@/lib/cn";
+import { formatShortDate } from "@/lib/format";
+import type { Store } from "@/types/core";
 
-import type { ShellWebsite } from "./website-selector";
+import { buildWebsiteLookup, rowText, rowWebsite } from "./row-website";
+import type { SearchFinding, SearchIndex, SearchPrompt, SearchReport, SearchRun, SearchTask } from "./search-types";
 
-type EntryType = "Website" | "Page";
+type EntryType = "Website" | "Page" | "Prompt" | "Finding" | "Task" | "Run" | "Report";
 
 type Entry = {
   key: string;
@@ -20,31 +24,94 @@ type Entry = {
   haystack: string;
 };
 
-const TYPE_ORDER: EntryType[] = ["Website", "Page"];
-const TYPE_ICON: Record<EntryType, IconName> = { Website: "globe", Page: "file-text" };
-const PER_TYPE_LIMIT = 8;
-const TOTAL_LIMIT = 16;
+const TYPE_ORDER: EntryType[] = ["Website", "Page", "Prompt", "Finding", "Task", "Run", "Report"];
+const TYPE_ICON: Record<EntryType, IconName> = {
+  Website: "globe",
+  Page: "file-text",
+  Prompt: "prompts",
+  Finding: "flag",
+  Task: "fixes",
+  Run: "monitoring",
+  Report: "reports",
+};
+const PER_TYPE_LIMIT = 6;
+const TOTAL_LIMIT = 24;
 
 const ORG_PAGES: { label: string; href: string }[] = [
   { label: "Websites & Brands", href: "/stores" },
   { label: "Add website", href: "/stores/new" },
+  { label: "Integrations", href: "/integrations" },
+  { label: "Billing", href: "/settings/billing" },
   { label: "Help & Support", href: "/help" },
 ];
 
 const WEBSITE_PAGES: { label: string; path: string }[] = [
   { label: "Dashboard", path: "" },
   { label: "Prompt Library", path: "/prompts" },
+  { label: "Audit", path: "/audits" },
+  { label: "Fixes", path: "/fixes" },
+  { label: "Fix tasks", path: "/fixes/tasks" },
+  { label: "Monitoring", path: "/monitoring" },
+  { label: "Alerts", path: "/monitoring/alerts" },
+  { label: "Runs", path: "/monitoring/runs" },
+  { label: "Schedules", path: "/monitoring/schedules" },
+  { label: "Usage", path: "/monitoring/usage" },
+  { label: "Comparison", path: "/comparisons" },
+  { label: "Reports", path: "/reports" },
   { label: "Website settings", path: "/settings" },
 ];
 
-function buildEntries(websites: ShellWebsite[]): Entry[] {
-  const out: Entry[] = [];
-  const add = (type: EntryType, key: string, label: string, hint: string, href: string, websiteId: string | null) =>
-    out.push({ key: `${type}:${key}`, type, label, hint, href, websiteId, haystack: `${label} ${hint} ${type}`.toLowerCase() });
-  for (const w of websites) add("Website", w.id, w.name, `${w.domain} · ${w.market}`, `/stores/${w.id}`, w.id);
-  for (const p of ORG_PAGES) add("Page", p.href, p.label, "Organization", p.href, null);
-  for (const w of websites) for (const p of WEBSITE_PAGES) add("Page", `${w.id}${p.path}`, p.label, w.name, `/stores/${w.id}${p.path}`, w.id);
-  return out;
+function useEntries(index: SearchIndex, websites: Store[], contextWebsiteId: string | null): Entry[] {
+  const prompts = useDemoCollection<SearchPrompt>("prompts", index.prompts).rows;
+  const findings = useDemoCollection<SearchFinding>("findings", index.findings).rows;
+  const tasks = useDemoCollection<SearchTask>("tasks", index.tasks).rows;
+  const runs = useDemoCollection<SearchRun>("runs", index.runs).rows;
+  const reports = useDemoCollection<SearchReport>("reports", index.reports).rows;
+  const events = useDemoEvents();
+
+  return useMemo(() => {
+    const lookup = buildWebsiteLookup(events);
+    const nameOf = (id: string | null) => websites.find((w) => w.id === id)?.name ?? "";
+    const out: Entry[] = [];
+    const add = (type: EntryType, key: string, label: string, hint: string, href: string, websiteId: string | null) =>
+      out.push({ key: `${type}:${key}`, type, label, hint, href, websiteId, haystack: `${label} ${hint} ${type}`.toLowerCase() });
+
+    for (const w of websites) {
+      add("Website", w.id, w.name, `${w.domain} · ${w.market}`, `/stores/${w.id}`, w.id);
+    }
+    for (const p of ORG_PAGES) add("Page", p.href, p.label, "Organization", p.href, null);
+    for (const w of websites) {
+      for (const p of WEBSITE_PAGES) add("Page", `${w.id}${p.path}`, p.label, w.name, `/stores/${w.id}${p.path}`, w.id);
+    }
+    for (const row of prompts) {
+      const site = rowWebsite(row, lookup) ?? contextWebsiteId;
+      const text = rowText(row, "text", "title", "name");
+      if (site && text) add("Prompt", row.id, text, nameOf(site), `/stores/${site}/prompts/${row.id}`, site);
+    }
+    for (const row of findings) {
+      const site = rowWebsite(row, lookup) ?? contextWebsiteId;
+      const title = rowText(row, "title", "name");
+      if (site && title) add("Finding", row.id, title, nameOf(site), `/stores/${site}/fixes/findings/${row.id}`, site);
+    }
+    for (const row of tasks) {
+      const site = rowWebsite(row, lookup) ?? contextWebsiteId;
+      const title = rowText(row, "title", "name");
+      if (site && title) add("Task", row.id, title, nameOf(site), `/stores/${site}/fixes/tasks/${row.id}`, site);
+    }
+    for (const row of runs) {
+      const site = rowWebsite(row, lookup) ?? contextWebsiteId;
+      if (!site) continue;
+      const schedule = rowText(row, "scheduleName");
+      const when = rowText(row, "scheduledFor");
+      add("Run", row.id, schedule ? `${schedule} (${row.id})` : `Run ${row.id}`, [nameOf(site), when ? formatShortDate(when) : ""].filter(Boolean).join(" · "), `/stores/${site}/monitoring/runs/${row.id}`, site);
+    }
+    for (const row of reports) {
+      const site = rowWebsite(row, lookup) ?? contextWebsiteId;
+      const title = rowText(row, "title", "name");
+      if (site && title) add("Report", row.id, title, nameOf(site), `/stores/${site}/reports/${row.id}`, site);
+    }
+    return out;
+  }, [prompts, findings, tasks, runs, reports, events, websites, contextWebsiteId]);
 }
 
 /** Results for a query, grouped by type. Matches every word; label matches rank first, the current website next. */
@@ -77,17 +144,18 @@ function search(entries: Entry[], query: string, contextWebsiteId: string | null
 }
 
 type Props = {
-  websites: ShellWebsite[];
+  index: SearchIndex;
+  websites: Store[];
   contextWebsiteId: string | null;
   onClose: () => void;
 };
 
-/** Mount only while open: the dialog, input and entries exist just for that time. */
-export function CommandPalette({ websites, contextWebsiteId, onClose }: Props) {
+/** Mount only while open: the dialog, input and merged index exist just for that time. */
+export function CommandPalette({ index, websites, contextWebsiteId, onClose }: Props) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const listId = useId();
-  const entries = useMemo(() => buildEntries(websites), [websites]);
+  const entries = useEntries(index, websites, contextWebsiteId);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState({ query: "", index: 0 });
 
@@ -149,13 +217,13 @@ export function CommandPalette({ websites, contextWebsiteId, onClose }: Props) {
             aria-controls={listId}
             aria-activedescendant={results.length ? `${listId}-${active}` : undefined}
             aria-autocomplete="list"
-            aria-label="Search websites and pages"
+            aria-label="Search websites, pages, prompts, findings, tasks, runs and reports"
             autoComplete="off"
             spellCheck={false}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search websites and pages…"
+            placeholder="Search websites, prompts, findings…"
             className="h-12 min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-fg-subtle md:text-body"
           />
           <button

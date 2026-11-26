@@ -1,25 +1,34 @@
 import { describe, expect, it } from "vitest";
 
 import { hashString, initialsOf, seriesIndex } from "./avatar";
+import { trustText } from "./demo";
 import { hasActiveFilters } from "./filter-bar";
 import { computeFloatingPosition } from "./menu";
 import { toastDuration } from "./toast";
 
 describe("avatar", () => {
   it("derives stable initials", () => {
-    expect(initialsOf("Brown Tech")).toBe("BT");
-    expect(initialsOf("Tetralogicx")).toBe("TE");
+    expect(initialsOf("RunPro Pakistan")).toBe("RP");
+    expect(initialsOf("HomeFit")).toBe("HO");
     expect(initialsOf("  ")).toBe("?");
     expect(initialsOf("acme-labs.io")).toBe("AL");
   });
   it("hashes the same name to the same series, in range", () => {
-    expect(hashString("Tetralogicx")).toBe(hashString("Tetralogicx"));
-    for (const name of ["a", "Tetralogicx", "Brown Tech", "Hazelsoft"]) {
+    expect(hashString("RunPro UAE")).toBe(hashString("RunPro UAE"));
+    for (const name of ["a", "RunPro UAE", "HomeFit UK", "Zoe"]) {
       const index = seriesIndex(name);
       expect(index).toBeGreaterThanOrEqual(0);
       expect(index).toBeLessThan(5);
     }
-    expect(seriesIndex("Brown Tech")).toBe(seriesIndex("  brown tech "));
+    expect(seriesIndex("RunPro UAE")).toBe(seriesIndex("  runpro uae "));
+  });
+});
+
+describe("trustText", () => {
+  it("builds the coverage line", () => {
+    expect(trustText({ samples: 36, promptsIncluded: 12, promptsTotal: 15 })).toBe("Based on 36 samples · 12 of 15 prompts");
+    expect(trustText({ samples: 1 })).toBe("Based on 1 sample");
+    expect(trustText({})).toBe("");
   });
 });
 

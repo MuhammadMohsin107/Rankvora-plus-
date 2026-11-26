@@ -1,9 +1,52 @@
-import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { NotAvailablePage } from "@/components/shell/not-available";
+import { PageFallback } from "@/components/shell/page-fallback";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import { PageHeader } from "@/components/shell/page-header";
+import { FixesEmpty } from "@/features/fixes/fixes-empty";
+import { FixesTabs } from "@/features/fixes/fixes-tabs";
+import { TaskList } from "@/features/fixes/task-list";
+import { getStore, storeIds } from "@/services/core";
+import { getActor, getFixesSetup, listFindingRows, listTaskSummaries } from "@/services/fixes";
 
 export const metadata: Metadata = { title: "Fix tasks" };
 
-export default function Page() {
-  return <NotAvailablePage title="Fix tasks" icon="fixes" />;
+export async function generateStaticParams() {
+  return storeIds();
+}
+
+async function FixTasksPageContent(props: PageProps<"/stores/[storeId]/fixes/tasks">) {
+  const { storeId } = await props.params;
+  const store = await getStore(storeId);
+  if (!store) notFound();
+
+  const [tasks, findings, actor, setup] = await Promise.all([listTaskSummaries(storeId), listFindingRows(storeId), getActor(), getFixesSetup(storeId)]);
+  const tabs = <FixesTabs storeId={storeId} findings={findings.length} tasks={tasks} />;
+
+  // Tasks created in this browser are not in the static list, so only an empty finding list shows the empty state.
+  if (tasks.length === 0 && findings.length === 0) {
+    return (
+      <>
+        <PageHeader title="Fixes" tabs={tabs} />
+        <FixesEmpty storeId={storeId} kind="tasks" hasAiPlatform={setup.hasAiPlatform} hasFindings={false} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PageHeader title="Fixes" tabs={tabs} />
+      <TaskList storeId={storeId} tasks={tasks} findings={findings} role={actor.role} actorName={actor.name} />
+    </>
+  );
+}
+
+export default function FixTasksPage(props: PageProps<"/stores/[storeId]/fixes/tasks">) {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <FixTasksPageContent {...props} />
+    </Suspense>
+  );
 }

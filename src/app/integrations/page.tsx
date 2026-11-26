@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 
-import { NotAvailablePage } from "@/components/shell/not-available";
+import { PageHeader } from "@/components/shell/page-header";
+import { DemoBadge } from "@/components/ui/demo";
+import { ProvidersView } from "@/features/settings/providers-view";
+import { listProviderConnections } from "@/services/settings";
 
 export const metadata: Metadata = { title: "Integrations" };
 
-export default function Page() {
-  return <NotAvailablePage title="Integrations" icon="plug" />;
+export default async function IntegrationsPage() {
+  const providers = await listProviderConnections();
+  return (
+    <>
+      <PageHeader title="Integrations" meta={<DemoBadge />} />
+      <ProvidersView providers={providers} />
+    </>
+  );
 }

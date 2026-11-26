@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/feedback";
-import { SearchField } from "@/components/ui/form";
+import { Field, Input, SearchField, Select, Textarea } from "@/components/ui/form";
+import { ErrorSummary } from "@/components/ui/error-summary";
 import { Icon } from "@/components/ui/icon";
+import { useToast } from "@/components/ui/toast";
+import { simulatedToast } from "@/demo-state";
 import { cn } from "@/lib/cn";
 
 type Faq = { id: string; question: string; answer: string };
@@ -14,7 +19,12 @@ type Faq = { id: string; question: string; answer: string };
 const FAQS: Faq[] = [
   { id: "measure", question: "What does Rankvora AI measure?", answer: "How often AI assistants mention, recommend or cite your website across the prompts you track." },
   { id: "rates", question: "How is a rate calculated?", answer: "Every rate is a count over responses, for example 18 of 48. Failed requests are never counted as absent." },
-  { id: "add-website", question: "How do I add a website?", answer: "Open Websites & Brands and choose Add website." },
+  { id: "audit-vs-monitoring", question: "Audit or Monitoring?", answer: "An audit is a one-off deep check. Monitoring repeats a fixed prompt set on a schedule to show change over time." },
+  { id: "add-website", question: "How do I add a website?", answer: "Open Websites & Brands and choose Add website. Connections are optional and can be added later." },
+  { id: "fixes", question: "What happens when I apply a fix?", answer: "Nothing leaves your browser. Applying and verifying a fix is simulated and recorded in the activity timeline." },
+  { id: "simulated", question: "What does Simulated mean?", answer: "The result was produced locally. No request was sent to an AI provider or to your website." },
+  { id: "storage", question: "Where are my changes stored?", answer: "In this browser only. Use Reset demo data in the account menu to clear them." },
+  { id: "export", question: "Can I export results?", answer: "Reports and audits offer HTML, CSV and JSON downloads and a print view." },
 ];
 
 const SHORTCUTS: { keys: string[]; action: string }[] = [
@@ -25,7 +35,13 @@ const SHORTCUTS: { keys: string[]; action: string }[] = [
   { keys: ["Tab"], action: "Move to the next control" },
 ];
 
-const GUIDES: { label: string; href: string }[] = [{ label: "Add your first website", href: "/stores/new" }];
+const GUIDES: { label: string; href: string }[] = [
+  { label: "Add your first website", href: "/stores/new" },
+  { label: "Connect integrations", href: "/integrations" },
+  { label: "Usage and billing", href: "/settings/billing" },
+];
+
+const TOPICS = ["Question", "Something is not working", "Feature request", "Billing"] as const;
 
 function FaqList({ items }: { items: Faq[] }) {
   const [open, setOpen] = useState<Set<string>>(() => new Set());
@@ -65,6 +81,118 @@ function FaqList({ items }: { items: Faq[] }) {
   );
 }
 
+type FormValues = { name: string; email: string; topic: string; message: string };
+type FormErrors = Partial<Record<keyof FormValues, string>>;
+
+const FIELD_LABEL: Record<keyof FormValues, string> = { name: "Name", email: "Email", topic: "Topic", message: "Message" };
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validate(values: FormValues): FormErrors {
+  const errors: FormErrors = {};
+  if (!values.name.trim()) errors.name = "Enter your name.";
+  if (!values.email.trim()) errors.email = "Enter your email.";
+  else if (!EMAIL.test(values.email.trim())) errors.email = "Enter a valid email, like name@company.com.";
+  if (values.message.trim().length < 10) errors.message = "Write at least 10 characters.";
+  return errors;
+}
+
+/** Simulated contact form: validates, then confirms locally. Nothing is sent. */
+function ContactForm() {
+  const toast = useToast();
+  const [values, setValues] = useState<FormValues>({ name: "", email: "", topic: TOPICS[0], message: "" });
+  const [touched, setTouched] = useState<Partial<Record<keyof FormValues, boolean>>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const doneRef = useRef<HTMLDivElement>(null);
+  const uid = useId();
+  const fieldId = (key: keyof FormValues) => `${uid}-${key}`;
+
+  // The form is replaced by the confirmation: keep keyboard and screen reader users in place.
+  useEffect(() => {
+    if (sent) doneRef.current?.focus();
+  }, [sent]);
+
+  const errors = validate(values);
+  const shown = (key: keyof FormValues) => (touched[key] || submitted ? errors[key] : undefined);
+  const set = (key: keyof FormValues) => (value: string) => setValues((current) => ({ ...current, [key]: value }));
+  const blur = (key: keyof FormValues) => () => setTouched((current) => ({ ...current, [key]: true }));
+
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitted(true);
+    if (Object.keys(errors).length > 0) {
+      // Error summary takes focus so keyboard and screen reader users land on what to fix.
+      window.setTimeout(() => summaryRef.current?.focus(), 0);
+      return;
+    }
+    setSending(true);
+    window.setTimeout(() => {
+      setSending(false);
+      setSent(true);
+      toast.push(simulatedToast("Support message sent"));
+    }, 600);
+  };
+
+  const reset = () => {
+    setValues({ name: "", email: "", topic: TOPICS[0], message: "" });
+    setTouched({});
+    setSubmitted(false);
+    setSent(false);
+  };
+
+  if (sent) {
+    return (
+      <div ref={doneRef} tabIndex={-1} role="status" className="flex flex-col items-start gap-3 outline-none">
+        <Badge tone="info" icon="layers">Simulated</Badge>
+        <p className="text-body font-medium text-fg">Message recorded in this browser.</p>
+        <p className="text-body-sm text-fg-muted">Simulated: no email was sent.</p>
+        <Button variant="secondary" onClick={reset}>Send another</Button>
+      </div>
+    );
+  }
+
+  const errorList = Object.entries(errors) as [keyof FormValues, string][];
+  return (
+    <form noValidate onSubmit={onSubmit} className="flex flex-col gap-3">
+      {submitted && errorList.length > 0 ? (
+        <ErrorSummary
+          ref={summaryRef}
+          items={errorList.map(([key, message]) => ({ label: FIELD_LABEL[key], detail: message, targetId: fieldId(key) }))}
+        />
+      ) : null}
+      <Field id={fieldId("name")} label="Name" required error={shown("name")}>
+        {({ id, describedBy, invalid }) => (
+          <Input id={id} aria-describedby={describedBy} invalid={invalid} autoComplete="name" value={values.name} onChange={(e) => set("name")(e.target.value)} onBlur={blur("name")} />
+        )}
+      </Field>
+      <Field id={fieldId("email")} label="Email" required error={shown("email")}>
+        {({ id, describedBy, invalid }) => (
+          <Input id={id} type="email" aria-describedby={describedBy} invalid={invalid} autoComplete="email" value={values.email} onChange={(e) => set("email")(e.target.value)} onBlur={blur("email")} />
+        )}
+      </Field>
+      <Field label="Topic">
+        {({ id }) => (
+          <Select id={id} value={values.topic} onChange={(e) => set("topic")(e.target.value)}>
+            {TOPICS.map((topic) => <option key={topic}>{topic}</option>)}
+          </Select>
+        )}
+      </Field>
+      <Field id={fieldId("message")} label="Message" required error={shown("message")}>
+        {({ id, describedBy, invalid }) => (
+          <Textarea id={id} rows={4} aria-describedby={describedBy} invalid={invalid} value={values.message} onChange={(e) => set("message")(e.target.value)} onBlur={blur("message")} />
+        )}
+      </Field>
+      <div className="flex items-center justify-between gap-3">
+        <Badge tone="info" icon="layers">Simulated</Badge>
+        <Button type="submit" variant="primary" loading={sending}>Send message</Button>
+      </div>
+    </form>
+  );
+}
+
 export function HelpCenter() {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -78,7 +206,11 @@ export function HelpCenter() {
           <CardBody className="flex flex-col gap-3">
             <SearchField value={query} onChange={setQuery} label="Search help" placeholder="Search help" />
             {visible.length === 0 ? (
-              <EmptyState title="No answers match" className="border-0 px-0" />
+              <EmptyState
+                title="No answers match"
+                action={<a href="#contact" className="inline-flex h-btn items-center rounded-control border border-line-strong bg-surface px-4 text-body font-medium text-fg hover:bg-surface-2">Contact support</a>}
+                className="border-0 px-0"
+              />
             ) : (
               <FaqList key={q} items={visible} />
             )}
@@ -107,7 +239,16 @@ export function HelpCenter() {
 
       <div className="flex min-w-0 flex-col gap-3">
         <Card>
-          <CardHeader title="Guides" />
+          <div id="contact" className="scroll-mt-24">
+            <CardHeader title="Contact support" />
+          </div>
+          <CardBody>
+            <ContactForm />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader title="Guides" actions={<Badge tone="neutral">Demo</Badge>} />
           <CardBody className="pt-2">
             <ul className="flex flex-col">
               {GUIDES.map((guide) => (

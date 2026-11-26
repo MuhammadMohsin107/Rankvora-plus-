@@ -1,83 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-import { Button, IconButton } from "@/components/ui/button";
-import { EmptyState, ErrorState, Spinner } from "@/components/ui/feedback";
+import { IconButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { useSession, type Organization, type SessionUser } from "@/features/session/session";
-import { useWebsites, WebsitesProvider } from "@/features/websites/websites-data";
+import { useDemoCollection, useDemoEvents, useDemoUi, useUnreadAlertCount } from "@/demo-state";
+import { OPEN_TASK_STATUSES } from "@/lib/record-status";
+import type { AlertHeadline, Member, Organization, Store } from "@/types/core";
 
 import { Breadcrumbs } from "./breadcrumbs";
 import { CommandPalette } from "./command-palette";
 import { navGroups, storeIdFromPath } from "./nav";
+import { Notifications } from "./notifications";
 import { registerActionSlot } from "./page-chrome";
-import { isAccountRoute, normalizeRoute } from "./route-titles";
-import { Logo, Sidebar } from "./sidebar";
+import { normalizeRoute } from "./route-titles";
+import { buildWebsiteLookup, rowWebsite } from "./row-website";
+import type { SearchIndex, SearchTask } from "./search-types";
+import { Sidebar } from "./sidebar";
 import { UserMenu } from "./user-menu";
-import { WebsiteSelector, type ShellWebsite } from "./website-selector";
+import { WebsiteSelector } from "./website-selector";
 
-function FullPage({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex min-h-dvh flex-col items-center gap-6 px-page py-10">
-      <Logo />
-      <main id="main" className="flex w-full flex-1 flex-col items-center">{children}</main>
-    </div>
-  );
-}
-
-/** Account pages stand alone. Every other page needs a signed-in person with an organization. */
-export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  if (isAccountRoute(pathname)) return <FullPage>{children}</FullPage>;
-  return <SignedIn>{children}</SignedIn>;
-}
-
-function SignedIn({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const { state, refresh } = useSession();
-  const needsSignIn = state.status === "signed-out";
-  const needsOrganization = state.status === "ready" && !state.organization;
-
-  useEffect(() => {
-    if (needsSignIn) router.replace(`/sign-in?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-    else if (needsOrganization) router.replace("/welcome");
-  }, [needsSignIn, needsOrganization, router]);
-
-  if (state.status === "unavailable") {
-    return (
-      <FullPage>
-        <EmptyState icon="lock" title="Accounts are not set up on this server yet" className="w-full max-w-md" />
-      </FullPage>
-    );
-  }
-  if (state.status === "error") {
-    return (
-      <FullPage>
-        <ErrorState detail={state.message} className="w-full max-w-md" action={<Button onClick={() => void refresh()}>Try again</Button>} />
-      </FullPage>
-    );
-  }
-  if (state.status !== "ready" || !state.organization) {
-    return (
-      <FullPage>
-        <p role="status" className="text-fg-subtle">
-          <Spinner />
-          <span className="sr-only">Loading</span>
-        </p>
-      </FullPage>
-    );
-  }
-  return (
-    <WebsitesProvider organizationId={state.organization.id}>
-      <Frame user={state.user} organizations={state.organizations} organization={state.organization}>
-        {children}
-      </Frame>
-    </WebsitesProvider>
-  );
-}
+type ShellProps = {
+  org: Organization;
+  user: Member;
+  /** Seeded websites. Websites created in the browser are merged in on the client. */
+  stores: Store[];
+  alerts: AlertHeadline[];
+  searchIndex: SearchIndex;
+  children: ReactNode;
+};
 
 /** First step of the header trail: home is the Websites & Brands list. */
 function HomeLink() {
@@ -88,21 +41,34 @@ function HomeLink() {
   );
 }
 
-function Frame({ user, organizations, organization, children }: { user: SessionUser; organizations: Organization[]; organization: Organization; children: ReactNode }) {
-  const router = useRouter();
+export function AppShell({ user, stores, alerts, searchIndex, children }: ShellProps) {
   const pathname = normalizeRoute(usePathname());
-  const { selectOrganization, signOut } = useSession();
-  const { websites: records } = useWebsites();
-  const websites = useMemo<ShellWebsite[]>(
-    () => records.map((site) => ({ id: site.id, name: site.name, domain: site.domain?.host ?? "", market: site.market, status: site.status })),
-    [records],
-  );
+  const { ui, setLastWebsite } = useDemoUi();
+  const { rows: allWebsites } = useDemoCollection<Store>("websites", stores);
+  const { rows: tasks } = useDemoCollection<SearchTask>("tasks", searchIndex.tasks);
+  const events = useDemoEvents();
+
+  const websites = useMemo(() => allWebsites.filter((w) => w.status !== "archived"), [allWebsites]);
   const routeId = storeIdFromPath(pathname);
-  // Only a website that exists in this organization gets a website menu, so nothing links to pages that are not there.
-  const routeWebsite = routeId ? (websites.find((site) => site.id === routeId) ?? null) : null;
-  const websiteId = routeWebsite?.id ?? null;
-  const groups = useMemo(() => navGroups(websiteId), [websiteId]);
-  const selectable = useMemo(() => websites.filter((site) => site.status !== "archived"), [websites]);
+  const routeWebsite = routeId ? (allWebsites.find((w) => w.id === routeId) ?? null) : null;
+  // Organization pages have no website in context: the header and the sidebar show the organization only.
+  // Website pages show the website from the URL, once it is known to exist. An unknown address gets no website
+  // menu, so nothing links to pages that are not there. (A website made in this browser appears after it is read.)
+  const contextWebsite = routeWebsite;
+  const navWebsiteId = routeWebsite?.id ?? null;
+
+  useEffect(() => {
+    if (navWebsiteId && ui.lastWebsiteId !== navWebsiteId) setLastWebsite(navWebsiteId);
+  }, [navWebsiteId, ui.lastWebsiteId, setLastWebsite]);
+
+  const groups = useMemo(() => navGroups(navWebsiteId), [navWebsiteId]);
+  const unreadAlerts = useUnreadAlertCount(alerts, navWebsiteId ?? undefined);
+  const pendingTasks = useMemo(() => {
+    if (!navWebsiteId) return 0;
+    const lookup = buildWebsiteLookup(events);
+    return tasks.filter((t) => OPEN_TASK_STATUSES.has(t.status) && rowWebsite(t, lookup) === navWebsiteId).length;
+  }, [tasks, events, navWebsiteId]);
+  const counts = { pendingTasks, unreadAlerts };
 
   // Mobile drawer: open only for the path it was opened on, so navigating closes it.
   const [openFor, setOpenFor] = useState<string | null>(null);
@@ -146,7 +112,7 @@ function Frame({ user, organizations, organization, children }: { user: SessionU
       </a>
 
       <aside aria-label="Sidebar" className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-w)] border-r border-line bg-sidebar lg:block">
-        <Sidebar groups={groups} pathname={pathname} />
+        <Sidebar groups={groups} pathname={pathname} counts={counts} />
       </aside>
 
       <dialog
@@ -163,6 +129,7 @@ function Frame({ user, organizations, organization, children }: { user: SessionU
             <Sidebar
               groups={groups}
               pathname={pathname}
+              counts={counts}
               onSearch={() => {
                 setOpenFor(null);
                 setSearchOpen(true);
@@ -182,7 +149,7 @@ function Frame({ user, organizations, organization, children }: { user: SessionU
             <>
               <Icon name="chevron-right" size={14} aria-hidden="true" className="shrink-0 text-fg-faint" />
               <div className="flex min-w-0 shrink items-center">
-                <WebsiteSelector websites={selectable} active={routeWebsite} pathname={pathname} />
+                <WebsiteSelector websites={websites} active={contextWebsite} pathname={pathname} />
               </div>
             </>
           ) : null}
@@ -210,16 +177,10 @@ function Frame({ user, organizations, organization, children }: { user: SessionU
               Support
             </Link>
             <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-line sm:block" />
-            <UserMenu
-              user={user}
-              organization={organization}
-              organizations={organizations}
-              onSelectOrganization={(id) => {
-                selectOrganization(id);
-                router.push("/stores");
-              }}
-              onSignOut={() => void signOut()}
-            />
+            <div className="flex items-center gap-1">
+              <Notifications alerts={alerts} websites={websites} contextWebsiteId={navWebsiteId} />
+              <UserMenu user={user} />
+            </div>
           </div>
         </div>
       </header>
@@ -228,7 +189,7 @@ function Frame({ user, organizations, organization, children }: { user: SessionU
         {children}
       </main>
 
-      {searchOpen ? <CommandPalette websites={selectable} contextWebsiteId={websiteId} onClose={closeSearch} /> : null}
+      {searchOpen ? <CommandPalette index={searchIndex} websites={websites} contextWebsiteId={navWebsiteId} onClose={closeSearch} /> : null}
     </div>
   );
 }

@@ -10,15 +10,13 @@ import { Icon } from "@/components/ui/icon";
 import { Popover } from "@/components/ui/popover";
 import { cn } from "@/lib/cn";
 import { STATUS } from "@/lib/status";
-import type { WebsiteStatus } from "@/server/db/schema";
+import type { Store } from "@/types/core";
 
 import { switchWebsiteHref } from "./nav";
 
-export type ShellWebsite = { id: string; name: string; domain: string; market: string; status: Exclude<WebsiteStatus, "removed"> };
-
 type Props = {
-  websites: ShellWebsite[];
-  active: ShellWebsite | null;
+  websites: Store[];
+  active: Store | null;
   pathname: string;
 };
 
@@ -27,7 +25,7 @@ const SEARCH_THRESHOLD = 5;
 function WebsiteList({ websites, active, pathname, close }: Props & { close: () => void }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
-  const visible = q ? websites.filter((w) => `${w.name} ${w.domain}`.toLowerCase().includes(q)) : websites;
+  const visible = q ? websites.filter((w) => `${w.name} ${w.domain} ${w.brandName}`.toLowerCase().includes(q)) : websites;
   return (
     <div className="-m-1 flex flex-col gap-2">
       {websites.length > SEARCH_THRESHOLD ? <SearchField value={query} onChange={setQuery} label="Find a website" placeholder="Find a website" /> : null}

@@ -49,13 +49,4 @@ interface D1Database {
 
 interface CloudflareEnv {
   DB: D1Database;
-  // Backend configuration (secrets and vars). All optional: the API answers "not configured" without them.
-  // Names are documented in .dev.vars.example; src/server/env.ts reads and validates them.
-  BETTER_AUTH_SECRET?: string;
-  APP_URL?: string;
-  MAIL_TRANSPORT?: string;
-  MAIL_FROM?: string;
-  RESEND_API_KEY?: string;
-  /** `send_email` binding, only when Cloudflare Email Service is set up. */
-  EMAIL?: unknown;
 }

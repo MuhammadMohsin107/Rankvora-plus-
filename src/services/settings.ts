@@ -1,0 +1,129 @@
+/**
+ * Data access for organization and store settings. Reads demonstration data
+ * today; later these functions will call the real application services.
+ */
+import {
+  DEMO_ACTIVITY,
+  DEMO_ARCHIVED_COMPETITORS,
+  DEMO_BILLING,
+  DEMO_BRAND_KNOWLEDGE,
+  DEMO_BRAND_VERSIONS,
+  DEMO_DOMAINS,
+  DEMO_INTEGRATIONS,
+  DEMO_ORG_NOTIFICATIONS,
+  DEMO_PROVIDERS,
+  DEMO_SETUP_SAMPLE,
+  DEMO_STORE_NOTIFICATIONS,
+  NOTIFICATION_EVENTS,
+} from "@/demo/settings";
+import { WEBSITE_BASES } from "@/demo/audit";
+import { registryFor } from "@/demo/registry";
+import { listChannels, listCompetitors, listPromptsBase, listStores } from "@/services/core";
+import type { Competitor } from "@/types/core";
+import type {
+  ActivityEntry,
+  BillingBase,
+  BrandKnowledgeBase,
+  BrandVersion,
+  SourcePage,
+  DomainRecord,
+  IntegrationDetail,
+  NotificationEvent,
+  NotificationPrefs,
+  ProviderConnection,
+  StoreNotificationOverride,
+  StoreSetupSample,
+} from "@/types/settings";
+
+export async function listProviderConnections(): Promise<ProviderConnection[]> {
+  const channels = await listChannels();
+  return DEMO_PROVIDERS.map((base) => {
+    const channel = channels.find((c) => c.id === base.channelId);
+    return {
+      ...base,
+      apiLabel: channel?.apiLabel ?? "Messages API",
+      model: channel?.model ?? null,
+      searchMode: channel?.searchMode ?? null,
+      supportsCitations: channel ? channel.supportsCitations : null,
+    };
+  });
+}
+
+export async function listNotificationEvents(): Promise<NotificationEvent[]> {
+  return NOTIFICATION_EVENTS;
+}
+
+export async function getOrgNotificationPrefs(): Promise<NotificationPrefs> {
+  return DEMO_ORG_NOTIFICATIONS;
+}
+
+export async function getStoreNotificationOverride(storeId: string): Promise<StoreNotificationOverride> {
+  return DEMO_STORE_NOTIFICATIONS.find((o) => o.storeId === storeId) ?? { storeId, mode: "inherit", matrix: DEMO_ORG_NOTIFICATIONS.matrix };
+}
+
+/** Billing demonstration data. Request counts come from the demo usage; websites without usage count as zero. */
+export async function getBillingBase(): Promise<BillingBase> {
+  const stores = await listStores();
+  const usageSeeds = stores.map((store) => ({ websiteId: store.id, requests: DEMO_BILLING.usageSeeds.find((u) => u.websiteId === store.id)?.requests ?? {} }));
+  return { ...DEMO_BILLING, usageSeeds };
+}
+
+/** Prompt id, website and status only: enough to count active prompts after local changes. */
+export async function listPromptCountRows(): Promise<{ id: string; storeId: string; status: string }[]> {
+  const stores = await listStores();
+  const lists = await Promise.all(stores.map((store) => listPromptsBase(store.id)));
+  return lists.flat().map((p) => ({ id: p.id, storeId: p.storeId, status: p.status }));
+}
+
+export async function listStoreActivity(storeId: string): Promise<ActivityEntry[]> {
+  return DEMO_ACTIVITY.filter((a) => a.storeId === storeId);
+}
+
+export async function listBrandVersions(storeId: string): Promise<BrandVersion[]> {
+  return DEMO_BRAND_VERSIONS[storeId] ?? [];
+}
+
+export async function getDomainRecord(storeId: string): Promise<DomainRecord | null> {
+  return DEMO_DOMAINS.find((d) => d.storeId === storeId) ?? null;
+}
+
+export async function getIntegrationDetail(storeId: string): Promise<IntegrationDetail | null> {
+  return DEMO_INTEGRATIONS.find((i) => i.storeId === storeId) ?? null;
+}
+
+/** Confirmed and suggested competitors plus archived ones. */
+export async function listStoreCompetitors(storeId: string): Promise<Competitor[]> {
+  const active = await listCompetitors(storeId);
+  return [...active, ...DEMO_ARCHIVED_COMPETITORS.filter((c) => c.storeId === storeId)];
+}
+
+export async function getStoreSetupSample(): Promise<StoreSetupSample> {
+  return DEMO_SETUP_SAMPLE;
+}
+
+/** Page types that make good source pages for brand context (skips plain pages and collections beyond a few). */
+const SOURCE_PAGE_TYPES = new Set(["home", "product", "guide", "policy"]);
+
+/**
+ * Starting point for the Brand knowledge tab: authored facts and FAQs, key pages and AI crawler access
+ * taken from the latest completed audit of the same website (so it never disagrees with Audit).
+ * Websites without an audit return empty page and crawler lists.
+ */
+export async function getBrandKnowledgeBase(storeId: string): Promise<BrandKnowledgeBase> {
+  const seed = DEMO_BRAND_KNOWLEDGE[storeId] ?? { facts: [], faqs: [], contentContext: "" };
+  const base = WEBSITE_BASES[storeId];
+  const audit = registryFor(storeId).audits.find((a) => a.status !== "in_progress" && a.lanes.includes("website_readiness")) ?? null;
+  const sourcePages: SourcePage[] = base
+    ? base.pages
+        .filter((p) => SOURCE_PAGE_TYPES.has(p.type) && p.status === 200)
+        .slice(0, 6)
+        .map((p) => ({ id: `src-${p.id}`, url: p.url, title: p.title ?? p.path, type: p.type, confirmed: true }))
+    : [];
+  return {
+    ...seed,
+    sourcePages,
+    crawlers: base ? base.crawlers.map((c) => ({ id: c.id, name: c.name, purpose: c.purpose, allowed: c.allowed, findingId: c.findingId })) : [],
+    auditId: base && audit ? audit.id : null,
+    scannedAt: base && audit ? (audit.completedAt ?? audit.startedAt) : null,
+  };
+}

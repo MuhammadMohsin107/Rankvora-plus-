@@ -8,9 +8,12 @@ import { cn } from "@/lib/cn";
 
 import type { NavGroup, NavItem } from "./nav";
 
+export type NavCounts = { pendingTasks: number; unreadAlerts: number };
+
 type SidebarProps = {
   groups: NavGroup[];
   pathname: string;
+  counts: NavCounts;
   /** Present in the mobile drawer: shows a search button. */
   onSearch?: () => void;
 };
@@ -28,9 +31,10 @@ export function Logo() {
   );
 }
 
-function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavLink({ item, pathname, count }: { item: NavItem; pathname: string; count: number }) {
   const active = item.isActive(pathname);
-  return (
+  const countLabel = count > 0 ? `${count} ${item.badge === "pendingTasks" ? "pending" : "unread"}` : undefined;
+  const link = (
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
@@ -43,12 +47,18 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
       {active ? <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" /> : null}
       <Icon name={item.icon} size={18} className={cn("shrink-0", active ? "text-accent-text" : "text-sidebar-fg-muted group-hover:text-sidebar-fg")} />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      {count > 0 ? (
+        <span role="img" aria-label={countLabel} className="tnum rounded-full bg-accent-soft px-1.5 text-2xs font-semibold leading-5 text-accent-text">
+          {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
     </Link>
   );
+  return link;
 }
 
 /** Sidebar content, shared by the desktop rail and the mobile drawer. Landmark and heading wiring lives here. */
-export function Sidebar({ groups, pathname, onSearch }: SidebarProps) {
+export function Sidebar({ groups, pathname, counts, onSearch }: SidebarProps) {
   const uid = useId();
   return (
     <div className="flex h-full flex-col">
@@ -72,7 +82,7 @@ export function Sidebar({ groups, pathname, onSearch }: SidebarProps) {
             <ul className="flex flex-col gap-0.5">
               {group.items.map((item) => (
                 <li key={item.id} className="w-full">
-                  <NavLink item={item} pathname={pathname} />
+                  <NavLink item={item} pathname={pathname} count={item.badge ? counts[item.badge] : 0} />
                 </li>
               ))}
             </ul>
