@@ -13,7 +13,7 @@ describe("normalizeRoute", () => {
       "/sign-up",
       "/forgot-password",
       "/reset-password",
-      "/verified",
+      "/confirm-email",
       "/welcome",
       "/invitations/accept",
       site,

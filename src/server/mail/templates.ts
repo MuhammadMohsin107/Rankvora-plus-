@@ -25,7 +25,12 @@ export function verifyEmailMail(to: string, url: string): Mail {
     kind: "verify_email",
     to,
     subject: "Confirm your email for Rankvora AI",
-    ...layout("Confirm your email", "Confirm this address to finish creating your account.", { label: "Confirm email", url }, "The link expires in 24 hours. If you did not sign up, do not open it."),
+    ...layout(
+      "Confirm your email",
+      "Open the link and enter the password you chose to finish creating your account.",
+      { label: "Confirm email", url },
+      "The link expires in 24 hours. If you did not sign up, ignore this message.",
+    ),
   };
 }
 

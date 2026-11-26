@@ -7,15 +7,13 @@
    Upgrade to Workers Paid before turning accounts on. Free also limits D1 to 500 MB and 50 queries
    per request. Do not solve this by weakening the password hash.
 2. **Account pages exist** (sign-up, sign-in with two-step codes, confirmation, password reset,
-   invitations, new organization). The sign-up weakness in [status.md](status.md#known-limits-that-remain)
-   still needs fixing before real people sign up.
-3. **Live has no backend tables yet.** The migrations are applied to the test database only; live has
-   `0001` to `0005` pending. Finish the open items in the checklist below before using live. History
+   invitations, new organization). Confirming an email takes the password.
+3. **Live has no backend tables or secrets yet** (checked 2026-11-26: only the old `workspaces` table;
+   `0001` to `0005` pending). Finish the open items in the checklist below before using live. History
    tables are append-only: test rows written to live stay there.
 
-Pushing `main` deploys the code. **Without the settings below the whole app now shows only "Accounts
-are not set up on this server yet"**: the earlier demo screens were removed. Set up the backend before
-pushing, or do not push.
+Pushing `main` deploys the code. **Until the settings below are in place, the whole live app shows only
+"Accounts are not set up on this server yet"**: the earlier demo screens were removed.
 
 ## Settings
 
@@ -66,7 +64,8 @@ absolute paths, and add vars `APP_URL=http://localhost:8787`, `MAIL_TRANSPORT=co
 
 **Authentication.** ✔ Sign up, confirm, sign in, sign out, wrong password, unconfirmed account,
 revoked sessions, reset ends sessions, existing address, two-factor and backup codes, sole owner
-cannot delete the account, expired sessions and reset links. ☐ Expired confirmation links.
+cannot delete the account, expired sessions, reset links and confirmation links, confirming takes the
+password, a stranger signing up with someone else's address gains nothing, attempt limit.
 
 **Tenant isolation.** ✔ Customer B gets 404 on A's organization, members, invitations, history, logs,
 usage, websites and domains, and cannot add a website to it. ✔ The role table in [api.md](api.md) on

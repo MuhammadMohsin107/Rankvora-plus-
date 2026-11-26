@@ -40,7 +40,7 @@ Each was run again and passed.
 | Simultaneous requests | Same domain, same Idempotency-Key, last website place, two edits, pause with archive, starting verification, five invitations for two seats, double accept, two owners demoting each other, both owners leaving. One winner or the limit held each time; the rerun also confirmed the requests were in flight together |
 | Expiry | Invitation (and revival by resend), DNS record, session, password reset link |
 
-**Bug fixed (not yet committed or deployed):** reactivating a member counted only active members, so
+**Bug fixed:** reactivating a member counted only active members, so
 the seat rule could be broken (2 members and 9 open invitations with a limit of 10), and the person's
 own open invitation kept holding a second seat. Reactivation now follows the invitation rule and closes
 that invitation.
@@ -84,16 +84,26 @@ reset by the emailed link, the real website list and overview, every screen with
 website refusals shown at their fields, the account menu and sign-out, the new-organization form for
 an account without one, a broken invitation and confirmation link, and sign-in and websites on a
 375px phone without sideways scrolling. No browser or server errors. Not exercised through the screens:
-creating an organization or website, accepting an invitation, two-step sign-in and sign-up emails
-(their API calls passed the earlier tests).
+creating an organization or website, accepting an invitation and two-step sign-in (their API calls
+passed the earlier tests).
+
+### 2026-11-26, confirming an email takes the password: 30 checks, 0 failed
+
+This closes the sign-up weakness. Sign-up and the confirm page were used through the screens. The old
+one-click address answers not found; opening the link confirms nothing; a wrong password, a changed
+link and an expired link are refused; the right password confirms and signs nobody in. A stranger who
+signs up with someone else's address gets nothing: without that password the owner's click confirms
+nothing, and the owner's password reset confirms the address and replaces the stranger's password. The
+sixth attempt within a minute is refused. Confirmations and refusals are in the security log. The first
+run of this test found that the new code refused every link; fixed before it was committed, with a
+unit test on a link made by the library.
 
 **Not run:** a successful DNS ownership check (waiting for the owner to publish the record, which
 expires 2026-12-02) and what follows from it (the second account refused, proof kept when the domain
 becomes the main one); usage reserve and settle (nothing calls them until Phase 3) and the usage
-triggers; expiry of email confirmation links (signed by the library, 24 hours); real email delivery;
-the Free plan limits (the local runtime does not enforce CPU or query limits); a deployment. The 434
-unit tests pass, including 13 on the backend's pure rules; database behaviour is covered only by the
-live tests. Phase 2 code has not had a separate review.
+triggers; real email delivery; the Free plan limits (the local runtime does not enforce CPU or query
+limits). The 93 unit tests pass (tests of the removed demo screens went with them); database behaviour
+is covered only by the live tests. Phase 2 code and the new screens have not had a separate review.
 
 ## Roadmap (Part 24)
 
@@ -120,7 +130,7 @@ live tests. Phase 2 code has not had a separate review.
 
 | Point | State | Note |
 | --- | --- | --- |
-| 4.1 Register, verify email, sign in, sign out, reset password | ✅ | API only. Needs an email provider. No UI pages yet |
+| 4.1 Register, verify email, sign in, sign out, reset password | ✅ | API and screens. Confirming takes the password. Needs an email provider |
 | 4.1 Password storage | ✅ | scrypt (Better Auth). **Expected to exceed the Free plan CPU limit** |
 | 4.1 Sessions: create, expire (7 days), revoke, device list | ✅ | The expiry slides daily; the session token itself is not rotated |
 | 4.1 Optional MFA | ✅ | TOTP and backup codes |
@@ -199,16 +209,14 @@ live tests. Phase 2 code has not had a separate review.
 Type check, ESLint, `next build` and the OpenNext Cloudflare build. An independent read-only code
 review found no fault in the hand-written SQL and reported 16 other findings, among them an invitation
 that outlived its sender's access and a pre-registration account takeover. All 16 have changes; the
-takeover is **reduced, not closed** (below). The changes have not had a second review; the live tests
-exercised the invitation fix. The review also did not catch the seat-rule bug found on 2026-11-26.
+takeover was closed on 2026-11-26 (confirming an email takes the password, see the live tests). The
+changes have not had a second review; the live tests exercised the invitation and takeover fixes. The
+review also did not catch the seat-rule bug found on 2026-11-26.
 
 ## Known limits that remain
 
-- **Sign-up with someone else's address.** If a stranger signs up with your email and you open the
-  confirmation link, their password still works until you reset it. Confirming no longer signs anyone
-  in, a sign-in attempt no longer resends the link, and the email says not to open it if you did not
-  sign up. Closing it fully means choosing or re-entering the password on the confirmation page, which
-  needs the UI pages. Do this before real users sign up.
+- If a stranger signed up with an address first, the name they typed stays on the account after the
+  owner takes it back by password reset. There is no screen to change a name yet.
 - Password reset and resend-confirmation answer the same even if the email fails (otherwise they
   reveal which addresses have accounts). The failure is written to the security log. The response time
   of resend-confirmation can still differ.

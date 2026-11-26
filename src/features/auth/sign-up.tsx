@@ -35,7 +35,7 @@ export function SignUp() {
     setBusy(true);
     setError(null);
     try {
-      await authApi("/sign-up/email", { name: name.trim(), email: email.trim(), password, callbackURL: "/verified" });
+      await authApi("/sign-up/email", { name: name.trim(), email: email.trim(), password });
       setSentTo(email.trim());
     } catch (failure) {
       setError(messageOf(failure));

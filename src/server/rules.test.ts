@@ -1,8 +1,11 @@
 /** The pure rules of the backend. Database behaviour is covered by the live test against D1. */
+import { createEmailVerificationToken } from "better-auth/api";
+import { verifyJWT } from "better-auth/crypto";
 import { describe, expect, it } from "vitest";
 
 import { mentionsAnyName, normalisePrompt, similarity } from "@/lib/prompt-text";
 
+import { confirmLinkPayload } from "./auth/confirm-email";
 import { bare, nextCompetitorStatus } from "./modules/competitors/service";
 import { runState, scopeAllows } from "./modules/prompts/assignments";
 import { skipReason } from "./modules/prompts/bulk";
@@ -12,6 +15,22 @@ import { isPublicAddress } from "./modules/websites/inspect";
 import { nextStatus } from "./modules/websites/service";
 import { can, PERMISSIONS } from "./tenancy/permissions";
 import { publicPageUrl } from "./validation";
+
+describe("email confirmation link", () => {
+  const secret = "test-only-secret-of-at-least-32-characters";
+  const accepts = async (token: string) => confirmLinkPayload.safeParse(await verifyJWT(token, secret)).success;
+
+  it("accepts the link the library makes for a new account", async () => {
+    expect(await accepts(await createEmailVerificationToken(secret, "person@example.com", undefined, 60, { userId: "user_1" }))).toBe(true);
+  });
+
+  it("refuses an expired link, another secret, a change-of-address link and a link naming no account", async () => {
+    expect(await accepts(await createEmailVerificationToken(secret, "person@example.com", undefined, -60, { userId: "user_1" }))).toBe(false);
+    expect(await accepts(await createEmailVerificationToken(`${secret}x`, "person@example.com", undefined, 60, { userId: "user_1" }))).toBe(false);
+    expect(await accepts(await createEmailVerificationToken(secret, "person@example.com", "other@example.com", 60, { userId: "user_1" }))).toBe(false);
+    expect(await accepts(await createEmailVerificationToken(secret, "person@example.com", undefined, 60))).toBe(false);
+  });
+});
 
 describe("domain check address safety", () => {
   it("refuses private, loopback, link-local, metadata and reserved addresses", () => {

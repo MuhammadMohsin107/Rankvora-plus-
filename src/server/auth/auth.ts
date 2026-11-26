@@ -1,6 +1,7 @@
 /**
- * Authentication (Better Auth on D1): email and password, mandatory email verification, database
- * sessions that can be listed and revoked, password reset, optional TOTP two-factor.
+ * Authentication (Better Auth on D1): email and password, mandatory email verification (the emailed
+ * link plus the password, see confirm-email.ts), database sessions that can be listed and revoked,
+ * password reset, optional TOTP two-factor.
  *
  * One instance per request, because the D1 binding arrives with the request. A failed email send is
  * recorded in `delivery` and not thrown: the library either swallows such errors or turns them into
@@ -22,6 +23,7 @@ import type { Mail, Mailer } from "../mail/mailer";
 import { existingAccountMail, resetPasswordMail, verifyEmailMail } from "../mail/templates";
 import { releaseMemberships, SoleOwnerError } from "../modules/account/service";
 import { displayName } from "../validation";
+import { CONFIRM_EMAIL_PATH, confirmEmailWithPassword } from "./confirm-email";
 
 export const AUTH_BASE_PATH = "/api/v1/auth";
 export const MIN_PASSWORD_LENGTH = 12;
@@ -84,9 +86,10 @@ export function createAuth(deps: Deps, mailer: Mailer, delivery: DeliveryState =
         });
       },
     },
-    // Replaced by a single statement in api/auth/revoke-other-sessions: the library deletes sessions one
-    // by one and would pass the Free plan's 50 queries per request.
-    disabledPaths: ["/revoke-other-sessions"],
+    // revoke-other-sessions is replaced by a single statement in api/auth/revoke-other-sessions: the
+    // library deletes sessions one by one and would pass the Free plan's 50 queries per request.
+    // verify-email is replaced by confirm-email, which also asks for the password.
+    disabledPaths: ["/revoke-other-sessions", "/verify-email"],
     // `transaction: false`: D1 has no interactive transactions.
     database: drizzleAdapter(createDb(deps.d1), {
       provider: "sqlite",
@@ -135,18 +138,25 @@ export function createAuth(deps: Deps, mailer: Mailer, delivery: DeliveryState =
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => sendAfterResponse(resetPasswordMail(user.email, url)),
+      // The reset link went to this address and its reader chose the new password, so the address is
+      // confirmed. It is also how an owner takes back an address that someone else signed up with.
+      onPasswordReset: async ({ user }) => {
+        await prepare(deps.d1, raw(`update users set email_verified = 1, updated_at = ? where id = ? and email_verified = 0`, deps.now(), user.id)).run();
+      },
       // Sign-up answers the same for a new and an existing address, so both get an email.
       onExistingUserSignUp: async ({ user }) => send(existingAccountMail(user.email)),
     },
     emailVerification: {
       sendOnSignUp: true,
-      // Both off so that someone who signs up with another person's address gains nothing: a sign-in
-      // attempt cannot mail that person again, and confirming the address does not sign anyone in.
-      // Using the account takes the password, and a reset replaces it and ends every session.
+      // So that a stranger's sign-in attempt cannot mail the owner of the address again.
       sendOnSignIn: false,
-      autoSignInAfterVerification: false,
       expiresIn: DAY,
-      sendVerificationEmail: async ({ user, url }) => send(verifyEmailMail(user.email, url)),
+      // The library's own link would confirm without a password, so the email links to our page.
+      sendVerificationEmail: async ({ user, token }) => {
+        const link = new URL(CONFIRM_EMAIL_PATH, appUrl);
+        link.searchParams.set("token", token);
+        await send(verifyEmailMail(user.email, link.href));
+      },
     },
     session: {
       expiresIn: 7 * DAY,
@@ -180,7 +190,7 @@ export function createAuth(deps: Deps, mailer: Mailer, delivery: DeliveryState =
       useSecureCookies: appUrl.startsWith("https://"),
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
     },
-    plugins: [twoFactor({ issuer: "Rankvora AI" })],
+    plugins: [twoFactor({ issuer: "Rankvora AI" }), confirmEmailWithPassword(MAX_PASSWORD_LENGTH)],
   });
 }
 

@@ -80,7 +80,7 @@ export function SignIn() {
   const resend = async () => {
     setBusy(true);
     try {
-      await authApi("/send-verification-email", { email: email.trim(), callbackURL: "/verified" });
+      await authApi("/send-verification-email", { email: email.trim() });
       setResent(true);
       setUnconfirmed(false);
       setError(null);

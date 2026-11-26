@@ -14,10 +14,10 @@ Records of another organization answer **404**; a missing permission answers **4
 | Method and path | Body or note |
 | --- | --- |
 | POST `/sign-up/email` | `name`, `email`, `password` (12-128) |
-| GET `/verify-email?token=` | Link in the email. Does not sign in |
+| POST `/confirm-email` | `token` from the emailed link, and the account's `password`. Does not sign in. 5 attempts a minute |
 | POST `/send-verification-email` | `email` |
 | POST `/sign-in/email` · POST `/sign-out` · GET `/get-session` | |
-| POST `/request-password-reset` · POST `/reset-password` | `email`, `redirectTo` · `token`, `newPassword`. Ends all sessions |
+| POST `/request-password-reset` · POST `/reset-password` | `email`, `redirectTo` · `token`, `newPassword`. Ends all sessions and confirms the email |
 | POST `/change-password` · POST `/update-user` | |
 | GET `/list-sessions` · POST `/revoke-session` · `/revoke-sessions` · `/revoke-other-sessions` | The last answers `{ data: { revoked } }` |
 | POST `/two-factor/enable` · `/disable` · `/verify-totp` · `/verify-backup-code` | |

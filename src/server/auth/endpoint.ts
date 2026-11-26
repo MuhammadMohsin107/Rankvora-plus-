@@ -27,6 +27,7 @@ const SURFACE_DELIVERY_FAILURE = new Set(["/sign-up/email"]);
 
 const AUDITED: Record<string, string> = {
   "/sign-up/email": "auth.sign_up",
+  "/confirm-email": "auth.email_confirmed",
   "/sign-in/email": "auth.sign_in",
   "/sign-out": "auth.sign_out",
   "/request-password-reset": "auth.password_reset_requested",
@@ -54,8 +55,8 @@ const ACTS_ON_SESSION = new Set([
   "/delete-user",
 ]);
 
-/** Their response names the account that signed in. Sign-up is not listed: for an existing address its id is invented. */
-const RESPONSE_NAMES_USER = new Set(["/sign-in/email", "/two-factor/verify-totp", "/two-factor/verify-backup-code"]);
+/** Their response names the account that acted. Sign-up is not listed: for an existing address its id is invented. */
+const RESPONSE_NAMES_USER = new Set(["/sign-in/email", "/confirm-email", "/two-factor/verify-totp", "/two-factor/verify-backup-code"]);
 
 const ORIGIN_REJECTIONS = new Set(["INVALID_ORIGIN", "MISSING_OR_NULL_ORIGIN"]);
 

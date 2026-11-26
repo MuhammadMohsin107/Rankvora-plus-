@@ -4,8 +4,8 @@ Next.js (App Router) + React + TypeScript + Tailwind CSS 4, deployed to Cloudfla
 There is no demo or sample data. The screens show only what the API returns for the signed-in
 organization; features without a backend show "Not available yet".
 
-> **Before pushing `main`:** pushing deploys the live site. The live backend is not set up yet, so the
-> live site would show only "Accounts are not set up on this server yet" until it is (see
+> **Live site:** pushing `main` deploys it. The live backend is not set up yet, so until it is, the
+> live site shows only "Accounts are not set up on this server yet" (steps:
 > [docs/backend/runbook.md](docs/backend/runbook.md)).
 
 The backend on D1 lives in `src/server` and `/api/v1`. Phase 1 (accounts, organizations, team,

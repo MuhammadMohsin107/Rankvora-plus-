@@ -57,7 +57,7 @@ const ACCOUNT_ROUTES: Record<string, Crumb[]> = {
   "/sign-up": [{ label: "Create account" }],
   "/forgot-password": [{ label: "Reset password" }],
   "/reset-password": [{ label: "New password" }],
-  "/verified": [{ label: "Email confirmed" }],
+  "/confirm-email": [{ label: "Confirm email" }],
   "/welcome": [{ label: "Create organization" }],
   "/invitations/accept": [{ label: "Invitation" }],
 };
