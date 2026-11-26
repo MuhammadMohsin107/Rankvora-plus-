@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 
 import { useToast } from "@/components/ui/toast";
 
@@ -9,7 +9,6 @@ import { applyOverlay } from "./merge";
 import { eventsFor, isAlertUnread, unreadAlertCount, type AlertLike, type EventFilter } from "./selectors";
 import { countChanges } from "./state";
 import { demoStore, type DemoStore, type EventArg } from "./store";
-import { demoSync, type SyncSnapshot } from "./sync";
 import type { CollectionKind, CollectionOverlay, DemoEvent, DemoMarker, DemoRow, DemoStateV1, DemoUi } from "./types";
 
 type Ctx = { store: DemoStore; onReset?: () => void };
@@ -21,8 +20,6 @@ export function DemoStateProvider({ children, store = demoStore }: { children: R
   const push = toast.push;
   const onReset = useCallback(() => push(simulatedToast("reset", "info")), [push]);
   const value = useMemo<Ctx>(() => ({ store, onReset }), [store, onReset]);
-  // Server sync (D1) only for the app-wide store; a custom store (tests) stays local.
-  useEffect(() => (store === demoStore ? demoSync.start() : undefined), [store]);
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }
 
@@ -150,14 +147,6 @@ export function useDemoReset(): () => void {
     store.reset();
     onReset?.();
   }, [store, onReset]);
-}
-
-/**
- * Server sync status for the small indicator: "local" (not syncing yet), "syncing", "synced" or
- * "offline" (server unreachable; changes stay in this browser and are retried).
- */
-export function useDemoSync(): SyncSnapshot {
-  return useSyncExternalStore(demoSync.subscribe, demoSync.getSnapshot, demoSync.getServerSnapshot);
 }
 
 export type DemoMeta = { hasChanges: boolean; changeCount: number; eventCount: number };

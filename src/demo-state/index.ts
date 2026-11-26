@@ -17,11 +17,6 @@
  *   useDemoUi()                                  -> { ui, toggleSidebar, setLastWebsite, dismissBanner, ... }
  *   useDemoReset()                               -> () => void (clears everything, toasts "Demo data reset")
  *   useDemoMeta()                                -> { hasChanges, changeCount, eventCount }
- *   useDemoSync()                                -> { status: "local" | "syncing" | "synced" | "offline", lastSyncedAt }
- *
- * Server copy: localStorage stays the instant copy; changes are also saved to Cloudflare D1 through
- * /api/demo-state (per-browser workspace cookie, see sync.ts). Without a database the app keeps working
- * from localStorage (status "offline"). Render <SyncIndicator /> (sync-indicator.tsx) to show the status.
  *
  * Plain functions (call from event handlers only, never during render)
  *   emit(event), resetDemoData(), demoNow(), eventsFor(events, filter), unreadAlertCount(...),
@@ -51,7 +46,6 @@ export {
   type EventArg,
   type StorageLike,
 } from "./store";
-export { createDemoSync, demoSync, SYNC_URL, type DemoSync, type DemoSyncOptions, type SyncSnapshot, type SyncStatus } from "./sync";
 export { eventsFor, isAlertUnread, unreadAlertCount, type AlertLike, type EventFilter } from "./selectors";
 export { simulatedToast, type SimulatedKind, type SimulatedToast, type SimulatedTone } from "./copy";
 export {
@@ -62,7 +56,6 @@ export {
   useDemoMeta,
   useDemoReset,
   useDemoSettings,
-  useDemoSync,
   useDemoUi,
   useUnreadAlertCount,
   type DemoAlerts,
@@ -72,4 +65,3 @@ export {
   type DemoSetting,
   type DemoUiApi,
 } from "./provider";
-export { SyncIndicator } from "./sync-indicator";

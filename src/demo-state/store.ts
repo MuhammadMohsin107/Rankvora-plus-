@@ -47,10 +47,6 @@ export type DemoStore = {
   nextId(kind: string): string;
   setUi(patch: Partial<DemoUi>): void;
   reset(): void;
-  /** Replace the whole state (used by server sync) and persist it to storage immediately. */
-  adopt(next: DemoStateV1): void;
-  /** Called after every reset(). Used by server sync to delete the remote copy. Returns an unsubscribe function. */
-  onReset(listener: () => void): () => void;
   /** Write pending changes now. */
   flush(): void;
   /** Re-read storage (used by the cross-tab `storage` event). */
@@ -75,7 +71,6 @@ export function createDemoStore(options: DemoStoreOptions = {}): DemoStore {
   const debounceMs = options.debounceMs ?? 150;
   const clock = options.now ?? (() => new Date().toISOString());
   const listeners = new Set<() => void>();
-  const resetListeners = new Set<() => void>();
 
   let state: DemoStateV1 = EMPTY_STATE;
   let hydrated = false;
@@ -299,22 +294,6 @@ export function createDemoStore(options: DemoStoreOptions = {}): DemoStore {
       }
       state = EMPTY_STATE;
       notify();
-      for (const l of [...resetListeners]) l();
-    },
-
-    adopt(next) {
-      hydrated = true;
-      state = next;
-      dirty = true;
-      flush();
-      notify();
-    },
-
-    onReset(listener) {
-      resetListeners.add(listener);
-      return () => {
-        resetListeners.delete(listener);
-      };
     },
 
     flush,

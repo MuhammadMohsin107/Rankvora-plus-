@@ -8,28 +8,19 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
-    "db:d1:generate": "drizzle-kit generate --config drizzle.d1.config.ts",
-    "db:d1:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "db:d1:reset:local": "node scripts/reset-local-d1.mjs && wrangler d1 migrations apply DB --local",
     "test": "vitest run",
-    "test:unit": "vitest run --exclude \"**/*.d1.test.ts\"",
-    "test:d1": "vitest run d1.test",
     "preview": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "upload": "cross-env DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && opennextjs-cloudflare upload"
   },
   "engines": {
     "node": ">=24"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.17",
-    "drizzle-orm": "^0.45.4",
     "next": "16.4.6",
     "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "zod": "^4.6.7"
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
@@ -37,7 +28,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "cross-env": "^10.1.0",
-    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "prettier": "^3.10.1",

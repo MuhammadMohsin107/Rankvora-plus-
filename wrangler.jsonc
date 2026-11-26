@@ -14,15 +14,6 @@
       "service": "rankvora-plus"
     }
   ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "rankvora-plus",
-      // Created with `npx wrangler d1 create rankvora-plus` (account 4a369912…, APAC). See docs/d1-setup.md.
-      "database_id": "b76945c2-c584-4211-ba4d-36d39ade7772",
-      "migrations_dir": "migrations"
-    }
-  ],
   "observability": {
     "enabled": true
   }
