@@ -8,8 +8,12 @@
    per request. Do not solve this by weakening the password hash.
 2. **Account pages exist** (sign-up, sign-in with two-step codes, confirmation, password reset,
    invitations, new organization). Confirming an email takes the password.
-3. **Live has no backend tables or secrets yet** (checked 2026-11-26: only the old `workspaces` table;
-   `0001` to `0005` pending). Finish the open items in the checklist below before using live. History
+3. **Live has the tables but no secrets yet.** `0001` to `0005` were applied on 2026-11-26. Checked
+   afterwards: same structure as the tested database (37 tables, 64 indexes, 35 triggers), all new
+   tables empty, no broken links, the 45 rows of the old `workspaces` table unchanged (the app no
+   longer uses it). The backup taken just before is outside the repo, in the owner's
+   `Documents/rankvora-backups/`; Time Travel bookmark before the change:
+   `00000066-00000000-0000512f-4e8ead6d4764d4c1b28f6fcc6e73dcba` (kept for a limited time). History
    tables are append-only: test rows written to live stay there.
 
 Pushing `main` deploys the code. **Until the settings below are in place, the whole live app shows only
