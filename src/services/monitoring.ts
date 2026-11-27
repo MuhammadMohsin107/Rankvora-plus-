@@ -192,37 +192,6 @@ export async function listSchedules(storeId: string): Promise<ScheduleRow[]> {
   );
 }
 
-export type ScheduleDetail = {
-  row: ScheduleRow;
-  createdAt: string;
-  createdBy: string;
-  versions: MonitoringSchedule["versions"];
-  prompts: { id: string; text: string; status: string; pinned: number | null; version: number }[];
-  recentRuns: RunSummary[];
-  storeTimezone: string;
-};
-
-export async function getSchedule(storeId: string, scheduleId: string): Promise<ScheduleDetail | null> {
-  const schedule = allSchedules().find((s) => s.storeId === storeId && s.id === scheduleId);
-  if (!schedule) return null;
-  const [rows, prompts, runs, store] = await Promise.all([listSchedules(storeId), listPromptsBase(storeId), listRuns(storeId), getStore(storeId)]);
-  const row = rows.find((r) => r.id === scheduleId);
-  if (!row || !store) return null;
-  const config = schedule.versions[0].config;
-  return {
-    row,
-    createdAt: schedule.createdAt,
-    createdBy: schedule.createdBy,
-    versions: schedule.versions,
-    prompts: config.promptIds.map((id) => {
-      const p = prompts.find((x) => x.id === id);
-      return { id, text: p?.text ?? id, status: p?.status ?? "active", pinned: config.pinnedVersions[id] ?? null, version: p?.version ?? 1 };
-    }),
-    recentRuns: runs.filter((r) => r.scheduleId === scheduleId).slice(0, 5),
-    storeTimezone: store.timezone,
-  };
-}
-
 export function scheduleParams(): { storeId: string; scheduleId: string }[] {
   return allSchedules().map((s) => ({ storeId: s.storeId, scheduleId: s.id }));
 }

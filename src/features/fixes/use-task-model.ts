@@ -223,5 +223,3 @@ export function useTaskModel({ storeId, detail, tasks: baseTasks, actorName, lin
 
   return { row, view, text, dirty, diffChanged, needsApproval, history, generating, verifying, simulated, setSimulated, act, fix };
 }
-
-export type TaskModel = ReturnType<typeof useTaskModel>;

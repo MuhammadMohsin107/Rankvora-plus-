@@ -2,16 +2,8 @@ import type { IconName } from "@/components/ui/icon";
 import { STATUS } from "@/lib/status";
 import type { StoreStatus } from "@/types/core";
 
-/** Allowed website status transitions (vocabulary from the specification). */
-export const ALLOWED_TRANSITIONS: Record<StoreStatus, StoreStatus[]> = {
-  draft: ["ready", "archived"],
-  needs_review: ["ready", "archived"],
-  ready: ["active", "archived"],
-  active: ["paused", "archived"],
-  paused: ["active", "archived"],
-  disconnected: ["active", "archived"],
-  archived: ["paused"],
-};
+// The allowed website status transitions live in docs/backend/backend-plan.md section 3.9;
+// the backend will enforce them. Nothing here reads a transition table today.
 
 export type TransitionCopy = {
   /** Menu / button label. */
