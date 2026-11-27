@@ -26,6 +26,7 @@ Open <http://localhost:3000>.
 | `npm run build`       | Production build                             |
 | `npm start`           | Run the production build                     |
 | `npm run lint`        | Lint with ESLint                             |
+| `npm run typecheck`   | Type check the web app and the Jobs Worker   |
 | `npm run format`      | Format with Prettier                         |
 | `npm test`            | Run the tests                                |
 | `npm run preview`     | Build for Cloudflare and run it locally      |
@@ -75,3 +76,20 @@ docs/          design-system.md, ui-screen-inventory.md, feature-ownership.md
 
 The UI is frontend only: demo data, simulated actions, no real AI provider, CMS or scheduler calls. See
 [docs/feature-ownership.md](docs/feature-ownership.md) for which screen owns which feature.
+
+### Backend folders (structure only, no backend features yet)
+
+Frontend and backend live in this one project, in separate folders. Each folder has a README with its rules,
+and `npm run lint` fails on imports that cross the line.
+
+```
+src/server/     backend code
+src/app/api/    API routes
+src/domain/     rules shared by screens and backend
+src/contracts/  data shapes shared by screens and backend
+workers/jobs/   second Worker for background work (placeholder, not deployed)
+migrations/     database changes
+tests/          tests that sit outside src
+```
+
+Plan: [docs/backend/backend-plan.md](docs/backend/backend-plan.md), section 4.
